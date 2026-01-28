@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
+import '../../screens/session_detail_screen.dart';
 
 /// Shows summary of training for selected date
 class DailySnapshotCard extends ConsumerWidget {
@@ -37,179 +38,199 @@ class DailySnapshotCard extends ConsumerWidget {
     ColorScheme scheme,
     DailySnapshot snapshot,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [scheme.surface, scheme.surfaceContainerHighest],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return InkWell(
+      onTap: () => _navigateToDetail(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [scheme.surface, scheme.surfaceContainerHighest],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: scheme.outline),
         ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.fitness_center,
+                    color: scheme.primary,
+                    size: 20,
+                  ),
                 ),
-                child: Icon(
-                  Icons.fitness_center,
-                  color: scheme.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      DateFormat(
-                        'EEEE, d MMMM',
-                        'es_ES',
-                      ).format(snapshot.date).toUpperCase(),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onSurface,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    if (snapshot.dayName != null)
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        snapshot.dayName!,
+                        DateFormat(
+                          'EEEE, d MMMM',
+                          'es_ES',
+                        ).format(snapshot.date).toUpperCase(),
                         style: GoogleFonts.montserrat(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
                           color: scheme.onSurface,
+                          letterSpacing: 1,
                         ),
                       ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Stats row
-          Row(
-            children: [
-              _buildStat(
-                scheme: scheme,
-                icon: Icons.monitor_weight_outlined,
-                value: snapshot.formattedVolume,
-                label: 'VOLUMEN',
-              ),
-              const SizedBox(width: 16),
-              _buildStat(
-                scheme: scheme,
-                icon: Icons.timer_outlined,
-                value: snapshot.formattedDuration,
-                label: 'DURACIÓN',
-              ),
-              const SizedBox(width: 16),
-              _buildStat(
-                scheme: scheme,
-                icon: Icons.check_circle_outline,
-                value: '${snapshot.setsCompleted}',
-                label: 'SERIES',
-              ),
-            ],
-          ),
-
-          // Best set highlight
-          if (snapshot.bestSet != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: scheme.tertiary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: scheme.tertiary.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.emoji_events, color: scheme.tertiary, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                      if (snapshot.dayName != null)
                         Text(
-                          'MEJOR SET',
+                          snapshot.dayName!,
                           style: GoogleFonts.montserrat(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: scheme.tertiary,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Text(
-                          snapshot.bestSet!.formatted,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: scheme.onSurface,
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                // Arrow indicator
+                Icon(
+                  Icons.chevron_right,
+                  color: scheme.onSurfaceVariant,
+                  size: 24,
+                ),
+              ],
             ),
-          ],
 
-          // Exercise list
-          if (snapshot.exerciseNames.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: snapshot.exerciseNames.take(5).map((name) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+            const SizedBox(height: 16),
+
+            // Stats row
+            Row(
+              children: [
+                _buildStat(
+                  scheme: scheme,
+                  icon: Icons.monitor_weight_outlined,
+                  value: snapshot.formattedVolume,
+                  label: 'VOLUMEN',
+                ),
+                const SizedBox(width: 16),
+                _buildStat(
+                  scheme: scheme,
+                  icon: Icons.timer_outlined,
+                  value: snapshot.formattedDuration,
+                  label: 'DURACIÓN',
+                ),
+                const SizedBox(width: 16),
+                _buildStat(
+                  scheme: scheme,
+                  icon: Icons.check_circle_outline,
+                  value: '${snapshot.setsCompleted}',
+                  label: 'SERIES',
+                ),
+              ],
+            ),
+
+            // Best set highlight
+            if (snapshot.bestSet != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: scheme.tertiary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: scheme.tertiary.withValues(alpha: 0.3),
                   ),
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.emoji_events, color: scheme.tertiary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'MEJOR SET',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: scheme.tertiary,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          Text(
+                            snapshot.bestSet!.formatted,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // Exercise list
+            if (snapshot.exerciseNames.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: snapshot.exerciseNames.take(5).map((name) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      name,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 10,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              if (snapshot.exerciseNames.length > 5)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    name,
+                    '+${snapshot.exerciseNames.length - 5} más',
                     style: GoogleFonts.montserrat(
                       fontSize: 10,
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-            if (snapshot.exerciseNames.length > 5)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '+${snapshot.exerciseNames.length - 5} más',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 10,
-                    color: scheme.onSurfaceVariant,
-                  ),
                 ),
-              ),
+            ],
           ],
-        ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToDetail(BuildContext context) {
+    // Navigate to session detail using the sessionsForDateProvider
+    // This will be handled by a Consumer widget to read the provider
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const DailySnapshotDetailScreen(),
       ),
     );
   }
@@ -295,6 +316,115 @@ class DailySnapshotCard extends ConsumerWidget {
             strokeWidth: 2,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Intermediate screen that loads sessions for the selected date
+/// and navigates to the appropriate detail view
+class DailySnapshotDetailScreen extends ConsumerWidget {
+  const DailySnapshotDetailScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sessionsAsync = ref.watch(sessionsForDateProvider);
+    final selectedDate = ref.watch(selectedCalendarDateProvider);
+
+    return sessionsAsync.when(
+      data: (sessions) {
+        if (sessions.isEmpty) {
+          // No sessions found, show empty state
+          return Scaffold(
+            appBar: AppBar(title: const Text('Detalle')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.event_busy,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Sin sesiones',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  if (selectedDate != null)
+                    Text(
+                      DateFormat('d MMM yyyy', 'es_ES').format(selectedDate),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // If there's only one session, show it directly
+        if (sessions.length == 1) {
+          // Replace this route with the session detail
+          Future.microtask(() {
+            if (context.mounted) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => SessionDetailScreen(sesion: sessions.first),
+                ),
+              );
+            }
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Multiple sessions - show list to select
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              selectedDate != null
+                  ? DateFormat('d MMM yyyy', 'es_ES').format(selectedDate)
+                  : 'Sesiones',
+            ),
+          ),
+          body: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: sessions.length,
+            itemBuilder: (context, index) {
+              final session = sessions[index];
+              return Card(
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Text('${index + 1}'),
+                  ),
+                  title: Text('Sesión ${index + 1}'),
+                  subtitle: Text(
+                    '${session.completedSetsCount} series - '
+                    '${session.totalVolume.toStringAsFixed(1)} kg',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => SessionDetailScreen(sesion: session),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        );
+      },
+      loading: () => Scaffold(
+        appBar: AppBar(title: const Text('Cargando...')),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: Center(child: Text('Error: $e')),
       ),
     );
   }

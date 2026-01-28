@@ -16,6 +16,7 @@ enum SmartImportMode {
   voice, // Dictado por voz
   camera, // OCR desde cámara
   gallery, // OCR desde galería
+  text, // Pegar/escribir texto
 }
 
 /// Modelo unificado para ejercicios importados (de voz u OCR)
@@ -140,6 +141,9 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
 
   final _ocrService = RoutineOcrService.instance;
 
+  // Controller para entrada de texto
+  final _textController = TextEditingController();
+
   @override
   void dispose() {
     for (final c in _seriesControllers.values) {
@@ -148,6 +152,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
     for (final c in _repsControllers.values) {
       c.dispose();
     }
+    _textController.dispose();
     super.dispose();
   }
 
@@ -169,6 +174,40 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
     setState(() {
       _mode = SmartImportMode.voice;
     });
+  }
+
+  Future<void> _startTextImport() async {
+    setState(() {
+      _mode = SmartImportMode.text;
+    });
+  }
+
+  Future<void> _processTextInput() async {
+    final text = _textController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      // Usar el servicio de voz para parsear el texto (mismo parser)
+      final service = VoiceInputService.instance;
+      final parsed = await service.parseTranscript(text);
+
+      setState(() {
+        _importedExercises.addAll(
+          parsed.map((e) => SmartImportedExercise.fromVoice(e)),
+        );
+        _isProcessing = false;
+        _textController.clear();
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error procesando texto: ${e.toString()}';
+        _isProcessing = false;
+      });
+    }
   }
 
   Future<void> _startOcrImport(ImageSource source) async {
@@ -361,6 +400,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
       case SmartImportMode.camera:
       case SmartImportMode.gallery:
         return 'ESCANEO OCR';
+      case SmartImportMode.text:
+        return 'PEGAR TEXTO';
     }
   }
 
@@ -373,6 +414,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
       case SmartImportMode.camera:
       case SmartImportMode.gallery:
         return 'Procesando imagen...';
+      case SmartImportMode.text:
+        return 'Pega o escribe tu rutina';
     }
   }
 
@@ -388,10 +431,15 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
           return _buildProcessingView();
         }
         return _buildResultsView();
+      case SmartImportMode.text:
+        if (_isProcessing) {
+          return _buildProcessingView();
+        }
+        return _buildTextView();
     }
   }
 
-  /// Vista de selección inicial con 3 opciones
+  /// Vista de selección inicial con 4 opciones
   Widget _buildSelectionView() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -419,6 +467,14 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
               'Di los ejercicios: "Sentadilla 5x5, luego press banca 4x10"',
           color: Colors.blue,
           onTap: _startVoiceImport,
+        ),
+        const SizedBox(height: 12),
+        _ImportOptionCard(
+          icon: Icons.keyboard,
+          title: 'Pegar Texto',
+          subtitle: 'Pega o escribe tu rutina desde cualquier fuente',
+          color: Colors.purple,
+          onTap: _startTextImport,
         ),
         const SizedBox(height: 12),
         _ImportOptionCard(
@@ -509,6 +565,93 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         if (_importedExercises.isEmpty && !voiceState.isListening) ...[
           const SizedBox(height: 16),
           _buildVoiceSuggestions(),
+        ],
+      ],
+    );
+  }
+
+  /// Vista de entrada de texto (pegar/escribir)
+  Widget _buildTextView() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Campo de texto
+        TextField(
+          controller: _textController,
+          maxLines: 5,
+          style: GoogleFonts.montserrat(color: Colors.white),
+          decoration: InputDecoration(
+            hintText:
+                'Pega o escribe tu entrenamiento...\n\nEj: Press banca 4x8 80kg, Sentadilla 3x5 100kg',
+            hintStyle: GoogleFonts.montserrat(color: Colors.white30),
+            filled: true,
+            fillColor: AppColors.bgElevated,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.purple),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Botón procesar
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _processTextInput,
+            icon: const Icon(Icons.auto_awesome),
+            label: const Text('PROCESAR TEXTO'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.purple,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Ejercicios detectados
+        if (_importedExercises.isNotEmpty) ...[
+          Flexible(child: _buildExercisesList()),
+          const SizedBox(height: 16),
+          _buildActionButtons(),
+        ],
+
+        // Sugerencias si no hay ejercicios
+        if (_importedExercises.isEmpty) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.bgDeep,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ejemplos de formato:',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white54,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildSuggestionChip('Press banca 4 series de 8 con 80 kilos'),
+                _buildSuggestionChip('Sentadillas 3x5, notas: felt strong'),
+                _buildSuggestionChip('Curl bíceps 3x12 a 15 kg'),
+              ],
+            ),
+          ),
         ],
       ],
     );
