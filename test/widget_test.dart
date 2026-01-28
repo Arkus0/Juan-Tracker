@@ -7,6 +7,6 @@ void main() {
   testWidgets('Home shows greeting', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: JuanTrackerApp()));
 
-    expect(find.text('Hello'), findsOneWidget);
+    expect(find.text('Juan Tracker'), findsOneWidget);
   });
 }
