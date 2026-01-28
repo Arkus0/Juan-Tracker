@@ -55,8 +55,8 @@ class HistoryScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add_external_session',
         onPressed: () => _showExternalSessionSheet(context, ref),
-        backgroundColor: AppColors.neonCyan,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.primary,
         icon: const Icon(Icons.add),
         label: Text(
           'SESIÓN EXTERNA',
@@ -354,7 +354,7 @@ class _WeekSection extends StatelessWidget {
               Text(
                 weekLabel,
                 style: GoogleFonts.montserrat(
-                  color: Colors.redAccent[700],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
@@ -362,7 +362,10 @@ class _WeekSection extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 '$totalSessions sesiones • ${(totalVolume / 1000).toStringAsFixed(1)}t vol',
-                style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),
@@ -428,11 +431,14 @@ class _SessionTileState extends State<_SessionTile> {
               try {
                 HapticFeedback.mediumImpact();
               } catch (_) {}
+              final theme = Theme.of(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      SessionDetailScreen(sesion: widget.session),
+                  builder: (_) => Theme(
+                    data: theme,
+                    child: SessionDetailScreen(sesion: widget.session),
+                  ),
                 ),
               );
             },
@@ -462,7 +468,8 @@ class _SessionTileState extends State<_SessionTile> {
                               : '',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Colors.redAccent[700],
+                                color:
+                                    Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
@@ -495,15 +502,17 @@ class _SessionTileState extends State<_SessionTile> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.red[900]?.withValues(
-                                    alpha: 0.3,
-                                  ),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   widget.session.dayName!,
                                   style: TextStyle(
-                                    color: Colors.redAccent[100],
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -553,7 +562,7 @@ class _SessionTileState extends State<_SessionTile> {
                   ),
                   Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: Colors.redAccent[700],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -612,7 +621,7 @@ class _SessionTileState extends State<_SessionTile> {
                   Text(
                     '${maxWeight}kg max',
                     style: TextStyle(
-                      color: Colors.redAccent[100],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -636,20 +645,19 @@ class _SessionTileState extends State<_SessionTile> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
+                    final theme = Theme.of(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            SessionDetailScreen(sesion: widget.session),
+                        builder: (_) => Theme(
+                          data: theme,
+                          child: SessionDetailScreen(sesion: widget.session),
+                        ),
                       ),
                     );
                   },
                   icon: const Icon(Icons.visibility, size: 18),
                   label: const Text('VER DETALLE'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white70,
-                    side: BorderSide(color: Colors.grey[700]!),
-                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -657,10 +665,6 @@ class _SessionTileState extends State<_SessionTile> {
                 onPressed: () => _exportSession(context, widget.session),
                 icon: const Icon(Icons.share, size: 18),
                 label: const Text('EXPORT'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent[100],
-                  side: BorderSide(color: Colors.red[900]!),
-                ),
               ),
             ],
           ),

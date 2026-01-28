@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../providers/analysis_provider.dart';
-import '../../utils/design_system.dart';
 import 'daily_snapshot_card.dart';
 
 /// TableCalendar wrapper with training day markers
@@ -31,14 +30,16 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedCalendarDateProvider);
     final trainingDatesAsync = ref.watch(trainingDatesProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return Column(
       children: [
         // Calendar
         trainingDatesAsync.when(
-          data: (trainingDates) => _buildCalendar(trainingDates, selectedDate),
-          loading: () => _buildCalendarLoading(),
-          error: (_, __) => _buildCalendar({}, selectedDate),
+          data: (trainingDates) =>
+              _buildCalendar(scheme, trainingDates, selectedDate),
+          loading: () => _buildCalendarLoading(scheme),
+          error: (_, __) => _buildCalendar(scheme, {}, selectedDate),
         ),
 
         // Daily snapshot when date selected
@@ -50,12 +51,16 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
     );
   }
 
-  Widget _buildCalendar(Set<DateTime> trainingDates, DateTime? selectedDate) {
+  Widget _buildCalendar(
+    ColorScheme scheme,
+    Set<DateTime> trainingDates,
+    DateTime? selectedDate,
+  ) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep),
+        border: Border.all(color: scheme.outline),
       ),
       child: TableCalendar(
         firstDay: DateTime(2020),
@@ -94,8 +99,8 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
                 child: Container(
                   width: 6,
                   height: 6,
-                  decoration: const BoxDecoration(
-                    color: Colors.redAccent,
+                  decoration: BoxDecoration(
+                    color: scheme.primary,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -105,15 +110,21 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           },
           // Default cell
           defaultBuilder: (context, day, focusedDay) {
-            return _buildDayCell(day, isSelected: false, isToday: false);
+            return _buildDayCell(
+              scheme,
+              day,
+              isSelected: false,
+              isToday: false,
+            );
           },
           // Today cell
           todayBuilder: (context, day, focusedDay) {
-            return _buildDayCell(day, isSelected: false, isToday: true);
+            return _buildDayCell(scheme, day, isSelected: false, isToday: true);
           },
           // Selected cell
           selectedBuilder: (context, day, focusedDay) {
             return _buildDayCell(
+              scheme,
               day,
               isSelected: true,
               isToday: isSameDay(day, DateTime.now()),
@@ -125,7 +136,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
               child: Text(
                 '${day.day}',
                 style: GoogleFonts.montserrat(
-                  color: AppColors.bgDeep,
+                  color: scheme.onSurfaceVariant,
                   fontSize: 14,
                 ),
               ),
@@ -137,35 +148,35 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           titleCentered: true,
           formatButtonShowsNext: false,
           formatButtonDecoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: scheme.outline),
             borderRadius: BorderRadius.circular(8),
           ),
           formatButtonTextStyle: GoogleFonts.montserrat(
-            color: AppColors.textSecondary,
+            color: scheme.onSurfaceVariant,
             fontSize: 12,
           ),
           titleTextStyle: GoogleFonts.montserrat(
-            color: Colors.white,
+            color: scheme.onSurface,
             fontWeight: FontWeight.w700,
             fontSize: 16,
           ),
-          leftChevronIcon: const Icon(
+          leftChevronIcon: Icon(
             Icons.chevron_left,
-            color: AppColors.textSecondary,
+            color: scheme.onSurfaceVariant,
           ),
-          rightChevronIcon: const Icon(
+          rightChevronIcon: Icon(
             Icons.chevron_right,
-            color: AppColors.textSecondary,
+            color: scheme.onSurfaceVariant,
           ),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: GoogleFonts.montserrat(
-            color: AppColors.textTertiary,
+            color: scheme.onSurfaceVariant,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
           weekendStyle: GoogleFonts.montserrat(
-            color: AppColors.textTertiary,
+            color: scheme.onSurfaceVariant,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -174,31 +185,31 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           cellMargin: const EdgeInsets.all(4),
           // Default
           defaultTextStyle: GoogleFonts.montserrat(
-            color: Colors.grey[300],
+            color: scheme.onSurface,
             fontSize: 14,
           ),
           // Weekend
           weekendTextStyle: GoogleFonts.montserrat(
-            color: AppColors.textSecondary,
+            color: scheme.onSurfaceVariant,
             fontSize: 14,
           ),
           // Today
-          todayDecoration: const BoxDecoration(
-            color: AppColors.bgDeep,
+          todayDecoration: BoxDecoration(
+            color: scheme.surface,
             shape: BoxShape.circle,
           ),
           todayTextStyle: GoogleFonts.montserrat(
-            color: Colors.white,
+            color: scheme.onSurface,
             fontWeight: FontWeight.w600,
             fontSize: 14,
           ),
           // Selected
-          selectedDecoration: const BoxDecoration(
-            color: Colors.redAccent,
+          selectedDecoration: BoxDecoration(
+            color: scheme.primary,
             shape: BoxShape.circle,
           ),
           selectedTextStyle: GoogleFonts.montserrat(
-            color: Colors.white,
+            color: scheme.onSurface,
             fontWeight: FontWeight.w700,
             fontSize: 14,
           ),
@@ -208,6 +219,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
   }
 
   Widget _buildDayCell(
+    ColorScheme scheme,
     DateTime day, {
     required bool isSelected,
     required bool isToday,
@@ -216,9 +228,9 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
       margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: isSelected
-            ? Colors.redAccent
+            ? scheme.primary
             : isToday
-            ? AppColors.bgDeep
+            ? scheme.surface
             : null,
         shape: BoxShape.circle,
       ),
@@ -227,10 +239,10 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           '${day.day}',
           style: GoogleFonts.montserrat(
             color: isSelected
-                ? Colors.white
+                ? scheme.onSurface
                 : isToday
-                ? Colors.white
-                : Colors.grey[300],
+                ? scheme.onSurface
+                : scheme.onSurfaceVariant,
             fontWeight: isSelected || isToday
                 ? FontWeight.w600
                 : FontWeight.w400,
@@ -241,18 +253,15 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
     );
   }
 
-  Widget _buildCalendarLoading() {
+  Widget _buildCalendarLoading(ColorScheme scheme) {
     return Container(
       height: 350,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Center(
-        child: CircularProgressIndicator(
-          color: Colors.redAccent,
-          strokeWidth: 2,
-        ),
+      child: Center(
+        child: CircularProgressIndicator(color: scheme.primary, strokeWidth: 2),
       ),
     );
   }

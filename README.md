@@ -17,6 +17,19 @@ flutter run -d android
 flutter run -d chrome
 ```
 
+## Codegen (Drift)
+
+Si editas tablas o la clase `@DriftDatabase`, genera los archivos:
+
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
+
+## Pasos manuales (Android)
+
+- Revisa permisos de camara/microfono si activas OCR o voz.
+- Si usas timers con notificaciones, valida permisos y servicios en Android.
+
 ## Build web (release)
 
 ```bash

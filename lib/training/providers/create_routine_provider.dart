@@ -350,25 +350,6 @@ class CreateRoutineNotifier extends Notifier<Rutina> {
     return;
   }
 
-  void _clearImagePath(int dayIndex, int exerciseIndex) {
-    // Check if state still has this day and exercise at this index
-    if (dayIndex >= state.dias.length) return;
-    final day = state.dias[dayIndex];
-    if (exerciseIndex >= day.ejercicios.length) return;
-
-    final exercise = day.ejercicios[exerciseIndex];
-    if (exercise.localImagePath == null) return; // Already cleared
-
-    final updatedExercise = exercise.copyWith(localImagePath: null);
-    final newEjercicios = [...day.ejercicios];
-    newEjercicios[exerciseIndex] = updatedExercise;
-
-    final updatedDay = day.copyWith(ejercicios: newEjercicios);
-    final newDias = [...state.dias];
-    newDias[dayIndex] = updatedDay;
-    state = state.copyWith(dias: newDias);
-  }
-
   void removeExercise(int dayIndex, int exerciseIndex) {
     // Before removing, check if it was part of a superset
     // If we remove an item from a superset of 2, the remaining one should lose its supersetId

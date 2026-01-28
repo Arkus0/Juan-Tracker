@@ -5,45 +5,45 @@
 ---
 
 ## Prioridad: MVP (Imprescindible) 🚨
-- [ ] Implementar modelos del dominio:
-  - [ ] `Sesion` con campos: `id`, `fecha`, `durationSeconds?`, `totalVolume`, `ejerciciosCompletados[]`, `rutinaId?`, `dayName?`, getters: `formattedDuration`, `completedSetsCount`.
-  - [ ] `Ejercicio` con campos: `id/nombre`, `logs: List<SerieLog>`, métodos `completedSetsCount()` y `maxWeight()`.
-  - [ ] `SerieLog` con campos: `peso`, `reps`, `completed`, `rpe?`.
-  - [ ] `Rutina` simple: `id`, `nombre`, `ejerciciosPlantilla`.
+- [x] Implementar modelos del dominio:
+  - [x] `Sesion` con campos: `id`, `fecha`, `durationSeconds?`, `totalVolume`, `ejerciciosCompletados[]`, `rutinaId?`, `dayName?`, getters: `formattedDuration`, `completedSetsCount`.
+  - [x] `Ejercicio` con campos: `id/nombre`, `logs: List<SerieLog>`, métodos `completedSetsCount()` y `maxWeight()`.
+  - [x] `SerieLog` con campos: `peso`, `reps`, `completed`, `rpe?`.
+  - [x] `Rutina` simple: `id`, `nombre`, `ejerciciosPlantilla`.
 
-- [ ] Implementar API pública mínima (contratos):
-  - [ ] `ITrainingRepository` con `saveSession`, `watchSessions`, `deleteSession`, `getRutinas`.
-  - [ ] `ITimerService` (métodos: `start`, `stop`, `remaining$`) — al menos stub.
-  - [ ] `IVoiceInputService` (método: `listenAndParse()`) — stub inicial.
+- [x] Implementar API pública mínima (contratos):
+  - [x] `ITrainingRepository` con `saveSession`, `watchSessions`, `deleteSession`, `getRutinas`.
+  - [x] `ITimerService` (métodos: `start`, `stop`, `remaining$`) — al menos stub.
+  - [x] `IVoiceInputService` (método: `listenAndParse()`) — stub inicial.
 
-- [ ] State management (Riverpod 3):
-  - [ ] `TrainingSessionController` como `Notifier`/`AsyncNotifier` con métodos: `startSession`, `addSet`, `undoLastSet`, `finishSession`, `addExternalSession`.
-  - [ ] `sesionesHistoryStreamProvider` (StreamProvider que expone `watchSessions()` del repo).
-  - [ ] `rutinasStreamProvider` o `FutureProvider` que use `ITrainingRepository.getRutinas()`.
+- [x] State management (Riverpod 3):
+  - [x] `TrainingSessionController` como `Notifier`/`AsyncNotifier` con métodos: `startSession`, `addSet`, `undoLastSet`, `finishSession`, `addExternalSession`.
+  - [x] `sesionesHistoryStreamProvider` (StreamProvider que expone `watchSessions()` del repo).
+  - [x] `rutinasStreamProvider` o `FutureProvider` que use `ITrainingRepository.getRutinas()`.
 
-- [ ] Implementación de repositorio in-memory (para MVP):
-  - [ ] `InMemoryTrainingRepository` con StreamController broadcast y CRUD mínimo.
-  - [ ] Tests unitarios que validen la emisión de sesiones guardadas.
+- [x] Implementación de repositorio in-memory (para MVP):
+  - [x] `InMemoryTrainingRepository` con StreamController broadcast y CRUD mínimo.
+  - [x] Tests unitarios que validen la emisión de sesiones guardadas.
 
-- [ ] Pantallas y UX mínimos:
-  - [ ] `HistoryScreen` con agrupación por: `ESTA SEMANA`, `SEMANA PASADA`, `ESTE MES`, `MMMM YYYY`.
-  - [ ] `SessionDetailScreen` que muestre ejercicios y series.
-  - [ ] `TrainingSessionScreen` básico para iniciar sesión, añadir sets y finalizar.
-  - [ ] `ExternalSessionSheet` (modal/ficha para crear sesión externa manualmente).
-  - [ ] FAB para `SESIÓN EXTERNA` con `heroTag: 'add_external_session'`.
+- [x] Pantallas y UX mínimos:
+  - [x] `HistoryScreen` con agrupación por: `ESTA SEMANA`, `SEMANA PASADA`, `ESTE MES`, `MMMM YYYY`.
+  - [x] `SessionDetailScreen` que muestre ejercicios y series.
+  - [x] `TrainingSessionScreen` básico para iniciar sesión, añadir sets y finalizar.
+  - [x] `ExternalSessionSheet` (modal/ficha para crear sesión externa manualmente).
+  - [x] FAB para `SESIÓN EXTERNA` con `heroTag: 'add_external_session'`.
 
-- [ ] Export & Share:
-  - [ ] Export individual session (texto legible + JSON shareable).
-  - [ ] Export “Exportar todo” desde `History` (JSON con indentado).
+- [x] Export & Share:
+  - [x] Export individual session (texto legible + JSON shareable).
+  - [x] Export “Exportar todo” desde `History` (JSON con indentado).
 
-- [ ] Undo UX:
-  - [ ] SnackBar con DESHACER en acciones de guardado (llamar `ScaffoldMessenger.of(context).hideCurrentSnackBar()` antes de mostrar).
-  - [ ] DESHACER restaura estado previo (ej.: borra sesión guardada).
+- [x] Undo UX:
+  - [x] SnackBar con DESHACER en acciones de guardado (llamar `ScaffoldMessenger.of(context).hideCurrentSnackBar()` antes de mostrar).
+  - [x] DESHACER restaura estado previo (ej.: borra sesión guardada).
 
-- [ ] Tests mínimos (ejecución obligatoria en PR):
-  - [ ] Unit: controller behavior (start/addSet/finish/undo).
-  - [ ] Unit: in-memory repo CRUD + stream.
-  - [ ] Widget: `HistoryScreen` loads and groups sessions.
+- [x] Tests mínimos (ejecución obligatoria en PR):
+  - [x] Unit: controller behavior (start/addSet/finish/undo).
+  - [x] Unit: in-memory repo CRUD + stream.
+  - [x] Widget: `HistoryScreen` loads and groups sessions.
 
 - [ ] Documentación y PR:
   - [ ] Añadir `docs/PORTING_SPEC.md` (o enlazar a la que ya existe) y notas en PR sobre decisiones (stubs, Drift pendiente).
@@ -53,52 +53,52 @@
 
 ## Prioridad: Post-MVP (Alta → Media)
 - [ ] Persistencia local (Drift/SQLite):
-  - [ ] `lib/database/database.dart` con `schemaVersion` y `MigrationStrategy`.
-  - [ ] Implementar `DriftTrainingRepository` que satisface `ITrainingRepository`.
-  - [ ] Ejecutar `dart run build_runner build --delete-conflicting-outputs` para generar archivos.
+  - [x] `lib/database/database.dart` con `schemaVersion` y `MigrationStrategy`.
+  - [x] Implementar `DriftTrainingRepository` que satisface `ITrainingRepository`.
+  - [x] Ejecutar `dart run build_runner build --delete-conflicting-outputs` para generar archivos.
   - [ ] Tests de migraciones (crear DB vieja y actualizar, validar onUpgrade).
 
 - [ ] Timer & Notifications:
   - [ ] Implementar `ITimerService` real con `rest timers` y streams de tiempo restante.
-  - [ ] Integrar notificaciones locales y foreground service (Android) para timers si es necesario.
+  - [x] Integrar notificaciones locales y foreground service (Android) para timers si es necesario.
 
-- [ ] Voice & OCR (si decidido):
-  - [ ] `IVoiceInputService` con `speech_to_text` para reconocimiento; parser para construir `ExternalSession`.
-  - [ ] OCR con ML Kit si se quiere leer pantallas/ PDFs (opcional y device-required).
+- [x] Voice & OCR (si decidido):
+  - [x] `IVoiceInputService` con `speech_to_text` para reconocimiento; parser para construir `ExternalSession`.
+  - [x] OCR con ML Kit si se quiere leer pantallas/ PDFs (opcional y device-required).
 
-- [ ] MediaSession & audio UX:
-  - [ ] `MediaSessionService` nativo para lock screen media controls (Android) y `just_audio` para audio.
-  - [ ] Beeps / feedback sonoro (`NativeBeepService`).
+- [x] MediaSession & audio UX:
+  - [x] `MediaSessionService` nativo para lock screen media controls (Android) y `just_audio` para audio.
+  - [x] Beeps / feedback sonoro (`NativeBeepService`).
 
-- [ ] Haptics & feedback:
-  - [ ] Haptic feedback en interacciones importantes (selectionClick, mediumImpact).
+- [x] Haptics & feedback:
+  - [x] Haptic feedback en interacciones importantes (selectionClick, mediumImpact).
 
-- [ ] Progresión & recomendaciones:
-  - [ ] Implementar reglas básicas de progresión (ej.: aumentar peso tras N sets exitosos, milestone detection).
-  - [ ] Widgets para celebrar milestones (`MilestoneCelebration`).
+- [x] Progresión & recomendaciones:
+  - [x] Implementar reglas básicas de progresión (ej.: aumentar peso tras N sets exitosos, milestone detection).
+  - [x] Widgets para celebrar milestones (`MilestoneCelebration`).
 
-- [ ] Undo & historicidad avanzada:
-  - [ ] Guardar meta-datos adicionales de la sesión (isBadDay, dayIndex) si se requiere.
+- [x] Undo & historicidad avanzada:
+  - [x] Guardar meta-datos adicionales de la sesión (isBadDay, dayIndex) si se requiere.
 
 ---
 
 ## UI & Widgets (detallado)
-- [ ] Cards expandibles para sesiones (`_SessionTile`): tap para expandir, long-press para ir a detalle.
-- [ ] `AnimatedCrossFade` para mostrar detalles expandibles.
-- [ ] `RestTimerBar`, `FocusedSetRow`, `NumpadInputModal` para input de sets.
-- [ ] SnackBar con tipo floating, color y acción DESHACER.
-- [ ] Buttons estilizados (OutlinedButton.styleFrom con colores y borders especificados).
+- [x] Cards expandibles para sesiones (`_SessionTile`): tap para expandir, long-press para ir a detalle.
+- [x] `AnimatedCrossFade` para mostrar detalles expandibles.
+- [x] `RestTimerBar`, `FocusedSetRow`, `NumpadInputModal` para input de sets.
+- [x] SnackBar con tipo floating, color y acción DESHACER.
+- [x] Buttons estilizados (OutlinedButton.styleFrom con colores y borders especificados).
 
 ---
 
 ## Tests, QA & CI (detallado)
-- [ ] Unit tests:
-  - [ ] TrainingSessionController transitions (Idle → Active → Finished).
-  - [ ] Cálculos: `totalVolume`, `completedSetsCount`, `maxWeight`.
-  - [ ] Repo behavior: save/load/delete/watch emits.
-- [ ] Widget tests:
-  - [ ] History screen shows grouping and items.
-  - [ ] Session detail shows exercises/series and metrics.
+- [x] Unit tests:
+  - [x] TrainingSessionController transitions (Idle → Active → Finished).
+  - [x] Cálculos: `totalVolume`, `completedSetsCount`, `maxWeight`.
+  - [x] Repo behavior: save/load/delete/watch emits.
+- [x] Widget tests:
+  - [x] History screen shows grouping and items.
+  - [x] Session detail shows exercises/series and metrics.
 - [ ] Integration tests (device required):
   - [ ] Flow: start session → add sets → finish → verify in history.
   - [ ] Voice/OCR flows (manual test or E2E if devices available).
@@ -111,25 +111,25 @@
 ---
 
 ## Edge-cases, validaciones y seguridad
-- [ ] Validar input: `peso >= 0`, `reps > 0`, `rpe` en rango si aplica.
-- [ ] Manejar sesiones vacías: prevenir guardado accidental o avisar al usuario.
-- [ ] Sessions con fecha futura: mostrar alerta o normalizar.
-- [ ] Rutina eliminada: `rutinaId` no encontrada → mostrar etiqueta `RUTINA ELIMINADA`.
-- [ ] SnackBar undo timeout: 10s por diseño; restauración segura y atómica.
+- [x] Validar input: `peso >= 0`, `reps > 0`, `rpe` en rango si aplica.
+- [x] Manejar sesiones vacías: prevenir guardado accidental o avisar al usuario.
+- [x] Sessions con fecha futura: mostrar alerta o normalizar.
+- [x] Rutina eliminada: `rutinaId` no encontrada → mostrar etiqueta `RUTINA ELIMINADA`.
+- [x] SnackBar undo timeout: 10s por diseño; restauración segura y atómica.
 - [ ] Permisos faltantes: mostrar fallback/explicación (voice/ocr/camera/microphone).
 
 ---
 
 ## Observability y logs
-- [ ] Usar `logger` para mensajes de debugging relevantes (no prints en producción).
+- [x] Usar `logger` para mensajes de debugging relevantes (no prints en producción).
 - [ ] Tener tests que simulen errores y validen manejo correcto.
 
 ---
 
 ## Dev tools, scripts y mantenimiento
-- [ ] `scripts/extract_providers.dart` para auditar providers y acelerar portado.
+- [x] `scripts/extract_providers.dart` para auditar providers y acelerar portado.
 - [ ] `bin/` scripts (si necesario): generación/normalización de assets (aunque estamos ignorando exercises).
-- [ ] Documentar pasos de codegen (`dart run build_runner build --delete-conflicting-outputs`).
+- [x] Documentar pasos de codegen (`dart run build_runner build --delete-conflicting-outputs`).
 - [ ] Añadir instrucciones en README y notas en PR sobre pasos manuales a completar (migraciones DB, permisos Android).
 
 ---

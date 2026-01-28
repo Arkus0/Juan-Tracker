@@ -26,7 +26,7 @@ import 'numpad_input_modal.dart';
 class TrainingColors {
   // FOCO: Rojo profundo para serie activa (intensidad)
   static const activeSet = AppColors.bloodRed;
-  static const activeBg = Color(0xFF1A1212); // Sutil tinte rojo
+  static const activeBg = Color(0xFF241416); // Rojo oscuro (no vivo)
 
   // COMPLETADO: Verde brillante (éxito)
   static const completed = AppColors.completedGreen;
@@ -335,7 +335,7 @@ class _FocusedSetRowState extends State<FocusedSetRow>
           padding: const EdgeInsets.only(right: 20),
           margin: const EdgeInsets.symmetric(vertical: 2),
           decoration: BoxDecoration(
-            color: AppColors.bloodRed.withValues(alpha: 0.8),
+            color: AppColors.error.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -402,7 +402,6 @@ class _FocusedSetRowState extends State<FocusedSetRow>
       builder: (dialogContext) => PlateCalculatorDialog(
         currentWeight: currentWeight,
         onWeightSelected: (weight) {
-          Navigator.of(dialogContext).pop(); // Cerrar dialog de placas
           // 🎯 FIX: Aplicar directamente y cerrar numpad (el callback hace pop del numpad)
           onApplyAndClose(weight);
         },

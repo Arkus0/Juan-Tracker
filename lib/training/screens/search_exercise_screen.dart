@@ -36,7 +36,10 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
     final resultsAsync = ref.watch(exerciseSearchResultsProvider);
     final suggestionsAsync = ref.watch(exerciseSearchSuggestionsProvider);
     final query = ref.watch(exerciseSearchQueryProvider);
-
+    final filters = ref.watch(exerciseSearchFiltersProvider);
+    final filtersNotifier = ref.read(exerciseSearchFiltersProvider.notifier);
+    final muscleGroups = ref.watch(availableMuscleGroupsProvider);
+    final equipment = ref.watch(availableEquipmentProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('BUSCAR EJERCICIO')),
       body: Column(
@@ -49,10 +52,12 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
               onChanged: (value) {
                 ref.read(exerciseSearchQueryProvider.notifier).setQuery(value);
               },
-
               decoration: InputDecoration(
                 hintText: 'Buscar ejercicio...',
-                prefixIcon: Icon(Icons.search, color: Colors.redAccent[700]),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, color: Colors.grey),
@@ -67,6 +72,70 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                FilterChip(
+                  label: const Text('Favoritos'),
+                  selected: filters.favoritesOnly,
+                  onSelected: (value) =>
+                      filtersNotifier.setFavoritesOnly(value),
+                ),
+                const Spacer(),
+                if (filters.favoritesOnly ||
+                    (filters.muscleGroup != null &&
+                        filters.muscleGroup!.isNotEmpty) ||
+                    (filters.equipment != null &&
+                        filters.equipment!.isNotEmpty))
+                  TextButton(
+                    onPressed: filtersNotifier.clear,
+                    child: const Text('Limpiar filtros'),
+                  ),
+              ],
+            ),
+          ),
+          if (muscleGroups.isNotEmpty)
+            SizedBox(
+              height: 40,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: muscleGroups.take(8).length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final muscle = muscleGroups[index];
+                  final isSelected = filters.muscleGroup == muscle;
+                  return FilterChip(
+                    label: Text(muscle),
+                    selected: isSelected,
+                    onSelected: (_) => filtersNotifier.setMuscleGroup(
+                      isSelected ? null : muscle,
+                    ),
+                  );
+                },
+              ),
+            ),
+          if (equipment.isNotEmpty)
+            SizedBox(
+              height: 40,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: equipment.take(8).length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final item = equipment[index];
+                  final isSelected = filters.equipment == item;
+                  return FilterChip(
+                    label: Text(item),
+                    selected: isSelected,
+                    onSelected: (_) =>
+                        filtersNotifier.setEquipment(isSelected ? null : item),
+                  );
+                },
+              ),
+            ),
           Expanded(
             child: resultsAsync.when(
               data: (displayedExercises) {
@@ -101,7 +170,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                             (exercise) => Text(
                               exercise.name,
                               style: TextStyle(
-                                color: Colors.redAccent[100],
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -146,7 +215,9 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                         child: Text(
                           row.header!,
                           style: TextStyle(
-                            color: Colors.redAccent[100],
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -159,8 +230,9 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      title: Text(
-                        exercise.name.toUpperCase(),
+                      title: _HighlightedText(
+                        text: exercise.name.toUpperCase(),
+                        query: query,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -174,17 +246,21 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.red[900]?.withValues(alpha: 0.3),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: Colors.red[900]!.withValues(alpha: 0.5),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.4),
                               ),
                             ),
                             child: Text(
                               exercise.muscleGroup.toUpperCase(),
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.redAccent[100],
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -200,7 +276,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                       ),
                       trailing: Icon(
                         Icons.add_circle_outline,
-                        color: Colors.redAccent[700],
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       onTap: () {
                         Navigator.of(context).pop(exercise);
@@ -213,7 +289,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
               error: (error, _) => Center(
                 child: Text(
                   'Error al buscar ejercicios: $error',
-                  style: const TextStyle(color: Colors.redAccent),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
             ),
@@ -236,4 +312,88 @@ class _SearchRow {
     : this._(exercise: exercise);
 
   bool get isHeader => header != null;
+}
+
+class _HighlightedText extends StatelessWidget {
+  final String text;
+  final String query;
+  final TextStyle style;
+
+  const _HighlightedText({
+    required this.text,
+    required this.query,
+    required this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final normalizedQuery = query.trim();
+    if (normalizedQuery.isEmpty) {
+      return Text(
+        text,
+        style: style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    final tokens = normalizedQuery
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((t) => t.length >= 2)
+        .toList();
+
+    if (tokens.isEmpty) {
+      return Text(
+        text,
+        style: style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    final pattern = RegExp(
+      tokens.map(RegExp.escape).join('|'),
+      caseSensitive: false,
+    );
+    final matches = pattern.allMatches(text);
+    if (matches.isEmpty) {
+      return Text(
+        text,
+        style: style,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    final highlightStyle = style.copyWith(
+      color: Theme.of(context).colorScheme.primary,
+    );
+
+    final spans = <TextSpan>[];
+    var lastIndex = 0;
+    for (final match in matches) {
+      if (match.start > lastIndex) {
+        spans.add(
+          TextSpan(text: text.substring(lastIndex, match.start), style: style),
+        );
+      }
+      spans.add(
+        TextSpan(
+          text: text.substring(match.start, match.end),
+          style: highlightStyle,
+        ),
+      );
+      lastIndex = match.end;
+    }
+    if (lastIndex < text.length) {
+      spans.add(TextSpan(text: text.substring(lastIndex), style: style));
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
 }

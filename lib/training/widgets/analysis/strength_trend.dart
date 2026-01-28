@@ -84,15 +84,16 @@ class StrengthTrend extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedExercise = ref.watch(selectedTrendExerciseProvider);
+    final scheme = Theme.of(context).colorScheme;
     final exerciseNamesAsync = ref.watch(exerciseNamesProvider);
     final trendAsync = ref.watch(strengthTrendProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep),
+        border: Border.all(color: scheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,12 +104,12 @@ class StrengthTrend extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.2),
+                  color: scheme.tertiary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.trending_up,
-                  color: Colors.green,
+                  color: scheme.tertiary,
                   size: 18,
                 ),
               ),
@@ -126,6 +127,7 @@ class StrengthTrend extends ConsumerWidget {
                 return const SizedBox.shrink();
               }
               return _buildExerciseSelector(
+                scheme,
                 ref,
                 selectedExercise,
                 exerciseNames,
@@ -141,12 +143,12 @@ class StrengthTrend extends ConsumerWidget {
           trendAsync.when(
             data: (dataPoints) {
               if (dataPoints.isEmpty) {
-                return _buildEmptyState();
+                return _buildEmptyState(scheme);
               }
-              return _buildChart(dataPoints);
+              return _buildChart(scheme, dataPoints);
             },
-            loading: () => _buildLoading(),
-            error: (_, __) => _buildEmptyState(),
+            loading: () => _buildLoading(scheme),
+            error: (_, __) => _buildEmptyState(scheme),
           ),
         ],
       ),
@@ -154,6 +156,7 @@ class StrengthTrend extends ConsumerWidget {
   }
 
   Widget _buildExerciseSelector(
+    ColorScheme scheme,
     WidgetRef ref,
     String? selected,
     List<String> exerciseNames,
@@ -161,9 +164,9 @@ class StrengthTrend extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF252525),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.bgDeep),
+        border: Border.all(color: scheme.outline),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -173,11 +176,11 @@ class StrengthTrend extends ConsumerWidget {
               ? exerciseNames.first
               : null,
           hint: Text('Selecciona ejercicio', style: _TrendStyles.dropdownHint),
-          icon: const Icon(
+          icon: Icon(
             Icons.keyboard_arrow_down,
-            color: AppColors.textTertiary,
+            color: scheme.onSurfaceVariant,
           ),
-          dropdownColor: const Color(0xFF252525),
+          dropdownColor: scheme.surface,
           isExpanded: true,
           items: exerciseNames.map((name) {
             return DropdownMenuItem<String>(
@@ -198,7 +201,7 @@ class StrengthTrend extends ConsumerWidget {
     );
   }
 
-  Widget _buildChart(List<StrengthDataPoint> dataPoints) {
+  Widget _buildChart(ColorScheme scheme, List<StrengthDataPoint> dataPoints) {
     // Calculate min/max for Y axis
     var minY = double.infinity;
     var maxY = double.negativeInfinity;
@@ -234,10 +237,7 @@ class StrengthTrend extends ConsumerWidget {
                 drawVerticalLine: false,
                 horizontalInterval: (maxY - minY) / 4,
                 getDrawingHorizontalLine: (value) {
-                  return const FlLine(
-                    color: AppColors.bgElevated,
-                    strokeWidth: 1,
-                  );
+                  return FlLine(color: scheme.outline, strokeWidth: 1);
                 },
               ),
               titlesData: FlTitlesData(
@@ -283,16 +283,16 @@ class StrengthTrend extends ConsumerWidget {
                   spots: spots,
                   isCurved: true,
                   curveSmoothness: 0.3,
-                  color: Colors.redAccent,
+                  color: scheme.primary,
                   barWidth: 3,
                   isStrokeCapRound: true,
                   dotData: FlDotData(
                     getDotPainter: (spot, percent, barData, index) {
                       return FlDotCirclePainter(
                         radius: 4,
-                        color: Colors.redAccent,
+                        color: scheme.primary,
                         strokeWidth: 2,
-                        strokeColor: const Color(0xFF1A1A1A),
+                        strokeColor: scheme.surface,
                       );
                     },
                   ),
@@ -300,8 +300,8 @@ class StrengthTrend extends ConsumerWidget {
                     show: true,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.redAccent.withValues(alpha: 0.3),
-                        Colors.redAccent.withValues(alpha: 0.0),
+                        scheme.primary.withValues(alpha: 0.3),
+                        scheme.primary.withValues(alpha: 0.0),
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -348,12 +348,15 @@ class StrengthTrend extends ConsumerWidget {
         const SizedBox(height: 12),
 
         // Summary stats
-        _buildSummaryStats(dataPoints),
+        _buildSummaryStats(scheme, dataPoints),
       ],
     );
   }
 
-  Widget _buildSummaryStats(List<StrengthDataPoint> dataPoints) {
+  Widget _buildSummaryStats(
+    ColorScheme scheme,
+    List<StrengthDataPoint> dataPoints,
+  ) {
     if (dataPoints.length < 2) return const SizedBox.shrink();
 
     final first = dataPoints.first;
@@ -365,19 +368,19 @@ class StrengthTrend extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: (isPositive ? Colors.green : Colors.red).withValues(alpha: 0.1),
+        color: (isPositive ? AppColors.completedGreen : scheme.error)
+            .withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: (isPositive ? Colors.green : Colors.red).withValues(
-            alpha: 0.3,
-          ),
+          color: (isPositive ? AppColors.completedGreen : scheme.error)
+              .withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         children: [
           Icon(
             isPositive ? Icons.trending_up : Icons.trending_down,
-            color: isPositive ? Colors.green : Colors.red,
+            color: isPositive ? AppColors.completedGreen : scheme.error,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -403,14 +406,14 @@ class StrengthTrend extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ColorScheme scheme) {
     return Container(
       height: 200,
       alignment: Alignment.center,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.show_chart, color: AppColors.border, size: 40),
+          Icon(Icons.show_chart, color: scheme.outline, size: 40),
           const SizedBox(height: 12),
           Text('Sin datos de progreso', style: _TrendStyles.emptyTitle),
           const SizedBox(height: 4),
@@ -423,12 +426,12 @@ class StrengthTrend extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoading() {
+  Widget _buildLoading(ColorScheme scheme) {
     return SizedBox(
       height: 200,
       child: Center(
         child: CircularProgressIndicator(
-          color: Colors.redAccent.withValues(alpha: 0.5),
+          color: scheme.primary.withValues(alpha: 0.5),
           strokeWidth: 2,
         ),
       ),

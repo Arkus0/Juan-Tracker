@@ -11,7 +11,6 @@ import '../../models/rutina.dart';
 import '../../models/sesion.dart';
 import '../../providers/training_provider.dart';
 import '../../screens/session_detail_screen.dart';
-import '../../utils/design_system.dart';
 import '../../widgets/common/app_widgets.dart';
 
 /// Session history list grouped by week - refactored from HistoryScreen
@@ -114,6 +113,7 @@ class WeekSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final totalVolume = sessions.fold(0.0, (sum, s) => sum + s.totalVolume);
     final totalSessions = sessions.length;
 
@@ -127,7 +127,7 @@ class WeekSection extends StatelessWidget {
               Text(
                 weekLabel,
                 style: GoogleFonts.montserrat(
-                  color: AppColors.neonPrimary,
+                  color: scheme.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
@@ -135,10 +135,7 @@ class WeekSection extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 '$totalSessions sesiones • ${(totalVolume / 1000).toStringAsFixed(1)}t vol',
-                style: const TextStyle(
-                  color: AppColors.textTertiary,
-                  fontSize: 11,
-                ),
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11),
               ),
             ],
           ),
@@ -176,6 +173,7 @@ class _SessionTileState extends State<SessionTile> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final rutina = widget.rutinasMap[widget.session.rutinaId];
     final rutinaName = rutina?.nombre ?? 'RUTINA ELIMINADA';
 
@@ -202,11 +200,14 @@ class _SessionTileState extends State<SessionTile> {
             },
             onLongPress: () {
               HapticFeedback.mediumImpact();
+              final theme = Theme.of(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      SessionDetailScreen(sesion: widget.session),
+                  builder: (_) => Theme(
+                    data: theme,
+                    child: SessionDetailScreen(sesion: widget.session),
+                  ),
                 ),
               );
             },
@@ -220,9 +221,9 @@ class _SessionTileState extends State<SessionTile> {
                     width: 50,
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.black,
+                      color: scheme.surface,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.bgDeep),
+                      border: Border.all(color: scheme.outline),
                     ),
                     child: Column(
                       children: [
@@ -231,7 +232,7 @@ class _SessionTileState extends State<SessionTile> {
                           style: GoogleFonts.montserrat(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: scheme.onSurface,
                             height: 1,
                           ),
                         ),
@@ -242,7 +243,7 @@ class _SessionTileState extends State<SessionTile> {
                           style: GoogleFonts.montserrat(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.neonPrimary,
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -262,7 +263,7 @@ class _SessionTileState extends State<SessionTile> {
                                 style: GoogleFonts.montserrat(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
-                                  color: Colors.white,
+                                  color: scheme.onSurface,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -275,7 +276,7 @@ class _SessionTileState extends State<SessionTile> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.live.withValues(alpha: 0.3),
+                                  color: scheme.primary.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -283,7 +284,7 @@ class _SessionTileState extends State<SessionTile> {
                                   style: GoogleFonts.montserrat(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.redAccent[100],
+                                    color: scheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -292,38 +293,38 @@ class _SessionTileState extends State<SessionTile> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.access_time,
                               size: 12,
-                              color: AppColors.textTertiary,
+                              color: scheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 3),
                             Text(
                               timeStr,
                               style: GoogleFonts.montserrat(
                                 fontSize: 11,
-                                color: AppColors.textTertiary,
+                                color: scheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(width: 10),
-                            const Icon(
+                            Icon(
                               Icons.timer_outlined,
                               size: 12,
-                              color: AppColors.textTertiary,
+                              color: scheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 3),
                             Text(
                               durationText,
                               style: GoogleFonts.montserrat(
                                 fontSize: 11,
-                                color: AppColors.textTertiary,
+                                color: scheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(width: 10),
-                            const Icon(
+                            Icon(
                               Icons.fitness_center,
                               size: 12,
-                              color: AppColors.textTertiary,
+                              color: scheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 3),
                             Text(
@@ -331,7 +332,7 @@ class _SessionTileState extends State<SessionTile> {
                               style: GoogleFonts.montserrat(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.redAccent[200],
+                                color: scheme.primary,
                               ),
                             ),
                           ],
@@ -341,7 +342,7 @@ class _SessionTileState extends State<SessionTile> {
                   ),
                   Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: AppColors.textTertiary,
+                    color: scheme.onSurfaceVariant,
                     size: 22,
                   ),
                 ],
@@ -351,7 +352,7 @@ class _SessionTileState extends State<SessionTile> {
           // Expandable content
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
-            secondChild: _buildExpandedContent(),
+            secondChild: _buildExpandedContent(scheme),
             crossFadeState: _isExpanded
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
@@ -362,13 +363,13 @@ class _SessionTileState extends State<SessionTile> {
     );
   }
 
-  Widget _buildExpandedContent() {
+  Widget _buildExpandedContent(ColorScheme scheme) {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(color: AppColors.bgDeep, height: 1),
+          Divider(color: scheme.outline, height: 1),
           const SizedBox(height: 10),
           // Exercise list
           ...widget.session.ejerciciosCompletados.take(5).map((ejercicio) {
@@ -387,7 +388,7 @@ class _SessionTileState extends State<SessionTile> {
                       ejercicio.nombre,
                       style: GoogleFonts.montserrat(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: scheme.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -397,7 +398,7 @@ class _SessionTileState extends State<SessionTile> {
                     '$completedSets series',
                     style: GoogleFonts.montserrat(
                       fontSize: 11,
-                      color: AppColors.textTertiary,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -406,7 +407,7 @@ class _SessionTileState extends State<SessionTile> {
                     style: GoogleFonts.montserrat(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Colors.redAccent[200],
+                      color: scheme.primary,
                     ),
                   ),
                 ],
@@ -420,7 +421,7 @@ class _SessionTileState extends State<SessionTile> {
                 '+${widget.session.ejerciciosCompletados.length - 5} ejercicios más',
                 style: GoogleFonts.montserrat(
                   fontSize: 10,
-                  color: AppColors.textTertiary,
+                  color: scheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -431,19 +432,22 @@ class _SessionTileState extends State<SessionTile> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
+                    final theme = Theme.of(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            SessionDetailScreen(sesion: widget.session),
+                        builder: (_) => Theme(
+                          data: theme,
+                          child: SessionDetailScreen(sesion: widget.session),
+                        ),
                       ),
                     );
                   },
                   icon: const Icon(Icons.visibility, size: 16),
                   label: const Text('DETALLE'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: const BorderSide(color: AppColors.border),
+                    foregroundColor: scheme.onSurface,
+                    side: BorderSide(color: scheme.outline),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     textStyle: GoogleFonts.montserrat(
                       fontSize: 11,
@@ -458,8 +462,10 @@ class _SessionTileState extends State<SessionTile> {
                 icon: const Icon(Icons.share, size: 16),
                 label: const Text('EXPORT'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent[200],
-                  side: const BorderSide(color: AppColors.live),
+                  foregroundColor: scheme.primary,
+                  side: BorderSide(
+                    color: scheme.primary.withValues(alpha: 0.4),
+                  ),
                   padding: const EdgeInsets.symmetric(
                     vertical: 8,
                     horizontal: 12,

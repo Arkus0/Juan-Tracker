@@ -35,6 +35,10 @@ class _CreateEditRoutineScreenState
   /// Flag para saber si ya se guardó la rutina (evitar diálogo al salir después de guardar)
   bool _savedSuccessfully = false;
 
+  // Stored references for safe disposal without accessing `ref` in dispose
+  late final providerContainer = ref.container;
+  late final _createRoutineProvider = createRoutineProvider(widget.rutina);
+
   @override
   void initState() {
     super.initState();
@@ -176,6 +180,14 @@ class _CreateEditRoutineScreenState
 
   @override
   void dispose() {
+    // Ensure edit state doesn't leak across future edits. Use stored container
+    // and provider to avoid using `ref` while the widget is being unmounted.
+    try {
+      providerContainer.invalidate(_createRoutineProvider);
+    } catch (_) {
+      // If invalidation fails (unlikely), ignore — we don't want to crash
+    }
+
     _nameController.dispose();
     super.dispose();
   }
@@ -1084,7 +1096,6 @@ class _CreateEditRoutineScreenState
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.black,
         appBar: AppBar(
           title: Text(
             widget.rutina == null
@@ -1095,7 +1106,6 @@ class _CreateEditRoutineScreenState
               fontSize: 22,
             ),
           ),
-          backgroundColor: AppColors.neonPrimaryPressed,
           actions: [
             // 🎯 UX ALTO: Un solo botón Smart Import (consolida voz + OCR + smart)
             IconButton(
@@ -1303,8 +1313,9 @@ class _CreateEditRoutineScreenState
                       fontSize: 16,
                     ),
                   ),
-                  backgroundColor: AppColors.neonPrimaryPressed,
-                  elevation: 8,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  elevation: 3,
                 ),
               ),
             ],
@@ -1313,10 +1324,11 @@ class _CreateEditRoutineScreenState
         bottomNavigationBar: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: AppColors.neonPrimaryPressed.withValues(alpha: 0.2),
+                color:
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, -4),
               ),
@@ -1325,9 +1337,9 @@ class _CreateEditRoutineScreenState
           child: ElevatedButton(
             onPressed: _saveRoutine,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.neonPrimary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shadowColor: AppColors.neonPrimary,
+              shadowColor: Theme.of(context).colorScheme.primary,
               elevation: 10,
             ),
             child: Text(

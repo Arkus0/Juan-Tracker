@@ -63,27 +63,27 @@ abstract class AppColors {
 
   /// Fondo más profundo - Material Dark surface
   /// Hex: #121212 | RGB: 18, 18, 18
-  static const Color bgDeep = Color(0xFF0B0F14);
+  static const Color bgDeep = Color(0xFF0E0F12);
 
   /// Fondo principal de pantallas - Material Dark surface
   /// Hex: #121212 | RGB: 18, 18, 18
-  static const Color bgPrimary = Color(0xFF0F141A);
+  static const Color bgPrimary = Color(0xFF0E0F12);
 
   /// Fondo de cards - Gris metálico oscuro
   /// Hex: #1C1C1C | RGB: 28, 28, 28
-  static const Color bgElevated = Color(0xFF151B23);
+  static const Color bgElevated = Color(0xFF16181D);
 
   /// Fondo de inputs, botones secundarios
   /// Hex: #252525 | RGB: 37, 37, 37
-  static const Color bgInteractive = Color(0xFF1C2430);
+  static const Color bgInteractive = Color(0xFF1E2128);
 
   /// Fondo para estados pressed/active
   /// Hex: #2F2F2F | RGB: 47, 47, 47
-  static const Color bgPressed = Color(0xFF222B38);
+  static const Color bgPressed = Color(0xFF232834);
 
   /// Fondo de cards destacadas (ejercicio activo) - Tinte rojo sutil
   /// Hex: #1F1212 | RGB: 31, 18, 18
-  static const Color bgActiveCard = Color(0xFF13202A);
+  static const Color bgActiveCard = Color(0xFF1A1E26);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ACENTO PRIMARIO: Rojo Ferrari — Intensidad Máxima
@@ -98,21 +98,21 @@ abstract class AppColors {
 
   /// Acento primario - Material Error Red (mejor contraste ~5.4:1)
   /// Hex: #EF5350 | RGB: 239, 83, 80
-  static const Color bloodRed = Color(0xFFF97316);
+  static const Color bloodRed = Color(0xFFD02A2A);
 
   /// Estado hover (más brillante)
   /// Hex: #F44336 | RGB: 244, 67, 54 (Material Red 500)
-  static const Color bloodRedHover = Color(0xFFFB923C);
+  static const Color bloodRedHover = Color(0xFFDC3A3A);
 
   /// Estado pressed - Rojo oscuro para sombras/countdowns
   /// Hex: #C62828 | RGB: 198, 40, 40 (Material Red 800)
-  static const Color bloodRedPressed = Color(0xFFC2410C);
+  static const Color bloodRedPressed = Color(0xFFB11F1F);
 
   /// Versión sutil para backgrounds (15% opacity)
-  static const Color bloodRedSubtle = Color(0x26F97316);
+  static const Color bloodRedSubtle = Color(0x26D02A2A);
 
   /// Glow para animaciones (usado en box-shadow)
-  static const Color bloodRedGlow = Color(0x4DF97316);
+  static const Color bloodRedGlow = Color(0x4DD02A2A);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ACENTO SECUNDARIO: Rojo Oscuro — Timers, Alertas, Sombras
@@ -120,11 +120,11 @@ abstract class AppColors {
 
   /// Rojo oscuro para countdowns, rachas y sombras
   /// Hex: #8B0000 | RGB: 139, 0, 0 (Dark Red)
-  static const Color darkRed = Color(0xFF9A3412);
-  static const Color darkRedHover = Color(0xFFC2410C);
-  static const Color darkRedPressed = Color(0xFF7C2D12);
-  static const Color darkRedSubtle = Color(0x269A3412);
-  static const Color darkRedGlow = Color(0x4D9A3412);
+  static const Color darkRed = Color(0xFF8A1B1B);
+  static const Color darkRedHover = Color(0xFFA42323);
+  static const Color darkRedPressed = Color(0xFF731616);
+  static const Color darkRedSubtle = Color(0x268A1B1B);
+  static const Color darkRedGlow = Color(0x4D8A1B1B);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HIGHLIGHTS: Rojo "On Fire" — PRs, Flames, Completados
@@ -133,11 +133,11 @@ abstract class AppColors {
   /// Highlight brillante con glow - Efecto "on fire"
   /// Hex: #FF3333 | RGB: 255, 51, 51
   /// Usar con glow: box-shadow: 0 0 10px #FF0000
-  static const Color fireRed = Color(0xFFFBBF24);
+  static const Color fireRed = Color(0xFFF5A524);
   static const Color fireRedGlow = Color(
-    0x80FBBF24,
+    0x80F5A524,
   ); // 50% opacity para glow intenso
-  static const Color fireRedSubtle = Color(0x26FBBF24);
+  static const Color fireRedSubtle = Color(0x26F5A524);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // NEUTROS: Gris Metálico Frío — Iconos inactivos, líneas
@@ -150,11 +150,11 @@ abstract class AppColors {
   static const Color metalGrayDark = Color(0xFF363636);
 
   // Aliases para compatibilidad (todos apuntan a rojo Ferrari)
-  static const Color techCyan = bloodRed;
-  static const Color techCyanHover = bloodRedHover;
-  static const Color techCyanPressed = bloodRedPressed;
-  static const Color techCyanSubtle = bloodRedSubtle;
-  static const Color techCyanGlow = bloodRedGlow;
+  static const Color techCyan = restTeal;
+  static const Color techCyanHover = restTealHover;
+  static const Color techCyanPressed = restTealPressed;
+  static const Color techCyanSubtle = restTealSubtle;
+  static const Color techCyanGlow = restTealGlow;
   static const Color neonPrimary = bloodRed;
   static const Color neonPrimaryHover = bloodRedHover;
   static const Color neonPrimaryPressed = bloodRedPressed;
@@ -233,11 +233,11 @@ abstract class AppColors {
   static const Color completedGreenSubtle = Color(0x2622C55E);
 
   // Aliases para compatibilidad
-  static const Color neonCyan = bloodRed;
-  static const Color neonCyanBright = bloodRedHover;
-  static const Color neonCyanDark = bloodRedPressed;
-  static const Color neonCyanSubtle = bloodRedSubtle;
-  static const Color neonCyanGlow = bloodRedGlow;
+  static const Color neonCyan = restTeal;
+  static const Color neonCyanBright = restTealHover;
+  static const Color neonCyanDark = restTealPressed;
+  static const Color neonCyanSubtle = restTealSubtle;
+  static const Color neonCyanGlow = restTealGlow;
   static const Color success = completedGreen;
   static const Color successSubtle = completedGreenDark;
   static const Color progressActive = bloodRed;
@@ -257,22 +257,22 @@ abstract class AppColors {
   /// El naranja/dorado fue eliminado de la paleta.
   /// ═══════════════════════════════════════════════════════════════════════════
 
-  /// Legacy copper → ahora rojo
-  static const Color copperOrange = bloodRed;
-  static const Color copperOrangeHover = bloodRedHover;
-  static const Color copperOrangePressed = bloodRedPressed;
-  static const Color copperOrangeSubtle = bloodRedSubtle;
-  static const Color copperOrangeGlow = bloodRedGlow;
+  /// Legacy copper → ahora ámbar (recompensas)
+  static const Color copperOrange = Color(0xFFF6C453);
+  static const Color copperOrangeHover = Color(0xFFFFD36B);
+  static const Color copperOrangePressed = Color(0xFFCC8A2C);
+  static const Color copperOrangeSubtle = Color(0x26F6C453);
+  static const Color copperOrangeGlow = Color(0x4DF6C453);
 
-  /// Gold → ahora rojo (PRs, celebraciones, thumbs-up)
-  static const Color goldAccent = bloodRed;
-  static const Color goldBright = bloodRedHover;
-  static const Color goldDark = darkRed; // #8B0000 para fondos oscuros
-  static const Color goldSubtle = bloodRedSubtle;
-  static const Color goldGlow = bloodRedGlow;
+  /// Gold (PRs, celebraciones, streaks)
+  static const Color goldAccent = Color(0xFFF6C453);
+  static const Color goldBright = Color(0xFFFFD36B);
+  static const Color goldDark = Color(0xFFB9831E);
+  static const Color goldSubtle = Color(0x26F6C453);
+  static const Color goldGlow = Color(0x4DF6C453);
 
   // Alias para compatibilidad
-  static const Color celebration = bloodRed;
+  static const Color celebration = goldAccent;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DATOS: Azul cielo para gráficas y evolución
@@ -321,17 +321,17 @@ abstract class AppColors {
   /// Texto primario: Datos clave (KG, REPS)
   /// Hex: #FFFFFF | RGB: 255, 255, 255 (Material onSurface)
   /// Contraste sobre bgPrimary (#121212): 18.73:1 ✅ (AAA)
-  static const Color textPrimary = Color(0xFFF5F7FA);
+  static const Color textPrimary = Color(0xFFF2F4F7);
 
   /// Texto secundario: Labels, descripciones
   /// Hex: #FFFFFF 60% → ~#A0A0A0 blended (Material onSurface secondary)
   /// Contraste sobre bgPrimary (#121212): 7.16:1 ✅ (AAA)
-  static const Color textSecondary = Color(0xFFB6C2D2);
+  static const Color textSecondary = Color(0xFFA0A7B4);
 
   /// Texto terciario: Hints, metadata
   /// Hex: #6B6B6B | RGB: 107, 107, 107
   /// Contraste sobre bgPrimary: 4.1:1 ✅ (AA Large)
-  static const Color textTertiary = Color(0xFF8791A1);
+  static const Color textTertiary = Color(0xFF7E8796);
 
   /// Texto deshabilitado
   /// Hex: #4A4A4A | RGB: 74, 74, 74
@@ -347,7 +347,7 @@ abstract class AppColors {
 
   /// Bordes sutiles de cards
   /// Hex: #333333 | RGB: 51, 51, 51
-  static const Color border = Color(0xFF273041);
+  static const Color border = Color(0xFF2A2F39);
 
   /// Borde en focus - Rojo Ferrari sutil
   /// Para cards/inputs cuando están seleccionados
@@ -355,11 +355,11 @@ abstract class AppColors {
 
   /// Bordes más visibles (estados activos - gris visible)
   /// Hex: #444444 | RGB: 68, 68, 68
-  static const Color borderVisible = Color(0xFF344056);
+  static const Color borderVisible = Color(0xFF313744);
 
   /// Separadores horizontales
   /// Hex: #2A2A2A | RGB: 42, 42, 42
-  static const Color divider = Color(0xFF1F2836);
+  static const Color divider = Color(0xFF1F2430);
 
   /// Borde para inputs activos - Rojo Ferrari
   static const Color borderActive = bloodRed;
@@ -375,7 +375,7 @@ abstract class AppColors {
   /// Error - Rojo técnico, uso MUY mínimo
   /// ❌ NO usar como borde de foco ni para feedback normal
   /// Hex: #DC4C4C | RGB: 220, 76, 76 (Rojo apagado, no alarmante)
-  static const Color error = Color(0xFFEF4444);
+  static const Color error = Color(0xFFE65B5B);
 
   /// Info (gris azulado, muy sutil)
   /// Hex: #6B7A8F | RGB: 107, 122, 143
@@ -439,7 +439,7 @@ abstract class AppTypography {
   static TextStyle get timer => GoogleFonts.montserrat(
     fontSize: 32,
     fontWeight: FontWeight.w900,
-    color: AppColors.techCyan,
+    color: AppColors.restTeal,
     fontFeatures: [const FontFeature.tabularFigures()],
     letterSpacing: 2.0,
   );
@@ -448,7 +448,7 @@ abstract class AppTypography {
   static TextStyle get timerCompact => GoogleFonts.montserrat(
     fontSize: 22,
     fontWeight: FontWeight.w800,
-    color: AppColors.techCyan,
+    color: AppColors.restTeal,
     fontFeatures: [const FontFeature.tabularFigures()],
     letterSpacing: 1.0,
   );
@@ -678,52 +678,76 @@ abstract class AppShadows {
 /// ============================================================================
 
 ThemeData buildAppTheme() {
+  final scheme =
+      ColorScheme.fromSeed(
+        seedColor: AppColors.neonPrimary,
+        brightness: Brightness.dark,
+      ).copyWith(
+        primary: AppColors.neonPrimary,
+        onPrimary: AppColors.textOnAccent,
+        secondary: AppColors.neonCyan,
+        onSecondary: AppColors.textOnAccent,
+        tertiary: AppColors.goldAccent,
+        onTertiary: AppColors.bgDeep,
+        background: AppColors.bgDeep,
+        surface: AppColors.bgElevated,
+        surfaceContainerHighest: AppColors.bgInteractive,
+        onSurface: AppColors.textPrimary,
+        onSurfaceVariant: AppColors.textSecondary,
+        outline: AppColors.border,
+        error: AppColors.error,
+        onError: AppColors.textOnAccent,
+      );
+
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: AppColors.bgDeep,
-    primaryColor: AppColors.neonPrimary,
-
-    colorScheme: const ColorScheme.dark(
-      primary: AppColors.neonPrimary,
-      onPrimary: AppColors.textOnAccent,
-      secondary: AppColors.neonCyan,
-      onSecondary: AppColors.textOnAccent,
-      tertiary: AppColors.goldAccent,
-      onTertiary: AppColors.bgDeep,
-      surface: AppColors.bgElevated,
-      error: AppColors.error,
-      onError: AppColors.textOnAccent,
-    ),
+    colorScheme: scheme,
+    scaffoldBackgroundColor: scheme.background,
+    primaryColor: scheme.primary,
 
     // ═════════════════════════════════════════════════════════════════════════
     // APP BAR: Limpio, sin acento de fondo
     // ═════════════════════════════════════════════════════════════════════════
     appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.bgDeep,
+      backgroundColor: scheme.surface,
+      foregroundColor: scheme.onSurface,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: AppTypography.sectionTitle,
-      iconTheme: const IconThemeData(color: AppColors.textPrimary, size: 24),
-      actionsIconTheme: const IconThemeData(
-        color: AppColors.textSecondary,
-        size: 22,
+      titleTextStyle: AppTypography.sectionTitle.copyWith(
+        color: scheme.onSurface,
       ),
+      iconTheme: IconThemeData(color: scheme.onSurface, size: 24),
+      actionsIconTheme: IconThemeData(color: scheme.onSurfaceVariant, size: 22),
+    ),
+
+    textTheme: GoogleFonts.montserratTextTheme().copyWith(
+      titleLarge: TextStyle(
+        color: scheme.onSurface,
+        fontWeight: FontWeight.w700,
+      ),
+      titleMedium: TextStyle(
+        color: scheme.onSurface,
+        fontWeight: FontWeight.w600,
+      ),
+      bodyMedium: TextStyle(color: scheme.onSurface),
+      bodySmall: TextStyle(color: scheme.onSurfaceVariant),
+      labelMedium: TextStyle(color: scheme.onSurfaceVariant),
     ),
 
     // ═════════════════════════════════════════════════════════════════════════
     // CARDS: Sutiles con borde, sin sombras pesadas
     // ═════════════════════════════════════════════════════════════════════════
     cardTheme: CardThemeData(
-      color: AppColors.bgElevated,
+      color: scheme.surface,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: scheme.outline),
       ),
     ),
 
@@ -732,9 +756,9 @@ ThemeData buildAppTheme() {
     // ═════════════════════════════════════════════════════════════════════════
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.neonPrimary,
-        foregroundColor: AppColors.textOnAccent,
-        disabledBackgroundColor: AppColors.bgInteractive,
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+        disabledBackgroundColor: scheme.surfaceContainerHighest,
         disabledForegroundColor: AppColors.textDisabled,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
@@ -750,7 +774,7 @@ ThemeData buildAppTheme() {
     // ═════════════════════════════════════════════════════════════════════════
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.textSecondary,
+        foregroundColor: scheme.onSurfaceVariant,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         textStyle: AppTypography.button,
       ),
@@ -761,8 +785,8 @@ ThemeData buildAppTheme() {
     // ═════════════════════════════════════════════════════════════════════════
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.textPrimary,
-        side: const BorderSide(color: AppColors.border, width: 1.5),
+        foregroundColor: scheme.onSurface,
+        side: BorderSide(color: scheme.outline, width: 1.5),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -775,14 +799,14 @@ ThemeData buildAppTheme() {
     // FAB: Acción flotante principal
     // ═════════════════════════════════════════════════════════════════════════
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: AppColors.neonPrimary,
-      foregroundColor: AppColors.textOnAccent,
-      elevation: 4,
-      highlightElevation: 8,
+      backgroundColor: scheme.surface,
+      foregroundColor: scheme.primary,
+      elevation: 2,
+      highlightElevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
-      extendedTextStyle: AppTypography.buttonPrimary,
+      extendedTextStyle: AppTypography.button.copyWith(color: scheme.primary),
     ),
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -791,12 +815,12 @@ ThemeData buildAppTheme() {
     checkboxTheme: CheckboxThemeData(
       fillColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return AppColors.neonCyan; // ✅ Cyan = completado
+          return scheme.primary; // CTA/acento
         }
         return Colors.transparent;
       }),
-      checkColor: WidgetStateProperty.all(AppColors.bgDeep),
-      side: const BorderSide(color: AppColors.textTertiary, width: 2),
+      checkColor: WidgetStateProperty.all(scheme.onPrimary),
+      side: BorderSide(color: scheme.onSurfaceVariant, width: 2),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
@@ -808,9 +832,9 @@ ThemeData buildAppTheme() {
     radioTheme: RadioThemeData(
       fillColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return AppColors.neonCyan;
+          return scheme.primary;
         }
-        return AppColors.textTertiary;
+        return scheme.onSurfaceVariant;
       }),
     ),
 
@@ -820,15 +844,15 @@ ThemeData buildAppTheme() {
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return AppColors.neonCyan;
+          return scheme.primary;
         }
-        return AppColors.textTertiary;
+        return scheme.onSurfaceVariant;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return AppColors.neonCyanSubtle;
+          return scheme.primary.withValues(alpha: 0.35);
         }
-        return AppColors.bgPressed;
+        return scheme.outline;
       }),
     ),
 
@@ -837,40 +861,40 @@ ThemeData buildAppTheme() {
     // ═════════════════════════════════════════════════════════════════════════
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.bgInteractive,
+      fillColor: scheme.surfaceContainerHighest,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: scheme.outline),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: scheme.outline),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.neonCyan, width: 2),
+        borderSide: BorderSide(color: scheme.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.error),
+        borderSide: BorderSide(color: scheme.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.error, width: 2),
+        borderSide: BorderSide(color: scheme.error, width: 2),
       ),
       labelStyle: AppTypography.label,
       hintStyle: AppTypography.hint,
-      errorStyle: AppTypography.meta.copyWith(color: AppColors.error),
+      errorStyle: AppTypography.meta.copyWith(color: scheme.error),
     ),
 
     // ═════════════════════════════════════════════════════════════════════════
     // BOTTOM NAVIGATION
     // ═════════════════════════════════════════════════════════════════════════
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: AppColors.bgDeep,
-      selectedItemColor: AppColors.neonPrimary,
-      unselectedItemColor: AppColors.textTertiary,
+      backgroundColor: scheme.surface,
+      selectedItemColor: scheme.primary,
+      unselectedItemColor: scheme.onSurfaceVariant,
       selectedLabelStyle: GoogleFonts.montserrat(
         fontWeight: FontWeight.w700,
         fontSize: 10,
@@ -888,23 +912,23 @@ ThemeData buildAppTheme() {
     // NAVIGATION BAR (Material 3)
     // ═════════════════════════════════════════════════════════════════════════
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.bgDeep,
+      backgroundColor: scheme.surface,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: AppColors.neonPrimarySubtle,
+      indicatorColor: scheme.primary.withValues(alpha: 0.18),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return AppTypography.meta.copyWith(
-            color: AppColors.neonPrimary,
+            color: scheme.primary,
             fontWeight: FontWeight.w700,
           );
         }
-        return AppTypography.meta;
+        return AppTypography.meta.copyWith(color: scheme.onSurfaceVariant);
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: AppColors.neonPrimary, size: 24);
+          return IconThemeData(color: scheme.primary, size: 24);
         }
-        return const IconThemeData(color: AppColors.textTertiary, size: 24);
+        return IconThemeData(color: scheme.onSurfaceVariant, size: 24);
       }),
     ),
 
@@ -912,15 +936,13 @@ ThemeData buildAppTheme() {
     // SNACKBAR
     // ═════════════════════════════════════════════════════════════════════════
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: AppColors.bgPressed,
-      contentTextStyle: AppTypography.label.copyWith(
-        color: AppColors.textPrimary,
-      ),
-      actionTextColor: AppColors.neonCyan,
+      backgroundColor: scheme.surface,
+      contentTextStyle: AppTypography.label.copyWith(color: scheme.onSurface),
+      actionTextColor: scheme.primary,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: scheme.outline),
       ),
     ),
 
@@ -928,50 +950,52 @@ ThemeData buildAppTheme() {
     // DIALOG
     // ═════════════════════════════════════════════════════════════════════════
     dialogTheme: DialogThemeData(
-      backgroundColor: AppColors.bgElevated,
+      backgroundColor: scheme.surface,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: scheme.outline),
       ),
-      titleTextStyle: AppTypography.sectionTitle,
+      titleTextStyle: AppTypography.sectionTitle.copyWith(
+        color: scheme.onSurface,
+      ),
       contentTextStyle: AppTypography.label.copyWith(
-        color: AppColors.textSecondary,
+        color: scheme.onSurfaceVariant,
       ),
     ),
 
     // ═════════════════════════════════════════════════════════════════════════
     // BOTTOM SHEET
     // ═════════════════════════════════════════════════════════════════════════
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: AppColors.bgElevated,
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: scheme.surface,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
       showDragHandle: true,
-      dragHandleColor: AppColors.borderFocus,
-      dragHandleSize: Size(40, 4),
+      dragHandleColor: scheme.outline,
+      dragHandleSize: const Size(40, 4),
     ),
 
     // ═════════════════════════════════════════════════════════════════════════
     // PROGRESS INDICATOR: Cyan para progreso
     // ═════════════════════════════════════════════════════════════════════════
-    progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: AppColors.neonCyan,
-      linearTrackColor: AppColors.bgInteractive,
-      circularTrackColor: AppColors.bgInteractive,
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: scheme.primary,
+      linearTrackColor: scheme.surfaceContainerHighest,
+      circularTrackColor: scheme.surfaceContainerHighest,
     ),
 
     // ═════════════════════════════════════════════════════════════════════════
     // SLIDER
     // ═════════════════════════════════════════════════════════════════════════
     sliderTheme: SliderThemeData(
-      activeTrackColor: AppColors.neonCyan,
-      inactiveTrackColor: AppColors.bgInteractive,
-      thumbColor: AppColors.neonCyan,
-      overlayColor: AppColors.neonCyanSubtle,
-      valueIndicatorColor: AppColors.neonCyan,
+      activeTrackColor: scheme.primary,
+      inactiveTrackColor: scheme.surfaceContainerHighest,
+      thumbColor: scheme.primary,
+      overlayColor: scheme.primary.withValues(alpha: 0.2),
+      valueIndicatorColor: scheme.primary,
       valueIndicatorTextStyle: AppTypography.badge,
     ),
 
@@ -979,13 +1003,13 @@ ThemeData buildAppTheme() {
     // TAB BAR
     // ═════════════════════════════════════════════════════════════════════════
     tabBarTheme: TabBarThemeData(
-      labelColor: AppColors.textPrimary,
-      unselectedLabelColor: AppColors.textTertiary,
-      indicatorColor: AppColors.neonPrimary,
+      labelColor: scheme.onSurface,
+      unselectedLabelColor: scheme.onSurfaceVariant,
+      indicatorColor: scheme.primary,
       indicatorSize: TabBarIndicatorSize.label,
       labelStyle: AppTypography.labelEmphasis,
       unselectedLabelStyle: AppTypography.label,
-      dividerColor: Colors.transparent,
+      dividerColor: scheme.outline,
     ),
 
     // ═════════════════════════════════════════════════════════════════════════

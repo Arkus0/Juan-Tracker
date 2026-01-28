@@ -99,6 +99,7 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     // Listen for runtime changes in the settings so the dialog updates live
     ref.listen<UserSettings>(settingsProvider, (previous, next) {
       if (previous?.barWeight != next.barWeight) {
@@ -110,10 +111,10 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
     });
 
     return Dialog(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: scheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.red[900]!, width: 2),
+        side: BorderSide(color: scheme.outline, width: 2),
       ),
       child: SingleChildScrollView(
         child: Padding(
@@ -124,7 +125,7 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
               Text(
                 'CALCULADORA DE PLACAS',
                 style: GoogleFonts.montserrat(
-                  color: Colors.white,
+                  color: scheme.onSurface,
                   fontWeight: FontWeight.w900,
                   fontSize: 18,
                 ),
@@ -139,9 +140,9 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
                     height: 120,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.black,
+                      color: scheme.surface,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[800]!),
+                      border: Border.all(color: scheme.outline),
                     ),
                     child: Center(
                       child: _calculatedPlates.isNotEmpty
@@ -160,7 +161,7 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
                                   Container(
                                     height: 12,
                                     width: 220,
-                                    color: Colors.grey[400],
+                                    color: scheme.outline,
                                   ),
                                   const SizedBox(width: 8),
                                   // Right side plates
@@ -175,7 +176,7 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
                               child: Text(
                                 'BARRA VACÍA',
                                 style: TextStyle(
-                                  color: Colors.grey[600],
+                                  color: scheme.onSurfaceVariant,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -193,17 +194,17 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: scheme.onSurface,
                       ),
                       decoration: InputDecoration(
                         labelText: 'PESO TOTAL (KG)',
                         filled: true,
-                        fillColor: Colors.black,
+                        fillColor: scheme.surface,
                         border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.redAccent[700]!),
+                          borderSide: BorderSide(color: scheme.outline),
                         ),
                       ),
                       onChanged: _updateWeight,
@@ -225,7 +226,7 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
                     hint: 'Toca para cambiar entre 10kg y 20kg',
                     child: Switch(
                       value: _barWeight == 20.0,
-                      activeThumbColor: Colors.redAccent[700],
+                      activeThumbColor: scheme.primary,
                       onChanged: (val) {
                         setState(() {
                           _barWeight = val
@@ -264,8 +265,8 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[900],
-                      foregroundColor: Colors.white,
+                      backgroundColor: scheme.primary,
+                      foregroundColor: scheme.onPrimary,
                     ),
                     child: const Text('APLICAR'),
                   ),

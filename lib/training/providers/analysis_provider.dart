@@ -90,6 +90,8 @@ class SelectedTrendExerciseNotifier extends Notifier<String?> {
 /// Yearly activity data for heatmap - cached per year
 final yearlyActivityProvider =
     FutureProvider.family<Map<DateTime, DailyActivity>, int>((ref, year) async {
+      // Recompute when history changes so calendar stays in sync
+      ref.watch(sesionesHistoryStreamProvider);
       final repo = ref.watch(trainingRepositoryProvider);
       return repo.getYearlyActivityMap(year);
     });

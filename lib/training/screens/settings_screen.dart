@@ -358,7 +358,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: GoogleFonts.montserrat(
-          color: Colors.redAccent[700],
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontSize: 12,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.5,
@@ -607,7 +607,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
                 : Switch(
                     value: widget.isEnabled,
                     onChanged: (value) => _handleToggle(value: value),
-                    activeThumbColor: Colors.redAccent[700],
+                    activeThumbColor: Theme.of(context).colorScheme.primary,
                   ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,

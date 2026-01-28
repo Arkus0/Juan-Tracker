@@ -74,7 +74,7 @@ class RutinasScreen extends ConsumerWidget {
                 background: Container(
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 20.0),
-                  color: Colors.red[900],
+                  color: Theme.of(context).colorScheme.error,
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
                 onDismissed: (_) => _deleteRutina(context, ref, rutina),
@@ -101,8 +101,14 @@ class RutinasScreen extends ConsumerWidget {
     try {
       HapticFeedback.lightImpact();
     } catch (_) {}
+    final theme = Theme.of(context);
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const CreateEditRoutineScreen()),
+      MaterialPageRoute(
+        builder: (_) => Theme(
+          data: theme,
+          child: const CreateEditRoutineScreen(),
+        ),
+      ),
     );
   }
 
@@ -110,9 +116,13 @@ class RutinasScreen extends ConsumerWidget {
     try {
       HapticFeedback.selectionClick();
     } catch (_) {}
+    final theme = Theme.of(context);
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => CreateEditRoutineScreen(rutina: rutina),
+        builder: (_) => Theme(
+          data: theme,
+          child: CreateEditRoutineScreen(rutina: rutina),
+        ),
       ),
     );
   }
@@ -127,10 +137,10 @@ class RutinasScreen extends ConsumerWidget {
       SnackBar(
         content: Text('RUTINA ELIMINADA', style: AppTypography.button),
         // 🎯 REDISEÑO: Fondo del sistema
-        backgroundColor: AppColors.bgElevated,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         action: SnackBarAction(
           label: 'DESHACER',
-          textColor: AppColors.actionPrimary,
+          textColor: Theme.of(context).colorScheme.primary,
           onPressed: () {
             ref.read(trainingRepositoryProvider).saveRutina(rutina);
             try {
@@ -248,7 +258,7 @@ class RutinasScreen extends ConsumerWidget {
               'Error al guardar: ${e.toString()}',
               style: GoogleFonts.montserrat(color: Colors.white),
             ),
-            backgroundColor: Colors.redAccent[700],
+            backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -426,7 +436,7 @@ class _RutinaTile extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al compartir: $e'),
-          backgroundColor: Colors.red[700],
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }

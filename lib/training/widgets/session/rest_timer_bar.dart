@@ -428,7 +428,6 @@ class _InactiveTimerBar extends StatelessWidget {
   // Constantes consistentes con barra activa
   static const double _horizontalPadding = 16.0;
   static const double _deleteButtonSize = 32.0;
-  static const double _startButtonSize = 48.0;
 
   const _InactiveTimerBar({
     required this.seconds,
@@ -556,7 +555,6 @@ class _ActiveTimerBar extends StatelessWidget {
   static const double _barHeight = 68.0;
   static const double _horizontalPadding = 16.0;
   static const double _elementGap = 12.0;
-  static const double _timerSize = 52.0;
   static const double _skipButtonSize = 44.0;
   static const double _addTimeButtonSize = 36.0;
   static const double _deleteButtonSize = 32.0;
@@ -860,12 +858,12 @@ class _TimeDurationSelector extends StatelessWidget {
 /// 🎯 REDISEÑO: Tamaño configurable para consistencia
 class _StartRestButton extends StatelessWidget {
   final VoidCallback onTap;
-  final double size;
 
-  const _StartRestButton({required this.onTap, this.size = 48});
+  const _StartRestButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    const size = 48.0;
     return Tooltip(
       message: 'Iniciar descanso',
       child: Material(
@@ -903,14 +901,12 @@ class _CircularTimerProgress extends StatefulWidget {
   final int seconds;
   final bool isCritical;
   final bool isPaused;
-  final double size;
 
   const _CircularTimerProgress({
     required this.progress,
     required this.seconds,
     required this.isCritical,
     required this.isPaused,
-    this.size = 52,
   });
 
   @override
@@ -982,6 +978,7 @@ class _CircularTimerProgressState extends State<_CircularTimerProgress>
       glowColor = const Color(0xFF00CED1).withValues(alpha: 0.5);
     }
 
+    const size = 52.0;
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {
@@ -990,8 +987,8 @@ class _CircularTimerProgressState extends State<_CircularTimerProgress>
         return Transform.scale(
           scale: scale,
           child: Container(
-            width: widget.size,
-            height: widget.size,
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               // 🎯 NUEVO: Glow que "respira"
@@ -1028,7 +1025,7 @@ class _CircularTimerProgressState extends State<_CircularTimerProgress>
                 Text(
                   '${widget.seconds}',
                   style: GoogleFonts.montserrat(
-                    fontSize: widget.size * 0.4, // Proporcional al tamaño
+                    fontSize: size * 0.4, // Proporcional al tamaño
                     fontWeight: FontWeight.w900,
                     color: timerColor,
                     shadows: widget.isCritical

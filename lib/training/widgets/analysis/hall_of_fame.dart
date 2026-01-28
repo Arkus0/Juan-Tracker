@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
-import '../../utils/design_system.dart';
 
 /// Grid display of personal records for big lifts
 class HallOfFame extends ConsumerWidget {
@@ -15,13 +14,14 @@ class HallOfFame extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final prsAsync = ref.watch(personalRecordsProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep),
+        border: Border.all(color: scheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,12 +32,12 @@ class HallOfFame extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.2),
+                  color: scheme.tertiary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.emoji_events,
-                  color: Colors.amber,
+                  color: scheme.tertiary,
                   size: 18,
                 ),
               ),
@@ -48,7 +48,7 @@ class HallOfFame extends ConsumerWidget {
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
+                    color: scheme.onSurfaceVariant,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -58,7 +58,7 @@ class HallOfFame extends ConsumerWidget {
                 style: GoogleFonts.montserrat(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Colors.amber,
+                  color: scheme.tertiary,
                 ),
               ),
             ],
@@ -70,7 +70,7 @@ class HallOfFame extends ConsumerWidget {
             'Récords personales en ejercicios clave',
             style: GoogleFonts.montserrat(
               fontSize: 11,
-              color: AppColors.textTertiary,
+              color: scheme.onSurfaceVariant,
             ),
           ),
 
@@ -80,12 +80,12 @@ class HallOfFame extends ConsumerWidget {
           prsAsync.when(
             data: (prs) {
               if (prs.isEmpty) {
-                return _buildEmptyState();
+                return _buildEmptyState(scheme);
               }
               return _buildPRGrid(prs);
             },
-            loading: () => _buildLoading(),
-            error: (_, __) => _buildEmptyState(),
+            loading: () => _buildLoading(scheme),
+            error: (_, __) => _buildEmptyState(scheme),
           ),
         ],
       ),
@@ -109,34 +109,27 @@ class HallOfFame extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ColorScheme scheme) {
     return Container(
       height: 150,
       alignment: Alignment.center,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.emoji_events_outlined,
-            color: AppColors.border,
-            size: 40,
-          ),
+          Icon(Icons.emoji_events_outlined, color: scheme.outline, size: 40),
           const SizedBox(height: 12),
           Text(
             'Sin récords aún',
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textTertiary,
+              color: scheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             'Completa entrenamientos para registrar PRs',
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
-              color: AppColors.border,
-            ),
+            style: GoogleFonts.montserrat(fontSize: 12, color: scheme.outline),
             textAlign: TextAlign.center,
           ),
         ],
@@ -144,7 +137,7 @@ class HallOfFame extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoading() {
+  Widget _buildLoading(ColorScheme scheme) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -158,7 +151,7 @@ class HallOfFame extends ConsumerWidget {
       itemBuilder: (context, index) {
         return Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF252525),
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(10),
           ),
         );
@@ -175,6 +168,7 @@ class _PRCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     // Gold/Silver/Bronze styling for top 3
     final isTop3 = rank <= 3;
     final gradientColors = _getGradientColors(rank);
@@ -194,7 +188,7 @@ class _PRCard extends StatelessWidget {
                   end: Alignment.bottomRight,
                 )
               : null,
-          color: isTop3 ? null : const Color(0xFF252525),
+          color: isTop3 ? null : scheme.surface,
           borderRadius: BorderRadius.circular(10),
           border: isTop3
               ? Border.all(color: gradientColors.first.withValues(alpha: 0.5))
@@ -212,7 +206,7 @@ class _PRCard extends StatelessWidget {
                     style: GoogleFonts.montserrat(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: scheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -237,7 +231,7 @@ class _PRCard extends StatelessWidget {
                   style: GoogleFonts.montserrat(
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: scheme.onSurface,
                     height: 1,
                   ),
                 ),
@@ -249,7 +243,7 @@ class _PRCard extends StatelessWidget {
                     style: GoogleFonts.montserrat(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -266,7 +260,7 @@ class _PRCard extends StatelessWidget {
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -276,7 +270,7 @@ class _PRCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.redAccent.withValues(alpha: 0.2),
+                    color: scheme.tertiary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -284,7 +278,7 @@ class _PRCard extends StatelessWidget {
                     style: GoogleFonts.montserrat(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: Colors.redAccent,
+                      color: scheme.tertiary,
                     ),
                   ),
                 ),
@@ -323,14 +317,15 @@ class _PRCard extends StatelessWidget {
   }
 
   void _showPRDetail(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1E1E1E),
+          decoration: BoxDecoration(
+            color: scheme.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
@@ -341,7 +336,7 @@ class _PRCard extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: scheme.outline,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -355,8 +350,8 @@ class _PRCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.amber.withValues(alpha: 0.3),
-                          Colors.orange.withValues(alpha: 0.1),
+                          scheme.tertiary.withValues(alpha: 0.3),
+                          scheme.tertiary.withValues(alpha: 0.1),
                         ],
                       ),
                       shape: BoxShape.circle,
@@ -373,7 +368,7 @@ class _PRCard extends StatelessWidget {
                           style: GoogleFonts.montserrat(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: Colors.amber,
+                            color: scheme.tertiary,
                             letterSpacing: 1.5,
                           ),
                         ),
@@ -382,7 +377,7 @@ class _PRCard extends StatelessWidget {
                           style: GoogleFonts.montserrat(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                            color: scheme.onSurface,
                           ),
                         ),
                       ],
@@ -397,18 +392,27 @@ class _PRCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: scheme.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   children: [
-                    _buildStatRow('Peso máximo', pr.formattedWeight),
-                    const Divider(color: Color(0xFF2A2A2A), height: 24),
-                    _buildStatRow('Repeticiones', '${pr.repsAtMax} reps'),
-                    const Divider(color: Color(0xFF2A2A2A), height: 24),
-                    _buildStatRow('1RM Estimado', pr.formattedEstimated1RM),
-                    const Divider(color: Color(0xFF2A2A2A), height: 24),
+                    _buildStatRow(context, 'Peso máximo', pr.formattedWeight),
+                    Divider(color: scheme.outline, height: 24),
                     _buildStatRow(
+                      context,
+                      'Repeticiones',
+                      '${pr.repsAtMax} reps',
+                    ),
+                    Divider(color: scheme.outline, height: 24),
+                    _buildStatRow(
+                      context,
+                      '1RM Estimado',
+                      pr.formattedEstimated1RM,
+                    ),
+                    Divider(color: scheme.outline, height: 24),
+                    _buildStatRow(
+                      context,
                       'Logrado el',
                       DateFormat('d MMM yyyy', 'es_ES').format(pr.achievedAt),
                     ),
@@ -424,7 +428,8 @@ class _PRCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatRow(String label, String value) {
+  Widget _buildStatRow(BuildContext context, String label, String value) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -432,7 +437,7 @@ class _PRCard extends StatelessWidget {
           label,
           style: GoogleFonts.montserrat(
             fontSize: 14,
-            color: AppColors.textTertiary,
+            color: scheme.onSurfaceVariant,
           ),
         ),
         Text(
@@ -440,7 +445,7 @@ class _PRCard extends StatelessWidget {
           style: GoogleFonts.montserrat(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: scheme.onSurface,
           ),
         ),
       ],

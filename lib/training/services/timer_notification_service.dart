@@ -188,18 +188,25 @@ class TimerNotificationService {
     // This prevents duplicate notifications (one from Flutter, one from native)
     if (_isAndroid) {
       try {
-        await _serviceChannel.invokeMethod('startTimerService', {
+        final started = await _serviceChannel.invokeMethod<bool>(
+          'startTimerService',
+          {
           'totalSeconds': totalSeconds,
           'endTimeMillis': endTime.millisecondsSinceEpoch,
           'isPaused': isPaused,
-        });
-        debugPrint('Timer foreground service started');
+          },
+        );
+        if (started == true) {
+          debugPrint('Timer foreground service started');
+          return;
+        }
+        debugPrint('Timer service unavailable, falling back to Flutter');
       } catch (e) {
         debugPrint('Failed to start timer service: $e');
-        // Fallback to Flutter notification only if native service fails
-        await _showNotification();
-        _startUpdateTimer(isPaused);
       }
+      // Fallback to Flutter notification when native service is unavailable
+      await _showNotification();
+      _startUpdateTimer(isPaused);
     } else {
       // iOS: Use flutter_local_notifications
       await _showNotification();
@@ -233,16 +240,21 @@ class TimerNotificationService {
     // 🎯 FIX #3: On Android, only update the foreground service
     if (_isAndroid) {
       try {
-        await _serviceChannel.invokeMethod('updateTimerService', {
+        final updated = await _serviceChannel.invokeMethod<bool>(
+          'updateTimerService',
+          {
           'totalSeconds': _totalSeconds,
           'endTimeMillis': _endTime?.millisecondsSinceEpoch ?? 0,
           'isPaused': _isPaused,
-        });
+          },
+        );
+        if (updated == true) return;
+        debugPrint('Timer service update unavailable, falling back to Flutter');
       } catch (e) {
         debugPrint('Failed to update timer service: $e');
-        // Fallback: update Flutter notification
-        _updateFlutterNotification();
       }
+      // Fallback: update Flutter notification
+      _updateFlutterNotification();
     } else {
       // iOS: Use flutter_local_notifications
       _updateFlutterNotification();
@@ -276,7 +288,7 @@ class TimerNotificationService {
     // Stop Android foreground service
     if (_isAndroid) {
       try {
-        await _serviceChannel.invokeMethod('stopTimerService');
+        await _serviceChannel.invokeMethod<bool>('stopTimerService');
         debugPrint('Timer foreground service stopped');
       } catch (e) {
         debugPrint('Failed to stop timer service: $e');

@@ -51,21 +51,22 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   @override
   Widget build(BuildContext context) {
     final sessionsAsync = ref.watch(sesionesHistoryStreamProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.bgDeep,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDeep,
-        elevation: 0,
         title: Text(
           'ANÁLISIS',
-          style: AppTypography.sectionTitle.copyWith(letterSpacing: 2),
+          style: AppTypography.sectionTitle.copyWith(
+            letterSpacing: 2,
+            color: scheme.onSurface,
+          ),
         ),
         actions: [
           // Export menu (preserved from HistoryScreen)
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            color: const Color(0xFF1E1E1E),
+            color: scheme.surface,
             onSelected: (value) {
               if (value == 'export_all') {
                 final sessions = sessionsAsync.asData?.value ?? [];
@@ -77,15 +78,15 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                 value: 'export_all',
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.file_download,
                       size: 20,
-                      color: Colors.white70,
+                      color: scheme.onSurface,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Exportar Todo',
-                      style: GoogleFonts.montserrat(color: Colors.white),
+                      style: GoogleFonts.montserrat(color: scheme.onSurface),
                     ),
                   ],
                 ),
@@ -95,10 +96,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.neonPrimary,
           indicatorWeight: 3,
-          labelColor: AppColors.textPrimary,
-          unselectedLabelColor: AppColors.textTertiary,
           labelStyle: AppTypography.labelEmphasis,
           unselectedLabelStyle: AppTypography.label,
           onTap: (_) => HapticFeedback.selectionClick(),
@@ -123,7 +121,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
             'No hay sesiones para exportar',
             style: GoogleFonts.montserrat(),
           ),
-          backgroundColor: Colors.grey[800],
+          backgroundColor: Theme.of(context).colorScheme.surface,
         ),
       );
       return;
@@ -251,20 +249,22 @@ class _ViewModeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.bgElevated,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: [
           _buildOption(
+            context,
             icon: Icons.calendar_month,
             label: 'Calendario',
             isSelected: currentMode == BitacoraViewMode.calendar,
             onTap: () => onModeChanged(BitacoraViewMode.calendar),
           ),
           _buildOption(
+            context,
             icon: Icons.list_alt,
             label: 'Lista',
             isSelected: currentMode == BitacoraViewMode.list,
@@ -275,12 +275,14 @@ class _ViewModeSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildOption({
+  Widget _buildOption(BuildContext context, {
     required IconData icon,
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -288,14 +290,10 @@ class _ViewModeSelector extends StatelessWidget {
           duration: AppDurations.fast,
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.neonPrimarySubtle
-                : Colors.transparent,
+            color: isSelected ? scheme.primary.withValues(alpha: 0.12) : null,
             borderRadius: BorderRadius.circular(AppRadius.sm),
             border: isSelected
-                ? Border.all(
-                    color: AppColors.neonPrimary.withValues(alpha: 0.5),
-                  )
+                ? Border.all(color: scheme.primary.withValues(alpha: 0.5))
                 : null,
           ),
           child: Row(
@@ -304,9 +302,7 @@ class _ViewModeSelector extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: isSelected
-                    ? AppColors.neonPrimary
-                    : AppColors.textTertiary,
+                color: isSelected ? scheme.primary : scheme.onSurfaceVariant,
               ),
               const SizedBox(width: 6),
               Text(
@@ -314,9 +310,11 @@ class _ViewModeSelector extends StatelessWidget {
                 style: isSelected
                     ? AppTypography.label.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: scheme.onSurface,
                       )
-                    : AppTypography.label,
+                    : AppTypography.label.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
               ),
             ],
           ),

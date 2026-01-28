@@ -201,6 +201,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
   }
 
   void _showAddedSnackbar(BuildContext context, String exerciseName) {
+    final scheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -211,7 +212,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
             fontWeight: FontWeight.w900,
           ),
         ),
-        backgroundColor: Colors.red[900],
+        backgroundColor: scheme.surface,
         duration: const Duration(milliseconds: 1000),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
@@ -345,6 +346,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
 
   /// 🆕 Muestra preview del ejercicio con historial personal
   void _showExercisePreview(BuildContext context, LibraryExercise ex) async {
+    final scheme = Theme.of(context).colorScheme;
     // Obtener PR personal si hay callback
     PersonalRecord? personalRecord;
     if (widget.getPersonalRecord != null) {
@@ -391,7 +393,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       style: GoogleFonts.montserrat(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: Colors.white,
+                        color: scheme.onSurface,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -414,9 +416,9 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.emoji_events,
-                              color: Colors.white,
+                              color: scheme.onSurface,
                               size: 16,
                             ),
                             const SizedBox(width: 6),
@@ -425,7 +427,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                               style: GoogleFonts.montserrat(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: Colors.white,
+                                color: scheme.onSurface,
                               ),
                             ),
                           ],
@@ -443,7 +445,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.red[900]!.withValues(alpha: 0.3),
+                            color: scheme.primary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -451,7 +453,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                             style: GoogleFonts.montserrat(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: Colors.redAccent[100],
+                              color: scheme.onSurface,
                             ),
                           ),
                         ),
@@ -566,7 +568,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[900],
+                        backgroundColor: scheme.primary,
                         foregroundColor: Colors.white,
                       ),
                     ),
@@ -582,9 +584,10 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     // Wrap in Scaffold to have its own ScaffoldMessenger for snackbars
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: scheme.background,
       body: SizedBox(
         height: MediaQuery.of(context).size.height * 0.9,
         child: Column(
@@ -593,29 +596,29 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red[900],
+                color: scheme.surface,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.library_books, color: Colors.white),
+                  Icon(Icons.library_books, color: scheme.onSurface),
                   const SizedBox(width: 8),
                   Text(
                     'EJERCICIOS',
                     style: GoogleFonts.montserrat(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: scheme.onSurface,
                     ),
                   ),
                   const Spacer(),
                   // 🆕 Dropdown de ordenación
                   PopupMenuButton<SortOption>(
-                    icon: const Icon(Icons.sort, color: Colors.white),
+                    icon: Icon(Icons.sort, color: scheme.onSurface),
                     tooltip: 'Ordenar',
-                    color: Colors.grey[850],
+                    color: scheme.surface,
                     onSelected: (option) {
                       setState(() => _currentSort = option);
                       try {
@@ -649,7 +652,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                   IconButton(
                     icon: Icon(
                       _compactView ? Icons.grid_view : Icons.view_list,
-                      color: Colors.white,
+                      color: scheme.onSurface,
                     ),
                     tooltip: _compactView ? 'Vista grid' : 'Vista compacta',
                     onPressed: () {
@@ -837,7 +840,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                           style: GoogleFonts.montserrat(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w700,
-                                            color: Colors.white,
+                                            color: scheme.onSurface,
                                           ),
                                         ),
                                       ),
@@ -937,7 +940,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                               style: GoogleFonts.montserrat(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: scheme.onSurface,
                               ),
                             ),
                             backgroundColor: Colors.grey[850],
@@ -1033,7 +1036,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                               style: GoogleFonts.montserrat(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: scheme.onSurface,
                               ),
                             ),
                             backgroundColor: Colors.green.withValues(
@@ -1269,7 +1272,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                               ex.name,
                               style: GoogleFonts.montserrat(
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: scheme.onSurface,
                                 fontSize: 13,
                               ),
                               maxLines: 1,
@@ -1285,7 +1288,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                             trailing: IconButton(
                               icon: Icon(
                                 Icons.add_circle,
-                                color: Colors.red[400],
+                                color: scheme.primary,
                               ),
                               onPressed: () {
                                 try {
@@ -1395,7 +1398,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                             style: GoogleFonts.montserrat(
                                               fontSize: 8,
                                               fontWeight: FontWeight.w800,
-                                              color: Colors.white,
+                                              color: scheme.onSurface,
                                             ),
                                           ),
                                         ),
@@ -1445,7 +1448,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                       ex.name,
                                       style: GoogleFonts.montserrat(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                        color: scheme.onSurface,
                                         fontSize: 14,
                                       ),
                                       maxLines: 2,
@@ -1455,7 +1458,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                     Text(
                                       ex.muscleGroup,
                                       style: TextStyle(
-                                        color: Colors.redAccent[700],
+                                        color: scheme.onSurfaceVariant,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -1469,7 +1472,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                 ),
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red[900],
+                                    backgroundColor: scheme.primary,
                                     minimumSize: const Size(
                                       double.infinity,
                                       36,

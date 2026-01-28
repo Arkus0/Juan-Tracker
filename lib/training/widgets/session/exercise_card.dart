@@ -867,12 +867,21 @@ class ExerciseCard extends StatelessWidget {
                   GestureDetector(
                     onTap: onToggleCollapse,
                     behavior: HitTestBehavior.opaque,
-                    child: Row(
-                      children: [
-                        // Icono de expansión/colapso
-                        AnimatedRotation(
-                          turns: isCollapsed ? -0.25 : 0,
-                          duration: const Duration(milliseconds: 200),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: AppColors.neonPrimary,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Icono de expansión/colapso
+                          AnimatedRotation(
+                            turns: isCollapsed ? -0.25 : 0,
+                            duration: const Duration(milliseconds: 200),
                           child: Icon(
                             Icons.expand_more,
                             size: 22,
