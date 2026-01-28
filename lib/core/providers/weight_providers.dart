@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../repositories/weight_repository.dart';
 import '../models/weight_entry.dart';
 import 'database_provider.dart';
 

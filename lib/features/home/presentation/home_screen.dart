@@ -5,6 +5,7 @@ import '../../../features/diary/presentation/diary_screen.dart';
 import '../../../features/foods/presentation/foods_screen.dart';
 import '../../../features/weight/presentation/weight_screen.dart';
 import '../../../features/summary/presentation/summary_screen.dart';
+import '../../../features/training/presentation/history_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     FoodsScreen(),
     WeightScreen(),
     SummaryScreen(),
+    HistoryScreen(),
   ];
 
   @override
@@ -33,9 +35,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onTap: (i) => setState(() => _currentIndex = i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Diario'),
-          BottomNavigationBarItem(icon: Icon(Icons.fastfood), label: 'Alimentos'),
-          BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Peso'),
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Resumen'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.fastfood),
+            label: 'Alimentos',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.fitness_center),
+            label: 'Peso',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Resumen',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Entreno'),
         ],
       ),
     );

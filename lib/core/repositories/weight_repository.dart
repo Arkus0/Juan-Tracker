@@ -12,7 +12,8 @@ abstract class WeightRepository {
 
 class InMemoryWeightRepository implements WeightRepository {
   final Map<String, WeightEntry> _store = {};
-  final StreamController<List<WeightEntry>> _controller = StreamController.broadcast();
+  final StreamController<List<WeightEntry>> _controller =
+      StreamController.broadcast();
 
   void _notify() => _controller.add(_store.values.toList());
 
@@ -31,13 +32,18 @@ class InMemoryWeightRepository implements WeightRepository {
   @override
   Future<WeightEntry?> latest() async {
     if (_store.isEmpty) return null;
-    final list = _store.values.toList()..sort((a, b) => b.date.compareTo(a.date));
+    final list = _store.values.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
     return list.first;
   }
 
   @override
   Stream<List<WeightEntry>> watchRange(DateTime from, DateTime to) {
-    return _controller.stream.map((list) => list.where((e) => e.date.isAfter(from) && e.date.isBefore(to)).toList());
+    return _controller.stream.map(
+      (list) => list
+          .where((e) => e.date.isAfter(from) && e.date.isBefore(to))
+          .toList(),
+    );
   }
 
   @override

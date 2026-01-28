@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/diary_entry.dart';
-import '../repositories/diary_repository.dart';
 import 'database_provider.dart';
 
 final selectedDayProvider = Provider<DateTime>((ref) => DateTime.now());

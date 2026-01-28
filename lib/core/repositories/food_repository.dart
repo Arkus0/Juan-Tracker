@@ -58,7 +58,13 @@ class InMemoryFoodRepository implements FoodRepository {
   @override
   Future<List<Food>> searchByNameOrBrand(String q) async {
     final ql = q.toLowerCase();
-    return _store.values.where((f) => f.name.toLowerCase().contains(ql) || (f.brand?.toLowerCase().contains(ql) ?? false)).toList();
+    return _store.values
+        .where(
+          (f) =>
+              f.name.toLowerCase().contains(ql) ||
+              (f.brand?.toLowerCase().contains(ql) ?? false),
+        )
+        .toList();
   }
 
   @override

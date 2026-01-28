@@ -12,12 +12,22 @@ void main() {
     final weight = InMemoryWeightRepository();
     final day = DateTime.now();
 
-    await diary.add(DiaryEntry(id: 'd1', date: day, mealType: MealType.lunch, grams: 100, kcal: 500));
+    await diary.add(
+      DiaryEntry(
+        id: 'd1',
+        date: day,
+        mealType: MealType.lunch,
+        grams: 100,
+        kcal: 500,
+      ),
+    );
 
-    final container = ProviderContainer(overrides: [
-      diaryRepositoryProvider.overrideWithValue(diary),
-      weightRepositoryProvider.overrideWithValue(weight),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        diaryRepositoryProvider.overrideWithValue(diary),
+        weightRepositoryProvider.overrideWithValue(weight),
+      ],
+    );
 
     final est = await container.read(tdeeEstimateProvider(day).future);
     expect(est, 500);
