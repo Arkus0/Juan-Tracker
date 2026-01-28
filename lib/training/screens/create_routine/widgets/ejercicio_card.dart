@@ -272,7 +272,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
     final tieneAlternativas =
         libId != null && AlternativasService.instance.hasAlternativas(libId);
 
-    final card = Card(
+    final cardContent = Card(
       color: scheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -409,6 +409,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
     );
 
     // 🆕 Envolver en Slidable para swipe actions
+    // El LongPressDraggable para superseries está en dia_expansion_tile.dart
     return Slidable(
       key: ValueKey(widget.ejercicio.id),
       // Swipe derecha: Duplicar (acción constructiva)
@@ -447,7 +448,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
           ),
         ],
       ),
-      child: card,
+      child: cardContent,
     );
   }
 

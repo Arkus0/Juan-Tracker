@@ -129,7 +129,16 @@ class HistoryContent extends ConsumerWidget {
                     child: ListTile(
                       title: Text(_formatSessionTitle(sesion)),
                       subtitle: Text(_formatSessionSubtitle(sesion)),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _deleteSession(context, ref, sesion),
+                          ),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -487,6 +496,43 @@ Future<void> _showExportDialog(
       ],
     ),
   );
+}
+
+Future<void> _deleteSession(BuildContext context, WidgetRef ref, Sesion sesion) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('¿Eliminar sesión?'),
+      content: Text(
+        '¿Estás seguro de que quieres eliminar la sesión del ${_formatSessionTitle(sesion)}? Esta acción no se puede deshacer.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text('Eliminar'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    final repo = ref.read(trainingRepositoryProvider);
+    await repo.deleteSession(sesion.id);
+    if (context.mounted) {
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sesión eliminada'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 }
 
 void _showUndoSnack(BuildContext context, WidgetRef ref, String sessionId) {

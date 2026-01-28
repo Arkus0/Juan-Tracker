@@ -371,10 +371,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     // 🎯 ERROR TOLERANCE: Mostrar diálogo de datos sospechosos
     // FIX: Marcar inmediatamente como "mostrando" para evitar múltiples diálogos
     if (suspiciousData.hasSuspiciousData) {
-      // Marcar ANTES del postFrameCallback para evitar race condition
-      ref.read(suspiciousDataProvider.notifier).markDialogShowing();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          // Marcar como mostrando y abrir diálogo después del build para cumplir con Riverpod
+          ref.read(suspiciousDataProvider.notifier).markDialogShowing();
           _showSuspiciousDataDialog(suspiciousData);
         }
       });
