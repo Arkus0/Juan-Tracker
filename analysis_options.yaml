@@ -1,0 +1,6 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Project-specific lint toggles
+    # prefer_single_quotes: true
