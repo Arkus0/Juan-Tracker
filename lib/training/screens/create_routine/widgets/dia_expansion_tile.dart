@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/training/models/dia.dart';
 import 'package:juan_tracker/training/models/ejercicio_en_rutina.dart';
 import 'package:juan_tracker/training/screens/create_routine/widgets/ejercicio_card.dart';
+import 'package:juan_tracker/training/utils/design_system.dart';
 
 class DiaExpansionTile extends StatefulWidget {
   final int dayIndex;
@@ -123,9 +124,10 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
   }
 
   void _showProOptions() {
+    final scheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: scheme.surface,
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(24),
@@ -137,7 +139,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 style: GoogleFonts.montserrat(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  color: Colors.red[900],
+                  color: scheme.onSurface,
                 ),
               ),
               const SizedBox(height: 24),
@@ -148,10 +150,10 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 ),
                 subtitle: Text(
                   widget.dia.progressionType.toUpperCase(),
-                  style: TextStyle(color: Colors.redAccent[700]),
+                  style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
                 trailing: DropdownButton<String>(
-                  dropdownColor: Colors.grey[850],
+                  dropdownColor: scheme.surface,
                   value:
                       [
                         'none',
@@ -201,10 +203,10 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
               ),
               ListTile(
                 leading: const Icon(Icons.copy, color: Colors.white),
-                title: const Text(
+                title: Text(
                   'DUPLICAR DÍA',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: scheme.onSurfaceVariant,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -214,11 +216,11 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text(
+                leading: Icon(Icons.delete, color: scheme.error),
+                title: Text(
                   'ELIMINAR DÍA',
                   style: TextStyle(
-                    color: Colors.red,
+                    color: scheme.error,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -236,20 +238,21 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.black,
-        border: Border.all(color: Colors.red[900]!),
+        color: scheme.surface,
+        border: Border.all(color: scheme.outline),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.red[900]!.withValues(alpha: 77 / 255.0),
+            color: scheme.outline.withValues(alpha: 0.3),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),
           BoxShadow(
-            color: Colors.red[900]!.withValues(alpha: 51 / 255.0),
+            color: scheme.outline.withValues(alpha: 0.2),
             blurRadius: 12,
             spreadRadius: -2,
             offset: const Offset(0, 2),
@@ -261,7 +264,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
           // Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            color: Colors.grey[900],
+            color: scheme.surface,
             child: Row(
               children: [
                 // Drag handle - long press to drag day
@@ -269,7 +272,10 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                   index: widget.dayIndex,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Icon(Icons.drag_handle, color: Colors.red[900]),
+                    child: Icon(
+                      Icons.drag_handle,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -279,15 +285,15 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     style: GoogleFonts.montserrat(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: scheme.onSurface,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       isDense: true,
                       hintText: 'Nombre del día',
-                      hintStyle: TextStyle(color: Colors.white38),
+                      hintStyle: TextStyle(color: scheme.onSurfaceVariant),
                     ),
                     onChanged: widget.onUpdateName,
                   ),
@@ -301,7 +307,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     ),
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
-                      color: Colors.red[900]!.withValues(alpha: 0.3),
+                      color: scheme.primary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -309,7 +315,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                       style: GoogleFonts.montserrat(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: Colors.redAccent[100],
+                        color: scheme.onSurface,
                       ),
                     ),
                   ),
@@ -318,7 +324,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     padding: const EdgeInsets.only(right: 8.0),
                     child: Icon(
                       Icons.auto_graph,
-                      color: Colors.redAccent[700],
+                      color: scheme.primary,
                       size: 20,
                     ),
                   ),
@@ -329,7 +335,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Icon(
                       Icons.more_vert,
-                      color: Colors.grey[600],
+                      color: scheme.onSurfaceVariant,
                       size: 20,
                     ),
                   ),
@@ -343,7 +349,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                   },
                   child: Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: Colors.white,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -359,7 +365,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     child: Text(
                       'VACÍO. AÑADE DOLOR.',
                       style: GoogleFonts.montserrat(
-                        color: Colors.white38,
+                        color: scheme.onSurfaceVariant,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -422,11 +428,11 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 Center(
                   child: TextButton.icon(
                     onPressed: widget.onAddExercise,
-                    icon: const Icon(Icons.add, color: Colors.redAccent),
+                    icon: Icon(Icons.add, color: scheme.primary),
                     label: Text(
                       'AÑADIR EJERCICIO',
                       style: GoogleFonts.montserrat(
-                        color: Colors.redAccent,
+                        color: scheme.primary,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -492,6 +498,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
     int idx,
     EjercicioEnRutina removedItem,
   ) {
+    final scheme = Theme.of(context).colorScheme;
     // Remove previous toast if any
     _currentToast?.remove();
     _currentToast = null;
@@ -509,7 +516,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.red[900],
+              color: scheme.error,
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
@@ -524,7 +531,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
                   child: Text(
                     '${removedItem.nombre} eliminado',
                     style: GoogleFonts.montserrat(
-                      color: Colors.white,
+                      color: scheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -542,7 +549,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
                   child: Text(
                     'DESHACER',
                     style: GoogleFonts.montserrat(
-                      color: Colors.white,
+                      color: scheme.onSurface,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -572,6 +579,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
     EjercicioEnRutina ex, {
     bool inSuperset = false,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     final card = EjercicioCard(
       key: Key('exercise_${ex.instanceId}'),
       ejercicio: ex,
@@ -597,8 +605,8 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
           decoration: BoxDecoration(
-            color: Colors.grey[850],
-            border: Border.all(color: Colors.redAccent, width: 2),
+            color: scheme.surface,
+            border: Border.all(color: scheme.primary, width: 2),
             borderRadius: BorderRadius.circular(8),
           ),
           padding: const EdgeInsets.all(12),
@@ -607,7 +615,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
             children: [
               Icon(
                 inSuperset ? Icons.link_off : Icons.link,
-                color: Colors.redAccent,
+                color: scheme.primary,
               ),
               const SizedBox(width: 8),
               Flexible(
@@ -616,7 +624,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
                   style: GoogleFonts.montserrat(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: scheme.onSurfaceVariant,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -662,7 +670,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
             duration: const Duration(milliseconds: 150),
             decoration: BoxDecoration(
               border: isHovering
-                  ? Border.all(color: Colors.redAccent, width: 3)
+                  ? Border.all(color: scheme.primary, width: 3)
                   : null,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -679,7 +687,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
       background: Container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
-        color: Colors.green[700],
+        color: AppColors.completedGreen,
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -699,7 +707,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
       secondaryBackground: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red[900],
+        color: scheme.error,
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -723,7 +731,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${ex.nombre} duplicado'),
-              backgroundColor: Colors.green[700],
+              backgroundColor: AppColors.completedGreen,
               duration: const Duration(milliseconds: 1200),
               behavior: SnackBarBehavior.floating,
             ),
@@ -743,15 +751,16 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     if (widget.isSuperset) {
       // Render superset group with swipe-to-delete for each item
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         decoration: BoxDecoration(
-          border: const Border(
-            left: BorderSide(color: Colors.redAccent, width: 4),
+          border: Border(
+            left: BorderSide(color: scheme.primary, width: 4),
           ),
-          color: Colors.grey[900]!.withValues(alpha: 0.5),
+          color: scheme.surface.withValues(alpha: 0.7),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -151,6 +151,9 @@ class MediaControlService {
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
+  // Flag to avoid repeated platform channel calls when plugin is not available
+  bool _platformSupported = true;
+
   // Polling timer (temporal hasta implementar MediaSession callbacks)
   Timer? _pollTimer;
   static const _pollInterval = Duration(seconds: 3);
@@ -184,10 +187,16 @@ class MediaControlService {
   /// Verifica si hay música reproduciéndose
   Future<bool> isMusicActive() async {
     if (!_isAndroid) return false;
+    if (!_platformSupported) return false;
 
     try {
       final result = await _channel.invokeMethod<bool>('isMusicActive');
       return result == true;
+    } on MissingPluginException catch (e) {
+      // Plugin not registered on this platform — avoid future calls
+      _platformSupported = false;
+      _logger.w('Plugin de música no disponible, deshabilitando checks de plataforma', error: e);
+      return false;
     } catch (e) {
       _logger.w('Error verificando música activa', error: e);
       return false;

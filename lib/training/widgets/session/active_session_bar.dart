@@ -30,8 +30,14 @@ class ActiveSessionBar extends ConsumerWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
+        final theme = Theme.of(context);
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const TrainingSessionScreen()),
+          MaterialPageRoute(
+            builder: (_) => Theme(
+              data: theme,
+              child: const TrainingSessionScreen(),
+            ),
+          ),
         );
       },
       child: Container(
@@ -163,7 +169,7 @@ class ActiveSessionBar extends ConsumerWidget {
                 if (confirm == true) {
                   await ref
                       .read(trainingSessionProvider.notifier)
-                      .finishSession();
+                      .discardSession();
                 }
               },
               child: Container(

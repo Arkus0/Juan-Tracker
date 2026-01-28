@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
-import '../../utils/design_system.dart';
 
 /// Displays current training streak with fire emoji
 class StreakCounter extends ConsumerWidget {
@@ -13,15 +12,20 @@ class StreakCounter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final streakAsync = ref.watch(streakDataProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return streakAsync.when(
-      data: (streak) => _buildContent(context, streak),
-      loading: () => _buildLoading(),
+      data: (streak) => _buildContent(context, scheme, streak),
+      loading: () => _buildLoading(scheme),
       error: (_, __) => const SizedBox.shrink(),
     );
   }
 
-  Widget _buildContent(BuildContext context, StreakData streak) {
+  Widget _buildContent(
+    BuildContext context,
+    ColorScheme scheme,
+    StreakData streak,
+  ) {
     final hasStreak = streak.currentStreak > 0;
 
     return Container(
@@ -30,18 +34,18 @@ class StreakCounter extends ConsumerWidget {
         gradient: hasStreak
             ? LinearGradient(
                 colors: [
-                  AppColors.fireRed.withValues(alpha: 0.2), // #FF3333
-                  AppColors.bloodRed.withValues(alpha: 0.1), // #C41E3A
+                  scheme.tertiary.withValues(alpha: 0.25),
+                  scheme.tertiary.withValues(alpha: 0.1),
                   Colors.transparent,
                 ],
               )
             : null,
-        color: hasStreak ? null : const Color(0xFF1A1A1A),
+        color: hasStreak ? null : scheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: hasStreak
-              ? AppColors.fireRed.withValues(alpha: 0.4) // Glow rojo
-              : AppColors.bgDeep,
+              ? scheme.tertiary.withValues(alpha: 0.4)
+              : scheme.outline,
         ),
       ),
       child: Row(
@@ -50,11 +54,11 @@ class StreakCounter extends ConsumerWidget {
           if (hasStreak) ...[
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.fireRedGlow, // Glow rojo intenso
+                    color: scheme.tertiary.withValues(alpha: 0.35),
                     blurRadius: 12,
                     spreadRadius: 2,
                   ),
@@ -83,8 +87,8 @@ class StreakCounter extends ConsumerWidget {
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
                         color: hasStreak
-                            ? AppColors.textPrimary
-                            : AppColors.textTertiary,
+                            ? scheme.onSurface
+                            : scheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -94,8 +98,8 @@ class StreakCounter extends ConsumerWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: hasStreak
-                            ? AppColors.textSecondary
-                            : AppColors.textTertiary,
+                            ? scheme.onSurfaceVariant
+                            : scheme.onSurfaceVariant,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -110,7 +114,7 @@ class StreakCounter extends ConsumerWidget {
                       : 'Comienza tu racha hoy',
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
-                    color: AppColors.textTertiary,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -122,9 +126,9 @@ class StreakCounter extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
+                color: scheme.surface,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.bgDeep),
+                border: Border.all(color: scheme.outline),
               ),
               child: Column(
                 children: [
@@ -134,9 +138,8 @@ class StreakCounter extends ConsumerWidget {
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: streak.currentStreak >= streak.longestStreak
-                          ? AppColors
-                                .fireRed // Highlight cuando iguala récord
-                          : AppColors.textSecondary,
+                          ? scheme.tertiary
+                          : scheme.onSurfaceVariant,
                     ),
                   ),
                   Text(
@@ -144,7 +147,7 @@ class StreakCounter extends ConsumerWidget {
                     style: GoogleFonts.montserrat(
                       fontSize: 8,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textTertiary,
+                      color: scheme.onSurfaceVariant,
                       letterSpacing: 1,
                     ),
                   ),
@@ -156,19 +159,19 @@ class StreakCounter extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoading() {
+  Widget _buildLoading(ColorScheme scheme) {
     return Container(
       height: 80,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Center(
+      child: Center(
         child: SizedBox(
           width: 20,
           height: 20,
           child: CircularProgressIndicator(
-            color: Colors.redAccent,
+            color: scheme.primary,
             strokeWidth: 2,
           ),
         ),
@@ -184,6 +187,7 @@ class StreakBadge extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final streakAsync = ref.watch(streakDataProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return streakAsync.when(
       data: (streak) {
@@ -194,8 +198,8 @@ class StreakBadge extends ConsumerWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.orange.withValues(alpha: 0.3),
-                Colors.red.withValues(alpha: 0.3),
+                scheme.tertiary.withValues(alpha: 0.3),
+                scheme.tertiary.withValues(alpha: 0.18),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
@@ -210,7 +214,7 @@ class StreakBadge extends ConsumerWidget {
                 style: GoogleFonts.montserrat(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: scheme.onSurface,
                 ),
               ),
             ],

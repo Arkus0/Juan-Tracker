@@ -24,7 +24,10 @@ class SessionDetailScreen extends ConsumerWidget {
       body: sessionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
-          child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
+          child: Text(
+            'Error: $err',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
         ),
         data: (sessions) {
           final previousSession = _findPreviousSession(sessions);
@@ -103,7 +106,7 @@ class SessionDetailScreen extends ConsumerWidget {
                       child: Text(
                         'EJERCICIOS EJECUTADOS',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.redAccent[700],
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -204,15 +207,15 @@ class SessionDetailScreen extends ConsumerWidget {
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
                 // Header
-                TableRow(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.redAccent[700]!,
-                        width: 2,
+                    TableRow(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 2,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   children: [
                     _buildHeaderCell(context, '#'),
                     _buildHeaderCell(context, 'META'),
@@ -256,7 +259,7 @@ class SessionDetailScreen extends ConsumerWidget {
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.bold,
-          color: Colors.redAccent[700],
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         textAlign: TextAlign.center,
       ),

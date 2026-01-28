@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:juan_tracker/training/utils/design_system.dart';
 import 'package:juan_tracker/training/models/ejercicio_en_rutina.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
 import 'package:juan_tracker/training/services/alternativas_service.dart';
@@ -105,6 +106,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
     BuildContext context,
     LibraryExercise? libExercise,
   ) {
+    final scheme = Theme.of(context).colorScheme;
+
     if (libExercise == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -139,7 +142,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
               'Reemplazado por ${seleccion.name}',
               style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
             ),
-            backgroundColor: Colors.red[900],
+            backgroundColor: scheme.surface,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -148,9 +151,11 @@ class _EjercicioCardState extends State<EjercicioCard> {
   }
 
   void _showProOptions(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: scheme.surface,
       isScrollControlled: true,
       builder: (sheetContext) {
         return Padding(
@@ -168,18 +173,18 @@ class _EjercicioCardState extends State<EjercicioCard> {
                 style: GoogleFonts.montserrat(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                  color: scheme.onSurface,
                 ),
               ),
               const SizedBox(height: 16),
 
               if (widget.onUnlink != null)
                 ListTile(
-                  leading: const Icon(Icons.link_off, color: Colors.orange),
-                  title: const Text(
+                  leading: Icon(Icons.link_off, color: scheme.tertiary),
+                  title: Text(
                     'DESVINCULAR (ROMPER SUPERSERIE)',
                     style: TextStyle(
-                      color: Colors.orange,
+                      color: scheme.tertiary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -191,7 +196,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
 
               TextFormField(
                 initialValue: widget.ejercicio.notas,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: scheme.onSurface),
                 decoration: const InputDecoration(
                   labelText: 'Notas / RPE / Tempo',
                 ),
@@ -203,9 +208,9 @@ class _EjercicioCardState extends State<EjercicioCard> {
               // Rest Time
               Row(
                 children: [
-                  const Text(
+                  Text(
                     'Descanso (seg): ',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: scheme.onSurface),
                   ),
                   Expanded(
                     child: TextFormField(
@@ -214,7 +219,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
                               .toString() ??
                           '60',
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: scheme.onSurface),
                       onChanged: (val) {
                         final sec = int.tryParse(val);
                         if (sec != null) {
@@ -235,10 +240,11 @@ class _EjercicioCardState extends State<EjercicioCard> {
                   Navigator.pop(sheetContext);
                   widget.onRemove();
                 },
-                icon: const Icon(Icons.delete, color: Colors.white),
+                icon: Icon(Icons.delete, color: scheme.onError),
                 label: const Text('ELIMINAR EJERCICIO'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[900],
+                  backgroundColor: scheme.error,
+                  foregroundColor: scheme.onError,
                 ),
               ),
               const SizedBox(height: 24),
@@ -251,6 +257,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     // Lookup library exercise by library ID (more reliable than matching by name)
     final libId = int.tryParse(widget.ejercicio.id);
     final libraryExercise = libId == null
@@ -259,20 +266,20 @@ class _EjercicioCardState extends State<EjercicioCard> {
               .cast<LibraryExercise?>()
               .firstWhere((e) => e?.id == libId, orElse: () => null);
 
-    final imageWidget = _buildImage(libraryExercise);
+    final imageWidget = _buildImage(scheme, libraryExercise);
 
     // Verificar si hay alternativas usando el ID entero
     final tieneAlternativas =
         libId != null && AlternativasService.instance.hasAlternativas(libId);
 
     final card = Card(
-      color: Colors.grey[900],
+      color: scheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Row(
           children: [
             // Drag Handle (reorder handled by parent)
-            Icon(Icons.drag_indicator, color: Colors.grey[700]),
+            Icon(Icons.drag_indicator, color: scheme.onSurfaceVariant),
             const SizedBox(width: 8),
 
             // Image
@@ -292,7 +299,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
                     style: GoogleFonts.montserrat(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: scheme.onSurface,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -302,7 +309,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
                     widget.ejercicio.musculosPrincipales.join(', '),
                     style: GoogleFonts.montserrat(
                       fontSize: 10,
-                      color: Colors.grey[400],
+                      color: scheme.onSurfaceVariant,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -317,17 +324,17 @@ class _EjercicioCardState extends State<EjercicioCard> {
                           keyboardType: TextInputType.number,
                           style: GoogleFonts.montserrat(
                             fontSize: 14,
-                            color: Colors.white,
+                            color: scheme.onSurface,
                             fontWeight: FontWeight.w800,
                           ),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             isDense: true,
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 4,
                               vertical: 4,
                             ),
                             border: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey),
+                              borderSide: BorderSide(color: scheme.outline),
                             ),
                           ),
                           onChanged: (val) {
@@ -340,24 +347,27 @@ class _EjercicioCardState extends State<EjercicioCard> {
                           },
                         ),
                       ),
-                      Text(' x ', style: TextStyle(color: Colors.grey[600])),
+                      Text(
+                        ' x ',
+                        style: TextStyle(color: scheme.onSurfaceVariant),
+                      ),
                       SizedBox(
                         width: 60,
                         child: TextField(
                           controller: _repsController,
                           style: GoogleFonts.montserrat(
                             fontSize: 14,
-                            color: Colors.white,
+                            color: scheme.onSurface,
                             fontWeight: FontWeight.w800,
                           ),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             isDense: true,
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 4,
                               vertical: 4,
                             ),
                             border: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey),
+                              borderSide: BorderSide(color: scheme.outline),
                             ),
                           ),
                           onChanged: (val) {
@@ -376,11 +386,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
             // Alternatives button
             if (tieneAlternativas)
               IconButton(
-                icon: Icon(
-                  Icons.swap_horiz,
-                  color: Colors.orange[600],
-                  size: 20,
-                ),
+                icon: Icon(Icons.swap_horiz, color: scheme.tertiary, size: 20),
                 onPressed: () =>
                     _showAlternativasDialog(context, libraryExercise),
                 visualDensity: VisualDensity.compact,
@@ -389,7 +395,11 @@ class _EjercicioCardState extends State<EjercicioCard> {
 
             // Info Icon / Menu
             IconButton(
-              icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+              icon: Icon(
+                Icons.more_vert,
+                color: scheme.onSurfaceVariant,
+                size: 20,
+              ),
               onPressed: () => _showProOptions(context),
               visualDensity: VisualDensity.compact,
             ),
@@ -412,7 +422,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
                     HapticFeedback.mediumImpact();
                     widget.onDuplicate!();
                   },
-                  backgroundColor: Colors.green[700]!,
+                  backgroundColor: AppColors.completedGreen,
                   foregroundColor: Colors.white,
                   icon: Icons.copy,
                   label: 'Duplicar',
@@ -430,7 +440,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
               HapticFeedback.mediumImpact();
               widget.onRemove();
             },
-            backgroundColor: Colors.red[700]!,
+            backgroundColor: scheme.error,
             foregroundColor: Colors.white,
             icon: Icons.delete,
             label: 'Eliminar',
@@ -441,24 +451,31 @@ class _EjercicioCardState extends State<EjercicioCard> {
     );
   }
 
-  Widget _buildImage(LibraryExercise? libExercise) {
+  Widget _buildImage(ColorScheme scheme, LibraryExercise? libExercise) {
     if (libExercise != null && libExercise.imageUrls.isNotEmpty) {
       return Image.network(
         libExercise.imageUrls.first,
         width: 60,
         height: 60,
         fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) =>
-            const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+        errorBuilder: (ctx, err, stack) => Icon(
+          Icons.fitness_center,
+          color: scheme.onSurfaceVariant,
+          size: 30,
+        ),
       );
     }
 
     return Container(
       width: 60,
       height: 60,
-      color: Colors.grey[850],
+      color: scheme.surface,
       alignment: Alignment.center,
-      child: const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+      child: Icon(
+        Icons.fitness_center,
+        color: scheme.onSurfaceVariant,
+        size: 30,
+      ),
     );
   }
 }

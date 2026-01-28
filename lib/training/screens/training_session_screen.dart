@@ -177,10 +177,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final shouldFinish = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.bgElevated,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: Theme.of(context).colorScheme.outline),
         ),
         title: Text('¿TERMINAR SESIÓN?', style: AppTypography.sectionTitle),
         content: Column(
@@ -209,7 +209,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'TERMINAR',
-              style: AppTypography.button.copyWith(color: AppColors.neonCyan),
+              style: AppTypography.button.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ),
         ],
@@ -431,18 +433,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               child: TextButton(
                 onPressed: _onFinishSession,
                 style: TextButton.styleFrom(
-                  // 🎯 NEON IRON: Gold celebración al completar, sutil cuando en progreso
-                  backgroundColor: progress.isComplete
-                      ? AppColors.goldAccent
-                      : AppColors.bgElevated,
-                  foregroundColor: progress.isComplete
-                      ? AppColors.bgDeep
-                      : AppColors.textPrimary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.full),
-                    side: progress.isComplete
-                        ? BorderSide.none
-                        : const BorderSide(color: AppColors.border),
+                    side: BorderSide.none,
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                 ),
@@ -457,9 +452,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                     Text(
                       'TERMINAR',
                       style: AppTypography.button.copyWith(
-                        color: progress.isComplete
-                            ? AppColors.bgDeep
-                            : AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
                   ],
@@ -479,12 +472,12 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                 Expanded(
                   child: ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(
+                    padding: EdgeInsets.fromLTRB(
                       8,
                       8,
                       8,
-                      80,
-                    ), // Espacio para timer compacto
+                      MediaQuery.of(context).viewPadding.bottom + 100,
+                    ), // Dynamic bottom padding to account for RestTimerBar and SafeArea
                     itemCount:
                         exercisesLength +
                         1, // +1 para el botón de añadir ejercicio

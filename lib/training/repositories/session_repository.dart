@@ -333,7 +333,8 @@ class SessionRepository {
               ])
               ..where(
                 db.sessionExercises.name.equals(exerciseName) &
-                    db.sessionExercises.isTarget.equals(false),
+                    db.sessionExercises.isTarget.equals(false) &
+                    db.sessions.completedAt.isNotNull(),
               )
               ..orderBy([OrderingTerm.desc(db.sessions.startTime)])
               ..limit(5))

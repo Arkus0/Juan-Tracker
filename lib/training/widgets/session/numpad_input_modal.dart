@@ -22,7 +22,6 @@ import '../../utils/design_system.dart';
 
 /// Colores específicos para el modal — Aggressive Red
 class _ModalColors {
-  static const activeAccent = AppColors.bloodRed; // #C41E3A
   static const activeSet = AppColors.bloodRed; // Alias for compatibility
   static const textPrimary = AppColors.textPrimary; // #EAEAEA
   static const textSecondary = AppColors.textSecondary;
@@ -30,7 +29,6 @@ class _ModalColors {
   static const bgCard = AppColors.bgElevated; // #1C1C1C
   static const bgInput = AppColors.bgInteractive; // #252525
   static const confirmButton = AppColors.bloodRed; // #C41E3A
-  static const borderFocus = AppColors.bloodRed; // Para inputs en foco
 }
 
 class NumpadInputModal extends StatefulWidget {

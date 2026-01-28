@@ -59,31 +59,32 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
   Widget build(BuildContext context) {
     final year = ref.watch(selectedYearProvider);
     final activityAsync = ref.watch(yearlyActivityProvider(year));
+    final scheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Year selector
-        _buildYearSelector(year),
+        _buildYearSelector(scheme, year),
 
         const SizedBox(height: 12),
 
         // Heatmap
         activityAsync.when(
           data: (activity) => _buildHeatmap(activity, year),
-          loading: () => _buildLoadingHeatmap(),
-          error: (e, _) => _buildErrorState(e.toString()),
+          loading: () => _buildLoadingHeatmap(scheme),
+          error: (e, _) => _buildErrorState(scheme, e.toString()),
         ),
 
         const SizedBox(height: 8),
 
         // Legend
-        _buildLegend(),
+        _buildLegend(scheme),
       ],
     );
   }
 
-  Widget _buildYearSelector(int year) {
+  Widget _buildYearSelector(ColorScheme scheme, int year) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -92,16 +93,16 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
           style: GoogleFonts.montserrat(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
+            color: scheme.onSurfaceVariant,
             letterSpacing: 1.2,
           ),
         ),
         Row(
           children: [
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.chevron_left,
-                color: AppColors.textTertiary,
+                color: scheme.onSurfaceVariant,
                 size: 20,
               ),
               onPressed: () {
@@ -116,13 +117,13 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
               style: GoogleFonts.montserrat(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: scheme.onSurface,
               ),
             ),
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.chevron_right,
-                color: AppColors.textTertiary,
+                color: scheme.onSurfaceVariant,
                 size: 20,
               ),
               onPressed: year < DateTime.now().year
@@ -197,35 +198,32 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
     );
   }
 
-  Widget _buildLoadingHeatmap() {
+  Widget _buildLoadingHeatmap(ColorScheme scheme) {
     return Container(
       height: 140,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Center(
-        child: CircularProgressIndicator(
-          color: Colors.redAccent,
-          strokeWidth: 2,
-        ),
+      child: Center(
+        child: CircularProgressIndicator(color: scheme.primary, strokeWidth: 2),
       ),
     );
   }
 
-  Widget _buildErrorState(String error) {
+  Widget _buildErrorState(ColorScheme scheme, String error) {
     return Container(
       height: 140,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Center(
         child: Text(
           'Error cargando datos',
           style: GoogleFonts.montserrat(
-            color: AppColors.textTertiary,
+            color: scheme.onSurfaceVariant,
             fontSize: 12,
           ),
         ),
@@ -233,7 +231,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
     );
   }
 
-  Widget _buildLegend() {
+  Widget _buildLegend(ColorScheme scheme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -241,7 +239,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
           'Menos',
           style: GoogleFonts.montserrat(
             fontSize: 10,
-            color: AppColors.textTertiary,
+            color: scheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(width: 4),
@@ -261,7 +259,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
           'Más',
           style: GoogleFonts.montserrat(
             fontSize: 10,
-            color: AppColors.textTertiary,
+            color: scheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -400,6 +398,7 @@ class _HeatmapCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final color = kHeatmapColors[intensity.clamp(0, 4)];
     final now = DateTime.now();
     final isToday =
@@ -422,7 +421,7 @@ class _HeatmapCell extends StatelessWidget {
             color: color,
             borderRadius: BorderRadius.circular(2),
             border: isToday
-                ? Border.all(color: Colors.white.withValues(alpha: 0.5))
+                ? Border.all(color: scheme.primary.withValues(alpha: 0.5))
                 : null,
           ),
         ),

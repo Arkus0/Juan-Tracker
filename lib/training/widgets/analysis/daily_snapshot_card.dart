@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
-import '../../utils/design_system.dart';
 
 /// Shows summary of training for selected date
 class DailySnapshotCard extends ConsumerWidget {
@@ -15,6 +14,7 @@ class DailySnapshotCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final snapshotAsync = ref.watch(dailySnapshotProvider);
     final selectedDate = ref.watch(selectedCalendarDateProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     if (selectedDate == null) {
       return const SizedBox.shrink();
@@ -23,26 +23,30 @@ class DailySnapshotCard extends ConsumerWidget {
     return snapshotAsync.when(
       data: (snapshot) {
         if (snapshot == null) {
-          return _buildNoTraining(selectedDate);
+          return _buildNoTraining(scheme, selectedDate);
         }
-        return _buildSnapshot(context, snapshot);
+        return _buildSnapshot(context, scheme, snapshot);
       },
-      loading: () => _buildLoading(),
-      error: (_, __) => _buildNoTraining(selectedDate),
+      loading: () => _buildLoading(scheme),
+      error: (_, __) => _buildNoTraining(scheme, selectedDate),
     );
   }
 
-  Widget _buildSnapshot(BuildContext context, DailySnapshot snapshot) {
+  Widget _buildSnapshot(
+    BuildContext context,
+    ColorScheme scheme,
+    DailySnapshot snapshot,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E1E1E), Color(0xFF1A1A1A)],
+        gradient: LinearGradient(
+          colors: [scheme.surface, scheme.surfaceContainerHighest],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+        border: Border.all(color: scheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,12 +57,12 @@ class DailySnapshotCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.2),
+                  color: scheme.primary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.fitness_center,
-                  color: Colors.redAccent,
+                  color: scheme.primary,
                   size: 20,
                 ),
               ),
@@ -75,7 +79,7 @@ class DailySnapshotCard extends ConsumerWidget {
                       style: GoogleFonts.montserrat(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: Colors.redAccent,
+                        color: scheme.onSurface,
                         letterSpacing: 1,
                       ),
                     ),
@@ -85,7 +89,7 @@ class DailySnapshotCard extends ConsumerWidget {
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: scheme.onSurface,
                         ),
                       ),
                   ],
@@ -100,18 +104,21 @@ class DailySnapshotCard extends ConsumerWidget {
           Row(
             children: [
               _buildStat(
+                scheme: scheme,
                 icon: Icons.monitor_weight_outlined,
                 value: snapshot.formattedVolume,
                 label: 'VOLUMEN',
               ),
               const SizedBox(width: 16),
               _buildStat(
+                scheme: scheme,
                 icon: Icons.timer_outlined,
                 value: snapshot.formattedDuration,
                 label: 'DURACIÓN',
               ),
               const SizedBox(width: 16),
               _buildStat(
+                scheme: scheme,
                 icon: Icons.check_circle_outline,
                 value: '${snapshot.setsCompleted}',
                 label: 'SERIES',
@@ -125,13 +132,15 @@ class DailySnapshotCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.1),
+                color: scheme.tertiary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: scheme.tertiary.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
+                  Icon(Icons.emoji_events, color: scheme.tertiary, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -142,7 +151,7 @@ class DailySnapshotCard extends ConsumerWidget {
                           style: GoogleFonts.montserrat(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: Colors.amber,
+                            color: scheme.tertiary,
                             letterSpacing: 1,
                           ),
                         ),
@@ -151,7 +160,7 @@ class DailySnapshotCard extends ConsumerWidget {
                           style: GoogleFonts.montserrat(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: scheme.onSurface,
                           ),
                         ),
                       ],
@@ -175,14 +184,14 @@ class DailySnapshotCard extends ConsumerWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.bgElevated,
+                    color: scheme.surface,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     name,
                     style: GoogleFonts.montserrat(
                       fontSize: 10,
-                      color: AppColors.textSecondary,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                 );
@@ -195,7 +204,7 @@ class DailySnapshotCard extends ConsumerWidget {
                   '+${snapshot.exerciseNames.length - 5} más',
                   style: GoogleFonts.montserrat(
                     fontSize: 10,
-                    color: AppColors.textTertiary,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -206,6 +215,7 @@ class DailySnapshotCard extends ConsumerWidget {
   }
 
   Widget _buildStat({
+    required ColorScheme scheme,
     required IconData icon,
     required String value,
     required String label,
@@ -213,14 +223,14 @@ class DailySnapshotCard extends ConsumerWidget {
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: AppColors.textTertiary, size: 18),
+          Icon(icon, color: scheme.onSurfaceVariant, size: 18),
           const SizedBox(height: 4),
           Text(
             value,
             style: GoogleFonts.montserrat(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: scheme.onSurface,
             ),
           ),
           Text(
@@ -228,7 +238,7 @@ class DailySnapshotCard extends ConsumerWidget {
             style: GoogleFonts.montserrat(
               fontSize: 9,
               fontWeight: FontWeight.w600,
-              color: AppColors.textTertiary,
+              color: scheme.onSurfaceVariant,
               letterSpacing: 0.5,
             ),
           ),
@@ -237,31 +247,31 @@ class DailySnapshotCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildNoTraining(DateTime date) {
+  Widget _buildNoTraining(ColorScheme scheme, DateTime date) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep),
+        border: Border.all(color: scheme.outline),
       ),
       child: Column(
         children: [
-          const Icon(Icons.event_busy, color: AppColors.textTertiary, size: 32),
+          Icon(Icons.event_busy, color: scheme.onSurfaceVariant, size: 32),
           const SizedBox(height: 8),
           Text(
             'Sin entrenamiento',
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textTertiary,
+              color: scheme.onSurfaceVariant,
             ),
           ),
           Text(
             DateFormat('d MMM yyyy', 'es_ES').format(date),
             style: GoogleFonts.montserrat(
               fontSize: 12,
-              color: AppColors.textTertiary,
+              color: scheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -269,19 +279,19 @@ class DailySnapshotCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoading() {
+  Widget _buildLoading(ColorScheme scheme) {
     return Container(
       height: 100,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Center(
+      child: Center(
         child: SizedBox(
           width: 20,
           height: 20,
           child: CircularProgressIndicator(
-            color: Colors.redAccent,
+            color: scheme.primary,
             strokeWidth: 2,
           ),
         ),

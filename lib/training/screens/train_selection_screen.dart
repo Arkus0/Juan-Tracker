@@ -120,10 +120,16 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
     try {
       HapticFeedback.mediumImpact();
     } catch (_) {}
+    final theme = Theme.of(context);
     ref.read(trainingSessionProvider.notifier).restoreFromStorage();
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const TrainingSessionScreen()),
+      MaterialPageRoute(
+        builder: (_) => Theme(
+          data: theme,
+          child: const TrainingSessionScreen(),
+        ),
+      ),
     );
   }
 
@@ -149,9 +155,15 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
           dayIndex: dayIndex,
         );
 
+    final theme = Theme.of(context);
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const TrainingSessionScreen()),
+      MaterialPageRoute(
+        builder: (_) => Theme(
+          data: theme,
+          child: const TrainingSessionScreen(),
+        ),
+      ),
     );
   }
 
@@ -182,7 +194,7 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              ref.read(trainingSessionProvider.notifier).clearStorage();
+              ref.read(trainingSessionProvider.notifier).discardSession();
             },
             child: Text(
               'TERMINAR',

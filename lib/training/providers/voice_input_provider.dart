@@ -94,7 +94,11 @@ class VoiceInputNotifier extends Notifier<VoiceInputState> {
 
   @override
   VoiceInputState build() {
-    _init();
+    // Defer initialization to avoid circular provider dependencies when this
+    // notifier is created during other provider builds.
+    Future.microtask(() async {
+      await _init();
+    });
     return const VoiceInputState();
   }
 

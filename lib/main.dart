@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Ensure DateFormat locale data is available (used throughout the app)
+  await initializeDateFormatting('es');
   runApp(const ProviderScope(child: JuanTrackerApp()));
 }

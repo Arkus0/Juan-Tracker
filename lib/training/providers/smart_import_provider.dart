@@ -105,20 +105,37 @@ final smartImportProvider =
 class SmartImportNotifier extends Notifier<SmartImportState> {
   @override
   SmartImportState build() {
-    _init();
+    // Defer initialization to avoid provider circular builds and
+    // to prevent modifying provider state synchronously during build.
+    Future.microtask(() async {
+      await _init();
+    });
     return const SmartImportState();
   }
 
   final _ocrService = RoutineOcrService.instance;
   final _voiceService = VoiceInputService.instance;
   final _matchingService = ExerciseMatchingService.instance;
+  // Evitar inicializaciones concurrentes/ciclos durante build
+  bool _isInitializing = false;  
 
   Future<void> _init() async {
-    // Inicializar servicios
-    await _matchingService.initialize();
-    final voiceAvailable = await _voiceService.initialize();
+    if (_isInitializing) return;
+    _isInitializing = true;
+    try {
+      // Inicializar servicios (idempotente)
+      await _matchingService.initialize();
+      final voiceAvailable = await _voice_service.initialize();
 
-    state = state.copyWith(isVoiceAvailable: voiceAvailable);
+      state = state.copyWith(isVoiceAvailable: voiceAvailable);
+    } catch (e, s) {
+      state = state.copyWith(
+        status: SmartImportStatus.error,
+        errorMessage: 'Error inicializando importador: ${e.toString()}',
+      );
+    } finally {
+      _isInitializing = false;
+    }
   }
 
   // ============================================
@@ -465,7 +482,9 @@ class SmartImportNotifier extends Notifier<SmartImportState> {
   void clear() {
     _voiceService.clearExerciseHistory();
     state = const SmartImportState();
-    _init(); // Re-inicializar
+    Future.microtask(() async {
+      await _init();
+    }); // Re-inicializar
   }
 
   /// Vuelve al estado idle manteniendo drafts
