@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/models/training_exercise.dart';
 import '../../../core/models/training_sesion.dart';
+import '../../../core/providers/exercise_providers.dart';
 import '../../../core/providers/training_providers.dart';
 import '../../../core/providers/training_session_controller.dart';
+import '../../../core/providers/database_provider.dart';
 import 'history_grouping.dart';
+import 'external_session_sheet.dart';
 import 'session_detail_screen.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -15,83 +19,28 @@ class HistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionsAsync = ref.watch(trainingSessionsProvider);
     final sessionState = ref.watch(trainingSessionControllerProvider);
 
     return Scaffold(
-      body: sessionsAsync.when(
-        data: (sessions) {
-          final groups = groupSessionsByPeriod(sessions, DateTime.now());
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _HeaderRow(
-                onExportAllText: () =>
-                    _exportAll(context, sessions, asJson: false),
-                onExportAllJson: () =>
-                    _exportAll(context, sessions, asJson: true),
-              ),
-              if (sessionState.isActive)
-                _ActiveSessionCard(
-                  session: sessionState.activeSession!,
-                  isSaving: sessionState.isSaving,
-                  onAddSet: () => _showAddSetDialog(context, ref),
-                  onUndo: () => ref
-                      .read(trainingSessionControllerProvider.notifier)
-                      .undoLastSet(),
-                  onFinish: () async {
-                    await ref
-                        .read(trainingSessionControllerProvider.notifier)
-                        .finishSession();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Sesion guardada')),
-                      );
-                    }
-                  },
-                )
-              else
-                _EmptyActiveSession(onStart: () => _startSession(ref)),
-              const SizedBox(height: 16),
-              if (groups.isEmpty)
-                const Text('Sin sesiones aun')
-              else
-                for (final group in groups) ...[
-                  Text(
-                    group.label,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  for (final sesion in group.sesiones)
-                    Card(
-                      child: ListTile(
-                        title: Text(_formatSessionTitle(sesion)),
-                        subtitle: Text(_formatSessionSubtitle(sesion)),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  SessionDetailScreen(session: sesion),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                ],
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(child: Text('Error: $e')),
-      ),
-      floatingActionButton: sessionState.isActive
-          ? null
-          : FloatingActionButton(
+      body: const HistoryContent(),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'add_external_session',
+            onPressed: () => _addExternalSession(context, ref),
+            icon: const Icon(Icons.add_box_outlined),
+            label: const Text('Sesion externa'),
+          ),
+          const SizedBox(height: 12),
+          if (!sessionState.isActive)
+            FloatingActionButton(
+              heroTag: 'start_session',
               onPressed: () => _startSession(ref),
               child: const Icon(Icons.play_arrow),
             ),
+        ],
+      ),
     );
   }
 
@@ -100,78 +49,228 @@ class HistoryScreen extends ConsumerWidget {
     ref.read(trainingSessionControllerProvider.notifier).startSession(id: id);
   }
 
-  Future<void> _showAddSetDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _addExternalSession(BuildContext context, WidgetRef ref) async {
+    final sesion = await showExternalSessionSheet(context);
+    if (sesion == null) return;
+    await ref
+        .read(trainingSessionControllerProvider.notifier)
+        .addExternalSession(sesion);
+    if (context.mounted) {
+      _showUndoSnack(context, ref, sesion.id);
+    }
+  }
+}
+
+class HistoryContent extends ConsumerWidget {
+  final bool showHeader;
+
+  const HistoryContent({super.key, this.showHeader = true});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sessionsAsync = ref.watch(trainingSessionsProvider);
+    final sessionState = ref.watch(trainingSessionControllerProvider);
+    final exercisesAsync = ref.watch(exerciseLibraryProvider);
+
+    final library = exercisesAsync.maybeWhen(
+      data: (items) => items,
+      orElse: () => <TrainingExercise>[],
+    );
+
+    return sessionsAsync.when(
+      data: (sessions) {
+        final groups = groupSessionsByPeriod(sessions, DateTime.now());
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (showHeader)
+              _HeaderRow(
+                onExportAllText: () =>
+                    _exportAll(context, sessions, asJson: false),
+                onExportAllJson: () =>
+                    _exportAll(context, sessions, asJson: true),
+              ),
+            if (sessionState.isActive)
+              _ActiveSessionCard(
+                session: sessionState.activeSession!,
+                isSaving: sessionState.isSaving,
+                onAddSet: () =>
+                    _showAddSetDialog(context, ref, library: library),
+                onUndo: () => ref
+                    .read(trainingSessionControllerProvider.notifier)
+                    .undoLastSet(),
+                onFinish: () async {
+                  await ref
+                      .read(trainingSessionControllerProvider.notifier)
+                      .finishSession();
+                  HapticFeedback.mediumImpact();
+                  final saved = ref
+                      .read(trainingSessionControllerProvider)
+                      .lastSession;
+                  if (context.mounted && saved != null) {
+                    _showUndoSnack(context, ref, saved.id);
+                  }
+                },
+              )
+            else
+              _EmptyActiveSession(onStart: () => _startSession(ref)),
+            const SizedBox(height: 16),
+            if (groups.isEmpty)
+              const Text('Sin sesiones aun')
+            else
+              for (final group in groups) ...[
+                Text(
+                  group.label,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                for (final sesion in group.sesiones)
+                  Card(
+                    child: ListTile(
+                      title: Text(_formatSessionTitle(sesion)),
+                      subtitle: Text(_formatSessionSubtitle(sesion)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                SessionDetailScreen(session: sesion),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                const SizedBox(height: 16),
+              ],
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, st) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  void _startSession(WidgetRef ref) {
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    ref.read(trainingSessionControllerProvider.notifier).startSession(id: id);
+  }
+
+  Future<void> _showAddSetDialog(
+    BuildContext context,
+    WidgetRef ref, {
+    required List<TrainingExercise> library,
+  }) async {
     final ejercicioCtl = TextEditingController();
     final pesoCtl = TextEditingController();
     final repsCtl = TextEditingController();
     final rpeCtl = TextEditingController();
+    String? selectedId;
 
     await showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Agregar serie'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: ejercicioCtl,
-              decoration: const InputDecoration(labelText: 'Ejercicio'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Agregar serie'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: selectedId,
+                  items: library
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.id,
+                          child: Text(e.nombre),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() => selectedId = value);
+                    final exercise = library.firstWhere((e) => e.id == value);
+                    ejercicioCtl.text = exercise.nombre;
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Ejercicio (biblioteca)',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: ejercicioCtl,
+                  decoration: const InputDecoration(
+                    labelText: 'Ejercicio (manual)',
+                  ),
+                ),
+                TextField(
+                  controller: pesoCtl,
+                  decoration: const InputDecoration(labelText: 'Peso'),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: repsCtl,
+                  decoration: const InputDecoration(labelText: 'Reps'),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: rpeCtl,
+                  decoration: const InputDecoration(
+                    labelText: 'RPE (opcional)',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
             ),
-            TextField(
-              controller: pesoCtl,
-              decoration: const InputDecoration(labelText: 'Peso'),
-              keyboardType: TextInputType.number,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancelar'),
             ),
-            TextField(
-              controller: repsCtl,
-              decoration: const InputDecoration(labelText: 'Reps'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: rpeCtl,
-              decoration: const InputDecoration(labelText: 'RPE (opcional)'),
-              keyboardType: TextInputType.number,
+            TextButton(
+              onPressed: () {
+                final ejercicioNombre = ejercicioCtl.text.trim().isEmpty
+                    ? 'Ejercicio'
+                    : ejercicioCtl.text.trim();
+                final ejercicioId = selectedId ?? ejercicioNombre;
+                final peso = double.tryParse(pesoCtl.text) ?? 0.0;
+                final reps = int.tryParse(repsCtl.text) ?? 0;
+                final rpe = int.tryParse(rpeCtl.text);
+                if (peso < 0 || reps <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Peso debe ser >= 0 y reps > 0'),
+                    ),
+                  );
+                  return;
+                }
+                ref
+                    .read(trainingSessionControllerProvider.notifier)
+                    .addSet(
+                      ejercicioId: ejercicioId,
+                      ejercicioNombre: ejercicioNombre,
+                      peso: peso,
+                      reps: reps,
+                      rpe: rpe,
+                    );
+                HapticFeedback.lightImpact();
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Serie agregada'),
+                    action: SnackBarAction(
+                      label: 'DESHACER',
+                      onPressed: () => ref
+                          .read(trainingSessionControllerProvider.notifier)
+                          .undoLastSet(),
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Agregar'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              final ejercicioId = ejercicioCtl.text.trim().isEmpty
-                  ? 'Ejercicio'
-                  : ejercicioCtl.text.trim();
-              final peso = double.tryParse(pesoCtl.text) ?? 0.0;
-              final reps = int.tryParse(repsCtl.text) ?? 0;
-              final rpe = int.tryParse(rpeCtl.text);
-              ref
-                  .read(trainingSessionControllerProvider.notifier)
-                  .addSet(
-                    ejercicioId: ejercicioId,
-                    ejercicioNombre: ejercicioId,
-                    peso: peso,
-                    reps: reps,
-                    rpe: rpe,
-                  );
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Serie agregada'),
-                  action: SnackBarAction(
-                    label: 'DESHACER',
-                    onPressed: () => ref
-                        .read(trainingSessionControllerProvider.notifier)
-                        .undoLastSet(),
-                  ),
-                ),
-              );
-            },
-            child: const Text('Agregar'),
-          ),
-        ],
       ),
     );
   }
@@ -386,6 +485,22 @@ Future<void> _showExportDialog(
           child: const Text('Cerrar'),
         ),
       ],
+    ),
+  );
+}
+
+void _showUndoSnack(BuildContext context, WidgetRef ref, String sessionId) {
+  final repo = ref.read(trainingRepositoryProvider);
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: const Text('Sesion guardada'),
+      duration: const Duration(seconds: 10),
+      behavior: SnackBarBehavior.floating,
+      action: SnackBarAction(
+        label: 'DESHACER',
+        onPressed: () => repo.deleteSession(sessionId),
+      ),
     ),
   );
 }

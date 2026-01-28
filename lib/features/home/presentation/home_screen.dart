@@ -5,7 +5,6 @@ import '../../../features/diary/presentation/diary_screen.dart';
 import '../../../features/foods/presentation/foods_screen.dart';
 import '../../../features/weight/presentation/weight_screen.dart';
 import '../../../features/summary/presentation/summary_screen.dart';
-import '../../../features/training/presentation/history_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -22,7 +21,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     FoodsScreen(),
     WeightScreen(),
     SummaryScreen(),
-    HistoryScreen(),
   ];
 
   @override
@@ -31,6 +29,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(title: const Text('Juan Tracker')),
       body: SafeArea(child: _tabs[_currentIndex]),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        showUnselectedLabels: true,
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
         items: const [
@@ -47,7 +47,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: Icon(Icons.dashboard),
             label: 'Resumen',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Entreno'),
         ],
       ),
     );

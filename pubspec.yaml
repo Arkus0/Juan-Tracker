@@ -11,6 +11,29 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.0.0
   cupertino_icons: ^1.0.8
+  google_fonts: ^6.3.0
+  shared_preferences: ^2.3.3
+  logging: ^1.3.0
+  drift: ^2.22.0
+  sqlite3_flutter_libs: ^0.5.28
+  path: ^1.9.0
+  path_provider: ^2.1.5
+  collection: ^1.19.0
+  uuid: ^4.5.1
+  intl: ^0.20.2
+  logger: ^2.5.0
+  fl_chart: ^1.1.1
+  table_calendar: ^3.2.0
+  percent_indicator: ^4.2.3
+  fuzzy: ^0.5.1
+  share_plus: ^12.0.1
+  url_launcher: ^6.3.1
+  google_mlkit_text_recognition: ^0.15.0
+  image_picker: ^1.1.2
+  speech_to_text: ^7.0.0
+  just_audio: ^0.9.34
+  flutter_local_notifications: ^20.0.0
+  flutter_slidable: ^4.0.3
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +42,23 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/data/exercises_local.json
+    - assets/data/alternativas.json
+    - assets/fonts/
+    - assets/sounds/
+
+google_fonts:
+  use_google_fonts_v2: true
+  fonts:
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-Regular.ttf
+        - asset: assets/fonts/Montserrat-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Montserrat-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Montserrat-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Montserrat-Black.ttf
+          weight: 900

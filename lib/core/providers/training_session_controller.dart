@@ -66,6 +66,24 @@ class TrainingSessionController extends Notifier<TrainingSessionState> {
     );
   }
 
+  void startSessionFromRoutine({
+    required String id,
+    required String rutinaId,
+    required List<Ejercicio> ejerciciosBase,
+  }) {
+    final now = DateTime.now();
+    state = TrainingSessionState.active(
+      Sesion(
+        id: id,
+        fecha: now,
+        durationSeconds: null,
+        totalVolume: 0.0,
+        ejerciciosCompletados: ejerciciosBase,
+        rutinaId: rutinaId,
+      ),
+    );
+  }
+
   void addSet({
     required String ejercicioId,
     String? ejercicioNombre,

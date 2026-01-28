@@ -1,10 +1,12 @@
 # MVP Training (in-memory) - notas
 
 Alcance MVP
-- Modelos: Sesion, Ejercicio, SerieLog, Rutina.
+- Modelos: Sesion, Ejercicio, SerieLog, Rutina, TrainingExercise (biblioteca).
 - ITrainingRepository + InMemoryTrainingRepository (stream con emision inicial por listener).
 - Controller Riverpod 3 (Notifier) con startSession/addSet/undoLastSet/finishSession/addExternalSession.
-- UI minima: HistoryScreen + SessionDetailScreen con export a texto/JSON y accion DESHACER.
+- UI gym: TrainingHome con tabs (Inicio/Biblioteca/Rutinas/Historial) + export a texto/JSON y accion DESHACER.
+- Biblioteca local de ejercicios (seed JSON + ejercicios custom en SharedPreferences).
+- Timer de descanso basico (dialog).
 
 Decisiones
 - Estado in-memory para MVP; la API de ITrainingRepository se mantiene estable para migrar a Drift.
@@ -15,7 +17,7 @@ Pendientes para PRs siguientes
 - Persistencia Drift + migraciones.
 - Servicios nativos (timer/voz/ocr/media) como stubs primero.
 
-Preguntas abiertas
-- Preferis Drift como persistencia final u otra alternativa?
-- Que features nativas son obligatorias para el MVP?
-- Migracion completa a Notifier/AsyncNotifier o gradual?
+Respuestas (28 Jan 2026)
+- Persistencia final: Drift.
+- Features nativas: todas las posibles (timer/voz/ocr/media/haptics).
+- Migracion: completa a Notifier/AsyncNotifier desde ya.

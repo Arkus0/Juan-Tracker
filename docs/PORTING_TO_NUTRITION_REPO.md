@@ -89,6 +89,11 @@ Preguntas abiertas para el mantenedor del repo destino
 3. ¿Política de migración de Riverpod: migración completa a `Notifier/AsyncNotifier` o migración gradual?
 4. ¿Desean incluir todos los assets (`assets/data/*.json`) o usar un paquete/asset servidor externo?
 
+Respuestas (28 Jan 2026)
+1. Persistencia final: Drift.
+2. Features nativas: todas las posibles (timer/voice/ocr/media/haptics).
+3. Migracion: completa a Notifier/AsyncNotifier desde ya.
+
 Uso del script de ayuda `scripts/extract_providers.dart`
 
 - Ejecuta `dart run scripts/extract_providers.dart` para obtener un listado rápido de declarations de providers y los archivos donde están definidos.
