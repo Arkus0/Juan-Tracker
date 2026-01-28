@@ -9,13 +9,24 @@ class PSSesion {
   final String? rutinaId;
   final String? dayName;
 
-  PSSesion({required this.id, required this.fecha, this.durationSeconds, required this.totalVolume, List<PSEjercicio>? ejerciciosCompletados, this.rutinaId, this.dayName})
-      : ejerciciosCompletados = ejerciciosCompletados ?? [];
+  PSSesion({
+    required this.id,
+    required this.fecha,
+    this.durationSeconds,
+    required this.totalVolume,
+    List<PSEjercicio>? ejerciciosCompletados,
+    this.rutinaId,
+    this.dayName,
+  }) : ejerciciosCompletados = ejerciciosCompletados ?? [];
 
-  int get completedSetsCount => ejerciciosCompletados.fold(0, (sum, e) => sum + e.completedSetsCount());
+  int get completedSetsCount =>
+      ejerciciosCompletados.fold(0, (sum, e) => sum + e.completedSetsCount());
 
-  String get formattedDuration => durationSeconds != null ? '${(durationSeconds! / 60).round()} MIN' : 'N/A';
+  String get formattedDuration => durationSeconds != null
+      ? '${(durationSeconds! / 60).round()} MIN'
+      : 'N/A';
 
   @override
-  String toString() => 'PSSesion(id: $id, fecha: $fecha, duration: $durationSeconds, totalVolume: $totalVolume)';
+  String toString() =>
+      'PSSesion(id: $id, fecha: $fecha, duration: $durationSeconds, totalVolume: $totalVolume)';
 }

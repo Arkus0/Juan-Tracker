@@ -22,7 +22,8 @@ class DailyTotals {
 
 class InMemoryDiaryRepository implements DiaryRepository {
   final Map<String, DiaryEntry> _store = {};
-  final StreamController<List<DiaryEntry>> _controller = StreamController.broadcast();
+  final StreamController<List<DiaryEntry>> _controller =
+      StreamController.broadcast();
 
   void _notify() => _controller.add(_store.values.toList());
 
@@ -41,7 +42,9 @@ class InMemoryDiaryRepository implements DiaryRepository {
   @override
   Future<List<DiaryEntry>> getDay(DateTime date) async {
     final d = DateTime(date.year, date.month, date.day);
-    return _store.values.where((e) => DateTime(e.date.year, e.date.month, e.date.day) == d).toList();
+    return _store.values
+        .where((e) => DateTime(e.date.year, e.date.month, e.date.day) == d)
+        .toList();
   }
 
   @override
@@ -49,7 +52,9 @@ class InMemoryDiaryRepository implements DiaryRepository {
     // naive implementation: stream of all entries; consumer can filter
     return _controller.stream.map((list) {
       final d = DateTime(date.year, date.month, date.day);
-      return list.where((e) => DateTime(e.date.year, e.date.month, e.date.day) == d).toList();
+      return list
+          .where((e) => DateTime(e.date.year, e.date.month, e.date.day) == d)
+          .toList();
     });
   }
 
@@ -69,6 +74,11 @@ class InMemoryDiaryRepository implements DiaryRepository {
       carbs += e.carbs ?? 0;
       fat += e.fat ?? 0;
     }
-    return DailyTotals(kcal: kcal, protein: prot == 0 ? null : prot, carbs: carbs == 0 ? null : carbs, fat: fat == 0 ? null : fat);
+    return DailyTotals(
+      kcal: kcal,
+      protein: prot == 0 ? null : prot,
+      carbs: carbs == 0 ? null : carbs,
+      fat: fat == 0 ? null : fat,
+    );
   }
 }

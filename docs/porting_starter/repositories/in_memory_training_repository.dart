@@ -32,7 +32,9 @@ class InMemoryTrainingRepositoryPS implements ITrainingRepositoryPS {
   }
 
   @override
-  Future<List<PSRutina>> getRutinas() async => [PSRutina(id: 'r1', nombre: 'Rutina ejemplo')];
+  Future<List<PSRutina>> getRutinas() async => [
+    PSRutina(id: 'r1', nombre: 'Rutina ejemplo'),
+  ];
 
   void dispose() {
     _controller.close();

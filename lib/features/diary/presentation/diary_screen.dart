@@ -40,17 +40,39 @@ class DiaryScreen extends ConsumerWidget {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
-                  TextField(controller: gramsCtl, decoration: const InputDecoration(labelText: 'grams'), keyboardType: TextInputType.number),
-                  TextField(controller: kcalCtl, decoration: const InputDecoration(labelText: 'kcal'), keyboardType: TextInputType.number),
+                  TextField(
+                    controller: nameCtl,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: gramsCtl,
+                    decoration: const InputDecoration(labelText: 'grams'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  TextField(
+                    controller: kcalCtl,
+                    decoration: const InputDecoration(labelText: 'kcal'),
+                    keyboardType: TextInputType.number,
+                  ),
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
                 TextButton(
                   onPressed: () {
                     final id = DateTime.now().millisecondsSinceEpoch.toString();
-                    final entry = DiaryEntry(id: id, date: DateTime.now(), mealType: MealType.snack, customName: nameCtl.text, foodId: null, grams: double.tryParse(gramsCtl.text) ?? 0, kcal: int.tryParse(kcalCtl.text) ?? 0);
+                    final entry = DiaryEntry(
+                      id: id,
+                      date: DateTime.now(),
+                      mealType: MealType.snack,
+                      customName: nameCtl.text,
+                      foodId: null,
+                      grams: double.tryParse(gramsCtl.text) ?? 0,
+                      kcal: int.tryParse(kcalCtl.text) ?? 0,
+                    );
                     ref.read(diaryRepositoryProvider).add(entry);
                     Navigator.of(ctx).pop();
                   },

@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../repositories/weight_repository.dart';
-import '../repositories/diary_repository.dart';
 import '../providers/database_provider.dart';
 
 /// Baseline TDEE estimator provider.
-final tdeeEstimateProvider = FutureProvider.family<double, DateTime>((ref, day) async {
+final tdeeEstimateProvider = FutureProvider.family<double, DateTime>((
+  ref,
+  day,
+) async {
   // Simple baseline: intake_day - (delta_weight_kg * 7700 / days)
   final diaryRepo = ref.watch(diaryRepositoryProvider);
   final weightRepo = ref.watch(weightRepositoryProvider);

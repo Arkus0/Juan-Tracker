@@ -39,16 +39,32 @@ class FoodsScreen extends ConsumerWidget {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
-                  TextField(controller: kcalCtl, decoration: const InputDecoration(labelText: 'kcal/100g'), keyboardType: TextInputType.number),
+                  TextField(
+                    controller: nameCtl,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: kcalCtl,
+                    decoration: const InputDecoration(labelText: 'kcal/100g'),
+                    keyboardType: TextInputType.number,
+                  ),
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
                 TextButton(
                   onPressed: () {
                     final id = DateTime.now().millisecondsSinceEpoch.toString();
-                    final food = Food(id: id, name: nameCtl.text, brand: null, barcode: null, kcalPer100g: int.tryParse(kcalCtl.text) ?? 0);
+                    final food = Food(
+                      id: id,
+                      name: nameCtl.text,
+                      brand: null,
+                      barcode: null,
+                      kcalPer100g: int.tryParse(kcalCtl.text) ?? 0,
+                    );
                     ref.read(foodRepositoryProvider).add(food);
                     Navigator.of(ctx).pop();
                   },

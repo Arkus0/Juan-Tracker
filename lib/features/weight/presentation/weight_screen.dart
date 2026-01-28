@@ -34,14 +34,25 @@ class WeightScreen extends ConsumerWidget {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Add Weight'),
-              content: TextField(controller: weightCtl, decoration: const InputDecoration(labelText: 'kg'), keyboardType: TextInputType.number),
+              content: TextField(
+                controller: weightCtl,
+                decoration: const InputDecoration(labelText: 'kg'),
+                keyboardType: TextInputType.number,
+              ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
                 TextButton(
                   onPressed: () {
                     final id = DateTime.now().millisecondsSinceEpoch.toString();
                     final w = double.tryParse(weightCtl.text) ?? 0.0;
-                    final entry = WeightEntry(id: id, date: DateTime.now(), weightKg: w);
+                    final entry = WeightEntry(
+                      id: id,
+                      date: DateTime.now(),
+                      weightKg: w,
+                    );
                     ref.read(weightRepositoryProvider).add(entry);
                     Navigator.of(ctx).pop();
                   },
