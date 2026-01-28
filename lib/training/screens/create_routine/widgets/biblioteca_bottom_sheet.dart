@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fuzzy/fuzzy.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/training/models/analysis_models.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
 import 'package:juan_tracker/training/services/exercise_library_service.dart';
 import 'package:juan_tracker/training/widgets/common/create_exercise_dialog.dart';
 
-/// Opciones de ordenación para power-users
-enum SortOption {
-  nameAsc, // A → Z
-  nameDesc, // Z → A
-  muscleGroup, // Agrupado por músculo
-  recentlyUsed, // Últimos usados primero (favoritos primero)
+/// Modo de búsqueda
+enum SearchMode {
+  smart, // Búsqueda inteligente por relevancia
+  favorites, // Solo favoritos
 }
 
 /// 🆕 SmartDefaults: valores sugeridos basados en historial
@@ -46,13 +43,12 @@ class BibliotecaBottomSheet extends StatefulWidget {
 
 class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedMuscle = 'Todos';
-  String _selectedEquipment = 'Todos';
   String _query = '';
-  bool _showFavoritesOnly = false;
-
-  /// 🆕 Ordenación actual
-  SortOption _currentSort = SortOption.nameAsc;
+  SearchMode _searchMode = SearchMode.smart;
+  
+  /// Filtros opcionales (se ignoran cuando hay búsqueda de texto)
+  String? _filterMuscle;
+  String? _filterEquipment;
 
   /// 🆕 Vista compacta (solo lista) vs grid con imágenes
   bool _compactView = false;
@@ -94,104 +90,188 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     _lastAddedExercise = addedEx;
   }
 
-  /// 🆕 Filtro por letra inicial (índice A-Z)
-  String? _selectedLetter;
 
-  /// Letras disponibles (se calculan dinámicamente)
-  List<String> _getAvailableLetters(List<LibraryExercise> exercises) {
-    final letters = exercises
-        .map((e) => e.name.isNotEmpty ? e.name[0].toUpperCase() : '')
-        .where((l) => l.isNotEmpty)
-        .toSet()
-        .toList();
-    letters.sort();
-    return letters;
-  }
 
-  List<String> get _muscles => [
-    'Todos',
-    'Pecho',
-    'Espalda',
-    'Piernas',
-    'Brazos',
-    'Hombros',
-    'Abdominales',
-    'Gemelos',
-    'Cardio',
+
+
+  final List<String> _muscles = [
+    'Pecho', 'Espalda', 'Piernas', 'Brazos', 
+    'Hombros', 'Abdominales', 'Gemelos', 'Cardio',
   ];
-  List<String> get _equipment => [
-    'Todos',
-    'Barra',
-    'Mancuerna',
-    'Máquina',
-    'Polea',
-    'Peso corporal',
-    'Banco',
+  final List<String> _equipment = [
+    'Barra', 'Mancuerna', 'Máquina', 
+    'Polea', 'Peso corporal', 'Banco',
   ];
 
-  /// Helper para construir items del menú de ordenación
-  PopupMenuItem<SortOption> _buildSortMenuItem(
-    SortOption option,
-    String label,
-    IconData icon,
-  ) {
-    final isSelected = _currentSort == option;
-    return PopupMenuItem<SortOption>(
-      value: option,
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? Colors.amber : Colors.white70,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: GoogleFonts.montserrat(
-              color: isSelected ? Colors.amber : Colors.white,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          if (isSelected) ...[
-            const Spacer(),
-            const Icon(Icons.check, color: Colors.amber, size: 18),
-          ],
-        ],
-      ),
-    );
+  /// Normaliza texto para búsqueda (sin acentos, minúsculas)
+  String _normalize(String input) {
+    if (input.trim().isEmpty) return '';
+    final lower = input.toLowerCase();
+    const accents = {
+      'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
+      'ü': 'u', 'ñ': 'n',
+    };
+    var result = lower;
+    accents.forEach((accent, normal) {
+      result = result.replaceAll(accent, normal);
+    });
+    return result.replaceAll(RegExp(r'[^a-z0-9\s]'), ' ').trim();
   }
 
-  /// Aplica ordenación a la lista de ejercicios
-  List<LibraryExercise> _applySorting(List<LibraryExercise> exercises) {
-    final sorted = List<LibraryExercise>.from(exercises);
-    switch (_currentSort) {
-      case SortOption.nameAsc:
-        sorted.sort(
-          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-        );
-        break;
-      case SortOption.nameDesc:
-        sorted.sort(
-          (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
-        );
-        break;
-      case SortOption.muscleGroup:
-        sorted.sort((a, b) {
-          final cmp = a.muscleGroup.compareTo(b.muscleGroup);
-          return cmp != 0 ? cmp : a.name.compareTo(b.name);
-        });
-        break;
-      case SortOption.recentlyUsed:
-        // Favoritos primero, luego alfabético
-        sorted.sort((a, b) {
-          if (a.isFavorite && !b.isFavorite) return -1;
-          if (!a.isFavorite && b.isFavorite) return 1;
-          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-        });
-        break;
+  /// Tokeniza una query en palabras individuales
+  List<String> _tokenize(String input) {
+    final normalized = _normalize(input);
+    if (normalized.isEmpty) return [];
+    return normalized.split(RegExp(r'\s+')).where((t) => t.length >= 2).toList();
+  }
+
+  /// Calcula el score de relevancia de un ejercicio para una query
+  /// Retorna 0 si no hay coincidencia, mayor es mejor
+  int _calculateScore(LibraryExercise ex, String query, List<String> tokens) {
+    final nameNorm = _normalize(ex.name);
+    final queryNorm = _normalize(query);
+    final muscleNorm = _normalize(ex.muscleGroup);
+    final equipmentNorm = _normalize(ex.equipment);
+    
+    // 1. Coincidencia exacta del nombre completo (100 pts)
+    if (nameNorm == queryNorm) return 100;
+    
+    // 2. El nombre empieza exactamente con la query (95 pts)
+    if (nameNorm.startsWith(queryNorm + ' ')) return 95;
+    if (nameNorm.startsWith(queryNorm)) return 90;
+    
+    // 3. Query está contenida en el nombre como palabra completa (85 pts)
+    if (nameNorm.contains(' ' + queryNorm + ' ')) return 85;
+    if (nameNorm.contains(' ' + queryNorm) || nameNorm.contains(queryNorm + ' ')) return 80;
+    
+    // 4. Query contenida en cualquier parte del nombre (70 pts)
+    if (nameNorm.contains(queryNorm)) return 70;
+    
+    // 5. Scoring por tokens (palabras individuales)
+    if (tokens.isNotEmpty) {
+      final nameTokens = nameNorm.split(RegExp(r'\s+'));
+      var matchedTokens = 0;
+      var prefixMatches = 0;
+      
+      for (final token in tokens) {
+        // Token exacto en nombre
+        if (nameTokens.contains(token)) {
+          matchedTokens++;
+        } else if (nameNorm.contains(token)) {
+          // Token contenido
+          matchedTokens++;
+        } else {
+          // Verificar si alguna palabra del nombre empieza con el token
+          for (final nameToken in nameTokens) {
+            if (nameToken.startsWith(token) || token.startsWith(nameToken)) {
+              prefixMatches++;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Todas las palabras coinciden exactamente (75 pts base + bonus)
+      if (matchedTokens == tokens.length && tokens.length > 1) {
+        return 75 + (tokens.length * 2);
+      }
+      
+      // Todas las palabras coinciden (incluyendo parciales)
+      if (matchedTokens + prefixMatches >= tokens.length && tokens.length > 1) {
+        return 60 + matchedTokens * 5;
+      }
+      
+      // Algunas palabras coinciden
+      if (matchedTokens > 0) {
+        return 40 + (matchedTokens * 10);
+      }
+      
+      if (prefixMatches > 0) {
+        return 30 + (prefixMatches * 5);
+      }
     }
-    return sorted;
+    
+    // 6. Coincidencia en grupo muscular (20-40 pts)
+    if (muscleNorm.contains(queryNorm)) return 35;
+    if (tokens.any((t) => muscleNorm.contains(t))) return 25;
+    
+    // 7. Coincidencia en equipo (10-30 pts)
+    if (equipmentNorm.contains(queryNorm)) return 30;
+    if (tokens.any((t) => equipmentNorm.contains(t))) return 20;
+    
+    // 8. Búsqueda en músculos secundarios
+    for (final muscle in ex.muscles) {
+      final muscleToken = _normalize(muscle);
+      if (muscleToken.contains(queryNorm)) return 25;
+      if (tokens.any((t) => muscleToken.contains(t))) return 15;
+    }
+    
+    return 0; // Sin coincidencia
+  }
+
+  /// Filtra y ordena ejercicios por relevancia
+  List<LibraryExercise> _searchExercises(
+    List<LibraryExercise> exercises,
+    String query,
+  ) {
+    if (query.trim().isEmpty) {
+      // Sin query: ordenar alfabéticamente
+      final result = List<LibraryExercise>.from(exercises);
+      result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      return result;
+    }
+    
+    final tokens = _tokenize(query);
+    final scored = <_ScoredExercise>[];
+    
+    for (final ex in exercises) {
+      final score = _calculateScore(ex, query, tokens);
+      if (score > 0) {
+        scored.add(_ScoredExercise(ex, score));
+      }
+    }
+    
+    // Ordenar por score descendente, luego por nombre
+    scored.sort((a, b) {
+      final scoreCmp = b.score.compareTo(a.score);
+      if (scoreCmp != 0) return scoreCmp;
+      return a.exercise.name.toLowerCase().compareTo(
+        b.exercise.name.toLowerCase(),
+      );
+    });
+    
+    return scored.map((s) => s.exercise).toList();
+  }
+  
+  /// Aplica filtros opcionales (solo cuando no hay búsqueda de texto)
+  List<LibraryExercise> _applyOptionalFilters(List<LibraryExercise> exercises) {
+    // Si hay búsqueda de texto, ignorar filtros para no perder resultados
+    if (_query.trim().isNotEmpty) return exercises;
+    
+    var filtered = exercises;
+    
+    // Modo favoritos
+    if (_searchMode == SearchMode.favorites) {
+      filtered = filtered.where((e) => e.isFavorite).toList();
+    }
+    
+    // Filtro de músculo
+    if (_filterMuscle != null) {
+      final muscleLower = _filterMuscle!.toLowerCase();
+      filtered = filtered.where((e) {
+        return e.muscleGroup.toLowerCase().contains(muscleLower);
+      }).toList();
+    }
+    
+    // Filtro de equipo
+    if (_filterEquipment != null) {
+      final equipLower = _filterEquipment!.toLowerCase();
+      filtered = filtered.where((e) {
+        return e.equipment.toLowerCase().contains(equipLower);
+      }).toList();
+    }
+    
+    return filtered;
   }
 
   @override
@@ -614,39 +694,25 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     ),
                   ),
                   const Spacer(),
-                  // 🆕 Dropdown de ordenación
-                  PopupMenuButton<SortOption>(
-                    icon: Icon(Icons.sort, color: scheme.onSurface),
-                    tooltip: 'Ordenar',
-                    color: scheme.surface,
-                    onSelected: (option) {
-                      setState(() => _currentSort = option);
-                      try {
-                        HapticFeedback.selectionClick();
-                      } catch (_) {}
+                  // Toggle favoritos
+                  IconButton(
+                    icon: Icon(
+                      _searchMode == SearchMode.favorites 
+                        ? Icons.star 
+                        : Icons.star_border,
+                      color: _searchMode == SearchMode.favorites 
+                        ? Colors.amber 
+                        : scheme.onSurface,
+                    ),
+                    tooltip: 'Solo favoritos',
+                    onPressed: () {
+                      setState(() {
+                        _searchMode = _searchMode == SearchMode.favorites
+                          ? SearchMode.smart
+                          : SearchMode.favorites;
+                      });
+                      HapticFeedback.selectionClick();
                     },
-                    itemBuilder: (ctx) => [
-                      _buildSortMenuItem(
-                        SortOption.nameAsc,
-                        'A → Z',
-                        Icons.sort_by_alpha,
-                      ),
-                      _buildSortMenuItem(
-                        SortOption.nameDesc,
-                        'Z → A',
-                        Icons.sort_by_alpha,
-                      ),
-                      _buildSortMenuItem(
-                        SortOption.muscleGroup,
-                        'Por músculo',
-                        Icons.fitness_center,
-                      ),
-                      _buildSortMenuItem(
-                        SortOption.recentlyUsed,
-                        'Favoritos',
-                        Icons.star,
-                      ),
-                    ],
                   ),
                   // 🆕 Toggle vista compacta/grid
                   IconButton(
@@ -689,205 +755,78 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Campo de búsqueda principal
                   TextField(
                     controller: _searchController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.search, color: Colors.white54),
-                      hintText: 'Buscar ejercicio...',
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                      suffixIcon: _query.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.white54),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _query = '');
+                            },
+                          )
+                        : null,
+                      hintText: 'Buscar ejercicio (ej: press banca)...',
+                      hintStyle: TextStyle(color: Colors.grey[600]),
                     ),
                     onChanged: (val) {
-                      setState(() {
-                        _query = val;
-                      });
+                      setState(() => _query = val);
                     },
                   ),
-                  const SizedBox(height: 12),
-                  // Favorites filter at the top
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            avatar: Icon(
-                              _showFavoritesOnly
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              color: _showFavoritesOnly
-                                  ? Colors.amber
-                                  : Colors.white70,
-                              size: 18,
-                            ),
-                            label: const Text('Favoritos'),
-                            selected: _showFavoritesOnly,
-                            onSelected: (sel) {
-                              setState(() {
-                                _showFavoritesOnly = sel;
-                              });
-                            },
-                            checkmarkColor: Colors.amber,
-                            selectedColor: Colors.amber.withValues(alpha: 0.3),
-                            backgroundColor: Colors.grey[800],
-                            labelStyle: TextStyle(
-                              color: _showFavoritesOnly
-                                  ? Colors.amber
-                                  : Colors.white70,
-                              fontWeight: _showFavoritesOnly
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
+                  
+                  // Solo mostrar filtros cuando NO hay búsqueda de texto
+                  if (_query.isEmpty) ...[
+                    const SizedBox(height: 12),
+                    // Filtro por grupo muscular
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildFilterChip(
+                            label: 'Todos',
+                            isSelected: _filterMuscle == null,
+                            onTap: () => setState(() => _filterMuscle = null),
                           ),
-                        ),
-                        ..._muscles.map(
-                          (m) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              label: Text(m),
-                              selected: _selectedMuscle == m,
-                              onSelected: (sel) {
-                                setState(() {
-                                  _selectedMuscle = sel ? m : 'Todos';
-                                });
-                              },
-                              checkmarkColor: Colors.white,
-                              selectedColor: Colors.redAccent[700],
-                              backgroundColor: Colors.grey[800],
-                              labelStyle: TextStyle(
-                                color: _selectedMuscle == m
-                                    ? Colors.white
-                                    : Colors.white70,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        ..._equipment.map(
-                          (e) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              label: Text(e),
-                              selected: _selectedEquipment == e,
-                              onSelected: (sel) {
-                                setState(() {
-                                  _selectedEquipment = sel ? e : 'Todos';
-                                });
-                              },
-                              checkmarkColor: Colors.white,
-                              selectedColor: Colors.redAccent[700],
-                              backgroundColor: Colors.grey[800],
-                              labelStyle: TextStyle(
-                                color: _selectedEquipment == e
-                                    ? Colors.white
-                                    : Colors.white70,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 🆕 Índice alfabético A-Z
-                  if (_query.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: ValueListenableBuilder<List<LibraryExercise>>(
-                        valueListenable:
-                            ExerciseLibraryService.instance.exercisesNotifier,
-                        builder: (context, exercises, _) {
-                          final letters = _getAvailableLetters(exercises);
-                          return SizedBox(
-                            height: 28,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: letters.length + 1, // +1 for "ALL"
-                              itemBuilder: (ctx, idx) {
-                                if (idx == 0) {
-                                  // Botón "Todos"
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 4),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        setState(() => _selectedLetter = null);
-                                        try {
-                                          HapticFeedback.selectionClick();
-                                        } catch (_) {}
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _selectedLetter == null
-                                              ? Colors.blue[700]
-                                              : Colors.grey[800],
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'A-Z',
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            color: scheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                final letter = letters[idx - 1];
-                                final isSelected = _selectedLetter == letter;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 2),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() => _selectedLetter = letter);
-                                      try {
-                                        HapticFeedback.selectionClick();
-                                      } catch (_) {}
-                                    },
-                                    child: Container(
-                                      width: 26,
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? Colors.blue[700]
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        letter,
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 12,
-                                          fontWeight: isSelected
-                                              ? FontWeight.w800
-                                              : FontWeight.w500,
-                                          color: isSelected
-                                              ? Colors.white
-                                              : Colors.grey[500],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
+                          ..._muscles.map((m) => _buildFilterChip(
+                            label: m,
+                            isSelected: _filterMuscle == m,
+                            onTap: () => setState(() => 
+                              _filterMuscle = _filterMuscle == m ? null : m),
+                          )),
+                        ],
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    // Filtro por equipo
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _equipment.map((e) => _buildFilterChip(
+                          label: e,
+                          isSelected: _filterEquipment == e,
+                          onTap: () => setState(() => 
+                            _filterEquipment = _filterEquipment == e ? null : e),
+                        )).toList(),
+                      ),
+                    ),
+                  ] else ...[
+                    // Indicador de búsqueda activa
+                    const SizedBox(height: 8),
+                    Text(
+                      'Búsqueda inteligente activa - Los filtros se ignoran',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -895,7 +834,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
             // 🆕 Sección: Añadidos recientemente (si no hay búsqueda activa)
             if (_query.isEmpty &&
                 _recentlyAdded.isNotEmpty &&
-                !_showFavoritesOnly)
+                _searchMode != SearchMode.favorites)
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -1067,148 +1006,11 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                 valueListenable:
                     ExerciseLibraryService.instance.exercisesNotifier,
                 builder: (context, exercises, _) {
-                  // Filter
-                  var filtered = exercises;
-
-                  // Favorites filter (first priority)
-                  if (_showFavoritesOnly) {
-                    filtered = filtered.where((e) => e.isFavorite).toList();
-                  }
-
-                  if (_selectedMuscle != 'Todos') {
-                    final selectedLower = _selectedMuscle.toLowerCase();
-
-                    // Map Spanish selection to common English synonyms to tolerate both data sources
-                    final muscleSynonyms = <String, List<String>>{
-                      'pecho': [
-                        'chest',
-                        'pectoral',
-                        'pectoralis',
-                        'pectorales',
-                      ],
-                      'espalda': [
-                        'back',
-                        'dorsal',
-                        'lats',
-                        'latissimus',
-                        'dorsal ancho',
-                      ],
-                      'piernas': [
-                        'legs',
-                        'quads',
-                        'quadriceps',
-                        'glutes',
-                        'hamstrings',
-                        'pierna',
-                      ],
-                      'brazos': ['arms', 'biceps', 'triceps', 'arm'],
-                      'hombros': ['shoulders', 'deltoid', 'deltoides'],
-                      'abdominales': ['abs', 'abdominal', 'obliques', 'rectus'],
-                      'gemelos': [
-                        'calves',
-                        'gastrocnemius',
-                        'soleus',
-                        'gemelos',
-                      ],
-                      'cardio': ['cardio', 'aerobic'],
-                    };
-
-                    final synonyms = muscleSynonyms[selectedLower] ?? [];
-
-                    filtered = filtered.where((e) {
-                      final mg = e.muscleGroup.toLowerCase();
-
-                      // Direct matches
-                      if (mg.contains(selectedLower)) return true;
-                      for (final s in synonyms) {
-                        if (mg.contains(s)) return true;
-                      }
-
-                      // Check detailed muscle names (normalize maps/strings)
-                      final musclesLower = e.muscles
-                          .map((m) => m.toLowerCase())
-                          .toList();
-                      if (musclesLower.any((m) => m.contains(selectedLower))) {
-                        return true;
-                      }
-                      if (musclesLower.any(
-                        (m) => synonyms.any((s) => m.contains(s)),
-                      )) {
-                        return true;
-                      }
-
-                      return false;
-                    }).toList();
-                  }
-
-                  if (_selectedEquipment != 'Todos') {
-                    final selectedEq = _selectedEquipment.toLowerCase();
-
-                    final equipmentSynonyms = <String, List<String>>{
-                      'barra': ['barbell', 'bar'],
-                      'mancuerna': ['dumbbell', 'dumbbells'],
-                      'máquina': ['machine', 'machine-based'],
-                      'polea': ['cable', 'pulley'],
-                      'peso corporal': ['bodyweight', 'body weight'],
-                      'banco': ['bench', 'bench press'],
-                    };
-
-                    final synonyms = equipmentSynonyms[selectedEq] ?? [];
-
-                    filtered = filtered.where((e) {
-                      final eq = e.equipment.toLowerCase();
-
-                      if (eq.contains(selectedEq)) return true;
-                      for (final s in synonyms) {
-                        if (eq.contains(s)) return true;
-                      }
-
-                      // Some library entries use longer names or multiple words; also check name and description
-                      if (e.name.toLowerCase().contains(selectedEq)) {
-                        return true;
-                      }
-                      for (final s in synonyms) {
-                        if (e.name.toLowerCase().contains(s)) return true;
-                      }
-
-                      return false;
-                    }).toList();
-                  }
-
-                  if (_query.isNotEmpty) {
-                    final fuse = Fuzzy(
-                      filtered,
-                      options: FuzzyOptions(
-                        keys: [
-                          WeightedKey(
-                            name: 'name',
-                            getter: (LibraryExercise x) => x.name,
-                            weight: 1.0,
-                          ),
-                          WeightedKey(
-                            name: 'muscleGroup',
-                            getter: (LibraryExercise x) => x.muscleGroup,
-                            weight: 0.5,
-                          ),
-                        ],
-                      ),
-                    );
-                    filtered = fuse.search(_query).map((r) => r.item).toList();
-                  }
-
-                  // 🆕 Filtro por letra inicial (índice A-Z)
-                  if (_selectedLetter != null) {
-                    filtered = filtered
-                        .where(
-                          (e) =>
-                              e.name.isNotEmpty &&
-                              e.name[0].toUpperCase() == _selectedLetter,
-                        )
-                        .toList();
-                  }
-
-                  // 🆕 Aplicar ordenación seleccionada
-                  filtered = _applySorting(filtered);
+                  // 1. Aplicar filtros opcionales (solo cuando no hay búsqueda)
+                  var filtered = _applyOptionalFilters(exercises);
+                  
+                  // 2. Aplicar búsqueda inteligente con scoring
+                  filtered = _searchExercises(filtered, _query);
 
                   if (filtered.isEmpty) {
                     return Center(
@@ -1511,6 +1313,40 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     );
   }
 
+  Widget _buildFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.redAccent[700] : Colors.grey[800],
+            borderRadius: BorderRadius.circular(20),
+            border: isSelected 
+              ? Border.all(color: Colors.redAccent[400]!) 
+              : null,
+          ),
+          child: Text(
+            label,
+            style: GoogleFonts.montserrat(
+              fontSize: 13,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? Colors.white : Colors.white70,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildImage(LibraryExercise ex) {
     if (ex.imageUrls.isNotEmpty) {
       return Image.network(
@@ -1528,4 +1364,12 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
       child: const Icon(Icons.fitness_center, color: Colors.white24),
     );
   }
+}
+
+/// Helper class para scoring
+class _ScoredExercise {
+  final LibraryExercise exercise;
+  final int score;
+  
+  _ScoredExercise(this.exercise, this.score);
 }

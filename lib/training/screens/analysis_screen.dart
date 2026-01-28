@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../models/external_session.dart';
 import '../models/sesion.dart';
 import '../providers/analysis_provider.dart';
 import '../providers/training_provider.dart';
 import '../utils/design_system.dart';
+import '../widgets/external_session_sheet.dart';
 import '../widgets/analysis/activity_heatmap.dart';
 import '../widgets/analysis/calendar_view.dart';
 import '../widgets/analysis/hall_of_fame.dart';
@@ -51,6 +53,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   @override
   Widget build(BuildContext context) {
     final sessionsAsync = ref.watch(sesionesHistoryStreamProvider);
+    final tabIndex = ref.watch(analysisTabIndexProvider);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -110,6 +113,22 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         controller: _tabController,
         children: const [_BitacoraTab(), _LaboratorioTab()],
       ),
+      floatingActionButton: tabIndex == 0
+          ? FloatingActionButton.extended(
+              heroTag: 'add_external_session',
+              onPressed: () => _addExternalSession(context),
+              backgroundColor: scheme.surface,
+              foregroundColor: scheme.primary,
+              icon: const Icon(Icons.add),
+              label: Text(
+                'SESION EXTERNA',
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -129,6 +148,68 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
 
     HapticFeedback.mediumImpact();
     exportAllSessions(context, sessions);
+  }
+
+  Future<void> _addExternalSession(BuildContext context) async {
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
+
+    final session = await ExternalSessionSheet.show(context);
+    if (session == null) return;
+
+    final repo = ref.read(trainingRepositoryProvider);
+    try {
+      await repo.saveSesion(session.toSesion());
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al guardar: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+    _showUndoSnack(context, repo, session);
+  }
+
+  void _showUndoSnack(
+    BuildContext context,
+    dynamic repo,
+    ExternalSession session,
+  ) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Sesion externa guardada (${session.exercises.length} ejercicios)',
+                style: GoogleFonts.montserrat(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.bgElevated,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        action: SnackBarAction(
+          label: 'DESHACER',
+          textColor: AppColors.neonCyan,
+          onPressed: () => repo.deleteSesion(session.id),
+        ),
+        duration: const Duration(seconds: 10),
+      ),
+    );
   }
 }
 

@@ -307,15 +307,19 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
           suggestedWeight = peso * 10; // Probablemente falta un 0
         }
 
-        ref
-            .read(suspiciousDataProvider.notifier)
-            .setSuspiciousData(
+        final currentSuspicious = ref.read(suspiciousDataProvider);
+        // Evitar sobrescribir si ya hay un diálogo mostrándose y programar la notificación
+        if (!currentSuspicious.dialogShowing) {
+          Future.microtask(() {
+            ref.read(suspiciousDataProvider.notifier).setSuspiciousData(
               exerciseName: exercise.nombre,
               enteredWeight: peso,
               suggestedWeight: suggestedWeight,
               exerciseIndex: exerciseIndex,
               setIndex: setIndex,
             );
+          });
+        }
         Logger().w(
           'Peso sospechoso en ${exercise.nombre}: $peso kg (sugerido: $suggestedWeight kg)',
         );

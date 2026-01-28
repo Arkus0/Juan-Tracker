@@ -327,7 +327,7 @@ class HistoryScreen extends ConsumerWidget {
   }
 }
 
-class _WeekSection extends StatelessWidget {
+class _WeekSection extends ConsumerWidget {
   final String weekLabel;
   final List<Sesion> sessions;
   final Map<String, Rutina> rutinasMap;
@@ -339,7 +339,7 @@ class _WeekSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Calcular estadísticas de la semana
     final totalVolume = sessions.fold(0.0, (sum, s) => sum + s.totalVolume);
     final totalSessions = sessions.length;
@@ -375,22 +375,151 @@ class _WeekSection extends StatelessWidget {
             key: ValueKey(session.id),
             session: session,
             rutinasMap: rutinasMap,
+            onDelete: () => _deleteSession(context, ref, session),
           ),
         ),
         const SizedBox(height: 8),
       ],
     );
   }
+
+  Future<void> _deleteSession(BuildContext context, WidgetRef ref, Sesion session) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgElevated,
+        title: Row(
+          children: [
+            const Icon(Icons.delete_forever, color: AppColors.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '¿ELIMINAR SESIÓN?',
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Esta acción no se puede deshacer.',
+              style: GoogleFonts.montserrat(color: Colors.white70),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.bgDeep,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    session.dayName ?? 'Sesión',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('EEEE, d MMMM yyyy', 'es_ES').format(session.fecha),
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${session.completedSetsCount} series • ${(session.totalVolume / 1000).toStringAsFixed(1)}t volumen',
+                    style: GoogleFonts.montserrat(
+                      color: AppColors.neonCyan,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'CANCELAR',
+              style: GoogleFonts.montserrat(color: Colors.white54),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            icon: const Icon(Icons.delete, size: 18),
+            label: Text(
+              'ELIMINAR',
+              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final repository = ref.read(trainingRepositoryProvider);
+        await repository.deleteSesion(session.id);
+        
+        if (context.mounted) {
+          HapticFeedback.mediumImpact();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Sesión eliminada',
+                style: GoogleFonts.montserrat(),
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Error al eliminar: $e',
+                style: GoogleFonts.montserrat(),
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
 }
 
 class _SessionTile extends StatefulWidget {
   final Sesion session;
   final Map<String, Rutina> rutinasMap;
+  final VoidCallback onDelete;
 
   const _SessionTile({
     super.key,
     required this.session,
     required this.rutinasMap,
+    required this.onDelete,
   });
 
   @override
@@ -660,11 +789,18 @@ class _SessionTileState extends State<_SessionTile> {
                   label: const Text('VER DETALLE'),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: () => _exportSession(context, widget.session),
                 icon: const Icon(Icons.share, size: 18),
                 label: const Text('EXPORT'),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: widget.onDelete,
+                icon: const Icon(Icons.delete_outline, size: 20),
+                color: AppColors.error,
+                tooltip: 'Eliminar sesión',
               ),
             ],
           ),

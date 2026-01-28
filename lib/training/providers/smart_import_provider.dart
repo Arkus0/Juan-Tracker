@@ -125,10 +125,10 @@ class SmartImportNotifier extends Notifier<SmartImportState> {
     try {
       // Inicializar servicios (idempotente)
       await _matchingService.initialize();
-      final voiceAvailable = await _voice_service.initialize();
+      final voiceAvailable = await _voiceService.initialize();
 
       state = state.copyWith(isVoiceAvailable: voiceAvailable);
-    } catch (e, s) {
+    } catch (e) {
       state = state.copyWith(
         status: SmartImportStatus.error,
         errorMessage: 'Error inicializando importador: ${e.toString()}',
