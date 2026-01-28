@@ -823,27 +823,15 @@ class _CreateEditRoutineScreenState
                 },
               ),
               const SizedBox(height: 12),
-              // Opción 2: Smart Import (detecta automático)
+              // Opción 2: Smart Import (detecta automático - voz, OCR, texto)
               _ImportOptionTile(
                 icon: Icons.auto_awesome,
                 iconColor: Colors.amber[400]!,
                 title: 'Import Inteligente',
-                subtitle: 'Pega texto o dicta tus ejercicios',
+                subtitle: 'Voz, texto, cámara o galería',
                 onTap: () {
                   Navigator.pop(ctx);
                   _showSmartImport();
-                },
-              ),
-              const SizedBox(height: 12),
-              // Opción 3: Escanear imagen
-              _ImportOptionTile(
-                icon: Icons.document_scanner,
-                iconColor: Colors.blue[400]!,
-                title: 'Escanear Imagen',
-                subtitle: 'Importa desde foto de rutina',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _importFromOcr();
                 },
               ),
               const SizedBox(height: 16),

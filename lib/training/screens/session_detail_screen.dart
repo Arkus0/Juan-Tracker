@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../models/ejercicio.dart';
 import '../models/sesion.dart';
 import '../providers/training_provider.dart';
+import '../utils/design_system.dart';
 
 class SessionDetailScreen extends ConsumerWidget {
   final Sesion sesion;
@@ -20,7 +23,16 @@ class SessionDetailScreen extends ConsumerWidget {
     final rutinasAsync = ref.watch(rutinasStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('INFORME DE COMBATE')),
+      appBar: AppBar(
+        title: const Text('INFORME DE COMBATE'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: AppColors.error),
+            tooltip: 'Eliminar sesión',
+            onPressed: () => _confirmDelete(context, ref),
+          ),
+        ],
+      ),
       body: sessionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
@@ -324,5 +336,132 @@ class SessionDetailScreen extends ConsumerWidget {
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgElevated,
+        title: Row(
+          children: [
+            const Icon(Icons.delete_forever, color: AppColors.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '¿ELIMINAR SESIÓN?',
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Esta acción no se puede deshacer.',
+              style: GoogleFonts.montserrat(color: Colors.white70),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.bgDeep,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    sesion.dayName ?? 'Sesión',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('EEEE, d MMMM yyyy', 'es_ES').format(sesion.fecha),
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${sesion.completedSetsCount} series • ${(sesion.totalVolume / 1000).toStringAsFixed(1)}t volumen',
+                    style: GoogleFonts.montserrat(
+                      color: AppColors.neonCyan,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'CANCELAR',
+              style: GoogleFonts.montserrat(color: Colors.white54),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            icon: const Icon(Icons.delete, size: 18),
+            label: Text(
+              'ELIMINAR',
+              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final repository = ref.read(trainingRepositoryProvider);
+        await repository.deleteSesion(sesion.id);
+
+        if (context.mounted) {
+          HapticFeedback.mediumImpact();
+          Navigator.of(context).pop(); // Volver atrás tras eliminar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Sesión eliminada',
+                style: GoogleFonts.montserrat(),
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Error al eliminar: $e',
+                style: GoogleFonts.montserrat(),
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
   }
 }
