@@ -1,0 +1,2254 @@
+[
+  {
+    "id": "press_banca_con_barra",
+    "nombre": "Press banca con barra",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_banca_con_mancuernas",
+    "nombre": "Press banca con mancuernas",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_banca_con_maquina",
+    "nombre": "Press banca con maquina",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_inclinado_con_barra",
+    "nombre": "Press inclinado con barra",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_inclinado_con_mancuernas",
+    "nombre": "Press inclinado con mancuernas",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_inclinado_con_maquina",
+    "nombre": "Press inclinado con maquina",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_declinado_con_barra",
+    "nombre": "Press declinado con barra",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_declinado_con_mancuernas",
+    "nombre": "Press declinado con mancuernas",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_declinado_con_maquina",
+    "nombre": "Press declinado con maquina",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "aperturas_con_mancuernas",
+    "nombre": "Aperturas con mancuernas",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "aperturas_con_cable",
+    "nombre": "Aperturas con cable",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "cable",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "aperturas_con_maquina",
+    "nombre": "Aperturas con maquina",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "pullover_con_mancuernas",
+    "nombre": "Pullover con mancuernas",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "pullover_con_barra",
+    "nombre": "Pullover con barra",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "pullover_con_maquina",
+    "nombre": "Pullover con maquina",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos",
+    "nombre": "Fondos",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos_con_maquina",
+    "nombre": "Fondos con maquina",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "dominadas",
+    "nombre": "Dominadas",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "dominadas_con_lastre",
+    "nombre": "Dominadas con lastre",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "lastre",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_barra",
+    "nombre": "Remo con barra",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_mancuernas",
+    "nombre": "Remo con mancuernas",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_cable",
+    "nombre": "Remo con cable",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "cable",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_maquina",
+    "nombre": "Remo con maquina",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "jalon_al_pecho_con_cable",
+    "nombre": "Jalon al pecho con cable",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "cable",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "jalon_al_pecho_con_maquina",
+    "nombre": "Jalon al pecho con maquina",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_con_barra",
+    "nombre": "Peso muerto con barra",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Femoral"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_con_mancuernas",
+    "nombre": "Peso muerto con mancuernas",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Femoral"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "buenos_dias_con_barra",
+    "nombre": "Buenos dias con barra",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Femoral"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "face_pull_con_cable",
+    "nombre": "Face pull con cable",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "cable",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "face_pull_con_bandas",
+    "nombre": "Face pull con bandas",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "bandas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "sentadilla_con_barra",
+    "nombre": "Sentadilla con barra",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Core"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "sentadilla_con_mancuernas",
+    "nombre": "Sentadilla con mancuernas",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Core"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "sentadilla_con_maquina",
+    "nombre": "Sentadilla con maquina",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Core"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "prensa_con_maquina",
+    "nombre": "Prensa con maquina",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "zancadas_con_mancuernas",
+    "nombre": "Zancadas con mancuernas",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "zancadas_con_barra",
+    "nombre": "Zancadas con barra",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "zancadas",
+    "nombre": "Zancadas",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_rumano_con_barra",
+    "nombre": "Peso muerto rumano con barra",
+    "grupoMuscular": "Femoral",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_rumano_con_mancuernas",
+    "nombre": "Peso muerto rumano con mancuernas",
+    "grupoMuscular": "Femoral",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_femoral_con_maquina",
+    "nombre": "Curl femoral con maquina",
+    "grupoMuscular": "Femoral",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "extension_de_cuadriceps_con_maquina",
+    "nombre": "Extension de cuadriceps con maquina",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Cuadriceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "hip_thrust_con_barra",
+    "nombre": "Hip thrust con barra",
+    "grupoMuscular": "Gluteos",
+    "musculosSecundarios": [
+      "Femoral"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "hip_thrust_con_maquina",
+    "nombre": "Hip thrust con maquina",
+    "grupoMuscular": "Gluteos",
+    "musculosSecundarios": [
+      "Femoral"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_gemelos_con_maquina",
+    "nombre": "Elevacion de gemelos con maquina",
+    "grupoMuscular": "Gemelos",
+    "musculosSecundarios": [
+      "Piernas"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_gemelos_con_mancuernas",
+    "nombre": "Elevacion de gemelos con mancuernas",
+    "grupoMuscular": "Gemelos",
+    "musculosSecundarios": [
+      "Piernas"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_gemelos",
+    "nombre": "Elevacion de gemelos",
+    "grupoMuscular": "Gemelos",
+    "musculosSecundarios": [
+      "Piernas"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_militar_con_barra",
+    "nombre": "Press militar con barra",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_militar_con_mancuernas",
+    "nombre": "Press militar con mancuernas",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_militar_con_maquina",
+    "nombre": "Press militar con maquina",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_laterales_con_mancuernas",
+    "nombre": "Elevaciones laterales con mancuernas",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Trapecio"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_laterales_con_cable",
+    "nombre": "Elevaciones laterales con cable",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Trapecio"
+    ],
+    "equipo": "cable",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_frontales_con_mancuernas",
+    "nombre": "Elevaciones frontales con mancuernas",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_frontales_con_barra",
+    "nombre": "Elevaciones frontales con barra",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_frontales_con_cable",
+    "nombre": "Elevaciones frontales con cable",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "cable",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "pajaros_con_mancuernas",
+    "nombre": "Pajaros con mancuernas",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "pajaros_con_cable",
+    "nombre": "Pajaros con cable",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "cable",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "pajaros_con_maquina",
+    "nombre": "Pajaros con maquina",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "encogimientos_con_barra",
+    "nombre": "Encogimientos con barra",
+    "grupoMuscular": "Trapecio",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "encogimientos_con_mancuernas",
+    "nombre": "Encogimientos con mancuernas",
+    "grupoMuscular": "Trapecio",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_biceps_con_barra",
+    "nombre": "Curl biceps con barra",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_biceps_con_mancuernas",
+    "nombre": "Curl biceps con mancuernas",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_biceps_con_cable",
+    "nombre": "Curl biceps con cable",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "cable",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_biceps_con_maquina",
+    "nombre": "Curl biceps con maquina",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_martillo_con_mancuernas",
+    "nombre": "Curl martillo con mancuernas",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_concentrado_con_mancuernas",
+    "nombre": "Curl concentrado con mancuernas",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "extension_triceps_con_cable",
+    "nombre": "Extension triceps con cable",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "cable",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "extension_triceps_con_barra",
+    "nombre": "Extension triceps con barra",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "extension_triceps_con_mancuernas",
+    "nombre": "Extension triceps con mancuernas",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_cerrado_con_barra",
+    "nombre": "Press cerrado con barra",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_cerrado_con_maquina",
+    "nombre": "Press cerrado con maquina",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos_en_banco",
+    "nombre": "Fondos en banco",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos_en_banco_con_mancuernas",
+    "nombre": "Fondos en banco con mancuernas",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "plancha",
+    "nombre": "Plancha",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "crunch",
+    "nombre": "Crunch",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Cadera"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "crunch_con_maquina",
+    "nombre": "Crunch con maquina",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Cadera"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_piernas",
+    "nombre": "Elevacion de piernas",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Cadera"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_piernas_con_barra",
+    "nombre": "Elevacion de piernas con barra",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Cadera"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "ab_wheel_con_rueda",
+    "nombre": "Ab wheel con rueda",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "rueda",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "farmer_walk_con_mancuernas",
+    "nombre": "Farmer walk con mancuernas",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Core",
+      "Antebrazos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "farmer_walk_con_kettlebell",
+    "nombre": "Farmer walk con kettlebell",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Core",
+      "Antebrazos"
+    ],
+    "equipo": "kettlebell",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "kettlebell_swing_con_kettlebell",
+    "nombre": "Kettlebell swing con kettlebell",
+    "grupoMuscular": "Gluteos",
+    "musculosSecundarios": [
+      "Espalda",
+      "Core"
+    ],
+    "equipo": "kettlebell",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "clean_and_press_con_barra",
+    "nombre": "Clean and press con barra",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Hombros",
+      "Core"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "clean_and_press_con_kettlebell",
+    "nombre": "Clean and press con kettlebell",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Hombros",
+      "Core"
+    ],
+    "equipo": "kettlebell",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "burpees",
+    "nombre": "Burpees",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Core"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_invertido",
+    "nombre": "Remo invertido",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "flexiones",
+    "nombre": "Flexiones",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_banca_con_barra_agarre_ancho",
+    "nombre": "Press banca con barra agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_banca_con_mancuernas_agarre_ancho",
+    "nombre": "Press banca con mancuernas agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_banca_con_maquina_agarre_ancho",
+    "nombre": "Press banca con maquina agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_inclinado_con_barra_agarre_ancho",
+    "nombre": "Press inclinado con barra agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_inclinado_con_mancuernas_agarre_ancho",
+    "nombre": "Press inclinado con mancuernas agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_inclinado_con_maquina_agarre_ancho",
+    "nombre": "Press inclinado con maquina agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_declinado_con_barra_agarre_ancho",
+    "nombre": "Press declinado con barra agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_declinado_con_mancuernas_agarre_ancho",
+    "nombre": "Press declinado con mancuernas agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_declinado_con_maquina_agarre_ancho",
+    "nombre": "Press declinado con maquina agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "aperturas_con_mancuernas_agarre_ancho",
+    "nombre": "Aperturas con mancuernas agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "aperturas_con_cable_agarre_ancho",
+    "nombre": "Aperturas con cable agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "cable",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "aperturas_con_maquina_agarre_ancho",
+    "nombre": "Aperturas con maquina agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "pullover_con_mancuernas_agarre_ancho",
+    "nombre": "Pullover con mancuernas agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "pullover_con_barra_agarre_ancho",
+    "nombre": "Pullover con barra agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "pullover_con_maquina_agarre_ancho",
+    "nombre": "Pullover con maquina agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos_agarre_ancho",
+    "nombre": "Fondos agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos_con_maquina_agarre_ancho",
+    "nombre": "Fondos con maquina agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "dominadas_agarre_ancho",
+    "nombre": "Dominadas agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "dominadas_con_lastre_agarre_ancho",
+    "nombre": "Dominadas con lastre agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "lastre",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_barra_agarre_ancho",
+    "nombre": "Remo con barra agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_mancuernas_agarre_ancho",
+    "nombre": "Remo con mancuernas agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_cable_agarre_ancho",
+    "nombre": "Remo con cable agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "cable",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_maquina_agarre_ancho",
+    "nombre": "Remo con maquina agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "jalon_al_pecho_con_cable_agarre_ancho",
+    "nombre": "Jalon al pecho con cable agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "cable",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "jalon_al_pecho_con_maquina_agarre_ancho",
+    "nombre": "Jalon al pecho con maquina agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_con_barra_agarre_ancho",
+    "nombre": "Peso muerto con barra agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Femoral"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_con_mancuernas_agarre_ancho",
+    "nombre": "Peso muerto con mancuernas agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Femoral"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "buenos_dias_con_barra_agarre_ancho",
+    "nombre": "Buenos dias con barra agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Femoral"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "face_pull_con_cable_agarre_ancho",
+    "nombre": "Face pull con cable agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "cable",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "face_pull_con_bandas_agarre_ancho",
+    "nombre": "Face pull con bandas agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "bandas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "sentadilla_con_barra_agarre_ancho",
+    "nombre": "Sentadilla con barra agarre ancho",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Core"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "sentadilla_con_mancuernas_agarre_ancho",
+    "nombre": "Sentadilla con mancuernas agarre ancho",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Core"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "sentadilla_con_maquina_agarre_ancho",
+    "nombre": "Sentadilla con maquina agarre ancho",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Core"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "prensa_con_maquina_agarre_ancho",
+    "nombre": "Prensa con maquina agarre ancho",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "zancadas_con_mancuernas_agarre_ancho",
+    "nombre": "Zancadas con mancuernas agarre ancho",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "zancadas_con_barra_agarre_ancho",
+    "nombre": "Zancadas con barra agarre ancho",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "zancadas_agarre_ancho",
+    "nombre": "Zancadas agarre ancho",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_rumano_con_barra_agarre_ancho",
+    "nombre": "Peso muerto rumano con barra agarre ancho",
+    "grupoMuscular": "Femoral",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_rumano_con_mancuernas_agarre_ancho",
+    "nombre": "Peso muerto rumano con mancuernas agarre ancho",
+    "grupoMuscular": "Femoral",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_femoral_con_maquina_agarre_ancho",
+    "nombre": "Curl femoral con maquina agarre ancho",
+    "grupoMuscular": "Femoral",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "extension_de_cuadriceps_con_maquina_agarre_ancho",
+    "nombre": "Extension de cuadriceps con maquina agarre ancho",
+    "grupoMuscular": "Piernas",
+    "musculosSecundarios": [
+      "Cuadriceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "hip_thrust_con_barra_agarre_ancho",
+    "nombre": "Hip thrust con barra agarre ancho",
+    "grupoMuscular": "Gluteos",
+    "musculosSecundarios": [
+      "Femoral"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "hip_thrust_con_maquina_agarre_ancho",
+    "nombre": "Hip thrust con maquina agarre ancho",
+    "grupoMuscular": "Gluteos",
+    "musculosSecundarios": [
+      "Femoral"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_gemelos_con_maquina_agarre_ancho",
+    "nombre": "Elevacion de gemelos con maquina agarre ancho",
+    "grupoMuscular": "Gemelos",
+    "musculosSecundarios": [
+      "Piernas"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_gemelos_con_mancuernas_agarre_ancho",
+    "nombre": "Elevacion de gemelos con mancuernas agarre ancho",
+    "grupoMuscular": "Gemelos",
+    "musculosSecundarios": [
+      "Piernas"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_gemelos_agarre_ancho",
+    "nombre": "Elevacion de gemelos agarre ancho",
+    "grupoMuscular": "Gemelos",
+    "musculosSecundarios": [
+      "Piernas"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_militar_con_barra_agarre_ancho",
+    "nombre": "Press militar con barra agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_militar_con_mancuernas_agarre_ancho",
+    "nombre": "Press militar con mancuernas agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_militar_con_maquina_agarre_ancho",
+    "nombre": "Press militar con maquina agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_laterales_con_mancuernas_agarre_ancho",
+    "nombre": "Elevaciones laterales con mancuernas agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Trapecio"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_laterales_con_cable_agarre_ancho",
+    "nombre": "Elevaciones laterales con cable agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Trapecio"
+    ],
+    "equipo": "cable",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_frontales_con_mancuernas_agarre_ancho",
+    "nombre": "Elevaciones frontales con mancuernas agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_frontales_con_barra_agarre_ancho",
+    "nombre": "Elevaciones frontales con barra agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "elevaciones_frontales_con_cable_agarre_ancho",
+    "nombre": "Elevaciones frontales con cable agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "cable",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "pajaros_con_mancuernas_agarre_ancho",
+    "nombre": "Pajaros con mancuernas agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "pajaros_con_cable_agarre_ancho",
+    "nombre": "Pajaros con cable agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "cable",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "pajaros_con_maquina_agarre_ancho",
+    "nombre": "Pajaros con maquina agarre ancho",
+    "grupoMuscular": "Hombros",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "encogimientos_con_barra_agarre_ancho",
+    "nombre": "Encogimientos con barra agarre ancho",
+    "grupoMuscular": "Trapecio",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "encogimientos_con_mancuernas_agarre_ancho",
+    "nombre": "Encogimientos con mancuernas agarre ancho",
+    "grupoMuscular": "Trapecio",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_biceps_con_barra_agarre_ancho",
+    "nombre": "Curl biceps con barra agarre ancho",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_biceps_con_mancuernas_agarre_ancho",
+    "nombre": "Curl biceps con mancuernas agarre ancho",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_biceps_con_cable_agarre_ancho",
+    "nombre": "Curl biceps con cable agarre ancho",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "cable",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_biceps_con_maquina_agarre_ancho",
+    "nombre": "Curl biceps con maquina agarre ancho",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_martillo_con_mancuernas_agarre_ancho",
+    "nombre": "Curl martillo con mancuernas agarre ancho",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "curl_concentrado_con_mancuernas_agarre_ancho",
+    "nombre": "Curl concentrado con mancuernas agarre ancho",
+    "grupoMuscular": "Biceps",
+    "musculosSecundarios": [
+      "Antebrazos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "extension_triceps_con_cable_agarre_ancho",
+    "nombre": "Extension triceps con cable agarre ancho",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "cable",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "extension_triceps_con_barra_agarre_ancho",
+    "nombre": "Extension triceps con barra agarre ancho",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "extension_triceps_con_mancuernas_agarre_ancho",
+    "nombre": "Extension triceps con mancuernas agarre ancho",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_cerrado_con_barra_agarre_ancho",
+    "nombre": "Press cerrado con barra agarre ancho",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_cerrado_con_maquina_agarre_ancho",
+    "nombre": "Press cerrado con maquina agarre ancho",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos_en_banco_agarre_ancho",
+    "nombre": "Fondos en banco agarre ancho",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos_en_banco_con_mancuernas_agarre_ancho",
+    "nombre": "Fondos en banco con mancuernas agarre ancho",
+    "grupoMuscular": "Triceps",
+    "musculosSecundarios": [
+      "Pecho"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "plancha_agarre_ancho",
+    "nombre": "Plancha agarre ancho",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Gluteos"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "crunch_agarre_ancho",
+    "nombre": "Crunch agarre ancho",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Cadera"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "crunch_con_maquina_agarre_ancho",
+    "nombre": "Crunch con maquina agarre ancho",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Cadera"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_piernas_agarre_ancho",
+    "nombre": "Elevacion de piernas agarre ancho",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Cadera"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "elevacion_de_piernas_con_barra_agarre_ancho",
+    "nombre": "Elevacion de piernas con barra agarre ancho",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Cadera"
+    ],
+    "equipo": "barra",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "ab_wheel_con_rueda_agarre_ancho",
+    "nombre": "Ab wheel con rueda agarre ancho",
+    "grupoMuscular": "Core",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "rueda",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "farmer_walk_con_mancuernas_agarre_ancho",
+    "nombre": "Farmer walk con mancuernas agarre ancho",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Core",
+      "Antebrazos"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "farmer_walk_con_kettlebell_agarre_ancho",
+    "nombre": "Farmer walk con kettlebell agarre ancho",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Core",
+      "Antebrazos"
+    ],
+    "equipo": "kettlebell",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "kettlebell_swing_con_kettlebell_agarre_ancho",
+    "nombre": "Kettlebell swing con kettlebell agarre ancho",
+    "grupoMuscular": "Gluteos",
+    "musculosSecundarios": [
+      "Espalda",
+      "Core"
+    ],
+    "equipo": "kettlebell",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "clean_and_press_con_barra_agarre_ancho",
+    "nombre": "Clean and press con barra agarre ancho",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Hombros",
+      "Core"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "clean_and_press_con_kettlebell_agarre_ancho",
+    "nombre": "Clean and press con kettlebell agarre ancho",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Hombros",
+      "Core"
+    ],
+    "equipo": "kettlebell",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "burpees_agarre_ancho",
+    "nombre": "Burpees agarre ancho",
+    "grupoMuscular": "Full body",
+    "musculosSecundarios": [
+      "Core"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_invertido_agarre_ancho",
+    "nombre": "Remo invertido agarre ancho",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "flexiones_agarre_ancho",
+    "nombre": "Flexiones agarre ancho",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_banca_con_barra_agarre_cerrado",
+    "nombre": "Press banca con barra agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_banca_con_mancuernas_agarre_cerrado",
+    "nombre": "Press banca con mancuernas agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_banca_con_maquina_agarre_cerrado",
+    "nombre": "Press banca con maquina agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_inclinado_con_barra_agarre_cerrado",
+    "nombre": "Press inclinado con barra agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_inclinado_con_mancuernas_agarre_cerrado",
+    "nombre": "Press inclinado con mancuernas agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_inclinado_con_maquina_agarre_cerrado",
+    "nombre": "Press inclinado con maquina agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "press_declinado_con_barra_agarre_cerrado",
+    "nombre": "Press declinado con barra agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "press_declinado_con_mancuernas_agarre_cerrado",
+    "nombre": "Press declinado con mancuernas agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "press_declinado_con_maquina_agarre_cerrado",
+    "nombre": "Press declinado con maquina agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps",
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "aperturas_con_mancuernas_agarre_cerrado",
+    "nombre": "Aperturas con mancuernas agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "aperturas_con_cable_agarre_cerrado",
+    "nombre": "Aperturas con cable agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "cable",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "aperturas_con_maquina_agarre_cerrado",
+    "nombre": "Aperturas con maquina agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Hombros"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "pullover_con_mancuernas_agarre_cerrado",
+    "nombre": "Pullover con mancuernas agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "pullover_con_barra_agarre_cerrado",
+    "nombre": "Pullover con barra agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "pullover_con_maquina_agarre_cerrado",
+    "nombre": "Pullover con maquina agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Espalda"
+    ],
+    "equipo": "maquina",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos_agarre_cerrado",
+    "nombre": "Fondos agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "fondos_con_maquina_agarre_cerrado",
+    "nombre": "Fondos con maquina agarre cerrado",
+    "grupoMuscular": "Pecho",
+    "musculosSecundarios": [
+      "Triceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "dominadas_agarre_cerrado",
+    "nombre": "Dominadas agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "peso corporal",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "dominadas_con_lastre_agarre_cerrado",
+    "nombre": "Dominadas con lastre agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "lastre",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_barra_agarre_cerrado",
+    "nombre": "Remo con barra agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_mancuernas_agarre_cerrado",
+    "nombre": "Remo con mancuernas agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_cable_agarre_cerrado",
+    "nombre": "Remo con cable agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "cable",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "remo_con_maquina_agarre_cerrado",
+    "nombre": "Remo con maquina agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "jalon_al_pecho_con_cable_agarre_cerrado",
+    "nombre": "Jalon al pecho con cable agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "cable",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "jalon_al_pecho_con_maquina_agarre_cerrado",
+    "nombre": "Jalon al pecho con maquina agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Biceps"
+    ],
+    "equipo": "maquina",
+    "nivel": "intermedio",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_con_barra_agarre_cerrado",
+    "nombre": "Peso muerto con barra agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Femoral"
+    ],
+    "equipo": "barra",
+    "nivel": "avanzado",
+    "descripcion": ""
+  },
+  {
+    "id": "peso_muerto_con_mancuernas_agarre_cerrado",
+    "nombre": "Peso muerto con mancuernas agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Femoral"
+    ],
+    "equipo": "mancuernas",
+    "nivel": "basico",
+    "descripcion": ""
+  },
+  {
+    "id": "buenos_dias_con_barra_agarre_cerrado",
+    "nombre": "Buenos dias con barra agarre cerrado",
+    "grupoMuscular": "Espalda",
+    "musculosSecundarios": [
+      "Gluteos",
+      "Femoral"
+    ],
+    "equipo": "barra",
+    "nivel": "intermedio",
+    "descripcion": ""
+  }
+]
