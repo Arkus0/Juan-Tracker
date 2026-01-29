@@ -1,10 +1,9 @@
-/// Tests para RestTimerBar con gestos UX-003
-///
-/// Cubre:
-/// - Accesibilidad semántica
-/// - Estados activo/inactivo
-/// Nota: Requiere ProviderScope para tests completos debido a Riverpod
-import 'package:flutter/material.dart';
+// Tests para RestTimerBar con gestos UX-003
+//
+// Cubre:
+// - Accesibilidad semántica
+// - Estados activo/inactivo
+// Nota: Requiere ProviderScope para tests completos debido a Riverpod
 import 'package:flutter_test/flutter_test.dart';
 import 'package:juan_tracker/training/services/rest_timer_controller.dart';
 

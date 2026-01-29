@@ -1,6 +1,6 @@
-/// Tests para provider memoizado de totales por comida (MD-002)
-///
-/// Verifica que los totales se calculan correctamente y se cachean
+// Tests para provider memoizado de totales por comida (MD-002)
+//
+// Verifica que los totales se calculan correctamente y se cachean
 import 'package:flutter_test/flutter_test.dart';
 import 'package:juan_tracker/diet/models/models.dart' as diet;
 
