@@ -308,6 +308,31 @@ class DriftDiaryRepository implements IDiaryRepository {
         .get();
     return entries.map((e) => e.toModel()).toList();
   }
+
+  @override
+  Future<List<models.DiaryEntryModel>> getRecentUniqueEntries({int limit = 5}) async {
+    // Obtener las últimas 50 entradas ordenadas por fecha (más recientes primero)
+    final entries = await (_db.select(_db.diaryEntries)
+          ..orderBy([(e) => OrderingTerm.desc(e.createdAt)])
+          ..limit(50))
+        .get();
+
+    // Filtrar para obtener solo entradas únicas por foodId o foodName
+    final seen = <String>{};
+    final uniqueEntries = <db.DiaryEntry>[];
+
+    for (final entry in entries) {
+      // Usar foodId si existe, sino usar foodName como key único
+      final key = entry.foodId ?? entry.foodName;
+      if (!seen.contains(key)) {
+        seen.add(key);
+        uniqueEntries.add(entry);
+        if (uniqueEntries.length >= limit) break;
+      }
+    }
+
+    return uniqueEntries.map((e) => e.toModel()).toList();
+  }
 }
 
 /// Implementación Drift de IWeighInRepository

@@ -31,10 +31,36 @@ final rutinasStreamProvider = StreamProvider<List<Rutina>>((ref) {
   return repo.watchRutinas();
 });
 
+/// Provider de historial con límite por defecto de 50 sesiones
+/// Para paginación, usar sesionesHistoryPaginatedProvider
 final sesionesHistoryStreamProvider = StreamProvider<List<Sesion>>((ref) {
   final repo = ref.watch(trainingRepositoryProvider);
-  return repo.watchSesionesHistory();
+  return repo.watchSesionesHistory(limit: 50);
 });
+
+/// Provider paginado para el historial de sesiones
+/// Permite cargar más sesiones bajo demanda para mejor rendimiento
+///
+/// Uso: ref.watch(sesionesHistoryPaginatedProvider(page))
+/// page 0 = primeras 20, page 1 = siguientes 20, etc.
+final sesionesHistoryPaginatedProvider = StreamProvider.family<List<Sesion>, int>((ref, page) {
+  final repo = ref.watch(trainingRepositoryProvider);
+  // Cada página trae 20 sesiones, acumulando con páginas anteriores
+  return repo.watchSesionesHistory(limit: (page + 1) * 20);
+});
+
+/// Notifier para controlar la paginación del historial
+class HistoryPaginationNotifier extends Notifier<int> {
+  @override
+  int build() => 0; // Empezar en página 0
+
+  void loadMore() => state++;
+  void reset() => state = 0;
+}
+
+final historyPaginationProvider = NotifierProvider<HistoryPaginationNotifier, int>(
+  HistoryPaginationNotifier.new,
+);
 
 final activeSessionStreamProvider = StreamProvider<ActiveSessionData?>((ref) {
   final repo = ref.watch(trainingRepositoryProvider);
