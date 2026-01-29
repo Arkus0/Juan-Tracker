@@ -17,3 +17,7 @@ export 'repositories/drift_diet_repositories.dart';
 
 // Providers (opcional, solo si usas Riverpod)
 export 'providers/diet_providers.dart';
+
+// Servicios
+export 'services/weight_trend_calculator.dart';
+export 'services/day_summary_calculator.dart';
