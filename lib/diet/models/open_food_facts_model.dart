@@ -179,6 +179,28 @@ class OpenFoodFactsResult {
 
   @override
   String toString() => 'OpenFoodFactsResult($name, ${brand ?? "sin marca"}, ${kcalPer100g}kcal/100g)';
+
+  /// Convierte este resultado a un FoodModel
+  /// 
+  /// Nota: El id debe ser generado por el repositorio (uuid)
+  Map<String, dynamic> toFoodModelJson() => {
+    'name': name,
+    'brand': brand,
+    'barcode': code,
+    'kcalPer100g': kcalPer100g.toInt(),
+    'proteinPer100g': proteinPer100g,
+    'carbsPer100g': carbsPer100g,
+    'fatPer100g': fatPer100g,
+    'portionName': portionName ?? 'Porción',
+    'portionGrams': portionGrams ?? 100.0,
+    'userCreated': false,
+    'verifiedSource': source,
+    'sourceMetadata': {
+      'fetchedAt': fetchedAt.toIso8601String(),
+      'imageUrl': imageUrl,
+      'ingredientsText': ingredientsText,
+    },
+  };
 }
 
 /// Respuesta completa de búsqueda de Open Food Facts

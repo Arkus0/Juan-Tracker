@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
+import 'package:juan_tracker/diet/models/weighin_model.dart';
 
 import 'package:intl/intl.dart';
 
@@ -32,10 +33,109 @@ class WeightScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () async {
+          final messenger = ScaffoldMessenger.of(context);
+
+          final result = await showDialog<bool> (
+            context: context,
+            builder: (context) => const AddWeightDialog(),
+          );
+
+          if (result == true && context.mounted) {
+            messenger.showSnackBar(const SnackBar(content: Text('Peso registrado')));
+          }
+        },
         icon: const Icon(Icons.add),
         label: const Text('Registrar'),
       ),
+    );
+  }
+}
+
+class AddWeightDialog extends ConsumerStatefulWidget {
+  const AddWeightDialog({super.key});
+
+  @override
+  ConsumerState<AddWeightDialog> createState() => _AddWeightDialogState();
+}
+
+class _AddWeightDialogState extends ConsumerState<AddWeightDialog> {
+  late final TextEditingController _weightController;
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _weightController = TextEditingController();
+    _selectedDate = DateTime.now();
+  }
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    final text = _weightController.text.trim();
+    final value = double.tryParse(text.replaceAll(',', '.'));
+    if (value == null) return;
+    final repo = ref.read(weighInRepositoryProvider);
+    final id = 'wi_${DateTime.now().millisecondsSinceEpoch}';
+    await repo.insert(WeighInModel(id: id, dateTime: _selectedDate, weightKg: value));
+    if (mounted) {
+      Navigator.of(context).pop(true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Registrar peso'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _weightController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Peso (kg)'),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Text('Fecha: '),
+              TextButton(
+                onPressed: _selectDate,
+                child: Text(DateFormat('d MMM yyyy', 'es').format(_selectedDate)),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('CANCELAR'),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: const Text('GUARDAR'),
+        ),
+      ],
     );
   }
 }
@@ -111,10 +211,28 @@ class _WeighInsListSliver extends ConsumerWidget {
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final w = weighIns[index];
-              return ListTile(
-                leading: Icon(Icons.scale, color: Theme.of(context).colorScheme.primary),
-                title: Text(' kg'),
-                subtitle: Text(DateFormat('d MMM', 'es').format(w.dateTime)),
+              return Dismissible(
+                key: Key(w.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                onDismissed: (_) async {
+                  await ref.read(weighInRepositoryProvider).delete(w.id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Peso eliminado')),
+                    );
+                  }
+                },
+                child: ListTile(
+                  leading: Icon(Icons.scale, color: Theme.of(context).colorScheme.primary),
+                  title: Text('${w.weightKg.toStringAsFixed(1)} kg'),
+                  subtitle: Text(DateFormat('d MMM', 'es').format(w.dateTime)),
+                ),
               );
             },
             childCount: weighIns.length,
@@ -123,7 +241,7 @@ class _WeighInsListSliver extends ConsumerWidget {
       },
       loading: () => const SliverToBoxAdapter(child: AppLoading()),
       error: (e, _) => SliverToBoxAdapter(
-        child: AppError(message: 'Error: '),
+        child: AppError(message: 'Error: $e'),
       ),
     );
   }

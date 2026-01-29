@@ -190,13 +190,16 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     // Hacer petición a API
     final response = await _apiService.searchProducts(query, page: 1);
 
-    // Guardar en cache
-    if (response.products.isNotEmpty) {
-      await _cacheService.cacheSearchResults(query, response.products);
+    // Filtrar resultados irrelevantes
+    final filteredProducts = _filterRelevantResults(response.products, query);
+
+    // Guardar en cache solo resultados filtrados
+    if (filteredProducts.isNotEmpty) {
+      await _cacheService.cacheSearchResults(query, filteredProducts);
     }
 
     // Actualizar estado
-    if (response.products.isEmpty) {
+    if (filteredProducts.isEmpty) {
       state = state.copyWith(
         status: ExternalSearchStatus.empty,
         results: const [],
@@ -205,7 +208,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     } else {
       state = state.copyWith(
         status: ExternalSearchStatus.success,
-        results: response.products,
+        results: filteredProducts,
         hasMore: response.hasMore,
         page: 1,
       );
@@ -339,6 +342,38 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     await _cacheService.clearRecentSearches();
     await _cacheService.clearSearchCache();
     await _loadRecentSearches();
+  }
+
+  /// Filtra resultados irrelevantes basado en la query
+  List<OpenFoodFactsResult> _filterRelevantResults(
+    List<OpenFoodFactsResult> results,
+    String query,
+  ) {
+    final queryLower = query.toLowerCase();
+    final queryWords = queryLower.split(RegExp(r'\s+'));
+    
+    return results.where((product) {
+      final nameLower = product.name.toLowerCase();
+      final brandLower = (product.brand ?? '').toLowerCase();
+      
+      // Debe contener al menos una palabra de la query en el nombre o marca
+      bool hasMatch = false;
+      for (final word in queryWords) {
+        if (word.length < 3) continue; // Ignorar palabras muy cortas
+        
+        if (nameLower.contains(word) || brandLower.contains(word)) {
+          hasMatch = true;
+          break;
+        }
+      }
+      
+      // Si la query es corta, ser más permisivo
+      if (query.length < 4) {
+        return nameLower.startsWith(queryLower) || hasMatch;
+      }
+      
+      return hasMatch;
+    }).toList();
   }
 
   /// Obtiene sugerencias offline basadas en búsquedas previas

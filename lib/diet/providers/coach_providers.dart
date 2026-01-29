@@ -34,21 +34,30 @@ class CoachPlanNotifier extends Notifier<CoachPlan?> {
   /// Crea un nuevo plan de Coach
   Future<void> createPlan({
     required WeightGoal goal,
-    required double weeklyRatePercent,
+    double? weeklyRatePercent, // Legacy, preferir weeklyRateKg
+    double? weeklyRateKg,
     required int initialTdeeEstimate,
     required double startingWeight,
     String? notes,
+    MacroPreset macroPreset = MacroPreset.balanced,
   }) async {
     final repository = ref.read(coachRepositoryProvider);
+    
+    // Usar weeklyRateKg si se proporciona, si no calcular de weeklyRatePercent (legacy)
+    final rateKg = weeklyRateKg ?? (weeklyRatePercent != null 
+        ? startingWeight * weeklyRatePercent 
+        : (goal == WeightGoal.maintain ? 0.0 : 0.5));
+    
     final plan = CoachPlan(
       id: 'plan_${DateTime.now().millisecondsSinceEpoch}',
       goal: goal,
-      weeklyRatePercent: weeklyRatePercent,
+      weeklyRateKg: rateKg,
       initialTdeeEstimate: initialTdeeEstimate,
       startingWeight: startingWeight,
       startDate: DateTime.now(),
       currentKcalTarget: initialTdeeEstimate,
       notes: notes,
+      macroPreset: macroPreset,
     );
 
     await repository.savePlan(plan);

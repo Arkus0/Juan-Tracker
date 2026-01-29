@@ -206,12 +206,14 @@ class VoiceAudioFeedbackService {
 }
 
 /// Audio source para reproducir bytes WAV
+// ignore: experimental_member_use
 class _WavAudioSource extends StreamAudioSource {
   final List<int> _bytes;
 
   _WavAudioSource(this._bytes);
 
   @override
+  // ignore: experimental_member_use
   Future<StreamAudioResponse> request([int? start, int? end]) async {
     start ??= 0;
     end ??= _bytes.length;

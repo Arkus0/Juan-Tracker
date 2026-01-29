@@ -26,6 +26,7 @@ La app estÃ¡ diseÃ±ada **Android-first** pero tambiÃ©n soporta web. Usa ar
 - **OCR**: `google_mlkit_text_recognition` ^0.15.0
 - **Voz**: `speech_to_text` ^7.0.0
 - **Share**: `share_plus` ^12.0.1
+- **Barcode Scanning**: `mobile_scanner` ^6.0.11
 
 ---
 
@@ -333,6 +334,132 @@ final db = WebDatabase('name');  // APIs deprecated conocidas
 - QA / OEM tests
   - Prueba en varios OEMs (Xiaomi, Huawei, Samsung) y escenarios (app background, bloqueos de pantalla, cambios rápidos de app). Algunos OEMs aplican políticas agresivas a servicios en background.
   - Manual checklist: iniciar timer → bloquear pantalla → esperar finalización → verificar notificación desaparece y que los beeps suenan.
+
+### Lecciones de Refactorización UX/UI (Enero 2026) ✅
+> Aprendizajes de la refactorización visual masiva - Design System unificado y mejoras de UX.
+
+#### Resumen de Cambios Realizados
+- **Design System Unificado**: Nuevo sistema de tokens en `lib/core/design_system/`
+  - Paleta consistente: Primario terracota `#DA5A2A`
+  - Dos temas: Nutrición (claro) y Entrenamiento (oscuro)
+  - Componentes base: AppCard, AppButton, AppStatCard, AppInput
+  - Animaciones estandarizadas: 150ms/250ms/400ms
+  
+- **Pantallas Rediseñadas**:
+  - EntryScreen: Saludo dinámico, cards con gradiente, accesos rápidos
+  - DiaryScreen: Calendario semanal horizontal, macro donut chart
+  - WeightScreen: 3 stat cards, indicador de fase, lista simplificada
+  - RutinasScreen: Grid moderno con preview de días
+  
+- **Onboarding Completo**:
+  - Splash animado con logo
+  - 4 páginas de onboarding (bienvenida, nutrición, entrenamiento, coach)
+  - Sistema de haptics global (`AppHaptics`)
+  - Transiciones suaves entre modos
+  
+- **Dark Mode Toggle**: Persistencia en SharedPreferences, selector en bottom sheet
+
+#### Errores Cometidos y Soluciones
+
+**1. Conflictos de Design System Legacy vs Nuevo**
+```
+// ❌ PROBLEMA: Importar ambos design systems causa ambiguous_import
+import 'core/design_system/app_theme.dart';
+import 'training/utils/design_system.dart';  // <- Legacy, no usar
+
+// ✅ SOLUCIÓN: Usar solo el nuevo design system centralizado
+import 'core/design_system/design_system.dart';  // Exporta todo
+```
+
+**2. Nombres de tokens inconsistentes**
+```dart
+// ❌ PROBLEMA: Algunos archivos usan nombres antiguos
+AppColors.techCyan      // <- No existe en nuevo DS
+AppColors.timerActive   // <- No existe
+AppColors.bgElevated    // <- No existe (usar surfaceContainerHighest)
+
+// ✅ SOLUCIÓN: Usar nombres estandarizados
+AppColors.secondary     // <- teal/cyan
+AppColors.primary       // <- terracota
+AppColors.success       // <- verde
+```
+
+**3. Imports de Riverpod confusos**
+```dart
+// ❌ PROBLEMA: StateNotifier vs Notifier en Riverpod 3
+class MyNotifier extends StateNotifier<State>  // <- API antigua
+
+// ✅ SOLUCIÓN: Usar Notifier (Riverpod 3)
+class MyNotifier extends Notifier<State> {
+  @override
+  State build() => initialState;
+}
+```
+
+**4. Valores nullable sin manejo**
+```dart
+// ❌ PROBLEMA: toStringAsFixed en valores nullable
+text: '${food.proteinPer100g.toStringAsFixed(1)}g',  // <- Crash si null
+
+// ✅ SOLUCIÓN: Operador de null-aware con fallback
+text: '${food.proteinPer100g?.toStringAsFixed(1) ?? '0'}g',
+```
+
+#### Checklist para Futuras Refactorizaciones UI
+
+**Antes de empezar:**
+- [ ] Verificar qué design system usa cada pantalla (legacy vs nuevo)
+- [ ] Identificar imports problemáticos con `flutter analyze`
+- [ ] Planificar migración gradual si hay conflictos graves
+
+**Durante el desarrollo:**
+- [ ] Usar solo `core/design_system/design_system.dart` (barrel export)
+- [ ] Verificar nombres de tokens en `app_theme.dart`
+- [ ] Manejar valores nullable con `?.` y `??`
+- [ ] Usar `AppHaptics` en lugar de `HapticFeedback` directo
+
+**Antes de commit:**
+- [ ] `flutter analyze` sin errores (warnings de librerías externas OK)
+- [ ] Probar en modo claro y oscuro
+- [ ] Verificar que no hay imports duplicados
+
+#### Patrones Aprobados
+
+**Navegación con transiciones:**
+```dart
+Navigator.of(context).push(
+  PageRouteBuilder(
+    pageBuilder: (_, animation, __) => const DestinationScreen(),
+    transitionsBuilder: (_, animation, __, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
+    transitionDuration: const Duration(milliseconds: 400),
+  ),
+);
+```
+
+**Estados de UI consistentes:**
+```dart
+// Usar componentes del design system
+AppEmpty(icon: Icons.xxx, title: '...', subtitle: '...')
+AppLoading(message: 'Cargando...')
+AppError(message: 'Error', onRetry: () {})
+```
+
+**Provider con persistencia:**
+```dart
+final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
+  () => ThemeModeNotifier(),
+);
+
+class ThemeModeNotifier extends Notifier<ThemeMode> {
+  @override
+  ThemeMode build() {
+    _loadSaved();  // Async en constructor
+    return ThemeMode.system;
+  }
+}
+```
 
 ### PR / CI checklist (imponer antes de merge) 🔁
 - Código: `flutter analyze` y `flutter test` pasan en la rama.
@@ -860,4 +987,347 @@ Service.resetForTesting();
 - **Causa**: Cast directo de `List<dynamic>` a `List<Map<String, dynamic>>`
 - **Solución**: Usar `.map()` con `Map<String, dynamic>.from()`
 
-*Última actualización: Enero 2026 - Open Food Facts + OCR implementado*
+**Error: mobile_scanner v6.x `torchState` no existe**
+- **Causa**: La API cambió en v6.x, `torchState` (Stream) fue eliminado
+- **Solución**: Usar `toggleTorch()` método y mantener estado local:
+```dart
+// ❌ INCORRECTO - v5.x API
+ValueListenableBuilder(
+  valueListenable: _controller.torchState,
+  builder: (context, state, child) => Icon(
+    state == TorchState.on ? Icons.flash_on : Icons.flash_off,
+  ),
+)
+
+// ✅ CORRECTO - v6.x API
+IconButton(
+  icon: Icon(_isFlashOn ? Icons.flash_on : Icons.flash_off),
+  onPressed: () async {
+    await _controller.toggleTorch();
+    setState(() => _isFlashOn = !_isFlashOn);
+  },
+)
+```
+- **Archivo referencia**: `lib/features/diary/presentation/barcode_scanner_screen.dart`
+
+*Última actualización: Enero 2026 - mobile_scanner v6.x API documentada, flujos UX documentados*
+
+---
+
+## Flujos Críticos UX
+
+Flujos de usuario que requieren atención especial por su impacto en la retención y usabilidad.
+
+### 1. Entry Screen - Selección de Modo
+**Archivos**: `lib/features/home/presentation/entry_screen.dart`
+
+El punto de entrada de la app presenta dos modos distintos:
+- **Nutrición** (tema claro, primario terracota) → Navega a `HomeScreen`
+- **Entrenamiento** (tema oscuro, primario cyan/teal) → Navega a `TrainingShell`
+
+**Patrón de navegación**:
+```dart
+Navigator.of(context).push(
+  PageRouteBuilder(
+    pageBuilder: (_, animation, _) => const HomeScreen(), // o TrainingShell
+    transitionsBuilder: (_, animation, _, child) => 
+      FadeTransition(opacity: animation, child: child),
+    transitionDuration: const Duration(milliseconds: 400),
+  ),
+);
+```
+
+**Constraints**:
+- Cada modo tiene su propio tema (MaterialApp usa `theme`/`darkTheme`)
+- No hay persistencia del modo seleccionado (se decide en cada sesión)
+
+### 2. External Food Search - Búsqueda de Alimentos
+**Archivos**: `lib/features/diary/presentation/external_food_search_screen.dart`
+
+Flujo multi-modal para añadir alimentos al diario:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Usuario selecciona "Añadir comida"                         │
+│  ↓                                                          │
+│  Muestra: Barra de búsqueda + Chips de acción               │
+│  ├─ Pegar (portapapeles)                                    │
+│  ├─ OCR (cámara/galería)                                    │
+│  ├─ Voz (speech-to-text)                                    │
+│  └─ Barcode (camera-first)                                  │
+│  ↓                                                          │
+│  Resultados filtrados (solo coinciden con query)            │
+│  ↓                                                          │
+│  Selección → Añadir al diario                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**UX Decisions**:
+- **No mostrar productos aleatorios** en estado idle (muestra búsquedas recientes)
+- **Filtrado de resultados OFF**: Solo productos cuyo nombre/marca contengan los términos buscados
+- **Barcode camera-first**: Primero intenta cámara, fallback a entrada manual
+
+### 3. Diary Screen - Calendario vs Lista
+**Archivos**: `lib/features/diary/presentation/diary_screen.dart`
+
+Dos vistas toggleables:
+- **Lista**: Calendario semanal horizontal + entradas del día
+- **Calendario**: `TableCalendar` mensual con dots de actividad
+
+```dart
+// Toggle en AppBar
+IconButton(
+  icon: Icon(viewMode == DiaryViewMode.list 
+    ? Icons.calendar_month 
+    : Icons.list),
+  onPressed: () => ref.read(diaryViewModeProvider.notifier).state = 
+    viewMode == DiaryViewMode.list 
+      ? DiaryViewMode.calendar 
+      : DiaryViewMode.list,
+)
+```
+
+**Constraints**:
+- Al seleccionar fecha en modo calendario, automáticamente cambia a modo lista
+- Los dots en el calendario mensual representan días con entradas (no cantidad)
+
+### 4. Coach Adaptativo - Setup y Check-in
+**Archivos**: `lib/diet/screens/coach/`
+
+Flujo de configuración de plan:
+
+```
+1. Plan Setup Screen
+   ├─ Objetivo: Perder / Mantener / Ganar
+   ├─ Velocidad: kg/semana (convertido desde % del peso)
+   │  └─ -2.5% a +2.5% del peso corporal
+   ├─ TDEE inicial (o estimado)
+   └─ Distribución de macros:
+      ├─ Presets: Low Carb, Balanced, High Protein, High Carb, Keto
+      └─ Custom: Sliders con validación 100%
+
+2. Weekly Check-in Screen (cada 7 días)
+   ├─ Revisa progreso (peso trend vs calorías consumidas)
+   ├─ Calcula TDEE real
+   ├─ Propone ajuste (máx ±200 kcal/semana)
+   └─ Usuario confirma o modifica
+```
+
+**Fórmulas clave**:
+```
+TDEE_real = AVG_kcal - (ΔTrendWeightKg × 7700 / días)
+Ajuste_kcal = weeklyRatePercent × pesoKg × 7700 / 7
+```
+
+**Validaciones**:
+- Mínimo 4 días de diario + 3 pesajes para calcular
+- Clamps: máx ±200 kcal cambio/semana, límites absolutos 1200-6000 kcal
+
+### 5. Training Session - Timer y Notificaciones
+**Archivos**: `lib/training/screens/training_session_screen.dart`, servicios nativos
+
+Flujo crítico para retención de usuarios de gym:
+
+```
+Usuario registra serie → Inicia timer descanso
+                                    ↓
+                    ┌───────────────┼───────────────┐
+                    ↓               ↓               ↓
+              Timer en app    Notificación    Foreground Service
+              (visual)        persistente     (nativo, background)
+                    ↓               ↓               ↓
+                    └───────────────┴───────────────┘
+                                    ↓
+                            Acciones disponibles:
+                            ├─ Pausar / Reanudar
+                            ├─ +30s
+                            ├─ Saltar
+                            └─ Tap para volver a app
+```
+
+**Constraints técnicas**:
+- **Android-only**: Foreground service nativo en `TimerForegroundService.kt`
+- **OEM issues**: Xiaomi/Huawei tienen políticas agresivas de background killing
+- **Audio focus**: Beeps usan `STREAM_NOTIFICATION` (no interrumpen música)
+
+---
+
+## Constraints Actuales
+
+### Arquitecturales
+
+#### 1. Offline-First Obligatorio
+**Constraint**: La app funciona 100% offline excepto búsqueda OFF.
+
+**Implicaciones**:
+- Cache local obligatoria para resultados de Open Food Facts (TTL: 7 días)
+- No se puede asumir conectividad para features core
+- Sincronización cloud (si se implementa) debe ser opt-in y secundaria
+
+#### 2. Dual Theme System
+**Constraint**: Dos temas completamente separados (Nutrición claro, Entrenamiento oscuro).
+
+**Implicaciones**:
+- No hay toggle de dark mode dentro de un modo
+- Widgets deben funcionar en ambos temas (usar `ColorScheme`, no colores hardcodeados)
+- Transiciones entre modos deben ser suaves (fade 400ms)
+
+#### 3. Database Schema v5 - Congelada
+**Constraint**: Schema de Drift en v5, migraciones futuras deben mantener compatibilidad.
+
+**Tablas actuales**:
+```sql
+-- Training
+Routines, RoutineDays, RoutineExercises, Sessions, 
+SessionExercises, WorkoutSets, ExerciseNotes
+
+-- Diet  
+Foods, DiaryEntries, WeighIns, Targets, Recipes, RecipeItems
+```
+
+**Reglas para cambios**:
+- Solo añadir columnas nullable (nunca eliminar/modificar existentes)
+- Incrementar `schemaVersion` en `@DriftDatabase`
+- Ejecutar `build_runner` y probar migración en dispositivo real
+
+### Técnicos
+
+#### 4. mobile_scanner v6.x API
+**Constraint**: La API cambió significativamente en v6.x.
+
+**Antes vs Ahora**:
+```dart
+// ❌ REMOVED en v6.x
+_controller.torchState  // Stream<TorchState>
+
+// ✅ CORRECTO en v6.x  
+_controller.torchEnabled  // bool, sincrono
+await _controller.toggleTorch();  // Toggle método
+```
+
+**Archivo referencia**: `lib/features/diary/presentation/barcode_scanner_screen.dart`
+
+#### 5. Rate Limiting Open Food Facts
+**Constraint**: 60 requests/minuto (límite conservador self-imposed).
+
+**Implementación**:
+```dart
+final _requestTimestamps = <DateTime>[];
+
+bool get canMakeRequest {
+  _requestTimestamps.removeWhere(
+    (ts) => DateTime.now().difference(ts).inMinutes >= 1,
+  );
+  return _requestTimestamps.length < _maxRequestsPerMinute;
+}
+```
+
+**Fallback**: Cache local + búsqueda en alimentos guardados.
+
+#### 6. Speech-to-Text Limitaciones
+**Constraint**: `speech_to_text` requiere permisos específicos por plataforma y no funciona en todos los dispositivos.
+
+**Mitigaciones**:
+- Siempre proveer input manual alternativo
+- Detectar disponibilidad: `speechToText.initialize()` puede fallar silenciosamente
+- No bloquear flujo si STT no está disponible
+
+### UX/UI
+
+#### 7. Context después de Async
+**Constraint**: Flutter linter exige `mounted` check después de operaciones async.
+
+**Patrón obligatorio**:
+```dart
+final result = await asyncOperation();
+if (!mounted) return;  // o if (!context.mounted)
+Navigator.of(context).pop(result);
+```
+
+**Violaciones comunes** (ahora corregidas):
+- Uso de `BuildContext` después de `await` en dialogs
+- Navegación después de operaciones de red/cache
+
+#### 8. Formato numérico en UI
+**Constraint**: Mostrar enteros sin decimal para valores redondos.
+
+```dart
+// ✅ Correcto - muestra "100" en lugar de "100.0"
+text: grams == grams.round() 
+  ? grams.toStringAsFixed(0) 
+  : grams.toStringAsFixed(1)
+
+// Tests de widget dependen de este formato exacto
+```
+
+### Testing
+
+#### 9. Tests y pumpAndSettle
+**Constraint**: Animaciones continuas (splash, transiciones) causan timeout en `pumpAndSettle`.
+
+**Solución**:
+```dart
+// ❌ EVITAR en tests
+await tester.pumpAndSettle();
+
+// ✅ USAR
+await tester.pump(const Duration(milliseconds: 500));
+// o
+await tester.pump();  // Single frame
+```
+
+#### 10. SharedPreferences en Tests
+**Constraint**: Singleton de SharedPreferences requiere reset entre tests.
+
+**Patrón**:
+```dart
+setUp(() {
+  SharedPreferences.setMockInitialValues({});
+  Service.resetForTesting();  // Si el servicio expone este método
+});
+```
+
+---
+
+## Decisiones de Arquitectura Pendientes
+
+### 1. Navegación unificada vs Separada
+**Estado actual**: Dos navegaciones separadas (Nutrición tiene sus screens, Entrenamiento los suyos).
+
+**Consideraciones**:
+- Unificar en un solo `Navigator` simplificaría deep linking
+- Mantener separado permite evolucionar modos independientemente
+
+### 2. Caché de OFF - TTL y Estrategia
+**Estado actual**: 7 días TTL fijo.
+
+**Alternativas consideradas**:
+- Cache infinito con invalidación manual (complica UI)
+- Sin cache (muy lento, rate limiting issues)
+- Cache adaptativo basado en frecuencia de uso (complejo)
+
+### 3. Modelos - Separación Diet/Training
+**Estado actual**: Modelos en `lib/diet/models/` y `lib/training/models/`.
+
+**Consideraciones**:
+- Unificar en `lib/core/models/` si hay overlap creciente
+- Mantener separado (preferido actualmente) para claridad de dominio
+
+---
+
+## Checklist para Nuevos Features
+
+Antes de implementar un nuevo feature:
+
+- [ ] ¿A qué modo pertenece (Nutrición/Entrenamiento/Ambos)?
+- [ ] ¿Requiere cambios en schema de DB?
+- [ ] ¿Funciona offline? Si no, ¿tiene fallback claro?
+- [ ] ¿Usa el Design System unificado (`core/design_system/`)?
+- [ ] ¿Maneja `mounted` después de operaciones async?
+- [ ] ¿Tiene tests unitarios para lógica pura?
+- [ ] ¿Funciona en ambos temas (claro/oscuro)?
+- [ ] ¿Requiere permisos nuevos en AndroidManifest?
+
+---
+
+*Última actualización: Enero 2026 - mobile_scanner integrado, flujos UX documentados*

@@ -59,60 +59,59 @@ class _EmptyCoachState extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.auto_graph,
-              size: 80,
-              color: colorScheme.primary.withAlpha(128),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.auto_graph,
+            size: 80,
+            color: colorScheme.primary.withAlpha(128),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Coach Adaptativo',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Coach Adaptativo',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'El Coach ajusta tus objetivos calóricos automáticamente '
+            'basándose en tu progreso real, como MacroFactor.',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurface.withAlpha(179),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'El Coach ajusta tus objetivos calóricos automáticamente '
-              'basándose en tu progreso real, como MacroFactor.',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withAlpha(179),
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          _InfoCard(
+            title: '¿Cómo funciona?',
+            items: const [
+              '1. Define tu objetivo (perder, mantener, ganar)',
+              '2. Elige velocidad en kg/semana (no %!)',
+              '3. Selecciona preset de macros (low carb, high protein...)',
+              '4. Registra peso y comida diariamente',
+              '5. Haz check-in semanal para ajustar targets',
+            ],
+          ),
+          const SizedBox(height: 32),
+          FilledButton.icon(
+            onPressed: onCreatePlan,
+            icon: const Icon(Icons.add),
+            label: const Text('CREAR PLAN'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(double.infinity, 56),
             ),
-            const SizedBox(height: 32),
-            _InfoCard(
-              title: '¿Cómo funciona?',
-              items: const [
-                '1. Define tu objetivo (perder, mantener, ganar)',
-                '2. Registra tu peso y comida diariamente',
-                '3. Haz check-in semanal para ajustar targets',
-                '4. El Coach calcula tu TDEE real y adapta',
-              ],
-            ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: onCreatePlan,
-              icon: const Icon(Icons.add),
-              label: const Text('CREAR PLAN'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(double.infinity, 56),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => _showLearnMore(context),
-              child: const Text('Saber más sobre el algoritmo'),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => _showLearnMore(context),
+            child: const Text('Saber más sobre el algoritmo'),
+          ),
+        ],
       ),
     );
   }
@@ -135,14 +134,25 @@ class _EmptyCoachState extends StatelessWidget {
               Text('TDEE = AVG_kcal - (ΔPeso × 7700 / días)'),
               SizedBox(height: 16),
               Text(
-                'Limitaciones:',
+                'Velocidad en kg/semana:',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
               Text(
-                '• 7700 kcal/kg es una aproximación\n'
-                '• Incluye agua, glucógeno y músculo\n'
-                '• Requiere datos consistentes',
+                '• 0.25-0.5 kg/semana = pérdida saludable\n'
+                '• 0.25-0.5 kg/semana = ganancia limpia\n'
+                '• Se calcula el déficit/superávit en kcal',
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Presets de macros:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                '• Low Carb: menos carbs, más grasa\n'
+                '• Balanced: distribución 30/35/35\n'
+                '• High Protein: 40% proteína para músculo',
               ),
             ],
           ),
@@ -208,7 +218,7 @@ class _ActiveCoachState extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              plan.goalDescription,
+                              plan.goalDescriptionShort,
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -225,6 +235,25 @@ class _ActiveCoachState extends StatelessWidget {
                     ],
                   ),
                   const Divider(height: 24),
+                  _StatRow(
+                    label: 'Velocidad',
+                    value: '${plan.weeklyRateKg.abs().toStringAsFixed(2)} kg/semana',
+                  ),
+                  _StatRow(
+                    label: 'Ajuste diario',
+                    value: '${plan.dailyAdjustmentKcal} kcal ${
+                      plan.goal == WeightGoal.lose 
+                          ? 'déficit' 
+                          : plan.goal == WeightGoal.gain 
+                              ? 'superávit' 
+                              : ''
+                    }',
+                    highlight: true,
+                  ),
+                  _StatRow(
+                    label: 'Macros',
+                    value: plan.macroPreset.displayName,
+                  ),
                   _StatRow(
                     label: 'Días activo',
                     value: '$daysSinceStart días',

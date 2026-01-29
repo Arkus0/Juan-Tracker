@@ -7,6 +7,12 @@ import 'package:juan_tracker/core/feedback/haptics.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/training/training_shell.dart';
 import 'home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:juan_tracker/diet/providers/diet_providers.dart';
+import 'package:juan_tracker/diet/models/weighin_model.dart';
+import 'package:juan_tracker/training/widgets/analysis/streak_counter.dart';
+import 'package:juan_tracker/training/providers/training_provider.dart';
+import 'package:juan_tracker/features/diary/presentation/food_search_screen.dart';
 
 /// Pantalla de entrada principal con selección de modo
 class EntryScreen extends StatelessWidget {
@@ -66,77 +72,18 @@ class EntryScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  _ModeCard(
-                    title: 'Nutrición',
-                    subtitle: 'Diario, alimentos, peso y resumen',
-                    icon: Icons.restaurant_menu_rounded,
-                    gradientColors: [
-                      AppColors.primary,
-                      AppColors.primaryLight,
-                    ],
-                    stats: const [
-                      _Stat(icon: Icons.local_fire_department, value: '1,850', label: 'kcal'),
-                      _Stat(icon: Icons.scale, value: '78.5', label: 'kg'),
-                    ],
-                    onTap: () => _navigateToNutrition(context),
-                  ),
+                  _NutritionModeCard(onTap: () => _navigateToNutrition(context)),
                   const SizedBox(height: 16),
-                  _ModeCard(
-                    title: 'Entrenamiento',
-                    subtitle: 'Sesiones, rutinas, análisis y progreso',
-                    icon: Icons.fitness_center_rounded,
-                    gradientColors: [
-                      AppColors.ironRed,
-                      AppColors.ironRedLight,
-                    ],
-                    isDark: true,
-                    stats: const [
-                      _Stat(icon: Icons.calendar_today, value: 'Push', label: 'Hoy'),
-                      _Stat(icon: Icons.timer, value: '45', label: 'min'),
-                    ],
-                    onTap: () => _navigateToTraining(context),
-                  ),
+                  _TrainingModeCard(onTap: () => _navigateToTraining(context)),
                 ]),
               ),
             ),
 
             // Accesos rápidos
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ACCESOS RÁPIDOS',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _QuickActionButton(
-                          icon: Icons.add_rounded,
-                          label: 'Peso',
-                          onTap: () {},
-                        ),
-                        const SizedBox(width: 12),
-                        _QuickActionButton(
-                          icon: Icons.play_arrow_rounded,
-                          label: 'Entrenar',
-                          onTap: () => _navigateToTraining(context),
-                        ),
-                        const SizedBox(width: 12),
-                        _QuickActionButton(
-                          icon: Icons.restaurant_rounded,
-                          label: 'Comida',
-                          onTap: () => _navigateToNutrition(context),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: _QuickActionsRow(),
               ),
             ),
 
@@ -149,7 +96,7 @@ class EntryScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: _StreakIndicator(days: 12),
+                child: const StreakCounter(),
               ),
             ),
 
@@ -191,6 +138,156 @@ class EntryScreen extends StatelessWidget {
         },
         transitionDuration: const Duration(milliseconds: 400),
       ),
+    );
+  }
+}
+
+/// Fila de acciones rápidas
+class _QuickActionsRow extends ConsumerWidget {
+  const _QuickActionsRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'ACCESOS RÁPIDOS',
+          style: AppTypography.labelSmall.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _QuickActionButton(
+              icon: Icons.add_rounded,
+              label: 'Peso',
+              onTap: () => _showAddWeightDialog(context, ref),
+            ),
+            const SizedBox(width: 12),
+            _QuickActionButton(
+              icon: Icons.play_arrow_rounded,
+              label: 'Entrenar',
+              onTap: () => _navigateToTraining(context),
+            ),
+            const SizedBox(width: 12),
+            _QuickActionButton(
+              icon: Icons.restaurant_rounded,
+              label: 'Comida',
+              onTap: () => _showAddFoodDialog(context, ref),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _navigateToTraining(BuildContext context) {
+    AppHaptics.buttonPressed();
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (_, animation, _) => const TrainingShell(),
+        transitionsBuilder: (_, animation, _, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
+  }
+
+  Future<void> _showAddWeightDialog(BuildContext context, WidgetRef ref) async {
+    AppHaptics.buttonPressed();
+    final weightController = TextEditingController();
+    DateTime selectedDate = DateTime.now();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Registrar peso'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: weightController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Peso (kg)',
+                  hintText: 'Ej: 75.5',
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Text('Fecha: '),
+                  TextButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                        lastDate: DateTime.now(),
+                      );
+                      if (picked != null) {
+                        setState(() => selectedDate = picked);
+                      }
+                    },
+                    child: Text(DateFormat('d MMM yyyy', 'es').format(selectedDate)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('CANCELAR'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = weightController.text.trim();
+                final value = double.tryParse(text.replaceAll(',', '.'));
+                if (value != null && value > 0 && value < 500) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+              child: const Text('GUARDAR'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == true) {
+      final text = weightController.text.trim();
+      final value = double.tryParse(text.replaceAll(',', '.'));
+      if (value != null) {
+        final repo = ref.read(weighInRepositoryProvider);
+        final id = 'wi_${DateTime.now().millisecondsSinceEpoch}';
+        await repo.insert(WeighInModel(
+          id: id, 
+          dateTime: selectedDate, 
+          weightKg: value,
+        ));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Peso registrado')),
+          );
+        }
+      }
+    }
+    
+    weightController.dispose();
+  }
+
+  void _showAddFoodDialog(BuildContext context, WidgetRef ref) {
+    AppHaptics.buttonPressed();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const FoodSearchScreen()),
     );
   }
 }
@@ -447,52 +544,83 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-/// Indicador de racha
-class _StreakIndicator extends StatelessWidget {
-  final int days;
+/// Nutrition card that uses providers to show today's kcal and latest weight
+class _NutritionModeCard extends ConsumerWidget {
+  final VoidCallback onTap;
 
-  const _StreakIndicator({required this.days});
+  const _NutritionModeCard({required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.warningContainer,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: AppColors.warning.withAlpha((0.3 * 255).round()),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.local_fire_department_rounded,
-            color: AppColors.warning,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '¡Racha de $days días! 🔥',
-                  style: AppTypography.labelLarge.copyWith(
-                    color: AppColors.warning,
-                  ),
-                ),
-                Text(
-                  'Sigues tu plan de nutrición y entrenamiento',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.warning.withAlpha((0.8 * 255).round()),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summaryAsync = ref.watch(daySummaryProvider);
+    final latestAsync = ref.watch(latestWeighInProvider);
+
+    final kcalText = summaryAsync.when(
+      data: (s) => s.consumed.kcal.toString(),
+      loading: () => '--',
+      error: (e, _) => '--',
+    );
+
+    final weightText = latestAsync.when(
+      data: (w) => w == null ? '--' : w.weightKg.toStringAsFixed(1),
+      loading: () => '--',
+      error: (e, _) => '--',
+    );
+
+    return _ModeCard(
+      title: 'Nutrición',
+      subtitle: 'Diario, alimentos, peso y resumen',
+      icon: Icons.restaurant_menu_rounded,
+      gradientColors: [AppColors.primary, AppColors.primaryLight],
+      stats: [
+        _Stat(icon: Icons.local_fire_department, value: kcalText, label: 'kcal'),
+        _Stat(icon: Icons.scale, value: weightText, label: 'kg'),
+      ],
+      onTap: onTap,
+    );
+  }
+}
+
+class _TrainingModeCard extends ConsumerWidget {
+  final VoidCallback onTap;
+
+  const _TrainingModeCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rutinasAsync = ref.watch(rutinasStreamProvider);
+
+    final stats = rutinasAsync.when(
+      data: (rutinas) {
+        if (rutinas.isEmpty) {
+          return [
+            const _Stat(icon: Icons.calendar_today, value: '—', label: 'Hoy'),
+            const _Stat(icon: Icons.timer, value: '--', label: 'min'),
+          ];
+        }
+        return [
+          const _Stat(icon: Icons.calendar_today, value: '—', label: 'Hoy'),
+          const _Stat(icon: Icons.timer, value: '--', label: 'min'),
+        ];
+      },
+      loading: () => [
+        const _Stat(icon: Icons.calendar_today, value: '—', label: 'Hoy'),
+        const _Stat(icon: Icons.timer, value: '--', label: 'min'),
+      ],
+      error: (e, _) => [
+        const _Stat(icon: Icons.calendar_today, value: '—', label: 'Hoy'),
+        const _Stat(icon: Icons.timer, value: '--', label: 'min'),
+      ],
+    );
+
+    return _ModeCard(
+      title: 'Entrenamiento',
+      subtitle: 'Sesiones, rutinas, análisis y progreso',
+      icon: Icons.fitness_center_rounded,
+      gradientColors: [AppColors.ironRed, AppColors.ironRedLight],
+      isDark: true,
+      stats: stats,
+      onTap: onTap,
     );
   }
 }

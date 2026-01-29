@@ -47,8 +47,8 @@ class OpenFoodFactsService {
   static const int _maxRequestsBurst = 10; // Máximo en ventana corta
   
   // URLs base
-  static const String _baseUrl = 'https://world.openfoodfacts.org';
-  static const String _apiUrl = '$_baseUrl/api/v2';
+  static const String baseUrl = 'https://world.openfoodfacts.org';
+  static const String apiUrl = '$baseUrl/api/v2';
   
   // User-Agent personalizado (requerido por OFF)
   static const String _userAgent = 'JuanTracker/1.0 (contact@juantracker.app)';
@@ -60,7 +60,7 @@ class OpenFoodFactsService {
         _timeout = timeout ?? const Duration(seconds: 10);
 
   /// Verifica si podemos hacer una petición (rate limiting)
-  bool get _canMakeRequest {
+  bool get canMakeRequest {
     final now = DateTime.now();
     
     // Limpiar timestamps antiguos (> 1 minuto)
@@ -91,7 +91,7 @@ class OpenFoodFactsService {
 
   /// Espera hasta que se pueda hacer otra petición
   Future<void> _waitForRateLimit() async {
-    while (!_canMakeRequest) {
+    while (!canMakeRequest) {
       await Future.delayed(const Duration(milliseconds: 500));
     }
   }
@@ -121,15 +121,16 @@ class OpenFoodFactsService {
 
     await _waitForRateLimit();
 
-    final uri = Uri.parse('$_apiUrl/search').replace(
+    final uri = Uri.parse('$apiUrl/search').replace(
       queryParameters: {
-        'search_terms': query.trim(),
+        'search_terms2': query.trim(), // Usar search_terms2 para mejor relevancia
         'page': page.toString(),
         'page_size': pageSize.toString(),
         'countries_tags': country,
         'fields': 'code,product_name,brands,image_url,image_small_url,'
-            'ingredients_text,serving_size,nutriments',
-        'sort_by': 'popularity_key', // Productos más populares primero
+            'ingredients_text,serving_size,nutriments,product_quantity',
+        // No usar sort_by para obtener resultados por relevancia de búsqueda
+        'states_tags': 'en:complete', // Solo productos completos
       },
     );
 
@@ -176,7 +177,7 @@ class OpenFoodFactsService {
     await _waitForRateLimit();
 
     final cleanBarcode = barcode.trim();
-    final uri = Uri.parse('$_apiUrl/product/$cleanBarcode').replace(
+    final uri = Uri.parse('$apiUrl/product/$cleanBarcode').replace(
       queryParameters: {
         'fields': 'code,product_name,brands,image_url,image_small_url,'
             'ingredients_text,serving_size,nutriments',

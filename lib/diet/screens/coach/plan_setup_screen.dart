@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/coach_providers.dart';
 import '../../services/adaptive_coach_service.dart';
-import 'dart:math' as math;
 
 class PlanSetupScreen extends ConsumerStatefulWidget {
   final CoachPlan? existingPlan;
@@ -18,9 +17,14 @@ class PlanSetupScreen extends ConsumerStatefulWidget {
 
 class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
   late WeightGoal _goal;
-  late double _weeklyRatePercent;
+  late double _weeklyRatePercent; // -0.025 a +0.025
   late final TextEditingController _tdeeController;
   late final TextEditingController _weightController;
+  late MacroPreset _macroPreset;
+  late double _customProteinPercent;
+  late double _customCarbsPercent;
+  late double _customFatPercent;
+  bool _useCustomMacros = false;
   bool _isLoading = false;
 
   final List<_GoalOption> _goalOptions = [
@@ -47,12 +51,50 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
     ),
   ];
 
+  final List<_MacroPresetOption> _macroPresetOptions = [
+    _MacroPresetOption(
+      preset: MacroPreset.lowCarb,
+      title: 'Low Carb',
+      subtitle: '25% prot · 45% grasa · 30% carb',
+      description: 'Ideal para cetosis leve y control de hambre',
+    ),
+    _MacroPresetOption(
+      preset: MacroPreset.balanced,
+      title: 'Balanceado',
+      subtitle: '30% prot · 35% carb · 35% grasa',
+      description: 'Distribución equilibrada para la mayoría',
+    ),
+    _MacroPresetOption(
+      preset: MacroPreset.highProtein,
+      title: 'High Protein',
+      subtitle: '40% prot · 30% carb · 30% grasa',
+      description: 'Máxima proteína para ganancia muscular',
+    ),
+    _MacroPresetOption(
+      preset: MacroPreset.highCarb,
+      title: 'High Carb',
+      subtitle: '25% prot · 50% carb · 25% grasa',
+      description: 'Alto rendimiento deportivo y energía',
+    ),
+    _MacroPresetOption(
+      preset: MacroPreset.keto,
+      title: 'Keto',
+      subtitle: '30% prot · 5% carb · 65% grasa',
+      description: 'Cetosis estricta',
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
     final plan = widget.existingPlan;
     _goal = plan?.goal ?? WeightGoal.lose;
-    _weeklyRatePercent = plan?.weeklyRatePercent ?? -0.005;
+    _weeklyRatePercent = _goal == WeightGoal.maintain ? 0.0 : 
+                        (_goal == WeightGoal.lose ? -0.005 : 0.005);
+    _macroPreset = plan?.macroPreset ?? MacroPreset.balanced;
+    _customProteinPercent = _macroPreset.proteinPercent * 100;
+    _customCarbsPercent = _macroPreset.carbsPercent * 100;
+    _customFatPercent = _macroPreset.fatPercent * 100;
     _tdeeController = TextEditingController(
       text: plan?.initialTdeeEstimate.toString() ?? '',
     );
@@ -67,6 +109,10 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
     _weightController.dispose();
     super.dispose();
   }
+
+  double get _weight => double.tryParse(_weightController.text) ?? 80;
+
+  double get _weeklyRateKg => _weight * _weeklyRatePercent;
 
   @override
   Widget build(BuildContext context) {
@@ -94,12 +140,21 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
             ..._goalOptions.map((option) => _GoalCard(
                   option: option,
                   isSelected: _goal == option.goal,
-                  onTap: () => setState(() => _goal = option.goal),
+                  onTap: () => setState(() {
+                    _goal = option.goal;
+                    if (_goal == WeightGoal.maintain) {
+                      _weeklyRatePercent = 0.0;
+                    } else if (_goal == WeightGoal.lose && _weeklyRatePercent >= 0) {
+                      _weeklyRatePercent = -0.005;
+                    } else if (_goal == WeightGoal.gain && _weeklyRatePercent <= 0) {
+                      _weeklyRatePercent = 0.005;
+                    }
+                  }),
                 )),
 
             const SizedBox(height: 24),
 
-            // Tasa de cambio
+            // Tasa de cambio en % del peso (mostrado en kg)
             Text(
               '2. Velocidad de cambio',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -108,7 +163,7 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Porcentaje de tu peso corporal por semana',
+              'Ajusta según tu peso actual (${_weight.toStringAsFixed(1)} kg)',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface.withAlpha(179),
               ),
@@ -118,9 +173,84 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
 
             const SizedBox(height: 24),
 
+            // Preset de macros
+            Text(
+              '3. Distribución de macros',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._macroPresetOptions.map((option) => _MacroPresetCard(
+                  option: option,
+                  isSelected: _macroPreset == option.preset && !_useCustomMacros,
+                  onTap: () => setState(() {
+                    _macroPreset = option.preset;
+                    _useCustomMacros = false;
+                    _customProteinPercent = option.preset.proteinPercent * 100;
+                    _customCarbsPercent = option.preset.carbsPercent * 100;
+                    _customFatPercent = option.preset.fatPercent * 100;
+                  }),
+                )),
+            
+            const SizedBox(height: 12),
+            
+            // Toggle personalizado
+            Card(
+              color: _useCustomMacros 
+                  ? colorScheme.primaryContainer 
+                  : colorScheme.surfaceContainerHighest.withAlpha(128),
+              child: InkWell(
+                onTap: () => setState(() {
+                  _useCustomMacros = !_useCustomMacros;
+                }),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _useCustomMacros ? Icons.check_circle : Icons.tune,
+                        color: _useCustomMacros ? colorScheme.primary : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Personalizado',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Ajusta los porcentajes manualmente',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: _useCustomMacros,
+                        onChanged: (v) => setState(() => _useCustomMacros = v),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Sliders personalizables
+            if (_useCustomMacros) ...[
+              const SizedBox(height: 24),
+              _buildMacroSliders(),
+            ],
+
+            const SizedBox(height: 24),
+
             // TDEE estimado
             Text(
-              '3. Estimación inicial de TDEE',
+              '4. Estimación inicial de TDEE',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -147,7 +277,7 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
 
             // Peso actual
             Text(
-              '4. Tu peso actual',
+              '5. Tu peso actual',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -156,6 +286,7 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
             TextField(
               controller: _weightController,
               keyboardType: TextInputType.number,
+              onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 labelText: 'Peso actual (kg)',
                 suffixText: 'kg',
@@ -184,6 +315,9 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
                     const SizedBox(height: 12),
                     _buildSummaryRow('Objetivo', _getGoalDescription()),
                     _buildSummaryRow('Velocidad', _getRateDescription()),
+                    _buildSummaryRow('Macros', _useCustomMacros 
+                        ? 'Personalizado (${_customProteinPercent.toInt()}% P)' 
+                        : _macroPreset.displayName),
                     _buildSummaryRow(
                         'TDEE inicial', '${_tdeeController.text} kcal'),
                     _buildSummaryRow(
@@ -223,26 +357,6 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
   }
 
   Widget _buildRateSlider() {
-    final minRate = _goal == WeightGoal.lose
-        ? -0.01
-        : _goal == WeightGoal.gain
-            ? 0.0025
-            : 0.0;
-    final maxRate = _goal == WeightGoal.lose
-        ? -0.0025
-        : _goal == WeightGoal.gain
-            ? 0.01
-            : 0.0;
-
-    // Si cambió el objetivo, ajustar la tasa
-    if (_goal == WeightGoal.maintain) {
-      _weeklyRatePercent = 0.0;
-    } else if (_weeklyRatePercent == 0.0 ||
-        (_goal == WeightGoal.lose && _weeklyRatePercent > 0) ||
-        (_goal == WeightGoal.gain && _weeklyRatePercent < 0)) {
-      _weeklyRatePercent = _goal == WeightGoal.lose ? -0.005 : 0.005;
-    }
-
     if (_goal == WeightGoal.maintain) {
       return const Card(
         child: Padding(
@@ -254,21 +368,21 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
       );
     }
 
-    final minAbs = math.min(minRate.abs(), maxRate.abs());
-    final maxAbs = math.max(minRate.abs(), maxRate.abs());
+    final displayValue = (_weeklyRatePercent * 100); // -2.5 a 2.5
+    final kgPerWeek = _weeklyRateKg.abs();
+    final kcalAdjustment = (kgPerWeek * 7700 / 7).round();
 
     return Column(
       children: [
         Slider(
-          value: _weeklyRatePercent.abs(),
-          min: minAbs,
-          max: maxAbs,
-          divisions: 7,
-          label: '${(_weeklyRatePercent.abs() * 100).toStringAsFixed(2)}%',
+          value: _weeklyRatePercent.clamp(-0.025, 0.025),
+          min: -0.025,
+          max: 0.025,
+          divisions: 20,
+          label: '${displayValue.toStringAsFixed(1)}%',
           onChanged: (value) {
             setState(() {
-              _weeklyRatePercent =
-                  _goal == WeightGoal.lose ? -value : value;
+              _weeklyRatePercent = value;
             });
           },
         ),
@@ -279,11 +393,25 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
               _goal == WeightGoal.lose ? 'Lento' : 'Conservador',
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            Text(
-              '${(_weeklyRatePercent.abs() * 100).toStringAsFixed(1)}%/semana',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+            Column(
+              children: [
+                Text(
+                  '${kgPerWeek.toStringAsFixed(2)} kg/semana',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                Text(
+                  '${_weeklyRatePercent >= 0 ? "+" : ""}$kcalAdjustment kcal/día',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: _weeklyRatePercent < 0 
+                        ? Colors.green 
+                        : _weeklyRatePercent > 0 
+                            ? Colors.orange 
+                            : null,
                   ),
+                ),
+              ],
             ),
             Text(
               _goal == WeightGoal.lose ? 'Agresivo' : 'Rápido',
@@ -291,8 +419,111 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
             ),
           ],
         ),
+        const SizedBox(height: 8),
+        Text(
+          _getRateGuidance(),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
+  }
+
+  Widget _buildMacroSliders() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _MacroPercentSlider(
+              label: 'Proteína',
+              value: _customProteinPercent,
+              color: Colors.red.shade400,
+              onChanged: (v) => setState(() {
+                _customProteinPercent = v;
+                _normalizeMacros();
+              }),
+            ),
+            const SizedBox(height: 16),
+            _MacroPercentSlider(
+              label: 'Carbohidratos',
+              value: _customCarbsPercent,
+              color: Colors.orange.shade400,
+              onChanged: (v) => setState(() {
+                _customCarbsPercent = v;
+                _normalizeMacros();
+              }),
+            ),
+            const SizedBox(height: 16),
+            _MacroPercentSlider(
+              label: 'Grasas',
+              value: _customFatPercent,
+              color: Colors.yellow.shade700,
+              onChanged: (v) => setState(() {
+                _customFatPercent = v;
+                _normalizeMacros();
+              }),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (_customProteinPercent + _customCarbsPercent + _customFatPercent - 100).abs() < 0.1
+                    ? Colors.green.withAlpha(51)
+                    : Colors.red.withAlpha(51),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Total: ${_customProteinPercent.toStringAsFixed(0)}% + ${_customCarbsPercent.toStringAsFixed(0)}% + ${_customFatPercent.toStringAsFixed(0)}% = ',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  Text(
+                    '${(_customProteinPercent + _customCarbsPercent + _customFatPercent).toStringAsFixed(0)}%',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: (_customProteinPercent + _customCarbsPercent + _customFatPercent - 100).abs() < 0.1
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _normalizeMacros() {
+    final total = _customProteinPercent + _customCarbsPercent + _customFatPercent;
+    if (total > 0 && (total - 100).abs() > 0.1) {
+      final factor = 100 / total;
+      _customProteinPercent *= factor;
+      _customCarbsPercent *= factor;
+      _customFatPercent *= factor;
+    }
+  }
+
+  String _getRateGuidance() {
+    final percent = _weeklyRatePercent.abs() * 100;
+    if (_goal == WeightGoal.lose) {
+      if (percent < 0.5) return '🐢 Pérdida conservadora, mínima pérdida muscular';
+      if (percent < 1.0) return '🐕 Pérdida moderada, recomendada para la mayoría';
+      if (percent < 1.5) return '🏃 Pérdida agresiva, riesgo de pérdida muscular';
+      return '⚠️ Muy agresivo, solo recomendado para casos especiales';
+    } else if (_goal == WeightGoal.gain) {
+      if (percent < 0.5) return '🐢 Ganancia limpia, mínima grasa';
+      if (percent < 1.0) return '🐕 Ganancia moderada, balance muscular/grasa';
+      return '🏃 Ganancia rápida, más grasa acumulada';
+    }
+    return '';
   }
 
   String _getGoalDescription() {
@@ -307,9 +538,13 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
   }
 
   String _getRateDescription() {
-    if (_goal == WeightGoal.maintain) return '0% (mantenimiento)';
-    final percent = (_weeklyRatePercent.abs() * 100).toStringAsFixed(1);
-    return '$percent% por semana';
+    if (_goal == WeightGoal.maintain) return '0% (0 kg/semana)';
+    final percent = (_weeklyRatePercent * 100).abs();
+    final kgString = _weeklyRateKg.abs().toStringAsFixed(2);
+    final kcalString = (_weeklyRateKg * 7700 / 7).round().abs();
+    return '${percent.toStringAsFixed(1)}% ($kgString kg/semana, ${kcalString}kcal ${
+      _goal == WeightGoal.lose ? 'déficit' : 'superávit'
+    })';
   }
 
   Widget _buildSummaryRow(String label, String value) {
@@ -349,16 +584,36 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
       return;
     }
 
+    // Validar que macros sumen 100%
+    if (_useCustomMacros) {
+      final total = _customProteinPercent + _customCarbsPercent + _customFatPercent;
+      if ((total - 100).abs() > 1) {
+        _showError('Los porcentajes de macros deben sumar 100% (actual: ${total.toStringAsFixed(0)}%)');
+        return;
+      }
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // Crear preset personalizado si es necesario
+      MacroPreset finalPreset = _macroPreset;
+      if (_useCustomMacros) {
+        finalPreset = _MacroPresetOption.createCustom(
+          proteinPercent: _customProteinPercent / 100,
+          carbsPercent: _customCarbsPercent / 100,
+          fatPercent: _customFatPercent / 100,
+        );
+      }
+
       await ref.read(coachPlanProvider.notifier).createPlan(
             goal: _goal,
             weeklyRatePercent: _weeklyRatePercent,
             initialTdeeEstimate: tdee,
             startingWeight: weight,
+            macroPreset: finalPreset,
           );
 
       if (mounted) {
@@ -407,6 +662,28 @@ class _GoalOption {
     required this.icon,
     required this.color,
   });
+}
+
+class _MacroPresetOption {
+  final MacroPreset preset;
+  final String title;
+  final String subtitle;
+  final String description;
+
+  _MacroPresetOption({
+    required this.preset,
+    required this.title,
+    required this.subtitle,
+    required this.description,
+  });
+
+  static MacroPreset createCustom({
+    required double proteinPercent,
+    required double carbsPercent,
+    required double fatPercent,
+  }) {
+    return MacroPreset.custom;
+  }
 }
 
 class _GoalCard extends StatelessWidget {
@@ -487,6 +764,152 @@ class _GoalCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MacroPresetCard extends StatelessWidget {
+  final _MacroPresetOption option;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _MacroPresetCard({
+    required this.option,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: isSelected ? 2 : 0,
+      color: isSelected
+          ? colorScheme.primaryContainer.withAlpha(128)
+          : colorScheme.surfaceContainerHighest.withAlpha(77),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isSelected
+            ? BorderSide(color: colorScheme.primary, width: 2)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isSelected 
+                      ? colorScheme.primary.withAlpha(51)
+                      : colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.pie_chart,
+                  color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      option.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      option.subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withAlpha(179),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      option.description,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: colorScheme.primary,
+                  size: 28,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MacroPercentSlider extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color color;
+  final ValueChanged<double> onChanged;
+
+  const _MacroPercentSlider({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(label),
+              ],
+            ),
+            Text(
+              '${value.toStringAsFixed(0)}%',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        Slider(
+          value: value.clamp(0, 100),
+          min: 0,
+          max: 100,
+          divisions: 20,
+          activeColor: color,
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }

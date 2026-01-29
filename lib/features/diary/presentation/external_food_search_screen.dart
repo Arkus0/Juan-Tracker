@@ -12,13 +12,15 @@ import '../../../diet/models/models.dart';
 import '../../../diet/providers/external_food_search_provider.dart';
 import '../../../diet/services/food_label_ocr_service.dart';
 import 'add_entry_dialog.dart';
+import 'barcode_scanner_screen.dart';
 
 /// Pantalla de búsqueda de alimentos externos (Open Food Facts)
 /// 
 /// Funcionalidades:
 /// - Búsqueda por texto con debounce
-/// - Escaneo de código de barras
+/// - Escaneo de código de barras (cámara primero)
 /// - Búsqueda por voz
+/// - OCR de etiquetas
 /// - Modo offline con cache local
 /// - Guardar alimentos a biblioteca local
 class ExternalFoodSearchScreen extends ConsumerStatefulWidget {
@@ -44,11 +46,6 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
     super.initState();
     _searchController = TextEditingController();
     _initSpeech();
-    
-    // Cargar sugerencias offline al iniciar
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(externalFoodSearchProvider.notifier).loadOfflineSuggestions();
-    });
   }
 
   Future<void> _initSpeech() async {
@@ -66,7 +63,7 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      if (mounted) {
+      if (mounted && value.trim().isNotEmpty) {
         ref.read(externalFoodSearchProvider.notifier).search(value);
       }
     });
@@ -103,28 +100,96 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
     setState(() => _isListening = false);
   }
 
-  /// Escanea código de barras
+  /// Escanea código de barras - AHORA CÁMARA PRIMERO
   Future<void> _scanBarcode() async {
-    // Mostrar un dialog para entrada manual de barcode
+    // Primero intentar con cámara
+    final result = await _scanBarcodeWithCamera();
+    if (result != null) {
+      await _processBarcode(result);
+      return;
+    }
+
+    // Si falla o cancela, mostrar opción de entrada manual
+    if (!mounted) return;
+    
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Código de barras'),
+        content: const Text('¿Cómo quieres introducir el código?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop('camera'),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.camera_alt),
+                SizedBox(width: 8),
+                Text('Cámara'),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop('manual'),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.keyboard),
+                SizedBox(width: 8),
+                Text('Manual'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (action == 'camera') {
+      final cameraResult = await _scanBarcodeWithCamera();
+      if (cameraResult != null) {
+        await _processBarcode(cameraResult);
+      }
+    } else if (action == 'manual') {
+      await _enterBarcodeManually();
+    }
+  }
+
+  /// Intenta escanear con cámara
+  Future<String?> _scanBarcodeWithCamera() async {
+    final barcode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => const BarcodeScannerScreen(),
+      ),
+    );
+    return barcode;
+  }
+
+  /// Entrada manual de código de barras
+  Future<void> _enterBarcodeManually() async {
     final barcode = await showDialog<String>(
       context: context,
       builder: (ctx) => const _BarcodeInputDialog(),
     );
 
-    if (barcode != null && barcode.isNotEmpty && mounted) {
-      final notifier = ref.read(externalFoodSearchProvider.notifier);
-      
-      // Mostrar loading
-      notifier.setLoading(barcode);
+    if (barcode != null && barcode.isNotEmpty) {
+      await _processBarcode(barcode);
+    }
+  }
 
-      final result = await notifier.searchByBarcode(barcode);
-      
-      if (result != null && mounted) {
-        _selectProduct(result);
-      } else if (mounted) {
-        _showError('Producto no encontrado');
-        notifier.clear();
-      }
+  /// Procesa el código de barras
+  Future<void> _processBarcode(String barcode) async {
+    final notifier = ref.read(externalFoodSearchProvider.notifier);
+    
+    // Mostrar loading
+    notifier.setLoading(barcode);
+
+    final result = await notifier.searchByBarcode(barcode);
+    
+    if (result != null && mounted) {
+      _selectProduct(result);
+    } else if (mounted) {
+      _showError('Producto no encontrado');
+      notifier.clear();
     }
   }
 
@@ -362,7 +427,7 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
       ),
       body: Column(
         children: [
-          // Barra de búsqueda con acciones
+          // Barra de búsqueda mejorada
           _SearchBar(
             controller: _searchController,
             isListening: _isListening,
@@ -444,10 +509,10 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
 }
 
 // ============================================================================
-// WIDGETS AUXILIARES
+// BARRA DE BÚSQUEDA MEJORADA
 // ============================================================================
 
-/// Barra de búsqueda con acciones
+/// Barra de búsqueda con acciones organizadas en menú
 class _SearchBar extends StatelessWidget {
   final TextEditingController controller;
   final bool isListening;
@@ -475,68 +540,153 @@ class _SearchBar extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: controller,
-        builder: (context, value, child) {
-          return TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Buscar en Open Food Facts...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Pegar del portapapeles
-                  IconButton(
-                    icon: const Icon(Icons.content_paste),
-                    tooltip: 'Pegar texto',
-                    onPressed: onPastePressed,
+      child: Column(
+        children: [
+          // Campo de búsqueda principal
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, child) {
+              return TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Buscar en Open Food Facts...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: value.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          tooltip: 'Limpiar',
+                          onPressed: onClear,
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  // OCR de etiqueta
-                  IconButton(
-                    icon: const Icon(Icons.document_scanner),
-                    tooltip: 'Escanear etiqueta',
-                    onPressed: onLabelScanPressed,
-                  ),
-                  // Micrófono
-                  IconButton(
-                    icon: Icon(
-                      isListening ? Icons.mic : Icons.mic_none,
-                      color: isListening ? theme.colorScheme.primary : null,
-                    ),
-                    tooltip: 'Búsqueda por voz',
-                    onPressed: onVoicePressed,
-                  ),
-                  // Barcode
-                  IconButton(
-                    icon: const Icon(Icons.qr_code_scanner),
-                    tooltip: 'Código de barras',
-                    onPressed: onBarcodePressed,
-                  ),
-                  // Clear
-                  if (value.text.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.clear),
-                      tooltip: 'Limpiar',
-                      onPressed: onClear,
-                    ),
-                ],
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest
-                  .withAlpha((0.3 * 255).round()),
+                  filled: true,
+                  fillColor: theme.colorScheme.surfaceContainerHighest
+                      .withAlpha((0.3 * 255).round()),
+                ),
+                onChanged: onChanged,
+              );
+            },
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Botones de acción organizados en una fila
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                // Código de barras (cámara primero)
+                _ActionChip(
+                  icon: Icons.qr_code_scanner,
+                  label: 'Código barras',
+                  onTap: onBarcodePressed,
+                  isPrimary: true,
+                ),
+                const SizedBox(width: 8),
+                
+                // Voz
+                _ActionChip(
+                  icon: isListening ? Icons.mic : Icons.mic_none,
+                  label: 'Voz',
+                  onTap: onVoicePressed,
+                  isActive: isListening,
+                ),
+                const SizedBox(width: 8),
+                
+                // OCR
+                _ActionChip(
+                  icon: Icons.document_scanner,
+                  label: 'Escanear etiqueta',
+                  onTap: onLabelScanPressed,
+                ),
+                const SizedBox(width: 8),
+                
+                // Pegar
+                _ActionChip(
+                  icon: Icons.content_paste,
+                  label: 'Pegar',
+                  onTap: onPastePressed,
+                ),
+              ],
             ),
-            onChanged: onChanged,
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 }
+
+/// Chip de acción para la barra de búsqueda
+class _ActionChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isPrimary;
+  final bool isActive;
+
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isPrimary = false,
+    this.isActive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final backgroundColor = isActive
+        ? colorScheme.primaryContainer
+        : isPrimary
+            ? colorScheme.primary.withAlpha((0.1 * 255).round())
+            : colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round());
+
+    final foregroundColor = isActive
+        ? colorScheme.onPrimaryContainer
+        : isPrimary
+            ? colorScheme.primary
+            : colorScheme.onSurfaceVariant;
+
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: foregroundColor,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: foregroundColor,
+                  fontWeight: isPrimary ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// RESTO DE WIDGETS (sin cambios significativos)
+// ============================================================================
 
 /// Indicador de estado de búsqueda
 class _StatusBar extends StatelessWidget {
@@ -1009,64 +1159,7 @@ class _ErrorState extends StatelessWidget {
 // DIÁLOGOS
 // ============================================================================
 
-/// Dialog para guardar alimento en biblioteca
-class _SaveFoodDialog extends StatelessWidget {
-  final OpenFoodFactsResult result;
-
-  const _SaveFoodDialog({required this.result});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return AlertDialog(
-      title: const Text('Guardar alimento'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('"${result.name}"'),
-          if (result.brand != null)
-            Text(
-              result.brand!,
-              style: TextStyle(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 14,
-              ),
-            ),
-          const SizedBox(height: 16),
-          Text(
-            '${result.kcalPer100g.round()} kcal / 100g',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Se guardará en tu biblioteca local para uso offline.',
-            style: TextStyle(
-              fontSize: 13,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Guardar y usar'),
-        ),
-      ],
-    );
-  }
-}
-
-/// Dialog para entrada manual de código de barras
+/// Diálogo para introducir código de barras manualmente
 class _BarcodeInputDialog extends StatefulWidget {
   const _BarcodeInputDialog();
 
@@ -1095,13 +1188,13 @@ class _BarcodeInputDialogState extends State<_BarcodeInputDialog> {
       title: const Text('Código de barras'),
       content: TextField(
         controller: _controller,
-        autofocus: true,
         keyboardType: TextInputType.number,
         decoration: const InputDecoration(
+          labelText: 'Número del código de barras',
           hintText: 'Ej: 8410000000000',
-          labelText: 'EAN-13',
           border: OutlineInputBorder(),
         ),
+        autofocus: true,
       ),
       actions: [
         TextButton(
@@ -1122,7 +1215,7 @@ class _BarcodeInputDialogState extends State<_BarcodeInputDialog> {
   }
 }
 
-/// Dialog para mostrar resultado de OCR y permitir edición
+/// Diálogo para mostrar resultado del OCR
 class _OcrResultDialog extends StatefulWidget {
   final FoodLabelScanResult scanResult;
 
@@ -1134,14 +1227,11 @@ class _OcrResultDialog extends StatefulWidget {
 
 class _OcrResultDialogState extends State<_OcrResultDialog> {
   late final TextEditingController _controller;
-  bool _showFullText = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(
-      text: widget.scanResult.detectedProductName ?? widget.scanResult.searchQuery,
-    );
+    _controller = TextEditingController(text: widget.scanResult.detectedProductName ?? '');
   }
 
   @override
@@ -1152,111 +1242,86 @@ class _OcrResultDialogState extends State<_OcrResultDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scanResult = widget.scanResult;
-
     return AlertDialog(
-      title: Row(
+      title: const Text('Texto detectado'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.document_scanner),
-          const SizedBox(width: 8),
-          const Expanded(child: Text('Texto detectado')),
-          if (scanResult.detectedBrand != null)
-            Chip(
-              label: Text(scanResult.detectedBrand!),
-              backgroundColor: theme.colorScheme.primaryContainer,
-              visualDensity: VisualDensity.compact,
+          TextField(
+            controller: _controller,
+            decoration: const InputDecoration(
+              labelText: 'Nombre del producto',
+              border: OutlineInputBorder(),
             ),
+            maxLines: 2,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Puedes editar el texto antes de buscar',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Campo editable
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Nombre del producto',
-                hintText: 'Edita si es necesario',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.edit),
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Palabras clave detectadas
-            if (scanResult.keywords.isNotEmpty) ...[
-              Text(
-                'Palabras clave detectadas:',
-                style: theme.textTheme.labelSmall,
-              ),
-              const SizedBox(height: 4),
-              Wrap(
-                spacing: 4,
-                children: scanResult.keywords.take(8).map((keyword) => 
-                  ActionChip(
-                    label: Text(keyword),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      _controller.text = keyword;
-                    },
-                  ),
-                ).toList(),
-              ),
-              const SizedBox(height: 16),
-            ],
-            
-            // Toggle para ver texto completo
-            TextButton.icon(
-              onPressed: () => setState(() => _showFullText = !_showFullText),
-              icon: Icon(_showFullText ? Icons.expand_less : Icons.expand_more),
-              label: Text(_showFullText ? 'Ocultar texto completo' : 'Ver texto completo'),
-            ),
-            
-            // Texto completo OCR
-            if (_showFullText) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  scanResult.fullText,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton.icon(
-          onPressed: () {
-            final text = _controller.text.trim();
-            if (text.isNotEmpty) {
-              Navigator.of(context).pop(text);
-            }
-          },
-          icon: const Icon(Icons.search),
-          label: const Text('Buscar'),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: const Text('Buscar'),
         ),
       ],
     );
   }
 }
 
-/// Dialog genérico para entrada/edición de texto
+/// Diálogo para guardar alimento
+class _SaveFoodDialog extends StatelessWidget {
+  final OpenFoodFactsResult result;
+
+  const _SaveFoodDialog({required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Guardar alimento'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('"${result.name}"'),
+          const SizedBox(height: 8),
+          Text(
+            '¿Guardar en tu biblioteca local?',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '${result.kcalPer100g.round()} kcal / 100g',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Solo usar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Diálogo para introducir texto
 class _TextInputDialog extends StatefulWidget {
   final String initialText;
   final String title;
@@ -1293,13 +1358,11 @@ class _TextInputDialogState extends State<_TextInputDialog> {
       title: Text(widget.title),
       content: TextField(
         controller: _controller,
-        autofocus: true,
-        maxLines: 3,
-        minLines: 1,
         decoration: InputDecoration(
-          hintText: widget.hint,
+          labelText: widget.hint,
           border: const OutlineInputBorder(),
         ),
+        maxLines: 3,
       ),
       actions: [
         TextButton(
@@ -1307,12 +1370,7 @@ class _TextInputDialogState extends State<_TextInputDialog> {
           child: const Text('Cancelar'),
         ),
         FilledButton(
-          onPressed: () {
-            final text = _controller.text.trim();
-            if (text.isNotEmpty) {
-              Navigator.of(context).pop(text);
-            }
-          },
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
           child: const Text('Buscar'),
         ),
       ],

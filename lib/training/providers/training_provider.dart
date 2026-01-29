@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/providers/database_provider.dart';
+
 import '../models/ejercicio.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/library_exercise.dart';
@@ -10,7 +12,7 @@ import '../models/progression_engine_models.dart';
 import '../models/rutina.dart';
 import '../models/serie_log.dart';
 import '../models/sesion.dart';
-import '../database/database.dart';
+
 import '../repositories/drift_training_repository.dart';
 import '../repositories/i_training_repository.dart';
 import '../services/error_tolerance_system.dart';
@@ -20,8 +22,7 @@ import 'main_provider.dart';
 import 'session_tolerance_provider.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
-  final db = AppDatabase();
-  ref.onDispose(db.close);
+  final db = ref.watch(appDatabaseProvider);
   return DriftTrainingRepository(db);
 });
 
