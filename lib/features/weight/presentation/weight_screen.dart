@@ -91,7 +91,7 @@ class _WeightCard extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.3),
+        color: colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -142,7 +142,7 @@ class _WeightCard extends StatelessWidget {
             Text(
               weighIn.note!,
               style: TextStyle(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                color: colorScheme.onSurfaceVariant.withAlpha((0.7 * 255).round()),
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
               ),
@@ -163,7 +163,7 @@ class _EmptyWeightState extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -171,7 +171,7 @@ class _EmptyWeightState extends StatelessWidget {
           Icon(
             Icons.scale,
             size: 48,
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha((0.5 * 255).round()),
           ),
           const SizedBox(height: 12),
           Text(
@@ -185,7 +185,7 @@ class _EmptyWeightState extends StatelessWidget {
           Text(
             'Registra tu primer peso con el botón +',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha((0.7 * 255).round()),
               fontSize: 14,
             ),
           ),

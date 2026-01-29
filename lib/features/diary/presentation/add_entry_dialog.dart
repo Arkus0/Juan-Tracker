@@ -154,7 +154,6 @@ class _AddEntryDialogState extends ConsumerState<AddEntryDialog> {
     final amount = double.tryParse(_amountController.text) ?? 0;
     if (amount <= 0) return;
 
-    final calculated = _calculateMacros();
     final date = ref.read(selectedDateProvider);
     final existingEntry = ref.read(editingEntryProvider);
 
@@ -223,7 +222,7 @@ class _MacroPreview extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

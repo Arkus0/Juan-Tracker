@@ -43,7 +43,7 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -182,7 +182,7 @@ class _EmptyState extends StatelessWidget {
           Icon(
             isSearch ? Icons.search_off : Icons.restaurant_menu,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha((0.4 * 255).round()),
           ),
           const SizedBox(height: 16),
           Text(
@@ -197,7 +197,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               'Añade tu primer alimento con el botón +',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha((0.7 * 255).round()),
                 fontSize: 14,
               ),
             ),
@@ -237,7 +237,7 @@ class _FoodDetailSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                  color: theme.colorScheme.onSurfaceVariant.withAlpha((0.3 * 255).round()),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -309,7 +309,7 @@ class _MacroGrid extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

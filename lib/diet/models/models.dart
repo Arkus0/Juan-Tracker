@@ -1,4 +1,4 @@
-/// Barrel file para exportar todos los modelos de diet
+/* Barrel file para exportar todos los modelos de diet */
 
 export 'food_model.dart';
 export 'diary_entry_model.dart';

@@ -1,9 +1,10 @@
-/// Barrel file para exportar todo el módulo de Diet
-///
-/// Uso:
-/// ```dart
-/// import 'package:juan_tracker/diet/diet.dart';
-/// ```
+/* Barrel file para exportar todo el módulo de Diet
+
+Uso:
+```dart
+import 'package:juan_tracker/diet/diet.dart';
+```
+*/
 
 // Modelos
 export 'models/models.dart';

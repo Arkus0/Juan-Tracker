@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
@@ -77,7 +76,7 @@ class _DailySummaryCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      color: colorScheme.primaryContainer.withOpacity(0.3),
+      color: colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -286,13 +285,7 @@ class _ProgressSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (targets == null) return const SizedBox.shrink();
 
-    final progress = TargetsProgress(
-      targets: targets,
-      kcalConsumed: totals.kcal,
-      proteinConsumed: totals.protein,
-      carbsConsumed: totals.carbs,
-      fatConsumed: totals.fat,
-    );
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,7 +374,7 @@ class _ProgressBar extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 8,
-              backgroundColor: color.withOpacity(0.2),
+              backgroundColor: color.withAlpha((0.2 * 255).round()),
               valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
