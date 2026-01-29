@@ -99,6 +99,12 @@ class _DiaryAdapter implements IDiaryRepository {
   }
 
   @override
+  Future<List<diet_models.DiaryEntryModel>> getRecentUniqueEntries({int limit = 50}) async {
+    // Minimal stub for tests: return no recent unique entries.
+    return [];
+  }
+
+  @override
   Stream<diet_models.DailyTotals> watchDailyTotals(DateTime date) {
     return Stream.value(diet_models.DailyTotals.empty);
   }
