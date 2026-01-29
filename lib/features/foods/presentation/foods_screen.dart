@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -17,11 +19,63 @@ class FoodsScreen extends ConsumerStatefulWidget {
 
 class _FoodsScreenState extends ConsumerState<FoodsScreen> {
   String _searchQuery = '';
+  String _debouncedQuery = '';
+  Timer? _debounceTimer;
+  final _searchController = TextEditingController();
+
+  // Cache del Future para evitar rebuilds innecesarios
+  Future<List<FoodModel>>? _foodsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshFoodsFuture();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() => _searchQuery = value);
+
+    // Debounce de 300ms para evitar queries excesivas
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted && _debouncedQuery != value) {
+        setState(() {
+          _debouncedQuery = value;
+          _refreshFoodsFuture();
+        });
+      }
+    });
+  }
+
+  void _refreshFoodsFuture() {
+    final repo = ref.read(foodRepositoryProvider);
+    _foodsFuture = _debouncedQuery.isEmpty
+        ? repo.getAll()
+        : repo.search(_debouncedQuery);
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _debounceTimer?.cancel();
+    setState(() {
+      _searchQuery = '';
+      _debouncedQuery = '';
+      _refreshFoodsFuture();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final foodsAsync = ref.watch(foodRepositoryProvider);
-    
+    // Solo watch para invalidación, no para rebuild del Future
+    ref.watch(foodRepositoryProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alimentos'),
@@ -31,15 +85,14 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: TextField(
+              controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Buscar alimentos...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() => _searchQuery = '');
-                        },
+                        onPressed: _clearSearch,
                       )
                     : null,
                 filled: true,
@@ -50,20 +103,18 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               ),
-              onChanged: (value) => setState(() => _searchQuery = value),
+              onChanged: _onSearchChanged,
             ),
           ),
         ),
       ),
       body: FutureBuilder<List<FoodModel>>(
-        future: _searchQuery.isEmpty
-            ? foodsAsync.getAll()
-            : foodsAsync.search(_searchQuery),
+        future: _foodsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
@@ -71,7 +122,7 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
           final foods = snapshot.data ?? [];
 
           if (foods.isEmpty) {
-            return _EmptyState(isSearch: _searchQuery.isNotEmpty);
+            return _EmptyState(isSearch: _debouncedQuery.isNotEmpty);
           }
 
           return ListView.builder(

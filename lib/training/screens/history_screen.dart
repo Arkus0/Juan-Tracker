@@ -16,12 +16,59 @@ import '../widgets/common/app_widgets.dart';
 import '../widgets/external_session_sheet.dart';
 import 'session_detail_screen.dart';
 
-class HistoryScreen extends ConsumerWidget {
+class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sessionsAsync = ref.watch(sesionesHistoryStreamProvider);
+  ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends ConsumerState<HistoryScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // Cargar más cuando el usuario está cerca del final (200px antes)
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMoreIfNeeded();
+    }
+  }
+
+  Future<void> _loadMoreIfNeeded() async {
+    if (_isLoadingMore) return;
+
+    final currentPage = ref.read(historyPaginationProvider);
+    final sessionsAsync = ref.read(sesionesHistoryPaginatedProvider(currentPage));
+
+    // Solo cargar más si hay datos y potencialmente más por cargar
+    final sessions = sessionsAsync.asData?.value ?? [];
+    if (sessions.length >= (currentPage + 1) * 20) {
+      setState(() => _isLoadingMore = true);
+      ref.read(historyPaginationProvider.notifier).loadMore();
+      // Pequeño delay para evitar spam de cargas
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (mounted) setState(() => _isLoadingMore = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentPage = ref.watch(historyPaginationProvider);
+    final sessionsAsync = ref.watch(sesionesHistoryPaginatedProvider(currentPage));
     final rutinasAsync = ref.watch(rutinasStreamProvider);
 
     return Scaffold(
@@ -71,7 +118,7 @@ class HistoryScreen extends ConsumerWidget {
             const AppLoadingIndicator(message: 'Cargando historial...'),
         error: (err, stack) => ErrorStateWidget(
           message: err.toString(),
-          onRetry: () => ref.invalidate(sesionesHistoryStreamProvider),
+          onRetry: () => ref.invalidate(sesionesHistoryPaginatedProvider(currentPage)),
         ),
         data: (sessions) {
           if (sessions.isEmpty) {
@@ -87,12 +134,24 @@ class HistoryScreen extends ConsumerWidget {
 
               // Agrupar sesiones por semana
               final groupedSessions = _groupSessionsByWeek(sessions);
+              final entries = groupedSessions.entries.toList();
 
               return ListView.builder(
-                itemCount: groupedSessions.length,
+                controller: _scrollController,
+                // Performance: número de items + 1 para indicador de carga
+                itemCount: entries.length + (_isLoadingMore ? 1 : 0),
                 padding: const EdgeInsets.only(top: 16, bottom: 100),
                 itemBuilder: (context, index) {
-                  final weekEntry = groupedSessions.entries.elementAt(index);
+                  // Indicador de carga al final
+                  if (index >= entries.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    );
+                  }
+                  final weekEntry = entries[index];
                   return _WeekSection(
                     weekLabel: weekEntry.key,
                     sessions: weekEntry.value,

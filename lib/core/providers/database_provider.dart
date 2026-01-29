@@ -130,6 +130,17 @@ class SelectedMealTypeNotifier extends Notifier<diet.MealType> {
 }
 
 // ============================================================================
+// RECENT FOODS - Para Quick Add (UX optimization)
+// ============================================================================
+
+/// Provider de comidas recientes para quick-add
+/// Retorna las últimas 5 comidas únicas registradas (por foodId)
+final recentFoodsProvider = FutureProvider<List<diet.DiaryEntryModel>>((ref) async {
+  final repo = ref.read(diaryRepositoryProvider);
+  return repo.getRecentUniqueEntries(limit: 5);
+});
+
+// ============================================================================
 // TRAINING REPOSITORIES (sin cambios)
 // ============================================================================
 
