@@ -70,7 +70,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.3 * 255).round()),
               ),
               onChanged: (value) {
                 ref.read(foodSearchQueryProvider.notifier).query = value;
@@ -118,6 +118,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   Future<void> _selectFood(BuildContext context, FoodModel food) async {
     ref.read(selectedFoodProvider.notifier).selected = food;
     
+    final navigator = Navigator.of(context);
     final result = await showDialog<DiaryEntryModel>(
       context: context,
       builder: (ctx) => AddEntryDialog(food: food),
@@ -125,11 +126,12 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
     if (result != null && mounted) {
       await _saveEntry(result);
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) navigator.pop();
     }
   }
 
   Future<void> _showQuickAddDialog(BuildContext context) async {
+    final navigator = Navigator.of(context);
     final result = await showDialog<DiaryEntryModel>(
       context: context,
       builder: (ctx) => const QuickAddDialog(),
@@ -137,7 +139,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
     if (result != null && mounted) {
       await _saveEntry(result);
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) navigator.pop();
     }
   }
 
@@ -257,7 +259,7 @@ class _EmptySearchState extends StatelessWidget {
           Icon(
             Icons.search_off,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha((0.4 * 255).round()),
           ),
           const SizedBox(height: 16),
           Text(
@@ -271,7 +273,7 @@ class _EmptySearchState extends StatelessWidget {
           Text(
             'Prueba con otra búsqueda o usa "Añadir Rápido"',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha((0.7 * 255).round()),
               fontSize: 14,
             ),
           ),
@@ -294,7 +296,7 @@ class _InitialState extends StatelessWidget {
           Icon(
             Icons.restaurant_menu,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha((0.4 * 255).round()),
           ),
           const SizedBox(height: 16),
           Text(

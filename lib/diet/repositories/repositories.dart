@@ -1,4 +1,4 @@
-/// Barrel file para exportar interfaces de repositorios
+/* Barrel file para exportar interfaces de repositorios */
 
 export 'food_repository.dart';
 export 'diary_repository.dart';

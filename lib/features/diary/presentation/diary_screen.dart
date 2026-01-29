@@ -132,7 +132,7 @@ class _DailyTotalsCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.3),
+        color: colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -321,7 +321,7 @@ class _MealSection extends ConsumerWidget {
             child: Text(
               'Sin entradas',
               style: TextStyle(
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                color: theme.colorScheme.onSurfaceVariant.withAlpha((0.6 * 255).round()),
                 fontSize: 14,
               ),
             ),
