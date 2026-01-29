@@ -1,17 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/weight_entry.dart';
+import '../../diet/models/models.dart';
 import 'database_provider.dart';
 
-final weightListStreamProvider = StreamProvider<List<WeightEntry>>((ref) {
-  final repo = ref.watch(weightRepositoryProvider);
-  final now = DateTime.now();
-  final from = now.subtract(const Duration(days: 30));
-  final to = now.add(const Duration(days: 1));
-  return repo.watchRange(from, to);
+// Provider de lista de pesos (adaptador)
+final weightListStreamProvider = StreamProvider<List<WeighInModel>>((ref) {
+  final from = DateTime.now().subtract(const Duration(days: 90));
+  return ref.watch(weighInRepositoryProvider).watchByDateRange(from, DateTime.now());
 });
 
-final latestWeightProvider = FutureProvider<WeightEntry?>((ref) {
-  final repo = ref.watch(weightRepositoryProvider);
-  return repo.latest();
-});
+// Provider del ultimo peso (re-export)
+// latestWeightProvider ya está definido en database_provider.dart

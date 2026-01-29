@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/food.dart';
+import '../../diet/models/models.dart';
 import 'database_provider.dart';
 
-final foodListStreamProvider = StreamProvider<List<Food>>((ref) {
-  final repo = ref.watch(foodRepositoryProvider);
-  return repo.watchAll();
+// Provider de lista de alimentos (adaptador)
+final foodListStreamProvider = StreamProvider<List<FoodModel>>((ref) {
+  return ref.watch(foodRepositoryProvider).watchAll();
 });
 
-final searchFoodsProvider = FutureProvider.family<List<Food>, String>((ref, q) {
-  final repo = ref.watch(foodRepositoryProvider);
-  if (q.trim().isEmpty) return repo.getAll();
-  return repo.searchByNameOrBrand(q);
+// Provider de busqueda de alimentos (adaptador)
+final searchFoodsProvider = FutureProvider.family<List<FoodModel>, String>((ref, q) async {
+  if (q.trim().isEmpty) return ref.watch(foodRepositoryProvider).getAll();
+  return ref.watch(foodRepositoryProvider).search(q);
 });
