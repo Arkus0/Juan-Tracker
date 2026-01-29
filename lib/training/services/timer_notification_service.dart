@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../core/telemetry_service.dart';
 
 bool get _isAndroid =>
     !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -196,15 +197,19 @@ class TimerNotificationService {
           'isPaused': isPaused,
           },
         );
-        if (started == true) {
+        final nativeStarted = started == true;
+        TelemetryService.instance.trackEvent('notification_start', {'nativeStarted': nativeStarted, 'totalSeconds': totalSeconds});
+        if (nativeStarted) {
           debugPrint('Timer foreground service started');
           return;
         }
         debugPrint('Timer service unavailable, falling back to Flutter');
-      } catch (e) {
+      } catch (e, st) {
+        TelemetryService.instance.error('notification_start_failed', e, st);
         debugPrint('Failed to start timer service: $e');
       }
       // Fallback to Flutter notification when native service is unavailable
+      TelemetryService.instance.trackEvent('notification_fallback_to_flutter');
       await _showNotification();
       _startUpdateTimer(isPaused);
     } else {
@@ -248,12 +253,16 @@ class TimerNotificationService {
           'isPaused': _isPaused,
           },
         );
-        if (updated == true) return;
+        final nativeUpdated = updated == true;
+        TelemetryService.instance.trackEvent('notification_update', {'nativeUpdated': nativeUpdated});
+        if (nativeUpdated) return;
         debugPrint('Timer service update unavailable, falling back to Flutter');
-      } catch (e) {
+      } catch (e, st) {
+        TelemetryService.instance.error('notification_update_failed', e, st);
         debugPrint('Failed to update timer service: $e');
       }
       // Fallback: update Flutter notification
+      TelemetryService.instance.trackEvent('notification_update_fallback');
       _updateFlutterNotification();
     } else {
       // iOS: Use flutter_local_notifications
@@ -283,6 +292,8 @@ class TimerNotificationService {
     _endTime = null;
     _isActive = false;
 
+    TelemetryService.instance.trackEvent('notification_stop');
+
     await _notifications.cancel(id: _timerNotificationId);
 
     // Stop Android foreground service
@@ -290,7 +301,8 @@ class TimerNotificationService {
       try {
         await _serviceChannel.invokeMethod<bool>('stopTimerService');
         debugPrint('Timer foreground service stopped');
-      } catch (e) {
+      } catch (e, st) {
+        TelemetryService.instance.error('notification_stop_failed', e, st);
         debugPrint('Failed to stop timer service: $e');
       }
     }
