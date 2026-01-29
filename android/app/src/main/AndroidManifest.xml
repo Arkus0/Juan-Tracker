@@ -3,10 +3,18 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
+    <!-- Foreground service permission for restful timer -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <application
         android:label="juan_tracker"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Timer foreground service declaration -->
+        <service
+            android:name=".TimerForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="media|location" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/telemetry_service.dart';
 
 bool get _isAndroid =>
     !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -186,6 +187,7 @@ class TimerPlatformService {
 
     _isInitialized = true;
     _logger.i('TimerPlatformService inicializado');
+    TelemetryService.instance.trackEvent('timer_platform_initialized');
   }
 
   /// Inicia el timer de descanso
@@ -205,6 +207,10 @@ class TimerPlatformService {
           setIndex: setIndex,
         ),
       );
+      TelemetryService.instance.trackEvent('timer_start', {
+        'platform': 'ios_or_local',
+        'seconds': seconds,
+      });
       return true;
     }
 
@@ -213,11 +219,13 @@ class TimerPlatformService {
         .millisecondsSinceEpoch;
 
     try {
-      await _timerChannel.invokeMethod('startTimerService', {
+      final started = await _timerChannel.invokeMethod<bool>('startTimerService', {
         'totalSeconds': seconds,
         'endTimeMillis': endTimeMillis,
         'isPaused': false,
       });
+
+      final bool nativeStarted = started == true;
 
       _updateState(
         TimerPlatformState(
@@ -229,10 +237,17 @@ class TimerPlatformService {
         ),
       );
 
-      _logger.d('Timer iniciado: ${seconds}s');
+      TelemetryService.instance.trackEvent('timer_start', {
+        'platform': nativeStarted ? 'native' : 'flutter_fallback',
+        'seconds': seconds,
+        'nativeStarted': nativeStarted,
+      });
+
+      _logger.d('Timer iniciado: ${seconds}s (nativeStarted=$nativeStarted)');
       return true;
-    } catch (e) {
+    } catch (e, st) {
       _logger.e('Error iniciando timer', error: e);
+      TelemetryService.instance.error('timer_start_failed', e, st);
       return false;
     }
   }
@@ -371,26 +386,43 @@ class TimerPlatformService {
       case 'onPause':
         await pause();
         _eventController.add(TimerPlatformEvent.pause);
+        TelemetryService.instance.trackEvent('notification_action', {'action': 'pause'});
         break;
 
       case 'onResume':
         await resume();
         _eventController.add(TimerPlatformEvent.resume);
+        TelemetryService.instance.trackEvent('notification_action', {'action': 'resume'});
         break;
 
       case 'onSkip':
         await stop();
         _eventController.add(TimerPlatformEvent.skip);
+        TelemetryService.instance.trackEvent('notification_action', {'action': 'skip'});
         break;
 
       case 'onAdd30':
         await addTime(30);
         _eventController.add(TimerPlatformEvent.add30);
+        TelemetryService.instance.trackEvent('notification_action', {'action': 'add30'});
         break;
 
       case 'onFinished':
         await stop();
         _eventController.add(TimerPlatformEvent.finished);
+        TelemetryService.instance.trackEvent('timer_finished');
+        break;
+
+      case 'onServiceStarted':
+        TelemetryService.instance.trackEvent('service_started');
+        break;
+
+      case 'onServiceStopped':
+        TelemetryService.instance.trackEvent('service_stopped');
+        break;
+
+      case 'onServiceStartFailed':
+        TelemetryService.instance.trackEvent('service_start_failed');
         break;
     }
   }

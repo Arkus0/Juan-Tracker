@@ -288,6 +288,36 @@ final db = WebDatabase('name');  // APIs deprecated conocidas
 
 ---
 
+### Cambios recientes y lecciones (Timer nativo y telemetría) ✅
+> Resumen de la implementación y aprendizajes obtenidos tras añadir soporte nativo para el temporizador de descanso y telemetría (Enero 2026).
+
+- **Foreground Service nativo**: Se añadió `TimerForegroundService.kt` como implementación nativa del temporizador (start/update/stop) y se declaró en `AndroidManifest.xml` (permiso `FOREGROUND_SERVICE`). `MainActivity.kt` ahora responde a `startTimerService`, `updateTimerService`, `stopTimerService` y devuelve `true` al arrancar el servicio nativo con éxito.
+
+- **Comportamiento de notificación**: La notificación de descanso es persistente y contiene acciones (Pausar / Reanudar / +30s / Saltar). Si el servicio nativo está activo usamos **solo** el servicio nativo para evitar duplicados y para garantizar que la notificación se gestione aun si el Flutter engine muere.
+
+- **Beep nativo y audio focus**: Los beeps se reproducen nativamente con `AudioTrack` (mismas frecuencias y duraciones que antes) y usan `STREAM_NOTIFICATION` para NO interrumpir la música del usuario. **No** se introdujo ningún beep nuevo ni extraño cuando se siguieron estas reglas; cuidado con duplicados si Dart y el servicio nativo reproducen a la vez (ahora evitado).
+
+- **Canal de eventos entre nativo y Dart**: Se agregó `TimerEventBridge` en `MainActivity.kt` y el servicio invoca eventos (`onServiceStarted`, `onServiceStopped`, `onFinished`, `onPause`, `onResume`, `onAdd30`, `onSkip`) para que Dart reciba notificaciones del lifecycle nativo.
+
+- **Telemetría ligera**: Se agregó `TelemetryService` en `lib/core/telemetry_service.dart`. Eventos instrumentados de ejemplo:
+  - `timer_start` (platform: native|flutter_fallback, seconds)
+  - `notification_start`, `notification_update`, `notification_stop`
+  - `timer_finished`, `service_started`, `service_stopped`
+  - `notification_action` (pause/resume/add30/skip)
+  - `notification_fallback_to_flutter` (cuando se usa fallback Dart)
+  Recomendación: integrar Sentry/Firebase para envío remoto y alertas en producción.
+
+- **Mitigaciones y pruebas**:
+  - Probar en múltiples OEM (Xiaomi, Huawei, Samsung) y escenarios (app background, bloqueo de pantalla, cambios rápidos de app) — algunos fabricantes tienen políticas agresivas de background.
+  - Checklist de QA: ver acciones de notificación, beeps en thresholds, desaparición de notificación al terminar y que los beeps no pausen música en reproducción.
+
+- **Lecciones aprendidas**:
+  - Preferir lógica nativa para funcionalidades críticas en background.
+  - Evitar duplicar responsabilidades entre Dart y nativo: un único "source of truth" reduce errores y race conditions.
+  - Telemetría desde el inicio facilita reproducir incidentes en producción.
+
+---
+
 ## Testing Instructions
 
 ### Tests existentes
@@ -657,3 +687,152 @@ Cubre:
 - Manejo de datos insuficientes
 
 *Última actualización: Enero 2026 - Coach Adaptativo implementado*
+
+---
+
+## Integración Open Food Facts + OCR de Etiquetas (Nuevo)
+
+Sistema de búsqueda de alimentos externos con cache offline y OCR de etiquetas nutricionales.
+
+### Arquitectura
+
+```
+lib/diet/services/
+├── open_food_facts_service.dart      # Cliente HTTP con rate limiting
+├── food_cache_service.dart            # Cache local (SharedPreferences + filesystem)
+└── food_label_ocr_service.dart        # OCR de etiquetas con ML Kit
+
+lib/diet/providers/
+└── external_food_search_provider.dart # Estado de búsqueda (online/offline)
+
+lib/features/diary/presentation/
+└── external_food_search_screen.dart   # UI con voz/OCR/barcode/texto
+```
+
+### Características Implementadas
+
+**Búsqueda Open Food Facts:**
+- Búsqueda por texto con debounce (500ms)
+- Búsqueda por código de barras (EAN-13)
+- Búsqueda por voz (`speech_to_text`)
+- Rate limiting: 60 req/minuto
+- Timeout: 10 segundos
+
+**Modo Offline:**
+- Cache de búsquedas (TTL: 7 días)
+- Alimentos guardados disponibles sin red
+- Búsqueda local en cache
+
+**OCR de Etiquetas:**
+- Escaneo desde cámara o galería
+- Detección automática de nombre del producto
+- Pegar texto desde portapapeles
+- Edición manual antes de buscar
+
+### Permisos Android Necesarios
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+### Dependencias
+
+```yaml
+dependencies:
+  http: ^1.3.0
+  connectivity_plus: ^6.1.3
+  google_mlkit_text_recognition: ^0.15.0  # Ya existía
+  image_picker: ^1.1.2                    # Ya existía
+  speech_to_text: ^7.0.0                  # Ya existía
+```
+
+### Patrones Aprendidos
+
+**OCR con ML Kit:**
+```dart
+// Procesar imagen
+final inputImage = InputImage.fromFilePath(imagePath);
+final textRecognizer = TextRecognizer();
+final recognizedText = await textRecognizer.processImage(inputImage);
+
+// Extraer líneas
+for (final block in recognizedText.blocks) {
+  for (final line in block.lines) {
+    lines.add(line.text.trim());
+  }
+}
+await textRecognizer.close(); // Siempre cerrar
+```
+
+**Portapapeles:**
+```dart
+final data = await Clipboard.getData(Clipboard.kTextPlain);
+final text = data?.text;
+```
+
+**BuildContext después de async:**
+```dart
+// ❌ INCORRECTO: Usar context después de await sin verificar
+final result = await asyncOperation();
+showDialog(context: context, ...); // Puede crashar
+
+// ✅ CORRECTO: Verificar mounted antes de usar context
+final result = await asyncOperation();
+if (!mounted) return;
+showDialog(context: context, ...);
+```
+
+**Casting de JSON de APIs externas:**
+```dart
+// ❌ INCORRECTO: Cast directo que puede fallar
+final products = json['products'] as List<Map<String, dynamic>>;
+
+// ✅ CORRECTO: Convertir cada elemento
+final products = (json['products'] as List)
+    .map((p) => Map<String, dynamic>.from(p as Map))
+    .toList();
+```
+
+**Rate Limiting simple:**
+```dart
+final _requestTimestamps = <DateTime>[];
+
+bool get _canMakeRequest {
+  _requestTimestamps.removeWhere(
+    (ts) => DateTime.now().difference(ts).inMinutes >= 1,
+  );
+  return _requestTimestamps.length < _maxRequestsPerMinute;
+}
+```
+
+**Test de servicios con SharedPreferences:**
+```dart
+// Resetear singleton entre tests
+@visibleForTesting
+static void resetForTesting() => _instance = null;
+
+// En setUp:
+SharedPreferences.setMockInitialValues({});
+Service.resetForTesting();
+```
+
+### Errores Comunes y Soluciones
+
+**Error: `use_build_context_synchronously`**
+- **Causa**: Usar `BuildContext` después de `await` sin verificar `mounted`
+- **Solución**: Verificar `if (mounted)` antes de usar el context
+
+**Error: `extends_non_class` en Riverpod 3**
+- **Causa**: Usar `StateNotifierProvider` en lugar de `NotifierProvider`
+- **Solución**: Migrar a `Notifier` + `NotifierProvider`
+
+**Error: `unused_local_variable`**
+- **Causa**: Variables declaradas pero no usadas
+- **Solución**: Eliminar o usar la variable
+
+**Error: Cast de tipos en JSON**
+- **Causa**: Cast directo de `List<dynamic>` a `List<Map<String, dynamic>>`
+- **Solución**: Usar `.map()` con `Map<String, dynamic>.from()`
+
+*Última actualización: Enero 2026 - Open Food Facts + OCR implementado*

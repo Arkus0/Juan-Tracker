@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../../core/providers/database_provider.dart';
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/external_food_search_provider.dart';
+import '../../../diet/services/food_label_ocr_service.dart';
 import 'add_entry_dialog.dart';
 
 /// Pantalla de búsqueda de alimentos externos (Open Food Facts)
@@ -125,6 +128,143 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
     }
   }
 
+  /// Escanea etiqueta de alimento con OCR
+  Future<void> _scanFoodLabel() async {
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Escanear etiqueta'),
+        content: const Text('¿Desde dónde quieres escanear?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(ImageSource.camera),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.camera_alt),
+                SizedBox(width: 8),
+                Text('Cámara'),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(ImageSource.gallery),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.photo_library),
+                SizedBox(width: 8),
+                Text('Galería'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null || !mounted) return;
+
+    try {
+      final scanResult = await FoodLabelOcrService.instance.scanLabel(source);
+      
+      if (!scanResult.hasText) {
+        if (mounted) {
+          _showError('No se pudo leer texto de la imagen. Intenta con mejor iluminación.');
+        }
+        return;
+      }
+
+      if (!scanResult.isLikelyFoodLabel && mounted) {
+        // Preguntar al usuario si quiere usar el texto de todos modos
+        final useAnyway = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('¿Es esto una etiqueta de alimento?'),
+            content: Text(
+              'El texto detectado no parece ser una etiqueta nutricional. '
+              '¿Quieres usar este texto para buscar de todos modos?\n\n'
+              'Texto detectado:\n${scanResult.fullText.substring(0, 
+                scanResult.fullText.length > 200 ? 200 : scanResult.fullText.length
+              )}${scanResult.fullText.length > 200 ? '...' : ''}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Usar texto'),
+              ),
+            ],
+          ),
+        );
+        
+        if (useAnyway != true || !mounted) return;
+      }
+
+      // Mostrar dialog para confirmar/editar texto detectado
+      if (!mounted) return;
+      
+      final searchText = await showDialog<String>(
+        context: context,
+        builder: (ctx) => _OcrResultDialog(scanResult: scanResult),
+      );
+
+      if (searchText != null && searchText.isNotEmpty && mounted) {
+        _searchController.text = searchText;
+        _onSearchChanged(searchText);
+      }
+    } on PlatformException catch (e) {
+      if (mounted) {
+        _showError('Error al acceder a la cámara: ${e.message}');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('Error al escanear: $e');
+      }
+    }
+  }
+
+  /// Pega texto desde el portapapeles
+  Future<void> _pasteFromClipboard() async {
+    final clipboardText = await FoodLabelOcrService.instance.getClipboardText();
+    
+    if (clipboardText == null || clipboardText.isEmpty) {
+      if (mounted) {
+        _showError('El portapapeles está vacío');
+      }
+      return;
+    }
+
+    // Limpiar el texto
+    final cleanedText = FoodLabelOcrService.instance.cleanTextForSearch(clipboardText);
+    
+    if (cleanedText.isEmpty) {
+      if (mounted) {
+        _showError('No se encontró texto válido en el portapapeles');
+      }
+      return;
+    }
+
+    // Mostrar dialog para confirmar/editar
+    if (!mounted) return;
+    
+    final searchText = await showDialog<String>(
+      context: context,
+      builder: (ctx) => _TextInputDialog(
+        initialText: cleanedText,
+        title: 'Texto del portapapeles',
+        hint: 'Edita el texto para buscar',
+      ),
+    );
+
+    if (searchText != null && searchText.isNotEmpty && mounted) {
+      _searchController.text = searchText;
+      _onSearchChanged(searchText);
+    }
+  }
+
   /// Selecciona un producto para guardar/usar
   Future<void> _selectProduct(OpenFoodFactsResult result) async {
     // Verificar si ya existe en biblioteca local
@@ -229,6 +369,8 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
             onChanged: _onSearchChanged,
             onVoicePressed: _isListening ? _stopVoiceSearch : _startVoiceSearch,
             onBarcodePressed: _scanBarcode,
+            onLabelScanPressed: _scanFoodLabel,
+            onPastePressed: _pasteFromClipboard,
             onClear: () {
               _searchController.clear();
               ref.read(externalFoodSearchProvider.notifier).clear();
@@ -312,6 +454,8 @@ class _SearchBar extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final VoidCallback onVoicePressed;
   final VoidCallback onBarcodePressed;
+  final VoidCallback onLabelScanPressed;
+  final VoidCallback onPastePressed;
   final VoidCallback onClear;
 
   const _SearchBar({
@@ -320,6 +464,8 @@ class _SearchBar extends StatelessWidget {
     required this.onChanged,
     required this.onVoicePressed,
     required this.onBarcodePressed,
+    required this.onLabelScanPressed,
+    required this.onPastePressed,
     required this.onClear,
   });
 
@@ -341,23 +487,38 @@ class _SearchBar extends StatelessWidget {
               suffixIcon: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Pegar del portapapeles
+                  IconButton(
+                    icon: const Icon(Icons.content_paste),
+                    tooltip: 'Pegar texto',
+                    onPressed: onPastePressed,
+                  ),
+                  // OCR de etiqueta
+                  IconButton(
+                    icon: const Icon(Icons.document_scanner),
+                    tooltip: 'Escanear etiqueta',
+                    onPressed: onLabelScanPressed,
+                  ),
                   // Micrófono
                   IconButton(
                     icon: Icon(
                       isListening ? Icons.mic : Icons.mic_none,
                       color: isListening ? theme.colorScheme.primary : null,
                     ),
+                    tooltip: 'Búsqueda por voz',
                     onPressed: onVoicePressed,
                   ),
                   // Barcode
                   IconButton(
                     icon: const Icon(Icons.qr_code_scanner),
+                    tooltip: 'Código de barras',
                     onPressed: onBarcodePressed,
                   ),
                   // Clear
                   if (value.text.isNotEmpty)
                     IconButton(
                       icon: const Icon(Icons.clear),
+                      tooltip: 'Limpiar',
                       onPressed: onClear,
                     ),
                 ],
@@ -952,6 +1113,204 @@ class _BarcodeInputDialogState extends State<_BarcodeInputDialog> {
             final code = _controller.text.trim();
             if (code.isNotEmpty) {
               Navigator.of(context).pop(code);
+            }
+          },
+          child: const Text('Buscar'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dialog para mostrar resultado de OCR y permitir edición
+class _OcrResultDialog extends StatefulWidget {
+  final FoodLabelScanResult scanResult;
+
+  const _OcrResultDialog({required this.scanResult});
+
+  @override
+  State<_OcrResultDialog> createState() => _OcrResultDialogState();
+}
+
+class _OcrResultDialogState extends State<_OcrResultDialog> {
+  late final TextEditingController _controller;
+  bool _showFullText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.scanResult.detectedProductName ?? widget.scanResult.searchQuery,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scanResult = widget.scanResult;
+
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.document_scanner),
+          const SizedBox(width: 8),
+          const Expanded(child: Text('Texto detectado')),
+          if (scanResult.detectedBrand != null)
+            Chip(
+              label: Text(scanResult.detectedBrand!),
+              backgroundColor: theme.colorScheme.primaryContainer,
+              visualDensity: VisualDensity.compact,
+            ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Campo editable
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del producto',
+                hintText: 'Edita si es necesario',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.edit),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Palabras clave detectadas
+            if (scanResult.keywords.isNotEmpty) ...[
+              Text(
+                'Palabras clave detectadas:',
+                style: theme.textTheme.labelSmall,
+              ),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 4,
+                children: scanResult.keywords.take(8).map((keyword) => 
+                  ActionChip(
+                    label: Text(keyword),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      _controller.text = keyword;
+                    },
+                  ),
+                ).toList(),
+              ),
+              const SizedBox(height: 16),
+            ],
+            
+            // Toggle para ver texto completo
+            TextButton.icon(
+              onPressed: () => setState(() => _showFullText = !_showFullText),
+              icon: Icon(_showFullText ? Icons.expand_less : Icons.expand_more),
+              label: Text(_showFullText ? 'Ocultar texto completo' : 'Ver texto completo'),
+            ),
+            
+            // Texto completo OCR
+            if (_showFullText) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  scanResult.fullText,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: () {
+            final text = _controller.text.trim();
+            if (text.isNotEmpty) {
+              Navigator.of(context).pop(text);
+            }
+          },
+          icon: const Icon(Icons.search),
+          label: const Text('Buscar'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dialog genérico para entrada/edición de texto
+class _TextInputDialog extends StatefulWidget {
+  final String initialText;
+  final String title;
+  final String hint;
+
+  const _TextInputDialog({
+    required this.initialText,
+    required this.title,
+    required this.hint,
+  });
+
+  @override
+  State<_TextInputDialog> createState() => _TextInputDialogState();
+}
+
+class _TextInputDialogState extends State<_TextInputDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialText);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLines: 3,
+        minLines: 1,
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final text = _controller.text.trim();
+            if (text.isNotEmpty) {
+              Navigator.of(context).pop(text);
             }
           },
           child: const Text('Buscar'),

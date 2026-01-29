@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:juan_tracker/diet/models/food_model.dart';
 import 'package:juan_tracker/diet/models/open_food_facts_model.dart';
 import 'package:juan_tracker/diet/services/food_cache_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';

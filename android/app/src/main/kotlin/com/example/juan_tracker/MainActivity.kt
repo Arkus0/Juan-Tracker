@@ -11,6 +11,8 @@ import android.media.AudioTrack
 import android.util.Log
 import kotlin.math.max
 
+object TimerEventBridge { var channel: MethodChannel? = null }
+
 class MainActivity : FlutterActivity() {
     private val MUSIC_CHANNEL = "juan_training/music_launcher"
     private val MUSIC_EVENTS_CHANNEL = "juan_training/music_events"
@@ -41,21 +43,59 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TIMER_SERVICE_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "startTimerService" -> {
-                    // Accept parameters; no-op implementation returns false to allow Flutter fallback
-                    result.success(false)
+                    val totalSeconds = call.argument<Int>("totalSeconds") ?: 90
+                    val endTimeMillis = call.argument<Long>("endTimeMillis") ?: 0L
+                    val isPaused = call.argument<Boolean>("isPaused") ?: false
+                    try {
+                        val intent = Intent(this, TimerForegroundService::class.java).apply {
+                            action = ACTION_START
+                            putExtra(EXTRA_TOTAL_SECONDS, totalSeconds)
+                            putExtra(EXTRA_END_TIME_MS, endTimeMillis)
+                            putExtra(EXTRA_IS_PAUSED, isPaused)
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(intent)
+                        } else {
+                            startService(intent)
+                        }
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
                 }
                 "updateTimerService" -> {
-                    result.success(false)
+                    val totalSeconds = call.argument<Int>("totalSeconds")
+                    val endTimeMillis = call.argument<Long>("endTimeMillis")
+                    val isPaused = call.argument<Boolean>("isPaused")
+                    try {
+                        val intent = Intent(this, TimerForegroundService::class.java).apply {
+                            action = ACTION_UPDATE
+                            totalSeconds?.let { putExtra(EXTRA_TOTAL_SECONDS, it) }
+                            endTimeMillis?.let { putExtra(EXTRA_END_TIME_MS, it) }
+                            isPaused?.let { putExtra(EXTRA_IS_PAUSED, it) }
+                        }
+                        startService(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
                 }
                 "stopTimerService" -> {
-                    result.success(false)
+                    try {
+                        val intent = Intent(this, TimerForegroundService::class.java).apply { action = ACTION_STOP }
+                        startService(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
                 }
                 else -> result.notImplemented()
             }
         }
 
         // Expose timer events channel to allow Dart to receive platform-initiated method calls if needed
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TIMER_EVENTS_CHANNEL)
+        val timerEvents = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TIMER_EVENTS_CHANNEL)
+        TimerEventBridge.channel = timerEvents
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, BEEP_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
