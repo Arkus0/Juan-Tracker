@@ -73,6 +73,7 @@ final weightTrendProvider = Provider<AsyncValue<WeightTrendResult?>>((ref) {
 });
 
 /// Provider del análisis con historial extendido (1 año)
+/// MA-003: Usa calculateAsync() para ejecutar en isolate si hay muchos datos
 final weightTrendHistoryProvider = FutureProvider<WeightTrendResult?>((ref) async {
   final repo = ref.watch(weighInRepositoryProvider);
   final calculator = ref.watch(weightTrendCalculatorProvider);
@@ -84,7 +85,9 @@ final weightTrendHistoryProvider = FutureProvider<WeightTrendResult?>((ref) asyn
   if (weighIns.isEmpty) return null;
 
   try {
-    return calculator.calculate(weighIns);
+    // MA-003: Usar calculateAsync para listas grandes (>50 registros)
+    // Esto ejecuta el cálculo en un isolate separado y evita bloquear la UI
+    return await calculator.calculateAsync(weighIns);
   } catch (_) {
     return null;
   }

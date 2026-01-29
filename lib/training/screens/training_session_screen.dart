@@ -267,41 +267,6 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     return;
   }
 
-  /// Callback cuando el timer de descanso termina
-  /// Vibra y notifica para auto-focus al siguiente input
-  void _onTimerFinished({int? lastExerciseIndex, int? lastSetIndex}) async {
-    // La vibración ya se maneja en el TimerBar
-    // Notificar para auto-focus usando el nuevo FocusManager
-    final state = ref.read(trainingSessionProvider);
-    final nextSet = state.nextIncompleteSet;
-
-    if (nextSet != null) {
-      // Usar el nuevo FocusManager para solicitar focus
-      ref
-          .read(focusManagerProvider.notifier)
-          .requestFocus(
-            exerciseIndex: nextSet.exerciseIndex,
-            setIndex: nextSet.setIndex,
-          );
-
-      // También actualizar el provider legacy para compatibilidad
-      ref.read(timerFinishedFocusProvider.notifier).setFocus(nextSet);
-
-      // Scroll hacia el ejercicio si es necesario
-      _scrollToExercise(nextSet.exerciseIndex);
-
-      // Limpiar después de un frame para que el widget pueda reaccionar
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 150), () {
-          if (mounted) {
-            ref.read(timerFinishedFocusProvider.notifier).clear();
-            ref.read(focusManagerProvider.notifier).clearFocus();
-          }
-        });
-      });
-    }
-  }
-
   /// Scroll suave hacia un ejercicio específico
   void _scrollToExercise(int exerciseIndex) async {
     // Try precise scroll using the exercise's GlobalKey and ensureVisible.
@@ -343,15 +308,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       trainingSessionProvider.select((s) => s.exercises.length),
     );
 
-    // Timer state: se pasa al RestTimerBar, que está envuelto en un RepaintBoundary
-    // para limitar los repaints solo a la barra cuando el timer hace tick (p.ej. cada 100 ms)
-    // y evitar repintar toda la pantalla en cada actualización del temporizador.
-    final restTimerState = ref.watch(
-      trainingSessionProvider.select((s) => s.restTimer),
-    );
-    final showTimerBar = ref.watch(
-      trainingSessionProvider.select((s) => s.showTimerBar),
-    );
+    // MD-001: Timer state movido a _TimerSection para aislar rebuilds
+    // El timer ya no causa rebuilds de toda la pantalla
 
     // Progress state
     final progress = ref.watch(sessionProgressProvider);
@@ -425,10 +383,20 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               loading: () => const SizedBox.shrink(),
               error: (_, _) => const SizedBox.shrink(),
             ),
-            IconButton(
-              icon: Icon(showTimerBar ? Icons.timer : Icons.timer_outlined),
-              onPressed: () => notifier.toggleTimerBar(!showTimerBar),
-              tooltip: 'Mostrar/ocultar timer',
+            // MD-001: Usar Consumer para aislar el rebuild del botón de timer
+            Consumer(
+              builder: (context, ref, child) {
+                final showTimerBar = ref.watch(
+                  trainingSessionProvider.select((s) => s.showTimerBar),
+                );
+                return IconButton(
+                  icon: Icon(showTimerBar ? Icons.timer : Icons.timer_outlined),
+                  onPressed: () => ref
+                      .read(trainingSessionProvider.notifier)
+                      .toggleTimerBar(!showTimerBar),
+                  tooltip: 'Mostrar/ocultar timer',
+                );
+              },
             ),
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
@@ -517,22 +485,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                   ),
                 ),
 
-                // Nuevo Timer Bar no invasivo
-                // Performance: RepaintBoundary aísla repaints del timer
-                RepaintBoundary(
-                  child: RestTimerBar(
-                    timerState: restTimerState,
-                    showInactiveBar: showTimerBar,
-                    onStartRest: notifier.startRest,
-                    onStopRest: notifier.stopRest,
-                    onPauseRest: notifier.pauseRest,
-                    onResumeRest: notifier.resumeRest,
-                    onDurationChange: notifier.setRestDuration,
-                    onAddTime: notifier.addRestTime,
-                    onTimerFinished: _onTimerFinished,
-                    onRestartRest: notifier.restartRest,
-                  ),
-                ),
+                // MD-001: Timer aislado en widget const para evitar rebuilds
+                const _TimerSection(),
               ],
             ),
 
@@ -817,5 +771,75 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         ),
       );
     }
+  }
+}
+
+/// MD-001: Sección de Timer aislada para evitar rebuilds de la pantalla completa
+/// 
+/// Este widget ConsumerWidget aísla todo el estado del timer del resto de la 
+/// pantalla de entrenamiento. Cuando el timer actualiza (cada 100ms), solo
+/// este widget se reconstruye, no toda la TrainingSessionScreen.
+/// 
+/// Optimizaciones:
+/// - Usa select() para escuchar solo cambios específicos del timer
+/// - Envuelto en RepaintBoundary para aislar repaints
+/// - Callbacks delegados al notifier sin reconstruir el padre
+class _TimerSection extends ConsumerWidget {
+  const _TimerSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Escuchar solo el estado del timer - cambios aquí solo reconstruyen este widget
+    final restTimerState = ref.watch(
+      trainingSessionProvider.select((s) => s.restTimer),
+    );
+    final showTimerBar = ref.watch(
+      trainingSessionProvider.select((s) => s.showTimerBar),
+    );
+    
+    final notifier = ref.read(trainingSessionProvider.notifier);
+    
+    // Callback que necesita acceso al context para scroll
+    void onTimerFinished({int? lastExerciseIndex, int? lastSetIndex}) {
+      // La vibración ya se maneja en el TimerBar
+      final state = ref.read(trainingSessionProvider);
+      final nextSet = state.nextIncompleteSet;
+
+      if (nextSet != null) {
+        // Usar el FocusManager para solicitar focus
+        ref
+            .read(focusManagerProvider.notifier)
+            .requestFocus(
+              exerciseIndex: nextSet.exerciseIndex,
+              setIndex: nextSet.setIndex,
+            );
+
+        // Actualizar provider legacy para compatibilidad
+        ref.read(timerFinishedFocusProvider.notifier).setFocus(nextSet);
+
+        // Limpiar después de un frame
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Future.delayed(const Duration(milliseconds: 150), () {
+            ref.read(timerFinishedFocusProvider.notifier).clear();
+            ref.read(focusManagerProvider.notifier).clearFocus();
+          });
+        });
+      }
+    }
+
+    return RepaintBoundary(
+      child: RestTimerBar(
+        timerState: restTimerState,
+        showInactiveBar: showTimerBar,
+        onStartRest: notifier.startRest,
+        onStopRest: notifier.stopRest,
+        onPauseRest: notifier.pauseRest,
+        onResumeRest: notifier.resumeRest,
+        onDurationChange: notifier.setRestDuration,
+        onAddTime: notifier.addRestTime,
+        onTimerFinished: onTimerFinished,
+        onRestartRest: notifier.restartRest,
+      ),
+    );
   }
 }

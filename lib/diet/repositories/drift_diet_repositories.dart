@@ -310,28 +310,42 @@ class DriftDiaryRepository implements IDiaryRepository {
   }
 
   @override
-  Future<List<models.DiaryEntryModel>> getRecentUniqueEntries({int limit = 5}) async {
-    // Obtener las últimas 50 entradas ordenadas por fecha (más recientes primero)
+  Future<List<models.DiaryEntryModel>> getRecentUniqueEntries({int limit = 7}) async {
+    // UX-002: Obtener entradas de los últimos 7 días (más amplio)
+    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
     final entries = await (_db.select(_db.diaryEntries)
+          ..where((e) => e.date.isBiggerOrEqualValue(
+                DateTime(sevenDaysAgo.year, sevenDaysAgo.month, sevenDaysAgo.day),
+              ))
           ..orderBy([(e) => OrderingTerm.desc(e.createdAt)])
-          ..limit(50))
+          ..limit(100))
         .get();
 
-    // Filtrar para obtener solo entradas únicas por foodId o foodName
-    final seen = <String>{};
-    final uniqueEntries = <db.DiaryEntry>[];
+    // UX-002: Agrupar por alimento y contar frecuencia
+    final frequencyMap = <String, int>{};
+    final entryMap = <String, db.DiaryEntry>{};
 
     for (final entry in entries) {
-      // Usar foodId si existe, sino usar foodName como key único
       final key = entry.foodId ?? entry.foodName;
-      if (!seen.contains(key)) {
-        seen.add(key);
-        uniqueEntries.add(entry);
-        if (uniqueEntries.length >= limit) break;
-      }
+      frequencyMap[key] = (frequencyMap[key] ?? 0) + 1;
+      // Guardar la entrada más reciente de cada alimento
+      entryMap.putIfAbsent(key, () => entry);
     }
 
-    return uniqueEntries.map((e) => e.toModel()).toList();
+    // Convertir a lista y ordenar por frecuencia (descendente) y luego por recencia
+    final sortedEntries = entryMap.entries.toList()
+      ..sort((a, b) {
+        // Primero por frecuencia
+        final freqCompare = frequencyMap[b.key]!.compareTo(frequencyMap[a.key]!);
+        if (freqCompare != 0) return freqCompare;
+        // Desempate por fecha
+        return b.value.createdAt.compareTo(a.value.createdAt);
+      });
+
+    // Tomar los primeros 'limit' elementos
+    final limitedEntries = sortedEntries.take(limit).map((e) => e.value).toList();
+
+    return limitedEntries.map((e) => e.toModel()).toList();
   }
 }
 

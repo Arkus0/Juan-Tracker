@@ -81,7 +81,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _completeOnboarding() async {
     HapticFeedback.mediumImpact();
     await OnboardingScreen.markCompleted();
+    // Guardar preferencia de onboarding contextual (UX-001)
+    await _markContextualOnboardingNeeded();
     widget.onComplete();
+  }
+
+  /// Marca que se debe mostrar onboarding contextual tras saltar
+  Future<void> _markContextualOnboardingNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('contextual_onboarding_needed', true);
+  }
+
+  /// Verifica si se necesita onboarding contextual
+  static Future<bool> needsContextualOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('contextual_onboarding_needed') == true;
+  }
+
+  /// Marca el onboarding contextual como completado
+  static Future<void> markContextualOnboardingComplete() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('contextual_onboarding_needed', false);
   }
 
   @override
@@ -93,17 +113,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button
+            // Skip button - solo visible tras la 2ª página (UX-001)
             Align(
               alignment: Alignment.topRight,
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
-                child: TextButton(
-                  onPressed: _completeOnboarding,
-                  child: Text(
-                    'Saltar',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: colors.onSurfaceVariant,
+                child: AnimatedOpacity(
+                  opacity: _currentPage >= 1 ? 1.0 : 0.0,
+                  duration: AppDurations.fast,
+                  child: TextButton(
+                    onPressed: _currentPage >= 1 ? _completeOnboarding : null,
+                    child: Text(
+                      'Saltar',
+                      style: AppTypography.labelLarge.copyWith(
+                        color: _currentPage >= 1 
+                            ? colors.onSurfaceVariant 
+                            : colors.onSurfaceVariant.withAlpha((0.3 * 255).round()),
+                      ),
                     ),
                   ),
                 ),

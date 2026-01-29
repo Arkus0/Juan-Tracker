@@ -10,6 +10,7 @@
 /// Todos los algoritmos son O(n) y funcionan en tiempo real en cualquier dispositivo.
 library;
 
+import 'package:flutter/foundation.dart' show compute;
 import '../models/weighin_model.dart' show WeighInModel;
 
 // ============================================================================
@@ -458,6 +459,38 @@ class WeightTrendCalculator {
   }
 
   // ============================================================================
+  // MA-003: CÁLCULOS EN ISOLATE (BACKGROUND)
+  // ============================================================================
+
+  /// Ejecuta el cálculo de tendencias en un Isolate separado
+  /// 
+  /// Útil cuando hay muchos registros (>100) o se quiere evitar
+  /// bloquear el UI thread durante el cálculo.
+  /// 
+  /// Ejemplo:
+  /// ```dart
+  /// final result = await calculator.calculateAsync(entries);
+  /// ```
+  Future<WeightTrendResult> calculateAsync(List<WeighInModel> entries) async {
+    if (entries.isEmpty) {
+      throw ArgumentError('Cannot calculate trend from empty entries list');
+    }
+    
+    // Para listas pequeñas, calcular sincrónicamente (más rápido que el overhead del isolate)
+    if (entries.length < 50) {
+      return calculate(entries);
+    }
+    
+    // Para listas grandes, usar isolate
+    final params = _CalculationParams(
+      entries: entries,
+      config: config,
+    );
+    
+    return compute(_calculateInIsolate, params);
+  }
+
+  // ============================================================================
   // UTILIDADES
   // ============================================================================
 
@@ -577,4 +610,30 @@ extension WeightTrendResultExtensions on WeightTrendResult {
     buffer.writeln('Confianza: ${(kalmanConfidence * 100).toStringAsFixed(0)}%');
     return buffer.toString();
   }
+}
+
+// ============================================================================
+// MA-003: PARÁMETROS PARA ISOLATE
+// ============================================================================
+
+/// Parámetros para cálculo en Isolate
+/// 
+/// Debe ser serializable para poder pasarse al isolate
+class _CalculationParams {
+  final List<WeighInModel> entries;
+  final TrendConfig config;
+
+  _CalculationParams({
+    required this.entries,
+    required this.config,
+  });
+}
+
+/// Función top-level que ejecuta el cálculo en el isolate
+/// 
+/// Debe ser top-level (no dentro de una clase) para poder ser
+/// pasada a compute()
+WeightTrendResult _calculateInIsolate(_CalculationParams params) {
+  final calculator = WeightTrendCalculator(config: params.config);
+  return calculator.calculate(params.entries);
 }
