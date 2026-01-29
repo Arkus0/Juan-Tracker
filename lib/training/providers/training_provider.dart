@@ -813,12 +813,33 @@ class SmartWorkoutSuggestion {
   final String dayName;
   final String reason;
 
+  /// Tiempo desde la última sesión de entrenamiento
+  final Duration? timeSinceLastSession;
+
+  /// Fecha de la última sesión
+  final DateTime? lastSessionDate;
+
+  /// Indica si es día de descanso (sugerido no entrenar)
+  final bool isRestDay;
+
   const SmartWorkoutSuggestion({
     required this.rutina,
     required this.dayIndex,
     required this.dayName,
     required this.reason,
+    this.timeSinceLastSession,
+    this.lastSessionDate,
+    this.isRestDay = false,
   });
+
+  /// Formato legible del tiempo desde última sesión
+  String get timeSinceFormatted {
+    if (timeSinceLastSession == null) return 'nuevo';
+    final days = timeSinceLastSession!.inDays;
+    if (days == 0) return 'hoy';
+    if (days == 1) return 'ayer';
+    return 'hace $days días';
+  }
 }
 
 /// Provider que calcula el próximo día sugerido basado en el historial.
@@ -863,6 +884,8 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((
       dayIndex: firstValidDayIndex,
       dayName: firstRutina.dias[firstValidDayIndex].nombre,
       reason: 'Comienza tu rutina',
+      timeSinceLastSession: null,
+      lastSessionDate: null,
     );
   }
 
@@ -885,12 +908,22 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((
 
     final nextDay = lastUsedRutina.dias[nextDayIndex];
 
-    // Determinar razón
+    // Calcular tiempo desde última sesión
+    final timeSince = DateTime.now().difference(lastSession.fecha);
+    final daysSince = timeSince.inDays;
+
+    // Determinar razón con contexto temporal
     String reason;
-    if (nextDayIndex == 0 && lastDayIndex >= 0) {
-      reason = 'Nueva semana, reinicia ciclo';
+    if (daysSince == 0) {
+      reason = 'Continúa tu rutina';
+    } else if (daysSince == 1) {
+      reason = 'Última sesión: ayer';
+    } else if (daysSince <= 3) {
+      reason = 'Última sesión: hace $daysSince días';
+    } else if (daysSince <= 7) {
+      reason = 'Retoma tu rutina ($daysSince días)';
     } else {
-      reason = 'Siguiente día en tu rutina';
+      reason = '¡Vuelve al gym! ($daysSince días sin entrenar)';
     }
 
     return SmartWorkoutSuggestion(
@@ -898,6 +931,8 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((
       dayIndex: nextDayIndex,
       dayName: nextDay.nombre,
       reason: reason,
+      timeSinceLastSession: timeSince,
+      lastSessionDate: lastSession.fecha,
     );
   }
 
