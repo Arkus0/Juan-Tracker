@@ -17,6 +17,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
 
+  // Usamos IndexedStack para preservar el estado de cada tab
+  // y evitar rebuilds innecesarios al cambiar entre tabs
   static const _tabs = <Widget>[
     DiaryScreen(),
     FoodsScreen(),
@@ -29,7 +31,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Juan Tracker')),
-      body: SafeArea(child: _tabs[_currentIndex]),
+      // IndexedStack mantiene todos los tabs en memoria pero solo muestra uno
+      // Esto preserva el scroll position y evita re-fetch de datos
+      body: SafeArea(
+        child: IndexedStack(
+          index: _currentIndex,
+          children: _tabs,
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         showUnselectedLabels: true,

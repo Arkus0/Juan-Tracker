@@ -117,39 +117,45 @@ abstract class AppRadius {
   static const double full = 9999.0;
 }
 
-/// Elevaciones (sombras)
+/// Elevaciones (sombras) - Constantes estáticas para evitar recreación
 abstract class AppElevation {
-  static List<BoxShadow> get none => [];
-  
-  static List<BoxShadow> get level1 => [
+  // Constantes pre-calculadas para mejor rendimiento
+  static const Color _shadow05 = Color(0x0D000000); // 0.05 * 255 = 13 = 0x0D
+  static const Color _shadow08 = Color(0x14000000); // 0.08 * 255 = 20 = 0x14
+  static const Color _shadow12 = Color(0x1F000000); // 0.12 * 255 = 31 = 0x1F
+  static const Color _shadow16 = Color(0x29000000); // 0.16 * 255 = 41 = 0x29
+
+  static const List<BoxShadow> none = [];
+
+  static const List<BoxShadow> level1 = [
     BoxShadow(
-      color: Colors.black.withAlpha((0.05 * 255).round()),
+      color: _shadow05,
       blurRadius: 4,
-      offset: const Offset(0, 1),
+      offset: Offset(0, 1),
     ),
   ];
-  
-  static List<BoxShadow> get level2 => [
+
+  static const List<BoxShadow> level2 = [
     BoxShadow(
-      color: Colors.black.withAlpha((0.08 * 255).round()),
+      color: _shadow08,
       blurRadius: 8,
-      offset: const Offset(0, 2),
+      offset: Offset(0, 2),
     ),
   ];
-  
-  static List<BoxShadow> get level3 => [
+
+  static const List<BoxShadow> level3 = [
     BoxShadow(
-      color: Colors.black.withAlpha((0.12 * 255).round()),
+      color: _shadow12,
       blurRadius: 16,
-      offset: const Offset(0, 4),
+      offset: Offset(0, 4),
     ),
   ];
-  
-  static List<BoxShadow> get level4 => [
+
+  static const List<BoxShadow> level4 = [
     BoxShadow(
-      color: Colors.black.withAlpha((0.16 * 255).round()),
+      color: _shadow16,
       blurRadius: 24,
-      offset: const Offset(0, 8),
+      offset: Offset(0, 8),
     ),
   ];
 }
