@@ -4,6 +4,10 @@ const Map<String, List<String>> exerciseAliases = {
   'bench press': ['press banca'],
   'press de banca': ['bench press'],
 
+  // Short forms for banca/banco
+  'banca': ['press banca', 'press de banca'],
+  'banco': ['press banca', 'fondos en banco'],
+
   // Dominadas / Pull ups
   'dominadas': ['pull up', 'pull-up', 'chin up'],
   'pull up': ['dominadas'],

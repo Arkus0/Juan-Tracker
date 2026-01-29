@@ -9,12 +9,12 @@ final tdeeEstimateProvider = FutureProvider.family<double, DateTime>((
 ) async {
   // Simple baseline: intake_day - (delta_weight_kg * 7700 / days)
   final diaryRepo = ref.watch(diaryRepositoryProvider);
-  final weightRepo = ref.watch(weightRepositoryProvider);
+  final weightRepo = ref.watch(weighInRepositoryProvider);
 
-  final totals = await diaryRepo.totalsForDay(day);
+  final totals = await diaryRepo.getDailyTotals(day);
   final intake = totals.kcal.toDouble();
 
-  final latest = await weightRepo.latest();
+  final latest = await weightRepo.getLatest();
   if (latest == null) return intake; // fallback
 
   // naive: assume delta from previous day if exists

@@ -52,7 +52,6 @@ class ExerciseSearchQueryNotifier extends Notifier<String> {
     state = query;
   }
 }
-
 class ExerciseSearchFiltersState {
   final String? muscleGroup;
   final String? equipment;

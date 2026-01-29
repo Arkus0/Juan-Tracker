@@ -168,6 +168,7 @@ Cobertura actual:
 - `test/core/tdee_test.dart` - Cálculos TDEE
 - `test/core/training/*` - Repositorios y controller de sesión
 - `test/features/training/*` - Widget tests de UI
+- `test/diet/*` - Tests de capa de datos de Diet (Food, Diary, WeighIn, Targets)
 
 ### Escribir nuevos tests
 
@@ -198,6 +199,8 @@ testWidgets('HistoryScreen muestra agrupación correcta', (tester) async {
 ## Database (Drift)
 
 ### Tablas principales
+
+#### Training
 - `Routines` - Rutinas de entrenamiento
 - `RoutineDays` - Días dentro de una rutina
 - `RoutineExercises` - Ejercicios configurados en un día
@@ -206,11 +209,67 @@ testWidgets('HistoryScreen muestra agrupación correcta', (tester) async {
 - `WorkoutSets` - Series individuales (peso, reps, RPE)
 - `ExerciseNotes` - Notas por ejercicio
 
+#### Diet (Schema v5)
+- `Foods` - Alimentos guardados (macros por 100g y/o porción, flags: userCreated, verifiedSource)
+- `DiaryEntries` - Entradas del diario (date, mealType, amount, macros calculados)
+- `WeighIns` - Registros de peso corporal (measuredAt, weightKg, note)
+- `Targets` - Objetivos diarios versionados por fecha (kcal, protein, carbs, fat)
+- `Recipes` - Recetas/comidas compuestas (totales calculados, porciones)
+- `RecipeItems` - Ingredientes de recetas (snapshot de macros del food)
+
+### Estructura de la capa de datos Diet
+```
+lib/diet/
+├── models/           # Modelos de dominio puros
+│   ├── food_model.dart
+│   ├── diary_entry_model.dart
+│   ├── weighin_model.dart
+│   ├── targets_model.dart
+│   └── recipe_model.dart
+├── repositories/     # Interfaces + Implementación Drift
+│   ├── food_repository.dart
+│   ├── diary_repository.dart
+│   ├── weighin_repository.dart
+│   ├── targets_repository.dart
+│   └── drift_diet_repositories.dart
+└── providers/        # Providers de Riverpod
+    ├── diet_providers.dart
+    └── diary_ui_providers.dart
+```
+
+### Providers de UI para Diet
+
+**Providers de estado global (diet_providers.dart):**
+- `appDatabaseProvider` - Singleton de base de datos Drift
+- `foodRepositoryProvider` - Repositorio de alimentos
+- `diaryRepositoryProvider` - Repositorio de diario
+- `weighInRepositoryProvider` - Repositorio de pesos
+- `targetsRepositoryProvider` - Repositorio de objetivos
+
+**Providers de UI del Diario (diary_ui_providers.dart):**
+- `selectedDateProvider` - Fecha seleccionada (StateNotifier)
+- `dayEntriesStreamProvider` - Stream de entradas del día
+- `dailyTotalsProvider` - Stream de totales diarios
+- `entriesByMealProvider` - Entradas filtradas por mealType
+- `mealTotalsProvider` - Totales por tipo de comida
+- `foodSearchResultsProvider` - Resultados de búsqueda de alimentos
+- `editingEntryProvider` - Entrada en edición actual
+- `selectedMealTypeProvider` - Tipo de comida seleccionado
+
+**Providers legacy (core/providers/) - Adaptadores para compatibilidad:**
+- `dayEntriesProvider` - Adapta Stream de entradas a modelos antiguos
+- `dayTotalsProvider` - Adapta totales a modelo antiguo
+- `foodListStreamProvider` - Stream de alimentos
+- `searchFoodsProvider` - Búsqueda de alimentos
+- `weightListStreamProvider` - Stream de pesos
+- `latestWeightProvider` - Último peso registrado
+
 ### Migraciones
-Schema version actual: **4**
+Schema version actual: **5**
 - v1 → v2: Agrega `supersetId` a `routine_exercises`
 - v2 → v3: Agrega progresión (`progressionType`, `weightIncrement`, `targetRpe`) y day info
 - v3 → v4: Agrega flag `isBadDay` para tolerancia de errores
+- v4 → v5: Agrega tablas de Diet (`Foods`, `DiaryEntries`, `WeighIns`, `Targets`, `Recipes`, `RecipeItems`)
 
 **IMPORTANTE**: Tras modificar tablas, ejecutar:
 ```bash
