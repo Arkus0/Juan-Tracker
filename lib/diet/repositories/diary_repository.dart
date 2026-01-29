@@ -34,4 +34,8 @@ abstract class IDiaryRepository {
     MealType mealType, {
     int limit = 50,
   });
+
+  /// Obtiene las últimas entradas únicas (por foodId/foodName) para quick-add
+  /// Útil para mostrar comidas recientes al usuario
+  Future<List<DiaryEntryModel>> getRecentUniqueEntries({int limit = 5});
 }

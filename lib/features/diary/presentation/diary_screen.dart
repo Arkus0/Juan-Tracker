@@ -117,6 +117,14 @@ class DiaryScreen extends ConsumerWidget {
               ),
             ),
 
+          // Quick Add - Comidas recientes (UX-003)
+          if (viewMode == DiaryViewMode.list)
+            SliverToBoxAdapter(
+              child: _QuickAddSection(
+                onQuickAdd: (entry) => _quickAddEntry(context, ref, entry),
+              ),
+            ),
+
           // Lista de comidas - solo en vista lista
           if (viewMode == DiaryViewMode.list)
             entriesAsync.when(
@@ -171,6 +179,56 @@ class DiaryScreen extends ConsumerWidget {
         builder: (_) => const FoodSearchScreen(),
       ),
     );
+  }
+
+  /// Quick add: copia una entrada existente al día seleccionado
+  Future<void> _quickAddEntry(BuildContext context, WidgetRef ref, DiaryEntryModel template) async {
+    HapticFeedback.mediumImpact();
+
+    final selectedDate = ref.read(selectedDateProvider);
+    final repo = ref.read(diaryRepositoryProvider);
+
+    // Crear nueva entrada basada en la plantilla
+    final newEntry = DiaryEntryModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      date: selectedDate,
+      mealType: MealType.snack, // Default a snack para quick add
+      foodId: template.foodId,
+      foodName: template.foodName,
+      foodBrand: template.foodBrand,
+      amount: template.amount,
+      unit: template.unit,
+      kcal: template.kcal,
+      protein: template.protein,
+      carbs: template.carbs,
+      fat: template.fat,
+      isQuickAdd: template.isQuickAdd,
+      notes: null,
+      createdAt: DateTime.now(),
+    );
+
+    await repo.insert(newEntry);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text('${template.foodName} añadido')),
+            ],
+          ),
+          action: SnackBarAction(
+            label: 'DESHACER',
+            onPressed: () async {
+              await repo.delete(newEntry.id);
+            },
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 }
 
@@ -278,6 +336,8 @@ class _WeekCalendar extends StatelessWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        // Performance: itemExtent fijo evita cálculos de layout por item
+        itemExtent: 52,
         itemCount: dates.length,
         itemBuilder: (context, index) {
           final date = dates[index];
@@ -629,6 +689,134 @@ class _MacroItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Sección de Quick Add - Comidas recientes para añadir con 1 tap (UX-003)
+class _QuickAddSection extends ConsumerWidget {
+  final void Function(DiaryEntryModel) onQuickAdd;
+
+  const _QuickAddSection({required this.onQuickAdd});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recentFoodsAsync = ref.watch(recentFoodsProvider);
+    final colors = Theme.of(context).colorScheme;
+
+    return recentFoodsAsync.when(
+      data: (recentFoods) {
+        if (recentFoods.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.bolt, size: 16, color: colors.primary),
+                  const SizedBox(width: 4),
+                  Text(
+                    'AÑADIR RÁPIDO',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: colors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                height: 44,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: recentFoods.length,
+                  itemExtent: null, // Variable width chips
+                  itemBuilder: (context, index) {
+                    final food = recentFoods[index];
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        right: index < recentFoods.length - 1 ? AppSpacing.sm : 0,
+                      ),
+                      child: _QuickAddChip(
+                        food: food,
+                        onTap: () => onQuickAdd(food),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// Chip individual para quick add
+class _QuickAddChip extends StatelessWidget {
+  final DiaryEntryModel food;
+  final VoidCallback onTap;
+
+  const _QuickAddChip({
+    required this.food,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colors.primaryContainer,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.add_circle_outline,
+                size: 18,
+                color: colors.primary,
+              ),
+              const SizedBox(width: 6),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    food.foodName.length > 15
+                        ? '${food.foodName.substring(0, 15)}...'
+                        : food.foodName,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: colors.onPrimaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${food.kcal} kcal',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: colors.onPrimaryContainer.withAlpha(180),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
