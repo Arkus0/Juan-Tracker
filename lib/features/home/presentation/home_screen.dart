@@ -5,6 +5,7 @@ import '../../../features/diary/presentation/diary_screen.dart';
 import '../../../features/foods/presentation/foods_screen.dart';
 import '../../../features/weight/presentation/weight_screen.dart';
 import '../../../features/summary/presentation/summary_screen.dart';
+import '../../../diet/screens/coach/coach_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     FoodsScreen(),
     WeightScreen(),
     SummaryScreen(),
+    CoachScreen(),
   ];
 
   @override
@@ -46,6 +48,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Resumen',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.auto_graph),
+            label: 'Coach',
           ),
         ],
       ),

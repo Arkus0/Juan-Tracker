@@ -34,6 +34,8 @@ dependencies:
   just_audio: ^0.9.34
   flutter_local_notifications: ^20.0.0
   flutter_slidable: ^4.0.3
+  http: ^1.3.0
+  connectivity_plus: ^6.1.3
 
 dev_dependencies:
   flutter_test:
