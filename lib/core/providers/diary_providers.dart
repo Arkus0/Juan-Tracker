@@ -36,6 +36,38 @@ final dayTotalsProvider = FutureProvider.autoDispose<_DailyTotals>((ref) async {
   );
 });
 
+// MD-002: Provider memoizado para totales por tipo de comida
+// Calcula los totales una sola vez por frame y los cachea automáticamente
+final mealTotalsProvider = Provider.family.autoDispose<_DailyTotals, diet.MealType>((ref, mealType) {
+  final entriesAsync = ref.watch(dayEntriesStreamProvider);
+  
+  return entriesAsync.when(
+    data: (entries) {
+      final mealEntries = entries.where((e) => e.mealType == mealType).toList();
+      int kcal = 0;
+      double protein = 0;
+      double carbs = 0;
+      double fat = 0;
+      
+      for (final e in mealEntries) {
+        kcal += e.kcal;
+        protein += e.protein ?? 0;
+        carbs += e.carbs ?? 0;
+        fat += e.fat ?? 0;
+      }
+      
+      return _DailyTotals(
+        kcal: kcal,
+        protein: protein,
+        carbs: carbs,
+        fat: fat,
+      );
+    },
+    loading: () => _DailyTotals(kcal: 0, protein: 0, carbs: 0, fat: 0),
+    error: (_, _) => _DailyTotals(kcal: 0, protein: 0, carbs: 0, fat: 0),
+  );
+});
+
 // Funcion de mapeo de modelo nuevo a antiguo
 old.DiaryEntry _mapToOldEntry(diet.DiaryEntryModel entry) {
   return old.DiaryEntry(

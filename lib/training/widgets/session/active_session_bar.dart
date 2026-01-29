@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../providers/training_provider.dart';
-import '../../screens/training_session_screen.dart';
 import '../../services/rest_timer_controller.dart';
 import '../../utils/design_system.dart';
 
@@ -30,15 +30,7 @@ class ActiveSessionBar extends ConsumerWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        final theme = Theme.of(context);
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => Theme(
-              data: theme,
-              child: const TrainingSessionScreen(),
-            ),
-          ),
-        );
+        context.goToTrainingSession();
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

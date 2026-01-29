@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,6 +23,10 @@ class FoodSearchScreen extends ConsumerStatefulWidget {
 
 class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   late final TextEditingController _searchController;
+  Timer? _debounceTimer;
+  
+  // PC-001: Debounce duration para búsqueda
+  static const _debounceDuration = Duration(milliseconds: 300);
 
   @override
   void initState() {
@@ -34,6 +40,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -75,7 +82,11 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                 fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.3 * 255).round()),
               ),
               onChanged: (value) {
-                ref.read(foodSearchQueryProvider.notifier).query = value;
+                // PC-001: Debounce para evitar búsquedas excesivas
+                _debounceTimer?.cancel();
+                _debounceTimer = Timer(_debounceDuration, () {
+                  ref.read(foodSearchQueryProvider.notifier).query = value;
+                });
               },
             ),
           ),
