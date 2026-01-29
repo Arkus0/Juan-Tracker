@@ -135,13 +135,15 @@ class HistoryScreen extends ConsumerWidget {
     return grouped;
   }
 
-  void _exportAllSessions(BuildContext context, List<Sesion> sessions) {
+  Future<void> _exportAllSessions(BuildContext context, List<Sesion> sessions) async {
     if (sessions.isEmpty) return;
 
     final data = sessions.map((s) => _sessionToMap(s)).toList();
     final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
 
-    Share.share(jsonStr, subject: 'Juan Training - Historial Completo');
+    await SharePlus.instance.share(
+      ShareParams(text: jsonStr, subject: 'Juan Training - Historial Completo'),
+    );
   }
 
   Map<String, dynamic> _sessionToMap(Sesion session) {
@@ -271,6 +273,8 @@ class HistoryScreen extends ConsumerWidget {
     if (session != null && context.mounted) {
       // Guardar la sesión externa (placeholder para futura implementación con la base de datos)
       await _saveExternalSession(session, ref);
+
+      if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -809,7 +813,7 @@ class _SessionTileState extends State<_SessionTile> {
     );
   }
 
-  void _exportSession(BuildContext context, Sesion session) {
+  Future<void> _exportSession(BuildContext context, Sesion session) async {
     try {
       HapticFeedback.selectionClick();
     } catch (_) {}
@@ -841,10 +845,12 @@ class _SessionTileState extends State<_SessionTile> {
       }
     }
 
-    Share.share(
-      buffer.toString(),
-      subject:
-          'Juan Training - Sesión ${DateFormat('dd/MM').format(session.fecha)}',
+    await SharePlus.instance.share(
+      ShareParams(
+        text: buffer.toString(),
+        subject:
+            'Juan Training - Sesión ${DateFormat('dd/MM').format(session.fecha)}',
+      ),
     );
   }
 }

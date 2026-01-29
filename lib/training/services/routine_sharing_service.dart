@@ -21,7 +21,9 @@ class RoutineSharingService {
   /// Shares a routine using the system share dialog.
   Future<void> shareRoutine(Rutina rutina) async {
     final jsonStr = exportRoutineToJson(rutina);
-    await Share.share(jsonStr, subject: 'Juan Training - ${rutina.nombre}');
+    await SharePlus.instance.share(
+      ShareParams(text: jsonStr, subject: 'Juan Training - ${rutina.nombre}'),
+    );
   }
 
   /// Parses a JSON string into a RoutineImportResult.

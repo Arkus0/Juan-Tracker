@@ -1,4 +1,4 @@
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:juan_tracker/training/features/exercises/search/exercise_search_engine.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
 

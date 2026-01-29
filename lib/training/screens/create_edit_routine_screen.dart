@@ -84,12 +84,14 @@ class _CreateEditRoutineScreenState
       if (currentDay.nombre != originalDay.nombre) return true;
 
       // Comparar tipo de progresión del día
-      if (currentDay.progressionType != originalDay.progressionType)
+      if (currentDay.progressionType != originalDay.progressionType) {
         return true;
+      }
 
       // Comparar número de ejercicios
-      if (currentDay.ejercicios.length != originalDay.ejercicios.length)
+      if (currentDay.ejercicios.length != originalDay.ejercicios.length) {
         return true;
+      }
 
       // 🎯 FIX #4: Comparación PROFUNDA de cada ejercicio
       for (var j = 0; j < currentDay.ejercicios.length; j++) {
@@ -102,13 +104,18 @@ class _CreateEditRoutineScreenState
         if (currentEx.series != originalEx.series) return true;
         if (currentEx.repsRange != originalEx.repsRange) return true;
         if (currentEx.notas != originalEx.notas) return true;
-        if (currentEx.descansoSugerido != originalEx.descansoSugerido)
+        if (currentEx.descansoSugerido != originalEx.descansoSugerido) {
           return true;
-        if (currentEx.supersetId != originalEx.supersetId) return true;
-        if (currentEx.progressionType != originalEx.progressionType)
+        }
+        if (currentEx.supersetId != originalEx.supersetId) {
           return true;
-        if (currentEx.weightIncrement != originalEx.weightIncrement)
+        }
+        if (currentEx.progressionType != originalEx.progressionType) {
           return true;
+        }
+        if (currentEx.weightIncrement != originalEx.weightIncrement) {
+          return true;
+        }
         if (currentEx.targetRpe != originalEx.targetRpe) return true;
       }
     }
@@ -256,6 +263,7 @@ class _CreateEditRoutineScreenState
       if (mounted) navigator.pop();
     } catch (e, s) {
       // Unexpected error: show friendly message and log
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -418,6 +426,7 @@ class _CreateEditRoutineScreenState
   }
 
   /// Importa ejercicios desde imagen usando OCR
+  // ignore: unused_element
   void _importFromOcr() {
     final routineState = ref.read(createRoutineProvider(widget.rutina));
 
@@ -1075,7 +1084,7 @@ class _CreateEditRoutineScreenState
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final shouldPop = await _confirmExit();
-        if (shouldPop && mounted) {
+        if (shouldPop && context.mounted) {
           // Ensure we discard unsaved changes explicitly to avoid accidental saves
           ref
               .read(createRoutineProvider(widget.rutina).notifier)

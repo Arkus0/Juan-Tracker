@@ -131,8 +131,9 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
   /// Verifica si el valor está dentro de los límites permitidos
   bool _isWithinLimits(String valueStr) {
     final value = double.tryParse(valueStr);
-    if (value == null)
+    if (value == null) {
       return true; // Strings inválidos se manejan en _canConfirm
+    }
 
     if (widget.isInteger) {
       return value <= _maxReps;
