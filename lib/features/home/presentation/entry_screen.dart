@@ -35,7 +35,13 @@ class EntryScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: colors.surface,
+      // UX-005: Edge-to-edge support
+      extendBodyBehindAppBar: true,
       body: SafeArea(
+        // UX-005: Mantener padding bottom para navegación
+        minimum: EdgeInsets.only(
+          bottom: MediaQuery.of(context).padding.bottom > 0 ? 0 : 16,
+        ),
         child: CustomScrollView(
           slivers: [
             // Header con saludo
@@ -395,10 +401,13 @@ class _ModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      padding: EdgeInsets.zero,
-      child: Container(
+    return Semantics(
+      button: true,
+      label: '$title: $subtitle',
+      child: AppCard(
+        onTap: onTap,
+        padding: EdgeInsets.zero,
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: gradientColors,
@@ -489,6 +498,7 @@ class _ModeCard extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
@@ -510,32 +520,36 @@ class _QuickActionButton extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     return Expanded(
-      child: Material(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onTap();
-          },
+      child: Semantics(
+        button: true,
+        label: label,
+        child: Material(
+          color: colors.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
-              children: [
-                Icon(
-                  icon,
-                  color: colors.primary,
-                  size: 24,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: AppTypography.labelMedium.copyWith(
-                    color: colors.onSurface,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onTap();
+            },
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: [
+                  Icon(
+                    icon,
+                    color: colors.primary,
+                    size: 24,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    label,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: colors.onSurface,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

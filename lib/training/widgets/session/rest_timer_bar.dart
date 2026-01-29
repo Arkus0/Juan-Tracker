@@ -417,7 +417,7 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
 /// 🎯 REDISEÑO: Grid horizontal consistente con barra activa
 ///
 /// Estructura (izq → der):
-/// [16px] [Duration selector] [flex] [Delete 32px] [8px] [Start 48px] [16px]
+/// [16px] [Duration selector] [flex] [Delete 40px] [12px] [Start 52px] [16px]
 class _InactiveTimerBar extends StatelessWidget {
   final int seconds;
   final ValueChanged<int> onDurationChange;
@@ -425,9 +425,9 @@ class _InactiveTimerBar extends StatelessWidget {
   final VoidCallback? onDiscardSession;
   final VoidCallback? onRestartRest;
 
-  // Constantes consistentes con barra activa
+  // UX-003: Constantes consistentes con barra activa (touch targets aumentados)
   static const double _horizontalPadding = 16.0;
-  static const double _deleteButtonSize = 32.0;
+  static const double _deleteButtonSize = 40.0;
 
   const _InactiveTimerBar({
     required this.seconds,
@@ -484,7 +484,7 @@ class _InactiveTimerBar extends StatelessWidget {
                   },
                 ),
 
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
 
               // Start - PRIMARIO (más grande, destacado)
               _StartRestButton(onTap: onStartRest),
@@ -551,13 +551,13 @@ class _ActiveTimerBar extends StatelessWidget {
   final VoidCallback? onDiscardSession;
   final VoidCallback? onRestartRest;
 
-  // 🎯 CONSTANTES: Espaciado y tamaños consistentes
-  static const double _barHeight = 68.0;
+  // 🎯 CONSTANTES: Espaciado y tamaños consistentes (UX-003)
+  static const double _barHeight = 80.0; // Aumentado para touch targets más grandes
   static const double _horizontalPadding = 16.0;
-  static const double _elementGap = 12.0;
-  static const double _skipButtonSize = 44.0;
-  static const double _addTimeButtonSize = 36.0;
-  static const double _deleteButtonSize = 32.0;
+  static const double _elementGap = 16.0;
+  static const double _skipButtonSize = 52.0; // Aumentado de 44
+  static const double _addTimeButtonSize = 44.0; // Aumentado de 36
+  static const double _deleteButtonSize = 40.0; // Aumentado de 32
 
   const _ActiveTimerBar({
     required this.displaySeconds,
@@ -588,7 +588,7 @@ class _ActiveTimerBar extends StatelessWidget {
 
     return Semantics(
       label:
-          'Timer de descanso: $seconds segundos restantes${isPaused ? ", pausado" : ""}',
+          'Timer de descanso: $seconds segundos restantes${isPaused ? ", pausado" : ""}. Desliza arriba para añadir 30 segundos, abajo para saltar.',
       child: GestureDetector(
         onLongPress: () {
           HapticsController.instance.trigger(HapticEvent.inputSubmit);
@@ -600,6 +600,19 @@ class _ActiveTimerBar extends StatelessWidget {
             onResumeRest();
           } else {
             onPauseRest();
+          }
+        },
+        // UX-003: Gestos swipe para acciones rápidas con manos sudadas
+        onVerticalDragEnd: (details) {
+          // Swipe up: +30s
+          if (details.primaryVelocity != null && details.primaryVelocity! < -100) {
+            HapticsController.instance.trigger(HapticEvent.buttonTap);
+            onAddTime();
+          }
+          // Swipe down: skip
+          else if (details.primaryVelocity != null && details.primaryVelocity! > 100) {
+            HapticsController.instance.trigger(HapticEvent.inputSubmit);
+            onStopRest();
           }
         },
         child: Container(
@@ -700,9 +713,9 @@ class _ActiveTimerBar extends StatelessWidget {
             width: _deleteButtonSize,
           ), // Mantener espacio para alineación
 
-        const SizedBox(width: 8),
+        const SizedBox(width: 16),
 
-        // +30s - SECUNDARIO
+        // +30s - SECUNDARIO (UX-003: Separado de acciones destructivas)
         _CircleButton(
           icon: Icons.more_time,
           size: _addTimeButtonSize,
@@ -713,7 +726,7 @@ class _ActiveTimerBar extends StatelessWidget {
           },
         ),
 
-        const SizedBox(width: 8),
+        const SizedBox(width: 16),
 
         // Skip - PRIMARIO (más grande, destacado)
         _CircleButton(
@@ -863,7 +876,8 @@ class _StartRestButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = 48.0;
+    // UX-003: Aumentado a 52dp para consistencia
+    const size = 52.0;
     return Tooltip(
       message: 'Iniciar descanso',
       child: Material(
@@ -1053,8 +1067,8 @@ class _CircleButton extends StatelessWidget {
   final Color? color;
   final VoidCallback? onTap;
 
-  /// Tamaño mínimo del área táctil (WCAG 2.1: 44dp, gimnasio: 48dp)
-  static const double _minHitArea = 48.0;
+  /// Tamaño mínimo del área táctil (UX-003: 64dp para manos sudadas/guantes)
+  static const double _minHitArea = 64.0;
 
   const _CircleButton({
     required this.icon,

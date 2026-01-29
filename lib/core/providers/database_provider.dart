@@ -149,8 +149,9 @@ bool _areDiaryEntryListsEqual(
   return true;
 }
 
-/// Provider de comidas recientes para quick-add
-/// Retorna las últimas 5 comidas únicas registradas (por foodId)
+/// Provider de comidas recientes para quick-add (UX-002)
+/// Retorna las últimas 7 comidas únicas registradas (por foodId)
+/// Ordenadas por frecuencia de consumo (más frecuentes primero)
 ///
 /// FIX: StreamProvider para ser reactivo a nuevas entradas en el diario,
 /// pero usando `distinct` para evitar emisiones cuando la lista de recientes
@@ -164,7 +165,8 @@ final recentFoodsProvider = StreamProvider<List<diet.DiaryEntryModel>>((ref) {
       .watch()
       .asyncMap((_) async {
         final repo = ref.read(diaryRepositoryProvider);
-        return repo.getRecentUniqueEntries(limit: 5);
+        // UX-002: Aumentado a 7 items, ordenado por frecuencia
+        return repo.getRecentUniqueEntries(limit: 7);
       })
       .distinct(_areDiaryEntryListsEqual);
 });

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/main_screen.dart';
 import 'services/alternativas_service.dart';
 import 'services/exercise_library_service.dart';
+import 'services/image_precache_service.dart';
 import 'utils/design_system.dart';
 
 class TrainingShell extends ConsumerStatefulWidget {
@@ -27,6 +28,18 @@ class _TrainingShellState extends ConsumerState<TrainingShell> {
     try {
       await ExerciseLibraryService.instance.init();
       await AlternativasService.instance.initialize();
+      
+      // MD-003: Precache de imágenes de ejercicios en segundo plano
+      // Se ejecuta después de cargar la biblioteca para mejorar UX
+      if (mounted) {
+        // No esperamos el precache para mostrar la UI rápidamente
+        context.precacheTopExerciseImages().then((_) {
+          debugPrint('TrainingShell: Exercise images precached');
+        }).catchError((e) {
+          debugPrint('TrainingShell: Precache error (non-critical): $e');
+        });
+      }
+      
       if (mounted) {
         setState(() {
           _ready = true;

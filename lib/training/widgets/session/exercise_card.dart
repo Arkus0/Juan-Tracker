@@ -739,24 +739,29 @@ class ExerciseCard extends StatelessWidget {
       color: isCollapsed
           ? (allSetsCompleted ? const Color(0xFF1A2A1A) : AppColors.bgElevated)
           : null,
-      child: InkWell(
-        // 🆕 Tap en header para colapsar/expandir
-        onTap: isCollapsed ? onToggleCollapse : null,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          // 🆕 Más padding para aire visual
-          padding: EdgeInsets.all(isCollapsed ? 14 : 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header siempre visible - diseño en 2 líneas para mejor legibilidad
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Fila 1: Nombre del ejercicio (nunca cortado)
-                  GestureDetector(
-                    onTap: onToggleCollapse,
-                    behavior: HitTestBehavior.opaque,
+      child: Semantics(
+        button: isCollapsed,
+        label: isCollapsed 
+            ? 'Ejercicio ${exercise.nombre} completado, tocar para expandir'
+            : 'Ejercicio ${exercise.nombre}',
+        child: InkWell(
+          // 🆕 Tap en header para colapsar/expandir
+          onTap: isCollapsed ? onToggleCollapse : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            // 🆕 Más padding para aire visual
+            padding: EdgeInsets.all(isCollapsed ? 14 : 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header siempre visible - diseño en 2 líneas para mejor legibilidad
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Fila 1: Nombre del ejercicio (nunca cortado)
+                    GestureDetector(
+                      onTap: onToggleCollapse,
+                      behavior: HitTestBehavior.opaque,
                       child: Row(
                         children: [
                           Container(
@@ -945,7 +950,8 @@ class ExerciseCard extends StatelessWidget {
                     : CrossFadeState.showSecond,
                 duration: const Duration(milliseconds: 200),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
