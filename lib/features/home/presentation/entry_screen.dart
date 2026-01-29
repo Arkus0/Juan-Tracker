@@ -274,9 +274,7 @@ class _QuickActionsRow extends ConsumerWidget {
           weightKg: value,
         ));
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Peso registrado')),
-          );
+          AppSnackbar.show(context, message: 'Peso registrado');
         }
       }
     }

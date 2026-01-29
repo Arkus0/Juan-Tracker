@@ -210,23 +210,12 @@ class DiaryScreen extends ConsumerWidget {
     await repo.insert(newEntry);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(child: Text('${template.foodName} añadido')),
-            ],
-          ),
-          action: SnackBarAction(
-            label: 'DESHACER',
-            onPressed: () async {
-              await repo.delete(newEntry.id);
-            },
-          ),
-          duration: const Duration(seconds: 3),
-        ),
+      AppSnackbar.showWithUndo(
+        context,
+        message: '${template.foodName} añadido',
+        onUndo: () async {
+          await repo.delete(newEntry.id);
+        },
       );
     }
   }

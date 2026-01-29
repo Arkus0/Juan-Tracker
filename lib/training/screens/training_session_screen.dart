@@ -80,6 +80,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
       // 🎯 MEDIA SESSION: Iniciar MediaSession para mostrar controles del sistema
       _initializeMediaSession();
+
+      // 🎯 HIGH-004: Welcome back banner si la sesión lleva tiempo activa
+      _showWelcomeBackIfNeeded();
     });
   }
 
@@ -265,6 +268,90 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     // Discovery tooltip removed by request - it was showing a swipe hint which is considered noisy.
     // Left intentionally empty so the callsite remains but it does nothing.
     return;
+  }
+
+  /// 🎯 HIGH-004: Muestra banner de bienvenida si la sesión lleva tiempo activa
+  /// Ayuda al usuario a recuperar contexto cuando regresa a la app
+  void _showWelcomeBackIfNeeded() {
+    final session = ref.read(trainingSessionProvider);
+
+    // Solo mostrar si la sesión empezó hace más de 5 minutos
+    if (session.startTime == null) return;
+    final elapsed = DateTime.now().difference(session.startTime!);
+    if (elapsed.inMinutes < 5) return;
+
+    // Calcular progreso
+    int completedSets = 0;
+    int totalSets = 0;
+    for (final ex in session.exercises) {
+      for (final log in ex.logs) {
+        totalSets++;
+        if (log.completed) completedSets++;
+      }
+    }
+
+    // Encontrar siguiente ejercicio
+    final nextSet = session.nextIncompleteSet;
+    final currentExercise = nextSet != null
+        ? session.exercises[nextSet.exerciseIndex].nombre
+        : null;
+
+    ScaffoldMessenger.of(context).showMaterialBanner(
+      MaterialBanner(
+        padding: const EdgeInsets.all(16),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '¡Bienvenido de vuelta!',
+              style: AppTypography.labelEmphasis.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Llevas ${elapsed.inMinutes} min | $completedSets/$totalSets series',
+              style: AppTypography.meta,
+            ),
+            if (currentExercise != null && nextSet != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                'Siguiente: $currentExercise (Serie ${nextSet.setIndex + 1})',
+                style: AppTypography.meta.copyWith(
+                  color: AppColors.success,
+                ),
+              ),
+            ],
+          ],
+        ),
+        leading: const Icon(
+          Icons.fitness_center,
+          color: AppColors.success,
+        ),
+        backgroundColor: AppColors.bgElevated,
+        actions: [
+          TextButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+            },
+            child: Text(
+              'CONTINUAR',
+              style: AppTypography.button.copyWith(
+                color: AppColors.success,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // Auto-dismiss después de 5 segundos
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+      }
+    });
   }
 
   /// Callback cuando el timer de descanso termina
