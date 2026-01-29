@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
+import 'package:juan_tracker/core/feedback/haptics.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/training/training_shell.dart';
 import 'home_screen.dart';
@@ -162,19 +163,33 @@ class EntryScreen extends StatelessWidget {
   }
 
   void _navigateToNutrition(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    AppHaptics.buttonPressed();
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const HomeScreen(),
+      PageRouteBuilder(
+        pageBuilder: (_, animation, __) => const HomeScreen(),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
       ),
     );
   }
 
   void _navigateToTraining(BuildContext context) {
-    HapticFeedback.mediumImpact();
+    AppHaptics.buttonPressed();
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const TrainingShell(),
+      PageRouteBuilder(
+        pageBuilder: (_, animation, __) => const TrainingShell(),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
       ),
     );
   }
