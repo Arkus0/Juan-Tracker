@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../../../diet/models/models.dart';
-import '../../../diet/providers/diet_providers.dart';
-import '../../../diet/services/day_summary_calculator.dart';
-import '../../targets/presentation/targets_screen.dart';
+import 'package:juan_tracker/core/design_system/design_system.dart';
+import 'package:juan_tracker/core/widgets/widgets.dart';
+import 'package:juan_tracker/diet/models/models.dart';
+import 'package:juan_tracker/diet/providers/diet_providers.dart';
+import 'package:juan_tracker/diet/services/day_summary_calculator.dart';
+import 'package:juan_tracker/features/targets/presentation/targets_screen.dart';
 import 'food_search_screen.dart';
 
-/// Pantalla principal del Diario
-/// Muestra el día actual con totales y entradas agrupadas por tipo de comida
+/// Pantalla principal del Diario con diseño mejorado
 class DiaryScreen extends ConsumerWidget {
   const DiaryScreen({super.key});
 
@@ -21,119 +23,189 @@ class DiaryScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(daySummaryProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Diario'),
-        centerTitle: true,
-        actions: [
-          // Botón "Hoy"
-          TextButton(
-            onPressed: () => ref.read(selectedDateProvider.notifier).goToToday(),
-            child: const Text('HOY', style: TextStyle(fontWeight: FontWeight.bold)),
+      body: CustomScrollView(
+        slivers: [
+          // App Bar con fecha y acciones
+          SliverAppBar(
+            floating: true,
+            snap: true,
+            title: const Text('Diario'),
+            centerTitle: true,
+            actions: [
+              TextButton(
+                onPressed: () => ref.read(selectedDateProvider.notifier).goToToday(),
+                child: const Text('HOY'),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Selector de fecha
-          _DateSelector(
-            selectedDate: selectedDate,
-            onPrevious: () => ref.read(selectedDateProvider.notifier).previousDay(),
-            onNext: () => ref.read(selectedDateProvider.notifier).nextDay(),
+
+          // Selector de fecha horizontal (calendario semanal)
+          SliverToBoxAdapter(
+            child: _WeekCalendar(
+              selectedDate: selectedDate,
+              onDateSelected: (date) {
+                ref.read(selectedDateProvider.notifier).date = date;
+              },
+            ),
           ),
 
           // Resumen del día con progreso
-          summaryAsync.when(
-            data: (summary) => _DailySummaryCard(summary: summary),
-            loading: () => _DailySummaryCard(
-              summary: DaySummary(
-                date: DateTime.now(),
-                consumed: DailyTotals.empty,
-                targets: null,
-                progress: TargetsProgress(
-                  kcalConsumed: 0,
-                  proteinConsumed: 0,
-                  carbsConsumed: 0,
-                  fatConsumed: 0,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: summaryAsync.when(
+                data: (summary) => _DailySummaryCard(summary: summary),
+                loading: () => const AppSkeleton(
+                  width: double.infinity,
+                  height: 200,
                 ),
-              ),
-            ),
-            error: (e, st) => _DailySummaryCard(
-              summary: DaySummary(
-                date: DateTime.now(),
-                consumed: DailyTotals.empty,
-                targets: null,
-                progress: TargetsProgress(
-                  kcalConsumed: 0,
-                  proteinConsumed: 0,
-                  carbsConsumed: 0,
-                  fatConsumed: 0,
+                error: (_, __) => AppError(
+                  message: 'Error al cargar resumen',
+                  onRetry: () => ref.invalidate(daySummaryProvider),
                 ),
               ),
             ),
           ),
-
-          const Divider(height: 1),
 
           // Lista de comidas
-          Expanded(
-            child: entriesAsync.when(
-              data: (entries) => _MealsList(entries: entries),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Center(child: Text('Error: $e')),
+          entriesAsync.when(
+            data: (entries) {
+              if (entries.isEmpty) {
+                return SliverFillRemaining(
+                  child: AppEmpty(
+                    icon: Icons.restaurant_menu_outlined,
+                    title: 'Sin entradas hoy',
+                    subtitle: 'Añade tu primera comida para empezar a trackear',
+                    actionLabel: 'AÑADIR COMIDA',
+                    onAction: () => _showAddEntry(context, ref, MealType.breakfast),
+                  ),
+                );
+              }
+              return _MealsListSliver(entries: entries);
+            },
+            loading: () => const SliverFillRemaining(
+              child: AppLoading(message: 'Cargando entradas...'),
+            ),
+            error: (e, _) => SliverFillRemaining(
+              child: AppError(
+                message: 'Error al cargar entradas',
+                details: e.toString(),
+              ),
             ),
           ),
+
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 100),
+          ),
         ],
+      ),
+      floatingActionButton: AppFAB(
+        onPressed: () => _showAddEntry(context, ref, MealType.snack),
+        icon: Icons.add_rounded,
+        label: 'Añadir',
+      ),
+    );
+  }
+
+  void _showAddEntry(BuildContext context, WidgetRef ref, MealType mealType) {
+    ref.read(selectedMealTypeProvider.notifier).meal = mealType;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const FoodSearchScreen(),
       ),
     );
   }
 }
 
-/// Selector de fecha con navegación
-class _DateSelector extends StatelessWidget {
+/// Calendario semanal horizontal
+class _WeekCalendar extends StatelessWidget {
   final DateTime selectedDate;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
+  final ValueChanged<DateTime> onDateSelected;
 
-  const _DateSelector({
+  const _WeekCalendar({
     required this.selectedDate,
-    required this.onPrevious,
-    required this.onNext,
+    required this.onDateSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isToday = _isSameDay(selectedDate, DateTime.now());
-    final dateText = isToday
-        ? 'Hoy, ${DateFormat('d MMM', 'es').format(selectedDate)}'
-        : DateFormat('EEEE d MMM', 'es').format(selectedDate);
+    final colors = Theme.of(context).colorScheme;
+    final now = DateTime.now();
+    final weekStart = now.subtract(Duration(days: now.weekday - 1));
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(
-            onPressed: onPrevious,
-            icon: const Icon(Icons.chevron_left),
-            tooltip: 'Día anterior',
-          ),
-          Expanded(
-            child: Text(
-              dateText.toUpperCase(),
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
+    return Container(
+      height: 90,
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        itemCount: 14, // 2 semanas
+        itemBuilder: (context, index) {
+          final date = weekStart.add(Duration(days: index));
+          final isSelected = _isSameDay(date, selectedDate);
+          final isToday = _isSameDay(date, now);
+          final dayName = DateFormat('E', 'es').format(date)[0].toUpperCase();
+
+          return GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onDateSelected(date);
+            },
+            child: AnimatedContainer(
+              duration: AppDurations.fast,
+              margin: const EdgeInsets.only(right: AppSpacing.sm),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? colors.primary
+                    : isToday
+                        ? colors.primaryContainer
+                        : colors.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: isToday && !isSelected
+                    ? Border.all(color: colors.primary)
+                    : null,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    dayName,
+                    style: AppTypography.labelSmall.copyWith(
+                      color: isSelected
+                          ? colors.onPrimary
+                          : colors.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${date.day}',
+                    style: AppTypography.dataSmall.copyWith(
+                      color: isSelected
+                          ? colors.onPrimary
+                          : colors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (isToday)
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? colors.onPrimary
+                            : colors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
               ),
             ),
-          ),
-          IconButton(
-            onPressed: onNext,
-            icon: const Icon(Icons.chevron_right),
-            tooltip: 'Día siguiente',
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -143,7 +215,7 @@ class _DateSelector extends StatelessWidget {
   }
 }
 
-/// Card con el resumen del día incluyendo progreso vs objetivos.
+/// Card de resumen diario con macros
 class _DailySummaryCard extends StatelessWidget {
   final DaySummary summary;
 
@@ -151,300 +223,313 @@ class _DailySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // CTA si no hay target configurado
-          if (!summary.hasTargets) ...[
-            _NoTargetsBanner(),
-            const SizedBox(height: 12),
-          ],
-          // Kcal principal con progreso
+          // Header con calorías principales
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '${summary.consumed.kcal}',
-                style: GoogleFonts.montserrat(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'kcal',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 16,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  if (summary.hasTargets)
-                    Text(
-                      '/ ${summary.targets!.kcalTarget}',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        color: colorScheme.onSurfaceVariant.withAlpha((0.7 * 255).round()),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          // Barra de progreso de calorías
-          if (summary.hasTargets) ...[
-            const SizedBox(height: 8),
-            _ProgressBar(
-              progress: summary.progress.kcalPercent?.clamp(0.0, 1.0) ?? 0,
-              color: Colors.orange,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${summary.progress.kcalRemaining} kcal restantes',
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          // Macros con progreso
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _MacroItemWithProgress(
-                label: 'Proteína',
-                consumed: summary.consumed.protein,
-                target: summary.targets?.proteinTarget,
-                color: Colors.red.shade400,
-              ),
-              _MacroItemWithProgress(
-                label: 'Carbs',
-                consumed: summary.consumed.carbs,
-                target: summary.targets?.carbsTarget,
-                color: Colors.amber.shade600,
-              ),
-              _MacroItemWithProgress(
-                label: 'Grasa',
-                consumed: summary.consumed.fat,
-                target: summary.targets?.fatTarget,
-                color: Colors.blue.shade400,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Banner CTA para configurar objetivos cuando no hay ninguno.
-class _NoTargetsBanner extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: theme.colorScheme.secondaryContainer,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const TargetsScreen()),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Icon(
-                Icons.track_changes,
-                color: theme.colorScheme.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Configura tus objetivos',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSecondaryContainer,
+                      'Calorías',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: colors.onSurfaceVariant,
                       ),
                     ),
-                    Text(
-                      'Define calorías y macros para hacer seguimiento',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: theme.colorScheme.onSecondaryContainer
-                            .withAlpha((0.7 * 255).round()),
-                      ),
+                    const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${summary.consumed.kcal}',
+                          style: AppTypography.dataLarge.copyWith(
+                            color: colors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        if (summary.hasTargets) ...[
+                          Text(
+                            '/ ${summary.targets!.kcalTarget}',
+                            style: AppTypography.dataSmall.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                color: theme.colorScheme.primary,
-                size: 20,
-              ),
+              if (summary.hasTargets)
+                _MacroDonut(
+                  progress: summary.progress.kcalPercent ?? 0,
+                  remaining: summary.progress.kcalRemaining,
+                ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
 
-/// Barra de progreso lineal personalizada.
-class _ProgressBar extends StatelessWidget {
-  final double progress;
-  final Color color;
-
-  const _ProgressBar({
-    required this.progress,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: LinearProgressIndicator(
-        value: progress,
-        minHeight: 6,
-        backgroundColor: color.withAlpha((0.2 * 255).round()),
-        valueColor: AlwaysStoppedAnimation(color),
-      ),
-    );
-  }
-}
-
-/// Item de macro con valor consumido y opcionalmente progreso vs objetivo.
-class _MacroItemWithProgress extends StatelessWidget {
-  final String label;
-  final double consumed;
-  final double? target;
-  final Color color;
-
-  const _MacroItemWithProgress({
-    required this.label,
-    required this.consumed,
-    required this.target,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hasTarget = target != null && target! > 0;
-    final progress = hasTarget ? (consumed / target!).clamp(0.0, 1.0) : 0.0;
-    final percentage = hasTarget ? ((consumed / target!) * 100).round() : 0;
-
-    return SizedBox(
-      width: 80,
-      child: Column(
-        children: [
-          Text(
-            '${consumed.toStringAsFixed(0)}g',
-            style: GoogleFonts.montserrat(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (hasTarget) ...[
-            const SizedBox(height: 4),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 4,
-                backgroundColor: color.withAlpha((0.2 * 255).round()),
-                valueColor: AlwaysStoppedAnimation(color),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              '$percentage%',
-              style: TextStyle(
-                fontSize: 10,
-                color: color,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ] else ...[
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                color: color,
-                fontWeight: FontWeight.w500,
+          if (!summary.hasTargets) ...[
+            const SizedBox(height: AppSpacing.md),
+            InkWell(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const TargetsScreen()),
+                );
+              },
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.track_changes, color: colors.primary),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Configura tus objetivos',
+                            style: AppTypography.labelLarge.copyWith(
+                              color: colors.onPrimaryContainer,
+                            ),
+                          ),
+                          Text(
+                            'Define calorías y macros',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: colors.onPrimaryContainer
+                                  .withAlpha((0.7 * 255).round()),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: colors.primary),
+                  ],
+                ),
               ),
             ),
           ],
-          if (hasTarget)
-            Text(
-              label,
-              style: GoogleFonts.montserrat(
-                fontSize: 10,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+
+          const SizedBox(height: AppSpacing.lg),
+          const Divider(height: 1),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Macros
+          Row(
+            children: [
+              Expanded(
+                child: _MacroItem(
+                  label: 'Proteína',
+                  value: summary.consumed.protein.toStringAsFixed(0),
+                  target: summary.targets?.proteinTarget.toStringAsFixed(0),
+                  color: AppColors.error,
+                  progress: summary.progress.proteinPercent ?? 0,
+                ),
               ),
-            ),
+              Expanded(
+                child: _MacroItem(
+                  label: 'Carbs',
+                  value: summary.consumed.carbs.toStringAsFixed(0),
+                  target: summary.targets?.carbsTarget.toStringAsFixed(0),
+                  color: AppColors.warning,
+                  progress: summary.progress.carbsPercent ?? 0,
+                ),
+              ),
+              Expanded(
+                child: _MacroItem(
+                  label: 'Grasa',
+                  value: summary.consumed.fat.toStringAsFixed(0),
+                  target: summary.targets?.fatTarget.toStringAsFixed(0),
+                  color: AppColors.info,
+                  progress: summary.progress.fatPercent ?? 0,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-/// Lista de secciones de comidas
-class _MealsList extends StatelessWidget {
-  final List<DiaryEntryModel> entries;
+/// Donut de progreso calórico
+class _MacroDonut extends StatelessWidget {
+  final double progress;
+  final int remaining;
 
-  const _MealsList({required this.entries});
+  const _MacroDonut({
+    required this.progress,
+    required this.remaining,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 100),
+    final colors = Theme.of(context).colorScheme;
+    final clampedProgress = progress.clamp(0.0, 1.0);
+
+    return SizedBox(
+      width: 80,
+      height: 80,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircularProgressIndicator(
+            value: 1,
+            strokeWidth: 8,
+            backgroundColor: colors.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              colors.surfaceContainerHighest,
+            ),
+          ),
+          CircularProgressIndicator(
+            value: clampedProgress,
+            strokeWidth: 8,
+            backgroundColor: Colors.transparent,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              clampedProgress > 1.0 ? AppColors.error : colors.primary,
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${(clampedProgress * 100).toInt()}%',
+                style: AppTypography.labelLarge.copyWith(
+                  color: colors.onSurface,
+                ),
+              ),
+              Text(
+                '$remaining',
+                style: AppTypography.labelSmall.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Item de macro individual
+class _MacroItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final String? target;
+  final Color color;
+  final double progress;
+
+  const _MacroItem({
+    required this.label,
+    required this.value,
+    this.target,
+    required this.color,
+    required this.progress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Column(
       children: [
-        _MealSection(
-          mealType: MealType.breakfast,
-          entries: entries.where((e) => e.mealType == MealType.breakfast).toList(),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: AppTypography.labelSmall.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
-        _MealSection(
-          mealType: MealType.lunch,
-          entries: entries.where((e) => e.mealType == MealType.lunch).toList(),
+        const SizedBox(height: 8),
+        Text(
+          '${value}g',
+          style: AppTypography.dataSmall.copyWith(
+            color: colors.onSurface,
+          ),
         ),
-        _MealSection(
-          mealType: MealType.dinner,
-          entries: entries.where((e) => e.mealType == MealType.dinner).toList(),
-        ),
-        _MealSection(
-          mealType: MealType.snack,
-          entries: entries.where((e) => e.mealType == MealType.snack).toList(),
+        if (target != null)
+          Text(
+            '/${target}g',
+            style: AppTypography.labelSmall.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: LinearProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            minHeight: 4,
+            backgroundColor: color.withAlpha((0.2 * 255).round()),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
         ),
       ],
     );
   }
 }
 
-/// Sección de un tipo de comida (Desayuno, Almuerzo, etc.)
+/// Lista de comidas tipo Sliver
+class _MealsListSliver extends StatelessWidget {
+  final List<DiaryEntryModel> entries;
+
+  const _MealsListSliver({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    final meals = [
+      MealType.breakfast,
+      MealType.lunch,
+      MealType.dinner,
+      MealType.snack,
+    ];
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index >= meals.length) return null;
+          final mealType = meals[index];
+          final mealEntries = entries
+              .where((e) => e.mealType == mealType)
+              .toList();
+
+          return _MealSection(
+            mealType: mealType,
+            entries: mealEntries,
+          );
+        },
+        childCount: meals.length,
+      ),
+    );
+  }
+}
+
+/// Sección de tipo de comida
 class _MealSection extends ConsumerWidget {
   final MealType mealType;
   final List<DiaryEntryModel> entries;
@@ -456,70 +541,76 @@ class _MealSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+    final colors = Theme.of(context).colorScheme;
     final totals = _calculateTotals();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header de la sección
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Icon(_getMealIcon(), size: 20, color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      mealType.displayName.toUpperCase(),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Totales de la comida
-              if (entries.isNotEmpty)
-                Text(
-                  '${totals.kcal} kcal',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurfaceVariant,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colors.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Icon(
+                    _getMealIcon(),
+                    size: 18,
+                    color: colors.primary,
                   ),
                 ),
-              const SizedBox(width: 8),
-              // Botón añadir
-              _AddButton(
-                onPressed: () => _showAddEntry(context, ref),
-              ),
-            ],
-          ),
-        ),
-
-        // Lista de entradas
-        if (entries.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'Sin entradas',
-              style: TextStyle(
-                color: theme.colorScheme.onSurfaceVariant.withAlpha((0.6 * 255).round()),
-                fontSize: 14,
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    mealType.displayName.toUpperCase(),
+                    style: AppTypography.labelLarge.copyWith(
+                      color: colors.primary,
+                    ),
+                  ),
+                ),
+                if (entries.isNotEmpty)
+                  Text(
+                    '${totals.kcal} kcal',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                const SizedBox(width: 8),
+                AppIconButton(
+                  icon: Icons.add_rounded,
+                  onTap: () => _addEntry(context, ref),
+                  variant: AppButtonVariant.secondary,
+                  size: AppButtonSize.small,
+                ),
+              ],
             ),
-          )
-        else
-          ...entries.map((entry) => _EntryTile(entry: entry)),
 
-        const Divider(height: 1, indent: 16, endIndent: 16),
-      ],
+            // Entradas
+            if (entries.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  'Sin entradas',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ...entries.map((entry) => _EntryTile(entry: entry)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -534,12 +625,7 @@ class _MealSection extends ConsumerWidget {
       carbs += e.carbs ?? 0;
       fat += e.fat ?? 0;
     }
-    return Macros(
-      kcal: kcal,
-      protein: protein,
-      carbs: carbs,
-      fat: fat,
-    );
+    return Macros(kcal: kcal, protein: protein, carbs: carbs, fat: fat);
   }
 
   IconData _getMealIcon() {
@@ -555,40 +641,16 @@ class _MealSection extends ConsumerWidget {
     }
   }
 
-  void _showAddEntry(BuildContext context, WidgetRef ref) {
+  void _addEntry(BuildContext context, WidgetRef ref) {
+    HapticFeedback.mediumImpact();
     ref.read(selectedMealTypeProvider.notifier).meal = mealType;
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const FoodSearchScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const FoodSearchScreen()),
     );
   }
 }
 
-/// Botón pequeño de añadir
-class _AddButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _AddButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(8),
-        child: const Padding(
-          padding: EdgeInsets.all(6),
-          child: Icon(Icons.add, size: 18),
-        ),
-      ),
-    );
-  }
-}
-
-/// Tile de una entrada individual
+/// Tile de entrada individual
 class _EntryTile extends ConsumerWidget {
   final DiaryEntryModel entry;
 
@@ -596,50 +658,61 @@ class _EntryTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+    final colors = Theme.of(context).colorScheme;
 
     return Dismissible(
       key: Key(entry.id),
       direction: DismissDirection.endToStart,
       background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
+        margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.only(right: 16),
-        child: const Icon(Icons.delete, color: Colors.white),
+        decoration: BoxDecoration(
+          color: colors.errorContainer,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        alignment: Alignment.centerRight,
+        child: Icon(Icons.delete_outline, color: colors.error),
       ),
       onDismissed: (_) => _deleteEntry(ref),
       child: ListTile(
         dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                entry.foodName,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-              ),
-            ),
-            Text(
-              '${entry.kcal} kcal',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ],
+        contentPadding: EdgeInsets.zero,
+        title: Text(
+          entry.foodName,
+          style: AppTypography.bodyMedium.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         subtitle: Text(
           _getSubtitle(),
-          style: TextStyle(
-            fontSize: 13,
-            color: theme.colorScheme.onSurfaceVariant,
+          style: AppTypography.bodySmall.copyWith(
+            color: colors.onSurfaceVariant,
           ),
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.edit, size: 18),
-          onPressed: () => _editEntry(context, ref),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${entry.kcal}',
+              style: AppTypography.labelLarge.copyWith(
+                color: colors.primary,
+              ),
+            ),
+            Text(
+              ' kcal',
+              style: AppTypography.labelSmall.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              size: 16,
+              color: colors.onSurfaceVariant,
+            ),
+          ],
         ),
+        onTap: () => _editEntry(context, ref),
       ),
     );
   }
@@ -648,15 +721,14 @@ class _EntryTile extends ConsumerWidget {
     final amount = entry.amount == entry.amount.roundToDouble()
         ? entry.amount.toInt().toString()
         : entry.amount.toString();
-    
+
     String unitText;
     switch (entry.unit) {
       case ServingUnit.grams:
         unitText = 'g';
         break;
       case ServingUnit.portion:
-        unitText = 'porción';
-        if (entry.amount > 1) unitText = 'porciones';
+        unitText = entry.amount > 1 ? 'porciones' : 'porción';
         break;
       case ServingUnit.milliliter:
         unitText = 'ml';
@@ -664,30 +736,28 @@ class _EntryTile extends ConsumerWidget {
     }
 
     final parts = <String>['$amount $unitText'];
-    
+
     if (entry.protein != null && entry.protein! > 0) {
-      parts.add('P: ${entry.protein!.toStringAsFixed(1)}g');
+      parts.add('P: ${entry.protein!.toStringAsFixed(0)}g');
     }
     if (entry.carbs != null && entry.carbs! > 0) {
-      parts.add('C: ${entry.carbs!.toStringAsFixed(1)}g');
+      parts.add('C: ${entry.carbs!.toStringAsFixed(0)}g');
     }
     if (entry.fat != null && entry.fat! > 0) {
-      parts.add('G: ${entry.fat!.toStringAsFixed(1)}g');
+      parts.add('G: ${entry.fat!.toStringAsFixed(0)}g');
     }
 
     return parts.join(' • ');
   }
 
-  Future<void> _editEntry(BuildContext context, WidgetRef ref) async {
+  void _editEntry(BuildContext context, WidgetRef ref) {
     ref.read(editingEntryProvider.notifier).editing = entry;
     ref.read(selectedMealTypeProvider.notifier).meal = entry.mealType;
-    
-    await Navigator.of(context).push(
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const FoodSearchScreen(isEditing: true),
       ),
     );
-    
     ref.read(editingEntryProvider.notifier).editing = null;
   }
 
