@@ -5,7 +5,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
-import 'core/onboarding/splash_wrapper.dart';
 import 'core/providers/app_providers.dart';
 import 'diet/services/food_cache_service.dart';
 import 'training/services/timer_audio_service.dart';
@@ -25,9 +24,7 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: getProviderOverrides(prefs),
-      child: const SplashWrapper(
-        child: JuanTrackerApp(),
-      ),
+      child: const JuanTrackerApp(),
     ),
   );
 

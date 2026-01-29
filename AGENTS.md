@@ -316,6 +316,31 @@ final db = WebDatabase('name');  // APIs deprecated conocidas
   - Evitar duplicar responsabilidades entre Dart y nativo: un único "source of truth" reduce errores y race conditions.
   - Telemetría desde el inicio facilita reproducir incidentes en producción.
 
+### Errores recientes y cómo evitarlos (checklist práctico) ✅
+- AndroidManifest / permisos
+  - Coloca `<uses-permission>` fuera del `<application>` (a nivel de manifest).
+  - Usa valores `foregroundServiceType` **documentados**; por ejemplo `mediaPlayback`. Evita escribir valores inválidos como `media|location` sin verificar el nombre exacto permitido por la SDK. Si dudas, prueba con `flutter build apk` para atrapar errores de linkeo de recursos.
+- Kotlin/Platform changes
+  - Cuando agregues llamadas nativas (Intents, Build.VERSION, PendingIntent) recuerda añadir imports: `android.content.Intent`, `android.os.Build`, `android.app.PendingIntent`, etc. Ejecuta `./gradlew assembleDebug` (o `flutter run`) temprano para detectar errores de compilación nativos.
+- Widgets y árbol de la UI
+  - Evita intentar mostrar `Scaffold` fuera de `MaterialApp`/`WidgetsApp` (error común: "No Directionality widget found"). Si añades un `SplashWrapper`, colócalo como `home` dentro de `MaterialApp`, no por encima.
+- Beeps & audio
+  - Evita duplicados: cuando arranque el servicio nativo marca `nativeStarted=true` y desactiva el `Timer.periodic`/beeps en Dart para no reproducir beeps dos veces.
+  - Usa `STREAM_NOTIFICATION` o equivalente para beeps de temporizador (no pedir Audio Focus) y configura la notificación con `playSound=false` si solo quieres beeps nativos.
+- Telemetría y logging
+  - Instrumenta eventos clave: `timer_start`, `notification_start`, `notification_update`, `timer_finished`, `service_started`, `service_stopped`, `notification_action`, `beep_played`.
+  - No incluir PII en eventos. Añade breadcrumbs para errores críticos y usa sampling en producción si la frecuencia es alta.
+- QA / OEM tests
+  - Prueba en varios OEMs (Xiaomi, Huawei, Samsung) y escenarios (app background, bloqueos de pantalla, cambios rápidos de app). Algunos OEMs aplican políticas agresivas a servicios en background.
+  - Manual checklist: iniciar timer → bloquear pantalla → esperar finalización → verificar notificación desaparece y que los beeps suenan.
+
+### PR / CI checklist (imponer antes de merge) 🔁
+- Código: `flutter analyze` y `flutter test` pasan en la rama.
+- Android: `flutter build apk` (o `./gradlew assembleDebug`) sin errores de manifest o Kotlin.
+- Manual testing steps incluidos en la descripción del PR (pasos y logs esperados).
+- Telemetría: eventos instrumentados añadidos y con sample rate apropiado.
+- Changelog breve en la descripción y un tag `ci/needs-manual-tests` si hay cambios nativos que requieren QA.
+
 ---
 
 ## Testing Instructions
