@@ -66,7 +66,8 @@ class AppRouter {
           ),
         );
       },
-      transitionDuration: const Duration(milliseconds: 400),
+      // Reducido de 400ms a 280ms para mejor percepción de velocidad
+      transitionDuration: const Duration(milliseconds: 280),
     );
   }
 }

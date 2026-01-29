@@ -53,11 +53,14 @@ class _SplashWrapperState extends State<SplashWrapper>
     // Start animation
     _controller.forward();
 
-    // Check if onboarding is needed
-    final shouldShow = await OnboardingScreen.shouldShow();
+    // Ejecutar en paralelo: verificar onboarding + delay mínimo
+    // Esto reduce el tiempo de espera de 2s a 800ms (mínimo para percibir branding)
+    final results = await Future.wait([
+      OnboardingScreen.shouldShow(),
+      Future.delayed(const Duration(milliseconds: 800)),
+    ]);
 
-    // Wait for animation and minimum splash time
-    await Future.delayed(const Duration(seconds: 2));
+    final shouldShow = results[0] as bool;
 
     if (mounted) {
       if (shouldShow) {
