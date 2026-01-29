@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
+import '../../../diet/services/day_summary_calculator.dart';
+import '../../targets/presentation/targets_screen.dart';
 import 'food_search_screen.dart';
 
 /// Pantalla principal del Diario
@@ -16,7 +18,7 @@ class DiaryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
     final entriesAsync = ref.watch(dayEntriesStreamProvider);
-    final totalsAsync = ref.watch(dailyTotalsProvider);
+    final summaryAsync = ref.watch(daySummaryProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -39,11 +41,35 @@ class DiaryScreen extends ConsumerWidget {
             onNext: () => ref.read(selectedDateProvider.notifier).nextDay(),
           ),
 
-          // Totales del día
-          totalsAsync.when(
-            data: (totals) => _DailyTotalsCard(totals: totals),
-            loading: () => const _DailyTotalsCard(totals: DailyTotals.empty),
-            error: (_, _) => const _DailyTotalsCard(totals: DailyTotals.empty),
+          // Resumen del día con progreso
+          summaryAsync.when(
+            data: (summary) => _DailySummaryCard(summary: summary),
+            loading: () => _DailySummaryCard(
+              summary: DaySummary(
+                date: DateTime.now(),
+                consumed: DailyTotals.empty,
+                targets: null,
+                progress: TargetsProgress(
+                  kcalConsumed: 0,
+                  proteinConsumed: 0,
+                  carbsConsumed: 0,
+                  fatConsumed: 0,
+                ),
+              ),
+            ),
+            error: (e, st) => _DailySummaryCard(
+              summary: DaySummary(
+                date: DateTime.now(),
+                consumed: DailyTotals.empty,
+                targets: null,
+                progress: TargetsProgress(
+                  kcalConsumed: 0,
+                  proteinConsumed: 0,
+                  carbsConsumed: 0,
+                  fatConsumed: 0,
+                ),
+              ),
+            ),
           ),
 
           const Divider(height: 1),
@@ -117,11 +143,11 @@ class _DateSelector extends StatelessWidget {
   }
 }
 
-/// Card con los totales del día
-class _DailyTotalsCard extends StatelessWidget {
-  final DailyTotals totals;
+/// Card con el resumen del día incluyendo progreso vs objetivos.
+class _DailySummaryCard extends StatelessWidget {
+  final DaySummary summary;
 
-  const _DailyTotalsCard({required this.totals});
+  const _DailySummaryCard({required this.summary});
 
   @override
   Widget build(BuildContext context) {
@@ -137,12 +163,17 @@ class _DailyTotalsCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Kcal principal
+          // CTA si no hay target configurado
+          if (!summary.hasTargets) ...[
+            _NoTargetsBanner(),
+            const SizedBox(height: 12),
+          ],
+          // Kcal principal con progreso
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                '${totals.kcal}',
+                '${summary.consumed.kcal}',
                 style: GoogleFonts.montserrat(
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
@@ -150,33 +181,65 @@ class _DailyTotalsCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                'kcal',
-                style: GoogleFonts.montserrat(
-                  fontSize: 16,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'kcal',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 16,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (summary.hasTargets)
+                    Text(
+                      '/ ${summary.targets!.kcalTarget}',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant.withAlpha((0.7 * 255).round()),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Macros
+          // Barra de progreso de calorías
+          if (summary.hasTargets) ...[
+            const SizedBox(height: 8),
+            _ProgressBar(
+              progress: summary.progress.kcalPercent?.clamp(0.0, 1.0) ?? 0,
+              color: Colors.orange,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${summary.progress.kcalRemaining} kcal restantes',
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          // Macros con progreso
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _MacroItem(
+              _MacroItemWithProgress(
                 label: 'Proteína',
-                value: '${totals.protein.toStringAsFixed(0)}g',
+                consumed: summary.consumed.protein,
+                target: summary.targets?.proteinTarget,
                 color: Colors.red.shade400,
               ),
-              _MacroItem(
+              _MacroItemWithProgress(
                 label: 'Carbs',
-                value: '${totals.carbs.toStringAsFixed(0)}g',
+                consumed: summary.consumed.carbs,
+                target: summary.targets?.carbsTarget,
                 color: Colors.amber.shade600,
               ),
-              _MacroItem(
+              _MacroItemWithProgress(
                 label: 'Grasa',
-                value: '${totals.fat.toStringAsFixed(0)}g',
+                consumed: summary.consumed.fat,
+                target: summary.targets?.fatTarget,
                 color: Colors.blue.shade400,
               ),
             ],
@@ -187,38 +250,164 @@ class _DailyTotalsCard extends StatelessWidget {
   }
 }
 
-class _MacroItem extends StatelessWidget {
-  final String label;
-  final String value;
+/// Banner CTA para configurar objetivos cuando no hay ninguno.
+class _NoTargetsBanner extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.secondaryContainer,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const TargetsScreen()),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                Icons.track_changes,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Configura tus objetivos',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSecondaryContainer,
+                      ),
+                    ),
+                    Text(
+                      'Define calorías y macros para hacer seguimiento',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.onSecondaryContainer
+                            .withAlpha((0.7 * 255).round()),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Barra de progreso lineal personalizada.
+class _ProgressBar extends StatelessWidget {
+  final double progress;
   final Color color;
 
-  const _MacroItem({
-    required this.label,
-    required this.value,
+  const _ProgressBar({
+    required this.progress,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: GoogleFonts.montserrat(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: progress,
+        minHeight: 6,
+        backgroundColor: color.withAlpha((0.2 * 255).round()),
+        valueColor: AlwaysStoppedAnimation(color),
+      ),
+    );
+  }
+}
+
+/// Item de macro con valor consumido y opcionalmente progreso vs objetivo.
+class _MacroItemWithProgress extends StatelessWidget {
+  final String label;
+  final double consumed;
+  final double? target;
+  final Color color;
+
+  const _MacroItemWithProgress({
+    required this.label,
+    required this.consumed,
+    required this.target,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasTarget = target != null && target! > 0;
+    final progress = hasTarget ? (consumed / target!).clamp(0.0, 1.0) : 0.0;
+    final percentage = hasTarget ? ((consumed / target!) * 100).round() : 0;
+
+    return SizedBox(
+      width: 80,
+      child: Column(
+        children: [
+          Text(
+            '${consumed.toStringAsFixed(0)}g',
+            style: GoogleFonts.montserrat(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: GoogleFonts.montserrat(
-            fontSize: 12,
-            color: color,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
+          if (hasTarget) ...[
+            const SizedBox(height: 4),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 4,
+                backgroundColor: color.withAlpha((0.2 * 255).round()),
+                valueColor: AlwaysStoppedAnimation(color),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '$percentage%',
+              style: TextStyle(
+                fontSize: 10,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.montserrat(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+          if (hasTarget)
+            Text(
+              label,
+              style: GoogleFonts.montserrat(
+                fontSize: 10,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -7,3 +7,9 @@ export 'package:juan_tracker/core/providers/database_provider.dart';
 
 // Exportar adaptadores/compatibilidad con el modelo antiguo (solo providers, no tipos)
 export 'package:juan_tracker/core/providers/diary_providers.dart' show selectedDayProvider, dayEntriesProvider, dayTotalsProvider;
+
+// Exportar providers de summary (targets y day summary)
+export 'summary_providers.dart';
+
+// Exportar providers de tendencia de peso
+export 'weight_trend_providers.dart';
