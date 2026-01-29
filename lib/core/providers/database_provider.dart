@@ -133,11 +133,40 @@ class SelectedMealTypeNotifier extends Notifier<diet.MealType> {
 // RECENT FOODS - Para Quick Add (UX optimization)
 // ============================================================================
 
+/// Compara dos listas de DiaryEntryModel para evitar emisiones redundantes
+bool _areDiaryEntryListsEqual(
+  List<diet.DiaryEntryModel> previous,
+  List<diet.DiaryEntryModel> next,
+) {
+  if (identical(previous, next)) return true;
+  if (previous.length != next.length) return false;
+
+  for (var i = 0; i < previous.length; i++) {
+    if (previous[i] != next[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /// Provider de comidas recientes para quick-add
 /// Retorna las últimas 5 comidas únicas registradas (por foodId)
-final recentFoodsProvider = FutureProvider<List<diet.DiaryEntryModel>>((ref) async {
-  final repo = ref.read(diaryRepositoryProvider);
-  return repo.getRecentUniqueEntries(limit: 5);
+///
+/// FIX: StreamProvider para ser reactivo a nuevas entradas en el diario,
+/// pero usando `distinct` para evitar emisiones cuando la lista de recientes
+/// no ha cambiado realmente.
+final recentFoodsProvider = StreamProvider<List<diet.DiaryEntryModel>>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+
+  // Escuchar cambios en la tabla diary_entries
+  return db
+      .select(db.diaryEntries)
+      .watch()
+      .asyncMap((_) async {
+        final repo = ref.read(diaryRepositoryProvider);
+        return repo.getRecentUniqueEntries(limit: 5);
+      })
+      .distinct(_areDiaryEntryListsEqual);
 });
 
 // ============================================================================

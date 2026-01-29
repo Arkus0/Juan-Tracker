@@ -732,7 +732,16 @@ class _QuickAddSection extends ConsumerWidget {
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: recentFoods.length,
-                  itemExtent: null, // Variable width chips
+                  // Performance: prototypeItem calcula tamaño una sola vez
+                  prototypeItem: recentFoods.isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.sm),
+                          child: _QuickAddChip(
+                            food: recentFoods.first,
+                            onTap: () {},
+                          ),
+                        )
+                      : null,
                   itemBuilder: (context, index) {
                     final food = recentFoods[index];
                     return Padding(

@@ -343,7 +343,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       trainingSessionProvider.select((s) => s.exercises.length),
     );
 
-    // Timer state (nuevo estado avanzado)
+    // Timer state: se pasa al RestTimerBar, que está envuelto en un RepaintBoundary
+    // para limitar los repaints solo a la barra cuando el timer hace tick (p.ej. cada 100 ms)
+    // y evitar repintar toda la pantalla en cada actualización del temporizador.
     final restTimerState = ref.watch(
       trainingSessionProvider.select((s) => s.restTimer),
     );
@@ -516,17 +518,20 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                 ),
 
                 // Nuevo Timer Bar no invasivo
-                RestTimerBar(
-                  timerState: restTimerState,
-                  showInactiveBar: showTimerBar,
-                  onStartRest: notifier.startRest,
-                  onStopRest: notifier.stopRest,
-                  onPauseRest: notifier.pauseRest,
-                  onResumeRest: notifier.resumeRest,
-                  onDurationChange: notifier.setRestDuration,
-                  onAddTime: notifier.addRestTime,
-                  onTimerFinished: _onTimerFinished,
-                  onRestartRest: notifier.restartRest,
+                // Performance: RepaintBoundary aísla repaints del timer
+                RepaintBoundary(
+                  child: RestTimerBar(
+                    timerState: restTimerState,
+                    showInactiveBar: showTimerBar,
+                    onStartRest: notifier.startRest,
+                    onStopRest: notifier.stopRest,
+                    onPauseRest: notifier.pauseRest,
+                    onResumeRest: notifier.resumeRest,
+                    onDurationChange: notifier.setRestDuration,
+                    onAddTime: notifier.addRestTime,
+                    onTimerFinished: _onTimerFinished,
+                    onRestartRest: notifier.restartRest,
+                  ),
                 ),
               ],
             ),
