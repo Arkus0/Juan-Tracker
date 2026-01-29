@@ -14,7 +14,7 @@
         <service
             android:name=".TimerForegroundService"
             android:exported="false"
-            android:foregroundServiceType="media|location" />
+            android:foregroundServiceType="mediaPlayback" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
