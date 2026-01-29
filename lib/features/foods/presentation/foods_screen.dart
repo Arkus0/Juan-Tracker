@@ -155,10 +155,15 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
   }
 
   Future<void> _showAddFoodDialog(BuildContext context) async {
-    await showDialog(
+    final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => const _AddFoodDialog(),
     );
+    
+    // Fix: Refrescar lista si se añadió un alimento exitosamente
+    if (result == true && mounted) {
+      setState(() => _refreshFoodsFuture());
+    }
   }
 }
 
@@ -663,8 +668,17 @@ class _AddFoodDialogState extends ConsumerState<_AddFoodDialog> {
     );
 
     final repo = ref.read(foodRepositoryProvider);
-    await repo.insert(food);
-
-    if (mounted) Navigator.of(context).pop();
+    try {
+      await repo.insert(food);
+      if (!mounted) return;
+      Navigator.of(context).pop(true); // Devolver true para indicar éxito
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error al guardar el alimento. Inténtalo de nuevo.'),
+        ),
+      );
+    }
   }
 }
