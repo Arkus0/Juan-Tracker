@@ -3,11 +3,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/router/app_router.dart';
 // import '../../../core/app_constants.dart';
 import '../../providers/coach_providers.dart';
 import '../../services/adaptive_coach_service.dart';
-import 'plan_setup_screen.dart';
-import 'weekly_check_in_screen.dart';
 
 class CoachScreen extends ConsumerWidget {
   const CoachScreen({super.key});
@@ -32,19 +31,12 @@ class CoachScreen extends ConsumerWidget {
   }
 
   void _navigateToSetup(BuildContext context, {CoachPlan? plan}) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => PlanSetupScreen(existingPlan: plan),
-      ),
-    );
+    // TODO: Pasar el plan existente mediante provider/extra params
+    context.goToCoachSetup();
   }
 
   void _navigateToCheckIn(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const WeeklyCheckInScreen(),
-      ),
-    );
+    context.goToCoachCheckIn();
   }
 }
 

@@ -1578,22 +1578,41 @@ Configurados en `AndroidManifest.xml`:
 - Esquema personalizado: `juantracker://nutrition/diary`
 - HTTPS: `https://juantracker.app/training/history`
 
-### Extensiones de Navegación
+### Extensiones de Navegación (Recomendado)
 
 ```dart
 // Uso simplificado desde cualquier BuildContext
 context.goToNutrition();     // Ir a nutrición
 context.goToDiary();         // Ir al diario
+context.goToFoods();         // Ir a alimentos
 context.goToTraining();      // Ir a entrenamiento
 context.goToCoach();         // Ir al coach
+context.pushTo('/ruta');     // Push manteniendo stack
+context.goBack();            // Volver atrás
 ```
 
-### Navegación Programática
+### Migración desde Navigator (Legacy)
+
+**Antes:**
+```dart
+Navigator.of(context).push(
+  MaterialPageRoute(builder: (_) => const TargetScreen()),
+);
+```
+
+**Después:**
+```dart
+context.pushTo(AppRouter.routeTarget);
+// o
+context.goToTarget(); // Si existe extensión
+```
+
+### Navegación Programática (GoRouter Nativo)
 
 ```dart
 import 'package:go_router/go_router.dart';
 
-// Navegar a ruta
+// Navegar a ruta (reemplaza)
 context.go('/nutrition/diary');
 
 // Navegar con push (mantiene stack)
@@ -1604,6 +1623,24 @@ context.pop();
 
 // Reemplazar ruta actual
 context.replace('/training');
+```
+
+### Transiciones Personalizadas
+
+El router usa `CustomTransitionPage` para transiciones suaves:
+
+```dart
+// Fade transition (400ms) para rutas principales
+GoRoute(
+  path: nutrition,
+  pageBuilder: (context, state) => CustomTransitionPage(
+    child: const HomeScreen(),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
+    transitionDuration: const Duration(milliseconds: 400),
+  ),
+);
 ```
 
 ---
@@ -1623,6 +1660,11 @@ context.replace('/training');
 - Deep links: `juantracker://` y `https://juantracker.app`
 - 17 rutas configuradas (nutrición + entrenamiento)
 - Extensiones de navegación para rutas comunes
+
+### Fase B+: GoRouter Migration Complete
+- Migración de todas las pantallas principales desde Navigator.push
+- Transiciones personalizadas con fade (400ms)
+- 12 tests de integración para rutas y deep links
 
 ### Fase C: Performance Optimizations
 - **PC-001**: Debounce 300ms en búsqueda de alimentos

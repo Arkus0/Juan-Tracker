@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
+import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
@@ -184,11 +185,7 @@ class DiaryScreen extends ConsumerWidget {
 
   void _showAddEntry(BuildContext context, WidgetRef ref, MealType mealType) {
     ref.read(selectedMealTypeProvider.notifier).meal = mealType;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const FoodSearchScreen(),
-      ),
-    );
+    context.pushTo(AppRouter.nutritionFoods);
   }
 
   /// Quick add: copia una entrada existente al día seleccionado
