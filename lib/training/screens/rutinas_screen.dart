@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:uuid/uuid.dart';
+
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
-import '../models/rutina.dart';
 import '../providers/training_provider.dart';
-import '../widgets/routine_import_preview_dialog.dart';
+
 import 'create_edit_routine_screen.dart';
 
 class RutinasScreen extends ConsumerWidget {
@@ -75,66 +73,6 @@ class RutinasScreen extends ConsumerWidget {
         builder: (_) => const CreateEditRoutineScreen(),
       ),
     );
-  }
-
-  void _navigateToEdit(BuildContext context, dynamic rutina) {
-    HapticFeedback.selectionClick();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => CreateEditRoutineScreen(rutina: rutina),
-      ),
-    );
-  }
-
-  void _deleteRutina(BuildContext context, WidgetRef ref, Rutina rutina) {
-    ref.read(trainingRepositoryProvider).deleteRutina(rutina.id);
-    HapticFeedback.heavyImpact();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Rutina eliminada'),
-        action: SnackBarAction(
-          label: 'DESHACER',
-          onPressed: () {
-            ref.read(trainingRepositoryProvider).saveRutina(rutina);
-            HapticFeedback.lightImpact();
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _duplicateRutina(
-    BuildContext context,
-    WidgetRef ref,
-    Rutina rutina,
-  ) async {
-    HapticFeedback.mediumImpact();
-
-    const uuid = Uuid();
-    final newRutina = Rutina(
-      id: uuid.v4(),
-      nombre: '${rutina.nombre} (copia)',
-      creada: DateTime.now(),
-      dias: rutina.dias
-          .map((dia) => dia.copyWith(
-                ejercicios: dia.ejercicios
-                    .map((ej) => ej.copyWith(instanceId: uuid.v4()))
-                    .toList(),
-              ))
-          .toList(),
-    );
-
-    await ref.read(trainingRepositoryProvider).saveRutina(newRutina);
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Rutina duplicada: ${newRutina.nombre}'),
-          backgroundColor: AppColors.success,
-        ),
-      );
-    }
   }
 
   Future<void> _showImportFlow(BuildContext context, WidgetRef ref) async {
