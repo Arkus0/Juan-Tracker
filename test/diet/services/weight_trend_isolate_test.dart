@@ -1,6 +1,6 @@
-/// Tests para cálculos de tendencia de peso en isolate (MA-003)
-///
-/// Verifica que calculateAsync funciona correctamente
+// Tests para cálculos de tendencia de peso en isolate (MA-003)
+//
+// Verifica que calculateAsync funciona correctamente
 import 'package:flutter_test/flutter_test.dart';
 import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/services/weight_trend_calculator.dart';

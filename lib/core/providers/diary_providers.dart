@@ -64,7 +64,7 @@ final mealTotalsProvider = Provider.family.autoDispose<_DailyTotals, diet.MealTy
       );
     },
     loading: () => _DailyTotals(kcal: 0, protein: 0, carbs: 0, fat: 0),
-    error: (_, __) => _DailyTotals(kcal: 0, protein: 0, carbs: 0, fat: 0),
+    error: (_, _) => _DailyTotals(kcal: 0, protein: 0, carbs: 0, fat: 0),
   );
 });
 

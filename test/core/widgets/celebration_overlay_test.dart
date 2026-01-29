@@ -1,9 +1,9 @@
-/// Tests para sistema de celebraciones UX-004
-///
-/// Cubre:
-/// - Confetti animation
-/// - Scale animation para completar series
-/// - Controller de celebraciones
+// Tests para sistema de celebraciones UX-004
+//
+// Cubre:
+// - Confetti animation
+// - Scale animation para completar series
+// - Controller de celebraciones
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:juan_tracker/core/widgets/celebration_overlay.dart';

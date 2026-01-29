@@ -92,13 +92,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await prefs.setBool('contextual_onboarding_needed', true);
   }
 
-  /// Verifica si se necesita onboarding contextual
+  // ignore: unused_element
   static Future<bool> needsContextualOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('contextual_onboarding_needed') == true;
   }
 
-  /// Marca el onboarding contextual como completado
+  // ignore: unused_element
   static Future<void> markContextualOnboardingComplete() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('contextual_onboarding_needed', false);
