@@ -58,7 +58,7 @@ class DiaryScreen extends ConsumerWidget {
                   width: double.infinity,
                   height: 200,
                 ),
-                error: (_, __) => AppError(
+                error: (_, _) => AppError(
                   message: 'Error al cargar resumen',
                   onRetry: () => ref.invalidate(daySummaryProvider),
                 ),

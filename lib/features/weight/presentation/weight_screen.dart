@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
-import 'package:juan_tracker/diet/services/weight_trend_calculator.dart';
+
 import 'package:intl/intl.dart';
 
 class WeightScreen extends ConsumerWidget {
@@ -89,7 +89,7 @@ class _MainStatsSection extends ConsumerWidget {
         );
       },
       loading: () => const AppLoading(),
-      error: (_, __) => AppError(
+      error: (_, _) => AppError(
         message: 'Error al cargar',
         onRetry: () => ref.invalidate(weightTrendProvider),
       ),
