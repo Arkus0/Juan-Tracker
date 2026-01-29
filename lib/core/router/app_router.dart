@@ -16,7 +16,6 @@ import '../../features/foods/presentation/foods_screen.dart';
 import '../../features/weight/presentation/weight_screen.dart';
 import '../../features/summary/presentation/summary_screen.dart';
 import '../../features/targets/presentation/targets_screen.dart';
-import '../../features/training/presentation/training_home_screen.dart';
 import '../../features/training/presentation/history_screen.dart';
 import '../../features/training/presentation/training_routines_screen.dart';
 import '../../features/training/presentation/training_library_screen.dart';
@@ -25,6 +24,7 @@ import '../../diet/screens/coach/coach_screen.dart';
 import '../../diet/screens/coach/plan_setup_screen.dart';
 import '../../diet/screens/coach/weekly_check_in_screen.dart';
 import '../../core/onboarding/splash_wrapper.dart';
+import '../../training/training_shell.dart';
 
 /// Provider para acceder al router desde cualquier parte de la app
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -57,6 +57,24 @@ class AppRouter {
   // Helper para navegar a detalle de sesión (requiere objeto Sesion)
   static String trainingSessionDetailWithId(String id) => '/training/session/detail/$id';
 
+  /// Helper para crear páginas con transición fade
+  static CustomTransitionPage<void> _fadePage({
+    required LocalKey key,
+    required Widget child,
+  }) {
+    return CustomTransitionPage<void>(
+      key: key,
+      child: child,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 400),
+    );
+  }
+
   /// Router principal configurado con todas las rutas
   static final GoRouter router = GoRouter(
     initialLocation: root,
@@ -77,9 +95,13 @@ class AppRouter {
       ),
 
       // === NUTRICIÓN ===
+      // Transición fade desde EntryScreen
       GoRoute(
         path: nutrition,
-        builder: (context, state) => const HomeScreen(),
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const HomeScreen(),
+        ),
       ),
 
       GoRoute(
@@ -124,9 +146,13 @@ class AppRouter {
       ),
 
       // === ENTRENAMIENTO ===
+      // Transición fade desde EntryScreen (usa TrainingShell internamente)
       GoRoute(
         path: training,
-        builder: (context, state) => const TrainingHomeScreen(),
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const TrainingShell(),
+        ),
       ),
 
       GoRoute(
@@ -197,14 +223,20 @@ class AppRouter {
 
 /// Extensiones útiles para navegación
 extension GoRouterExtension on BuildContext {
-  /// Navega a una ruta específica
+  /// Navega a una ruta específica (reemplaza la ruta actual)
   void goTo(String location) => go(location);
+
+  /// Navega a una ruta manteniendo el stack (push)
+  void pushTo(String location) => push(location);
 
   /// Navega a nutrición
   void goToNutrition() => go(AppRouter.nutrition);
 
   /// Navega al diario
   void goToDiary() => go(AppRouter.nutritionDiary);
+
+  /// Navega a los alimentos
+  void goToFoods() => go(AppRouter.nutritionFoods);
 
   /// Navega a entrenamiento
   void goToTraining() => go(AppRouter.training);
@@ -215,6 +247,30 @@ extension GoRouterExtension on BuildContext {
   /// Navega a la pantalla de sesión de entrenamiento
   void goToTrainingSession() => go(AppRouter.trainingSession);
 
+  /// Navega a la biblioteca de ejercicios
+  void goToTrainingLibrary() => go(AppRouter.trainingLibrary);
+
+  /// Navega a las rutinas
+  void goToTrainingRoutines() => go(AppRouter.trainingRoutines);
+
   /// Navega al coach
   void goToCoach() => go(AppRouter.nutritionCoach);
+
+  /// Navega al setup del coach (push)
+  void goToCoachSetup() => push(AppRouter.nutritionCoachSetup);
+
+  /// Navega al check-in semanal (push)
+  void goToCoachCheckIn() => push(AppRouter.nutritionCoachCheckin);
+
+  /// Navega a la pantalla de resumen
+  void goToSummary() => go(AppRouter.nutritionSummary);
+
+  /// Navega a la pantalla de targets/objetivos
+  void goToTargets() => go(AppRouter.nutritionTargets);
+
+  /// Navega a la pantalla de peso
+  void goToWeight() => go(AppRouter.nutritionWeight);
+
+  /// Vuelve atrás
+  void goBack() => pop();
 }

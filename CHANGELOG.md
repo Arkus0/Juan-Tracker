@@ -48,7 +48,28 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   - `celebration_overlay_test.dart` - Tests de celebraciones UX-004
   - `meal_totals_provider_test.dart` - Tests de providers MD-002
   - `weight_trend_isolate_test.dart` - Tests de isolates MA-003
-- Todos los tests pasando (172 total)
+- 12 nuevos tests para GoRouter (Fase B+):
+  - `app_router_test.dart` - Tests de integración para rutas y deep links
+- Todos los tests pasando (201 total)
+
+### Added - Fase B+: GoRouter Migration & Transitions
+- Migración completa de `Navigator.push` a `context.go()` / `context.push()`
+- Pantallas migradas:
+  - `entry_screen.dart` - Navegación a nutrición/entrenamiento
+  - `coach_screen.dart` - Navegación a setup y check-in
+  - `diary_screen.dart` - Navegación a búsqueda de alimentos
+  - `summary_screen.dart` - Navegación a targets
+- Transiciones personalizadas con `CustomTransitionPage`:
+  - Fade transition (400ms) entre EntryScreen y modos
+- Extensiones de navegación ampliadas:
+  - `pushTo()` - Navegación manteniendo stack
+  - `goBack()` - Volver atrás
+  - `goToFoods()`, `goToWeight()`, `goToCoachSetup()`, etc.
+
+### Fixed
+- Test `widget_test.dart` arreglado (timer pendiente del SplashWrapper)
+- Warnings de analyzer: unused imports
+- Exports limpios en barrel files
 
 ### Changed
 - Actualizado `app.dart` para usar `MaterialApp.router`
