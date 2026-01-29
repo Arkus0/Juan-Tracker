@@ -14,7 +14,6 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Colores semánticos de la aplicación
@@ -306,7 +305,7 @@ ThemeData buildNutritionTheme() {
     error: AppColors.error,
     onError: Colors.white,
     errorContainer: AppColors.errorContainer,
-    onErrorContainer: AppColors.errorDark,
+    onErrorContainer: AppColors.errorLight,
     surface: AppColors.lightSurface,
     onSurface: AppColors.lightTextPrimary,
     surfaceContainerHighest: AppColors.lightSurfaceContainer,
@@ -644,7 +643,6 @@ ThemeData buildTrainingTheme() {
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.darkBorder),
       ),
       behavior: SnackBarBehavior.floating,
     ),
@@ -654,7 +652,6 @@ ThemeData buildTrainingTheme() {
       backgroundColor: AppColors.darkSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        borderSide: const BorderSide(color: AppColors.darkBorder),
       ),
     ),
     
