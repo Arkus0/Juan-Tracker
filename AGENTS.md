@@ -154,6 +154,90 @@ class DriftTrainingRepository implements ITrainingRepository {
 ### Linter
 Usa `flutter_lints` v6.0.0. Config en `analysis_options.yaml`.
 
+### Patrones de código seguros
+
+**Manejo de BuildContext después de operaciones async**:
+```dart
+// ❌ INCORRECTO: Puede causar crash si el widget se desmontó
+final result = await someAsyncOperation();
+Navigator.of(context).pop();  // Risky!
+
+// ✅ CORRECTO: Verificar mounted antes de usar context
+final result = await someAsyncOperation();
+if (context.mounted) {  // o simplemente if (mounted) en StatefulWidget
+  Navigator.of(context).pop();
+}
+```
+
+**SharePlus API (share_plus ^12.0.1)**:
+```dart
+// ❌ DEPRECATED: API antigua de share_plus
+Share.share(text, subject: '...');
+
+// ✅ CORRECTO: Nueva API SharePlus
+await SharePlus.instance.share(
+  ShareParams(text: text, subject: '...'),
+);
+```
+
+## Notas recientes para agentes (correcciones importantes)
+> Pequeñas lecciones extraídas al arreglar errores comunes del repositorio.
+
+- **Riverpod 3 / Notifier**: El proyecto usa Riverpod v3. Cuando migres `StateNotifier`/`StateProvider` a la API nueva, prefiere `Notifier` + `NotifierProvider`. Evita manipular `.state` desde fuera de la implementación del `Notifier`; expón setters o métodos en el `Notifier` (ej.: `set query(String)` o `set meal(MealType)`). Esto mejora encapsulación y evita warnings `invalid_use_of_visible_for_testing_member`.
+
+- **Exports y nombres duplicados**: No reexportes tipos que puedan colisionar en la API global (ej.: `MealType` existe en más de un paquete). Si necesitas reexportar providers, hazlo de forma selectiva y con `show` o usa prefijos de import (`as diet`) para evitar `ambiguous_import`.
+
+- **withOpacity deprecado**: Para evitar pérdida de precisión y advertencias, prefiere `withAlpha((factor * 255).round())` o `withValues()` en lugar de `withOpacity()` cuando el linter sugiere `withValues`.
+
+- **BuildContext y `mounted`**: Evita usar `BuildContext` tras `await` si el widget puede desmontarse. Si necesitas hacer `Navigator.pop()` después de esperar, guarda el `Navigator.of(context)` en una variable antes del `await` o comprueba `if (mounted)` antes de usar el contexto.
+
+- **Formateo en UI**: Para mostrar valores numéricos (peso, volumen, etc.) formatea enteros sin decimal (ej.: mostrar `100` en vez de `100.0`) para que los tests de widgets que busquen texto coincidan exactamente.
+
+- **Tests y adaptadores temporales**: En tests de integración/logic que mezclan APIs antiguas y nuevas, usa adaptadores temporales (shim objects) para no cambiar la API de producción.
+
+> Estas notas **no** cambian las reglas de estilo globales, son recomendaciones prácticas para evitar los errores más frecuentes que aparecieron al corregir el repo.
+
+**ColorScheme (Material 3)**:
+```dart
+// ❌ DEPRECATED: background fue reemplazado por surface
+ColorScheme(background: Colors.black)
+scheme.background
+
+// ✅ CORRECTO: Usar surface
+ColorScheme(surface: Colors.black)
+scheme.surface
+// Para scaffoldBackgroundColor: scheme.surface
+```
+
+**Control flow structures**:
+```dart
+// ❌ INCORRECTO: If sin llaves (linter: curly_braces_in_flow_control_structures)
+if (condition) return true;
+
+// ✅ CORRECTO: Siempre usar llaves
+if (condition) {
+  return true;
+}
+```
+
+**Imports en tests**:
+```dart
+// ❌ INCORRECTO: No usar package:test en proyectos Flutter
+import 'package:test/test.dart';
+
+// ✅ CORRECTO: Usar flutter_test
+import 'package:flutter_test/flutter_test.dart';
+```
+
+**Ignorar warnings intencionales**:
+```dart
+// ignore: unused_element
+void _unusedPrivateMethod() { }
+
+// ignore: deprecated_member_use
+final db = WebDatabase('name');  // APIs deprecated conocidas
+```
+
 ---
 
 ## Testing Instructions
@@ -371,6 +455,18 @@ dart run build_runner watch --delete-conflicting-outputs
 
 **Error**: Locale español no funciona en fechas
 **Fix**: `main.dart` llama `initializeDateFormatting('es')` antes de runApp
+
+**Warning**: `use_build_context_synchronously` después de operaciones async
+**Fix**: Verificar `if (context.mounted)` o `if (mounted)` antes de usar `BuildContext`
+
+**Warning**: `curly_braces_in_flow_control_structures` en if sin llaves
+**Fix**: Siempre usar llaves: `if (x) { return; }`
+
+**Warning**: `deprecated_member_use` para `Share.share` o `ColorScheme.background`
+**Fix**: Ver sección "Patrones de código seguros" arriba para las APIs correctas
+
+**Warning**: `depend_on_referenced_packages` en tests
+**Fix**: Cambiar `import 'package:test/test.dart'` por `import 'package:flutter_test/flutter_test.dart'`
 
 ---
 
