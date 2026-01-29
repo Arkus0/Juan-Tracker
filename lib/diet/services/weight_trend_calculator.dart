@@ -121,7 +121,7 @@ class WeightTrendResult {
       case WeightPhase.losing:
         return 'Perdiendo ${weeklyRate.abs().toStringAsFixed(1)} kg/semana';
       case WeightPhase.maintaining:
-        return 'Estable (${daysInPhase} días)';
+        return 'Estable ($daysInPhase días)';
       case WeightPhase.gaining:
         return 'Ganando ${weeklyRate.toStringAsFixed(1)} kg/semana';
       case WeightPhase.insufficientData:
@@ -324,7 +324,7 @@ class WeightTrendCalculator {
     final n = entries.length;
 
     // Usar índices como X (0, 1, 2, ...) y peso como Y
-    double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+    double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
 
     for (int i = 0; i < n; i++) {
       final x = i.toDouble();
@@ -334,7 +334,6 @@ class WeightTrendCalculator {
       sumY += y;
       sumXY += x * y;
       sumX2 += x * x;
-      sumY2 += y * y;
     }
 
     final denominator = n * sumX2 - sumX * sumX;

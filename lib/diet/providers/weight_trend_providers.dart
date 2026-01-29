@@ -101,7 +101,7 @@ final weightChartDataProvider = FutureProvider<List<ChartDataPoint>>((ref) async
       return calculator.generateChartData(trend.entries);
     },
     loading: () => [],
-    error: (_, __) => [],
+    error: (_, _) => [],
   );
 });
 

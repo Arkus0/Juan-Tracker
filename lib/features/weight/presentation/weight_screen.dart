@@ -43,6 +43,16 @@ class WeightScreen extends ConsumerWidget {
               child: _PhaseIndicator(),
             ),
 
+            // Insights contextuales
+            SliverToBoxAdapter(
+              child: _InsightsSection(),
+            ),
+
+            // Consistencia de datos
+            SliverToBoxAdapter(
+              child: _ConsistencySection(),
+            ),
+
             // Predicciones
             SliverToBoxAdapter(
               child: _PredictionsSection(),
@@ -153,7 +163,7 @@ class _MainStatsSection extends ConsumerWidget {
         return _StatsGrid(result: result);
       },
       loading: () => const _StatsSkeleton(),
-      error: (_, __) => const _EmptyStatsCard(),
+      error: (_, _) => const _EmptyStatsCard(),
     );
   }
 }
@@ -324,7 +334,7 @@ class _PhaseIndicator extends ConsumerWidget {
         return _PhaseBanner(result: result);
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -436,7 +446,7 @@ class _PredictionsSection extends ConsumerWidget {
         return _PredictionsCard(result: result);
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -572,7 +582,7 @@ class _WeightChartSection extends ConsumerWidget {
         return _WeightChart(data: data);
       },
       loading: () => const _ChartSkeleton(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -820,7 +830,7 @@ class _AdvancedMetricsSection extends ConsumerWidget {
         return _MetricsCard(result: result);
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -1472,5 +1482,168 @@ class _EditWeightDialogState extends ConsumerState<_EditWeightDialog> {
     await repo.update(updated);
 
     if (mounted) Navigator.of(context).pop();
+  }
+}
+
+// ============================================================================
+// INSIGHTS CONTEXTUALES (NUEVO)
+// ============================================================================
+
+class _InsightsSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trendAsync = ref.watch(weightTrendProvider);
+
+    return trendAsync.when(
+      data: (result) {
+        if (result == null) return const SizedBox.shrink();
+        final insight = _generateInsight(result);
+        if (insight == null) return const SizedBox.shrink();
+        return _InsightCard(insight: insight);
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  _Insight? _generateInsight(WeightTrendResult result) {
+    if (result.phase == WeightPhase.maintaining && result.daysInPhase > 14) {
+      return _Insight(
+        icon: Icons.pause_circle,
+        color: Colors.orange,
+        title: 'Plateau detectado',
+        message: 'Llevas ${result.daysInPhase} dias sin cambios. Considera ajustar calorias.',
+      );
+    }
+    if (result.phase == WeightPhase.losing && result.weeklyRate < -1.0) {
+      return _Insight(
+        icon: Icons.warning_amber,
+        color: Colors.red,
+        title: 'Perdida rapida',
+        message: 'Estas perdiendo ${result.weeklyRate.abs().toStringAsFixed(1)} kg/semana.',
+      );
+    }
+    if (result.kalmanConfidence < 0.5 && result.entries.length > 7) {
+      return _Insight(
+        icon: Icons.scatter_plot,
+        color: Colors.purple,
+        title: 'Datos variables',
+        message: 'Tus pesos fluctuan mucho. Pesa siempre a la misma hora.',
+      );
+    }
+    return null;
+  }
+}
+
+class _Insight {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String message;
+  _Insight({required this.icon, required this.color, required this.title, required this.message});
+}
+
+class _InsightCard extends StatelessWidget {
+  final _Insight insight;
+  const _InsightCard({required this.insight});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: insight.color.withAlpha(25),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: insight.color.withAlpha(75)),
+      ),
+      child: Row(
+        children: [
+          Icon(insight.icon, color: insight.color, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(insight.title, style: GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.bold, color: insight.color)),
+                const SizedBox(height: 4),
+                Text(insight.message, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// CONSISTENCIA DE DATOS (NUEVO)
+// ============================================================================
+
+class _ConsistencySection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trendAsync = ref.watch(weightTrendProvider);
+    return trendAsync.when(
+      data: (result) {
+        if (result == null) return const SizedBox.shrink();
+        return _ConsistencyCard(result: result);
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _ConsistencyCard extends StatelessWidget {
+  final WeightTrendResult result;
+  const _ConsistencyCard({required this.result});
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final consistencyScore = ((result.kalmanConfidence * 0.6) + (result.regressionR2 * 0.4)) * 100;
+    final (label, color) = consistencyScore > 80 
+        ? ('Datos muy consistentes', Colors.green)
+        : consistencyScore > 60 
+            ? ('Consistencia aceptable', Colors.orange)
+            : ('Datos irregulares', Colors.red);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outline.withAlpha(128)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.analytics, color: colorScheme.primary, size: 20),
+              const SizedBox(width: 8),
+              Text('CALIDAD DE DATOS', style: GoogleFonts.montserrat(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1, color: colorScheme.primary)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: consistencyScore / 100,
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Consistencia: ${consistencyScore.toStringAsFixed(0)}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: color)),
+              Text(label, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

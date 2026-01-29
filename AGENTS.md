@@ -46,7 +46,14 @@ lib/
 â”‚   â”œâ”€â”€ foods/                  # GestiÃ³n de alimentos
 â”‚   â”œâ”€â”€ home/                   # Entry point dieta (HomeScreen)
 â”‚   â”œâ”€â”€ summary/                # Resumen/TDEE
-â”‚   â””â”€â”€ weight/                 # Tracking de peso corporal
+â”‚   â”œâ”€â”€ weight/                 # Tracking de peso corporal
+â”‚   â””â”€â”€ coach/                  # Coach Adaptativo (MacroFactor-style)
+â”œâ”€â”€ diet/                       # Capa de datos y servicios de nutrición
+â”‚   â”œâ”€â”€ models/                # Modelos de dominio
+â”‚   â”œâ”€â”€ repositories/          # Interfaces + Implementaciones Drift
+â”‚   â”œâ”€â”€ providers/             # Riverpod providers
+â”‚   â”œâ”€â”€ services/              # Servicios de cálculo puros
+â”‚   â””â”€â”€ screens/coach/         # UI del Coach Adaptativo
 â””â”€â”€ training/                    # Feature de ENTRENAMIENTO (mÃ¡s complejo)
     â”œâ”€â”€ database/               # Drift database + tablas + migraciones
     â”œâ”€â”€ features/exercises/     # BÃºsqueda de ejercicios
@@ -61,7 +68,7 @@ lib/
 test/                           # Tests unitarios y de widget
 â”œâ”€â”€ core/                       # Tests de lÃ³gica de negocio
 â”œâ”€â”€ diet/                       # Tests de capa de datos (models, repos, services)
-â”‚   â”œâ”€â”€ services/              # Tests de servicios puros (DaySummaryCalculator)
+â”‚   â”œâ”€â”€ services/              # Tests de servicios puros (DaySummaryCalculator, AdaptiveCoachService)
 â”‚   â””â”€â”€ providers/             # Tests de providers
 â””â”€â”€ features/                   # Tests de UI
 
@@ -189,6 +196,7 @@ await SharePlus.instance.share(
 - **Servicios de cÃ¡lculo puros**: Para lÃ³gica compleja (cÃ¡lculos, agregaciones), crear servicios 100% puros Dart en `lib/diet/services/` o `lib/training/services/`. 
   - Ejemplo: `DaySummaryCalculator` combina totales consumidos + objetivos sin depender de Flutter ni DB.
   - Ejemplo: `WeightTrendCalculator` implementa múltiples modelos (EMA, Holt-Winters, Filtro de Kalman, Regresión Lineal) para análisis avanzado de tendencias de peso. Todo offline sin redes neuronales.
+  - Ejemplo: `AdaptiveCoachService` calcula TDEE real y ajusta targets basado en datos del usuario (ingesta + cambio de peso). Determinista, testeable, sin dependencias externas.
   - Facilita testing unitario y reutilizaciÃ³n.
 
 - **Riverpod 3 / Notifier**: El proyecto usa Riverpod v3. Cuando migres `StateNotifier`/`StateProvider` a la API nueva, prefiere `Notifier` + `NotifierProvider`. Evita manipular `.state` desde fuera de la implementaciÃ³n del `Notifier`; expÃ³n setters o mÃ©todos en el `Notifier` (ej.: `set query(String)` o `set meal(MealType)`). Esto mejora encapsulaciÃ³n y evita warnings `invalid_use_of_visible_for_testing_member`.
@@ -552,3 +560,100 @@ dart run build_runner watch --delete-conflicting-outputs
 ---
 
 *Última actualización: Enero 2026 - Weigh-ins con tendencia EMA, gráficos de peso y cambio semanal/mensual*
+---
+
+## Modelos Matemáticos Offline (Nuevo)
+
+El proyecto ahora incluye análisis estadístico avanzado 100% offline:
+
+### Para Peso Corporal (lib/diet/services/weight_trend_calculator.dart)
+- **EMA** - Exponential Moving Average (suavizado)
+- **Kalman Filter** - Estimación óptima del peso "real"
+- **Holt-Winters** - Nivel + Tendencia con predicción
+- **Regresión Lineal** - Pendiente y R²
+- **Detección de Fase** - Plateau, pérdida, ganancia
+
+### Para Fuerza (lib/training/services/strength_analysis_service.dart)
+Mismos modelos aplicados a 1RM estimado de ejercicios.
+
+### Extensión de Progresión (lib/training/services/progression_engine_extensions.dart)
+`dart
+import 'progression_engine_extensions.dart';
+
+// Análisis de tendencia
+final trend = ProgressionEngine.instance.analyzeStrengthTrend(dataPoints);
+// trend.kalman1RM, trend.confidence, trend.isStalled
+
+// Detección de sobreentrenamiento
+final risk = ProgressionEngine.instance.detectOvertrainingRisk(
+  recent1RMs: dataPoints,
+  recentRPEs: rpeList,
+  failuresAtCurrentWeight: 2,
+);
+// risk.level, risk.shouldDeload, risk.recommendation
+`
+
+### Visualizaciones añadidas
+- **Insights contextuales** - Alertas de plateau, pérdida rápida, datos variables
+- **Calidad de datos** - Barra de consistencia basada en Kalman + R²
+- **Predicciones** - Proyección a 7 y 30 días (cuando R² > 0.6)
+
+*Última actualización: Enero 2026 - Modelos multi-modelo offline implementados*
+
+---
+
+## Coach Adaptativo (MacroFactor-style)
+
+Sistema de ajuste automático de targets calóricos basado en datos reales del usuario.
+
+### Arquitectura
+```
+lib/diet/services/adaptive_coach_service.dart      # Lógica matemática pura
+lib/diet/repositories/coach_repository.dart        # Persistencia (SharedPreferences)
+lib/diet/providers/coach_providers.dart            # Riverpod providers
+lib/diet/screens/coach/                            # UI
+├── coach_screen.dart                              # Dashboard principal
+├── plan_setup_screen.dart                         # Crear/editar plan
+└── weekly_check_in_screen.dart                    # Check-in semanal
+```
+
+### Modelo Matemático
+
+**Fórmula central:**
+```
+TDEE_real = AVG_kcal - (ΔTrendWeight × 7700 / días)
+Nuevo_target = TDEE_real ± ajuste_objetivo
+```
+
+Donde:
+- `7700 kcal/kg` = aproximación de energía por kg de tejido
+- `ΔTrendWeight` = cambio de trendWeight en el período (kg)
+- `ajuste_objetivo` = weeklyRatePercent × peso × 7700 / 7
+
+### Flujo de Uso
+
+1. **Usuario crea plan**: objetivo (lose/maintain/gain), velocidad (%/semana), TDEE inicial
+2. **Registro diario**: peso + entradas de diario
+3. **Check-in semanal**: el sistema calcula TDEE real y propone nuevos targets
+4. **Confirmación**: usuario revisa y aplica (no es automático)
+
+### Seguridades Implementadas
+
+- **Mínimo de datos**: 4 días de diario + 3 pesajes para calcular
+- **Clamps**: máximo ±200 kcal de cambio por semana
+- **Límites absolutos**: 1200-6000 kcal
+- **Todo offline**: sin datos online ni APIs externas
+
+### Tests
+
+```bash
+flutter test test/diet/services/adaptive_coach_service_test.dart
+```
+
+Cubre:
+- Cálculos de TDEE con diferentes escenarios de peso
+- Escenarios reales (plateau, recomp, bulking too fast)
+- Clamps de seguridad
+- Manejo de datos insuficientes
+
+*Última actualización: Enero 2026 - Coach Adaptativo implementado*
