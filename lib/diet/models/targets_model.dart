@@ -1,0 +1,153 @@
+/// Modelo de dominio para objetivos diarios versionados
+class TargetsModel {
+  final String id;
+  final DateTime validFrom; // Desde qué fecha aplica este objetivo
+  final int kcalTarget;
+  final double? proteinTarget;
+  final double? carbsTarget;
+  final double? fatTarget;
+  final String? notes;
+  final DateTime createdAt;
+
+  TargetsModel({
+    required this.id,
+    required this.validFrom,
+    required this.kcalTarget,
+    this.proteinTarget,
+    this.carbsTarget,
+    this.fatTarget,
+    this.notes,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+
+  /// Crea una copia con valores modificados
+  TargetsModel copyWith({
+    String? id,
+    DateTime? validFrom,
+    int? kcalTarget,
+    double? proteinTarget,
+    double? carbsTarget,
+    double? fatTarget,
+    String? notes,
+    DateTime? createdAt,
+  }) =>
+      TargetsModel(
+        id: id ?? this.id,
+        validFrom: validFrom ?? this.validFrom,
+        kcalTarget: kcalTarget ?? this.kcalTarget,
+        proteinTarget: proteinTarget ?? this.proteinTarget,
+        carbsTarget: carbsTarget ?? this.carbsTarget,
+        fatTarget: fatTarget ?? this.fatTarget,
+        notes: notes ?? this.notes,
+        createdAt: createdAt ?? this.createdAt,
+      );
+
+  /// Calcula los macros totales (para verificación)
+  double? get totalMacroGrams {
+    final p = proteinTarget ?? 0;
+    final c = carbsTarget ?? 0;
+    final f = fatTarget ?? 0;
+    final total = p + c + f;
+    return total > 0 ? total : null;
+  }
+
+  /// Calcula las calorías aproximadas de los macros (para validación)
+  int? get kcalFromMacros {
+    final p = proteinTarget ?? 0;
+    final c = carbsTarget ?? 0;
+    final f = fatTarget ?? 0;
+    // 4 kcal/g de proteína y carbs, 9 kcal/g de grasa
+    return ((p * 4) + (c * 4) + (f * 9)).round();
+  }
+
+  /// Devuelve el objetivo activo para una fecha dada desde una lista ordenada
+  static TargetsModel? getActiveForDate(
+    List<TargetsModel> allTargets,
+    DateTime date,
+  ) {
+    if (allTargets.isEmpty) return null;
+
+    // Ordenar por validFrom descendente
+    final sorted = List<TargetsModel>.from(allTargets)
+      ..sort((a, b) => b.validFrom.compareTo(a.validFrom));
+
+    // Encontrar el primero cuya validFrom sea <= date
+    for (final target in sorted) {
+      if (target.validFrom.isBefore(date) ||
+          target.validFrom.isAtSameMomentAs(date)) {
+        return target;
+      }
+    }
+
+    return null;
+  }
+
+  Map<String, dynamic> toDebugMap() => {
+        'id': id,
+        'validFrom': validFrom.toIso8601String(),
+        'kcalTarget': kcalTarget,
+        'proteinTarget': proteinTarget,
+        'carbsTarget': carbsTarget,
+        'fatTarget': fatTarget,
+      };
+
+  @override
+  String toString() => 'TargetsModel(${toDebugMap()})';
+}
+
+/// Progreso contra objetivos para un día
+class TargetsProgress {
+  final TargetsModel? targets;
+  final int kcalConsumed;
+  final double proteinConsumed;
+  final double carbsConsumed;
+  final double fatConsumed;
+
+  const TargetsProgress({
+    this.targets,
+    required this.kcalConsumed,
+    required this.proteinConsumed,
+    required this.carbsConsumed,
+    required this.fatConsumed,
+  });
+
+  /// Porcentajes de progreso (0.0 - 1.0+)
+  double? get kcalPercent =>
+      targets != null ? kcalConsumed / targets!.kcalTarget : null;
+
+  double? get proteinPercent =>
+      targets?.proteinTarget != null
+          ? proteinConsumed / targets!.proteinTarget!
+          : null;
+
+  double? get carbsPercent =>
+      targets?.carbsTarget != null
+          ? carbsConsumed / targets!.carbsTarget!
+          : null;
+
+  double? get fatPercent =>
+      targets?.fatTarget != null
+          ? fatConsumed / targets!.fatTarget!
+          : null;
+
+  /// Calorías/macros restantes
+  int? get kcalRemaining => targets != null
+      ? targets!.kcalTarget - kcalConsumed
+      : null;
+
+  double? get proteinRemaining => targets?.proteinTarget != null
+      ? targets!.proteinTarget! - proteinConsumed
+      : null;
+
+  Map<String, dynamic> toDebugMap() => {
+        'targets': targets?.toDebugMap(),
+        'kcalConsumed': kcalConsumed,
+        'proteinConsumed': proteinConsumed,
+        'carbsConsumed': carbsConsumed,
+        'fatConsumed': fatConsumed,
+        'kcalPercent': kcalPercent,
+      };
+
+  @override
+  String toString() => 'TargetsProgress(${toDebugMap()})';
+}

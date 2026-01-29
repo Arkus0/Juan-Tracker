@@ -6,7 +6,11 @@ import 'database_connection.dart';
 
 part 'database.g.dart';
 
-// Type Converters
+// ============================================================================
+// TYPE CONVERTERS
+// ============================================================================
+
+/// Convierte List<String> a JSON string para almacenamiento SQL
 class StringListConverter extends TypeConverter<List<String>, String> {
   const StringListConverter();
 
@@ -23,6 +27,62 @@ class StringListConverter extends TypeConverter<List<String>, String> {
   @override
   String toSql(List<String> value) {
     return json.encode(value);
+  }
+}
+
+/// Convierte Map<String, dynamic> a JSON string para almacenamiento SQL
+class JsonMapConverter extends TypeConverter<Map<String, dynamic>, String> {
+  const JsonMapConverter();
+
+  @override
+  Map<String, dynamic> fromSql(String fromDb) {
+    if (fromDb.isEmpty) return {};
+    try {
+      return Map<String, dynamic>.from(json.decode(fromDb));
+    } catch (e) {
+      return {};
+    }
+  }
+
+  @override
+  String toSql(Map<String, dynamic> value) {
+    return json.encode(value);
+  }
+}
+
+/// Convierte MealType a string para almacenamiento SQL
+class MealTypeConverter extends TypeConverter<MealType, String> {
+  const MealTypeConverter();
+
+  @override
+  MealType fromSql(String fromDb) {
+    return MealType.values.byName(fromDb);
+  }
+
+  @override
+  String toSql(MealType value) {
+    return value.name;
+  }
+}
+
+/// Tipos de comida para el diario
+enum MealType { breakfast, lunch, dinner, snack }
+
+/// Unidades de medida para cantidades
+enum ServingUnit { grams, portion, milliliter }
+
+/// Convierte ServingUnit a string para almacenamiento SQL
+class ServingUnitConverter extends TypeConverter<ServingUnit, String> {
+  const ServingUnitConverter();
+
+  @override
+  ServingUnit fromSql(String fromDb) {
+    return ServingUnit.values.byName(fromDb);
+  }
+
+  @override
+  String toSql(ServingUnit value) {
+    return value.name;
   }
 }
 
@@ -164,8 +224,167 @@ class ExerciseNotes extends Table {
   Set<Column> get primaryKey => {exerciseName};
 }
 
+// ============================================================================
+// DIET TABLES (Schema v5)
+// ============================================================================
+
+/// Alimentos guardados en la base de datos
+/// Pueden ser del sistema (seed), del usuario o verificados de fuentes externas
+@TableIndex(name: 'foods_name_idx', columns: {#name})
+@TableIndex(name: 'foods_barcode_idx', columns: {#barcode})
+class Foods extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get brand => text().nullable()();
+  TextColumn get barcode => text().nullable()();
+
+  // Valores nutricionales por 100g
+  IntColumn get kcalPer100g => integer()();
+  RealColumn get proteinPer100g => real().nullable()();
+  RealColumn get carbsPer100g => real().nullable()();
+  RealColumn get fatPer100g => real().nullable()();
+
+  // Valores nutricionales por porción (opcional)
+  TextColumn get portionName => text().nullable()(); // ej: "taza", "unidad", "rebanada"
+  RealColumn get portionGrams => real().nullable()(); // gramos que representa 1 porción
+
+  // Flags de origen y verificación
+  BoolColumn get userCreated =>
+      boolean().withDefault(const Constant(true))();
+  TextColumn get verifiedSource => text().nullable()(); // 'usda', 'edamam', etc.
+  TextColumn get sourceMetadata =>
+      text().map(const JsonMapConverter()).nullable()(); // datos crudos de la fuente
+
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Entradas del diario de alimentos
+/// Almacena tanto referencias a Foods como "quick add" libre
+@TableIndex(name: 'diary_date_idx', columns: {#date})
+@TableIndex(name: 'diary_date_meal_idx', columns: {#date, #mealType})
+class DiaryEntries extends Table {
+  TextColumn get id => text()();
+  DateTimeColumn get date => dateTime()(); // Truncado a día
+  TextColumn get mealType => text().map(const MealTypeConverter())();
+
+  // Referencia opcional a Food (null si es quickAdd)
+  TextColumn get foodId =>
+      text().nullable().references(Foods, #id, onDelete: KeyAction.setNull)();
+
+  // Información del alimento (denormalizada para historial)
+  TextColumn get foodName => text()(); // Nombre mostrado (de Food o custom)
+  TextColumn get foodBrand => text().nullable()();
+
+  // Cantidad consumida
+  RealColumn get amount => real()(); // cantidad numérica
+  TextColumn get unit =>
+      text().map(const ServingUnitConverter())(); // unidad de medida
+
+  // Valores nutricionales calculados para esta entrada (desnormalizado)
+  IntColumn get kcal => integer()();
+  RealColumn get protein => real().nullable()();
+  RealColumn get carbs => real().nullable()();
+  RealColumn get fat => real().nullable()();
+
+  // Para quickAdd libre: macros originales ingresados por usuario
+  BoolColumn get isQuickAdd => boolean().withDefault(const Constant(false))();
+
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Registros de peso corporal
+@TableIndex(name: 'weighin_date_idx', columns: {#measuredAt})
+class WeighIns extends Table {
+  TextColumn get id => text()();
+  DateTimeColumn get measuredAt => dateTime()(); // Fecha y hora exacta del pesaje
+  RealColumn get weightKg => real()();
+  TextColumn get note => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Objetivos diarios versionados por fecha de inicio
+/// Permite cambiar objetivos a lo largo del tiempo manteniendo historial
+@TableIndex(name: 'targets_validfrom_idx', columns: {#validFrom})
+class Targets extends Table {
+  TextColumn get id => text()();
+  DateTimeColumn get validFrom => dateTime()(); // Desde qué fecha aplica
+  IntColumn get kcalTarget => integer()();
+  RealColumn get proteinTarget => real().nullable()();
+  RealColumn get carbsTarget => real().nullable()();
+  RealColumn get fatTarget => real().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Recetas / Comidas compuestas
+/// Una receta es un Food especial que agrupa otros foods
+class Recipes extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get description => text().nullable()();
+
+  // Totales calculados (se actualizan al modificar ingredientes)
+  IntColumn get totalKcal => integer()();
+  RealColumn get totalProtein => real().nullable()();
+  RealColumn get totalCarbs => real().nullable()();
+  RealColumn get totalFat => real().nullable()();
+  RealColumn get totalGrams => real()(); // Peso total de la receta
+
+  // Porciones
+  IntColumn get servings => integer().withDefault(const Constant(1))();
+  TextColumn get servingName => text().nullable()(); // ej: "porción", "taza"
+
+  BoolColumn get userCreated =>
+      boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Ingredientes de una receta
+class RecipeItems extends Table {
+  TextColumn get id => text()();
+  TextColumn get recipeId =>
+      text().references(Recipes, #id, onDelete: KeyAction.cascade)();
+  TextColumn get foodId =>
+      text().references(Foods, #id, onDelete: KeyAction.cascade)();
+
+  RealColumn get amount => real()(); // cantidad en gramos o unidades
+  TextColumn get unit =>
+      text().map(const ServingUnitConverter())();
+
+  // Datos snapshot del food en el momento de agregarlo
+  TextColumn get foodNameSnapshot => text()();
+  IntColumn get kcalPer100gSnapshot => integer()();
+  RealColumn get proteinPer100gSnapshot => real().nullable()();
+  RealColumn get carbsPer100gSnapshot => real().nullable()();
+  RealColumn get fatPer100gSnapshot => real().nullable()();
+
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
+    // Training
     Routines,
     RoutineDays,
     RoutineExercises,
@@ -173,6 +392,13 @@ class ExerciseNotes extends Table {
     SessionExercises,
     WorkoutSets,
     ExerciseNotes,
+    // Diet
+    Foods,
+    DiaryEntries,
+    WeighIns,
+    Targets,
+    Recipes,
+    RecipeItems,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -216,9 +442,22 @@ class AppDatabase extends _$AppDatabase {
           // Column might already exist
         }
       }
+      // Migration path to version 5: add Diet tables (Foods, DiaryEntries, WeighIns, Targets, Recipes, RecipeItems)
+      if (from < 5) {
+        try {
+          await m.createTable(foods);
+          await m.createTable(diaryEntries);
+          await m.createTable(weighIns);
+          await m.createTable(targets);
+          await m.createTable(recipes);
+          await m.createTable(recipeItems);
+        } catch (e) {
+          // Tables might already exist
+        }
+      }
     },
   );
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 }
