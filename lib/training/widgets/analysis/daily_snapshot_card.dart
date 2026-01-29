@@ -29,7 +29,7 @@ class DailySnapshotCard extends ConsumerWidget {
         return _buildSnapshot(context, scheme, snapshot);
       },
       loading: () => _buildLoading(scheme),
-      error: (_, __) => _buildNoTraining(scheme, selectedDate),
+      error: (_, _) => _buildNoTraining(scheme, selectedDate),
     );
   }
 

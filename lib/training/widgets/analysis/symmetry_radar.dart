@@ -88,7 +88,7 @@ class SymmetryRadar extends ConsumerWidget {
                   return const SizedBox.shrink();
                 },
                 loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
               ),
             ],
           ),
@@ -109,7 +109,7 @@ class SymmetryRadar extends ConsumerWidget {
           symmetryAsync.when(
             data: (data) => _buildRadarChart(scheme, data),
             loading: () => _buildLoading(scheme),
-            error: (_, __) => _buildEmptyState(scheme),
+            error: (_, _) => _buildEmptyState(scheme),
           ),
         ],
       ),
@@ -275,7 +275,7 @@ class SymmetryRadarCompact extends ConsumerWidget {
                       color: scheme.outline,
                       width: 0.5,
                     ),
-                    getTitle: (_, __) => const RadarChartTitle(text: ''),
+                    getTitle: (_, _) => const RadarChartTitle(text: ''),
                     radarBackgroundColor: Colors.transparent,
                   ),
                 ),
@@ -344,7 +344,7 @@ class SymmetryRadarCompact extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

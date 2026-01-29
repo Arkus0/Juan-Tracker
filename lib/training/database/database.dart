@@ -10,7 +10,7 @@ part 'database.g.dart';
 // TYPE CONVERTERS
 // ============================================================================
 
-/// Convierte List<String> a JSON string para almacenamiento SQL
+/// Convierte `List<String>` a JSON string para almacenamiento SQL
 class StringListConverter extends TypeConverter<List<String>, String> {
   const StringListConverter();
 
@@ -30,7 +30,7 @@ class StringListConverter extends TypeConverter<List<String>, String> {
   }
 }
 
-/// Convierte Map<String, dynamic> a JSON string para almacenamiento SQL
+/// Convierte `Map<String, dynamic>` a JSON string para almacenamiento SQL
 class JsonMapConverter extends TypeConverter<Map<String, dynamic>, String> {
   const JsonMapConverter();
 

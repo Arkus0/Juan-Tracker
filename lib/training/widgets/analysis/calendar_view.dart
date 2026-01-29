@@ -39,7 +39,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           data: (trainingDates) =>
               _buildCalendar(scheme, trainingDates, selectedDate),
           loading: () => _buildCalendarLoading(scheme),
-          error: (_, __) => _buildCalendar(scheme, {}, selectedDate),
+          error: (_, _) => _buildCalendar(scheme, {}, selectedDate),
         ),
 
         // Daily snapshot when date selected

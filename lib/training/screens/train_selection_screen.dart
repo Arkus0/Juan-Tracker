@@ -74,7 +74,7 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
                 // ═════════════════════════════════════════════════════════════
                 return suggestionAsync.when(
                   loading: () => const _LoadingState(),
-                  error: (_, __) => _FallbackState(
+                  error: (_, _) => _FallbackState(
                     rutinas: rutinas,
                     onDaySelected: (rutina, dayIndex) =>
                         _startSession(context, ref, rutina, dayIndex),

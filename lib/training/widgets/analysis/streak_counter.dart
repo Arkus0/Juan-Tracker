@@ -17,7 +17,7 @@ class StreakCounter extends ConsumerWidget {
     return streakAsync.when(
       data: (streak) => _buildContent(context, scheme, streak),
       loading: () => _buildLoading(scheme),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
@@ -222,7 +222,7 @@ class StreakBadge extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

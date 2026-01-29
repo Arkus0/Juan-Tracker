@@ -612,7 +612,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                       child: ListView.separated(
                         shrinkWrap: true,
                         itemCount: sessions.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             const Divider(color: AppColors.border),
                         itemBuilder: (context, index) {
                           final session = sessions[index];

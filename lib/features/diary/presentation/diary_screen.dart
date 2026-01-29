@@ -43,7 +43,7 @@ class DiaryScreen extends ConsumerWidget {
           totalsAsync.when(
             data: (totals) => _DailyTotalsCard(totals: totals),
             loading: () => const _DailyTotalsCard(totals: DailyTotals.empty),
-            error: (_, __) => const _DailyTotalsCard(totals: DailyTotals.empty),
+            error: (_, _) => const _DailyTotalsCard(totals: DailyTotals.empty),
           ),
 
           const Divider(height: 1),
