@@ -188,7 +188,7 @@ await SharePlus.instance.share(
 
 - **Servicios de cÃ¡lculo puros**: Para lÃ³gica compleja (cÃ¡lculos, agregaciones), crear servicios 100% puros Dart en `lib/diet/services/` o `lib/training/services/`. 
   - Ejemplo: `DaySummaryCalculator` combina totales consumidos + objetivos sin depender de Flutter ni DB.
-  - Ejemplo: `WeightTrendCalculator` implementa EMA (Exponential Moving Average) para suavizar fluctuaciones diarias de peso y calcular tendencias.
+  - Ejemplo: `WeightTrendCalculator` implementa múltiples modelos (EMA, Holt-Winters, Filtro de Kalman, Regresión Lineal) para análisis avanzado de tendencias de peso. Todo offline sin redes neuronales.
   - Facilita testing unitario y reutilizaciÃ³n.
 
 - **Riverpod 3 / Notifier**: El proyecto usa Riverpod v3. Cuando migres `StateNotifier`/`StateProvider` a la API nueva, prefiere `Notifier` + `NotifierProvider`. Evita manipular `.state` desde fuera de la implementaciÃ³n del `Notifier`; expÃ³n setters o mÃ©todos en el `Notifier` (ej.: `set query(String)` o `set meal(MealType)`). Esto mejora encapsulaciÃ³n y evita warnings `invalid_use_of_visible_for_testing_member`.
