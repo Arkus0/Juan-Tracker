@@ -134,6 +134,47 @@ class _RowStyles {
   );
 }
 
+// 🎯 HIGH-005: Helper para detectar pesos sospechosos
+/// Retorna un peso sugerido si el valor parece erróneo, null si es válido
+double? _detectSuspiciousWeight(double enteredWeight, double? previousWeight) {
+  // Si no hay peso previo, no podemos detectar errores
+  if (previousWeight == null || previousWeight <= 0) return null;
+
+  // Si el peso ingresado es 0, no es sospechoso (bodyweight)
+  if (enteredWeight <= 0) return null;
+
+  // Detectar error de magnitud (500kg cuando quería 50kg)
+  // Si el peso es 8-12x el anterior, probablemente sobra un 0
+  if (enteredWeight >= previousWeight * 8 && enteredWeight >= 100) {
+    final suggested = enteredWeight / 10;
+    // Solo sugerir si el resultado es cercano al peso previo (±50%)
+    if ((suggested - previousWeight).abs() / previousWeight <= 0.5) {
+      return suggested;
+    }
+  }
+
+  // Detectar error inverso (5kg cuando quería 50kg)
+  // Si el peso es <0.15x el anterior y el anterior era significativo
+  if (previousWeight >= 20 &&
+      enteredWeight < previousWeight * 0.15 &&
+      enteredWeight >= 1) {
+    final suggested = enteredWeight * 10;
+    // Solo sugerir si el resultado es cercano al peso previo (±50%)
+    if ((suggested - previousWeight).abs() / previousWeight <= 0.5) {
+      return suggested;
+    }
+  }
+
+  // Detectar cambio muy grande (>100% de cambio)
+  // Pero ser más permisivo si el usuario está bajando peso
+  if (enteredWeight > previousWeight * 2) {
+    // Peso duplicado+ probablemente es error
+    return previousWeight;
+  }
+
+  return null; // El peso parece válido
+}
+
 class FocusedSetRow extends StatefulWidget {
   final int index;
   final SerieLog log;
@@ -272,15 +313,29 @@ class _FocusedSetRowState extends State<FocusedSetRow>
 
                 // Input KG (táctil grande)
                 // 🎯 FIX #3: Muestra peso incluso si es 0 o negativo (máquinas asistidas)
+                // 🎯 HIGH-005: Detectar peso sospechoso y mostrar sugerencia inline
                 Expanded(
-                  child: _TappableValueInput(
-                    value: widget.log.peso,
-                    label: 'KG',
-                    isActive: widget.isActive,
-                    isCompleted: isCompleted,
-                    textColor: style.textColor,
-                    allowZeroAndNegative: true, // 🎯 FIX #3
-                    onTap: isCompleted ? null : () => _openWeightInput(context),
+                  child: Builder(
+                    builder: (context) {
+                      final suspiciousWeight = _detectSuspiciousWeight(
+                        widget.log.peso,
+                        widget.prevLog?.peso,
+                      );
+                      return _TappableValueInput(
+                        value: widget.log.peso,
+                        label: 'KG',
+                        isActive: widget.isActive,
+                        isCompleted: isCompleted,
+                        textColor: style.textColor,
+                        allowZeroAndNegative: true, // 🎯 FIX #3
+                        onTap: isCompleted ? null : () => _openWeightInput(context),
+                        // 🎯 HIGH-005: Mostrar sugerencia si el peso parece erróneo
+                        suggestedValue: suspiciousWeight,
+                        onAcceptSuggestion: suspiciousWeight != null
+                            ? () => widget.onWeightChanged(suspiciousWeight)
+                            : null,
+                      );
+                    },
                   ),
                 ),
 
@@ -528,6 +583,9 @@ class _TappableValueInput extends StatelessWidget {
   final bool isInteger;
   final VoidCallback? onTap;
   final bool allowZeroAndNegative; // 🎯 FIX #3
+  // 🎯 HIGH-005: Inline weight validation
+  final double? suggestedValue;
+  final VoidCallback? onAcceptSuggestion;
 
   const _TappableValueInput({
     this.value,
@@ -538,6 +596,8 @@ class _TappableValueInput extends StatelessWidget {
     this.isInteger = false,
     this.onTap,
     this.allowZeroAndNegative = false, // 🎯 FIX #3
+    this.suggestedValue,
+    this.onAcceptSuggestion,
   });
 
   String get _displayValue {
@@ -557,6 +617,9 @@ class _TappableValueInput extends StatelessWidget {
     // Touch target mínimo 64dp (activo 72dp) para dedos sudados
     final height = isActive ? 72.0 : 56.0;
 
+    // 🎯 HIGH-005: Determinar si mostrar sugerencia
+    final showSuggestion = suggestedValue != null && isActive && !isCompleted;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -572,32 +635,114 @@ class _TappableValueInput extends StatelessWidget {
                 )
               : null,
         ),
-        child: Center(
+        child: Stack(
+          children: [
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    _displayValue,
+                    // ⚡ OPTIMIZACIÓN: Estilos pre-computados - valores MUY prominentes
+                    style:
+                        (isActive
+                                ? _SetRowStyles.valueActiveText
+                                : _SetRowStyles.valueNormalText)
+                            .copyWith(
+                              color: value == null || value == 0
+                                  ? TrainingColors.textDisabled
+                                  : textColor,
+                            ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
+                    // Labels muy sutiles para no competir con datos
+                    style: isActive
+                        ? _SetRowStyles.labelActiveText
+                        : _SetRowStyles.labelNormalText,
+                  ),
+                ],
+              ),
+            ),
+            // 🎯 HIGH-005: Badge de sugerencia inline
+            if (showSuggestion)
+              Positioned(
+                right: 4,
+                top: 4,
+                child: _WeightSuggestionBadge(
+                  suggestedValue: suggestedValue!,
+                  onAccept: onAcceptSuggestion,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 🎯 HIGH-005: Badge de sugerencia de peso inline
+/// Aparece cuando el peso ingresado parece sospechoso
+/// (ej: 500kg cuando probablemente quiso decir 50kg)
+class _WeightSuggestionBadge extends StatelessWidget {
+  final double suggestedValue;
+  final VoidCallback? onAccept;
+
+  const _WeightSuggestionBadge({
+    required this.suggestedValue,
+    this.onAccept,
+  });
+
+  String get _displaySuggestion {
+    if (suggestedValue == suggestedValue.truncateToDouble()) {
+      return '¿${suggestedValue.toInt()}kg?';
+    }
+    return '¿${suggestedValue.toStringAsFixed(1)}kg?';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onAccept?.call();
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.warning.withValues(alpha: 0.4),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                _displayValue,
-                // ⚡ OPTIMIZACIÓN: Estilos pre-computados - valores MUY prominentes
-                style:
-                    (isActive
-                            ? _SetRowStyles.valueActiveText
-                            : _SetRowStyles.valueNormalText)
-                        .copyWith(
-                          color: value == null || value == 0
-                              ? TrainingColors.textDisabled
-                              : textColor,
-                        ),
+              const Icon(
+                Icons.touch_app_rounded,
+                size: 12,
+                color: Colors.black87,
               ),
               const SizedBox(width: 4),
               Text(
-                label,
-                // Labels muy sutiles para no competir con datos
-                style: isActive
-                    ? _SetRowStyles.labelActiveText
-                    : _SetRowStyles.labelNormalText,
+                _displaySuggestion,
+                style: GoogleFonts.montserrat(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
               ),
             ],
           ),
