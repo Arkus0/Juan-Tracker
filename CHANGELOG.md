@@ -70,6 +70,7 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Test `widget_test.dart` arreglado (timer pendiente del SplashWrapper)
 - Warnings de analyzer: unused imports
 - Exports limpios en barrel files
+- TODO implementado: `editingPlanProvider` para pasar plan entre pantallas
 
 ### Changed
 - Actualizado `app.dart` para usar `MaterialApp.router`
