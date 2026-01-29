@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/coach_providers.dart';
 import '../../services/adaptive_coach_service.dart';
+import 'dart:math' as math;
 
 class PlanSetupScreen extends ConsumerStatefulWidget {
   final CoachPlan? existingPlan;
@@ -253,12 +254,15 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
       );
     }
 
+    final minAbs = math.min(minRate.abs(), maxRate.abs());
+    final maxAbs = math.max(minRate.abs(), maxRate.abs());
+
     return Column(
       children: [
         Slider(
           value: _weeklyRatePercent.abs(),
-          min: minRate.abs(),
-          max: maxRate.abs(),
+          min: minAbs,
+          max: maxAbs,
           divisions: 7,
           label: '${(_weeklyRatePercent.abs() * 100).toStringAsFixed(2)}%',
           onChanged: (value) {
