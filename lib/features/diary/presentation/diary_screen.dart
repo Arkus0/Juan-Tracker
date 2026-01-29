@@ -210,23 +210,12 @@ class DiaryScreen extends ConsumerWidget {
     await repo.insert(newEntry);
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(child: Text('${template.foodName} añadido')),
-            ],
-          ),
-          action: SnackBarAction(
-            label: 'DESHACER',
-            onPressed: () async {
-              await repo.delete(newEntry.id);
-            },
-          ),
-          duration: const Duration(seconds: 3),
-        ),
+      AppSnackbar.showWithUndo(
+        context,
+        message: '${template.foodName} añadido',
+        onUndo: () async {
+          await repo.delete(newEntry.id);
+        },
       );
     }
   }
@@ -414,7 +403,7 @@ class _WeekCalendar extends StatelessWidget {
   }
 }
 
-/// Card de resumen diario con macros
+/// Card de resumen diario con macros - CRIT-04: Muestra RESTANTE prominentemente
 class _DailySummaryCard extends StatelessWidget {
   final DaySummary summary;
 
@@ -423,13 +412,15 @@ class _DailySummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final hasTargets = summary.hasTargets;
+    final kcalRemaining = summary.progress.kcalRemaining ?? 0;
 
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header con calorías principales
+          // Header con calorías - CRIT-04: Mostrar RESTANTE como dato principal
           Row(
             children: [
               Expanded(
@@ -437,7 +428,7 @@ class _DailySummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Calorías',
+                      hasTargets ? 'Te quedan' : 'Consumido',
                       style: AppTypography.labelMedium.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
@@ -447,26 +438,34 @@ class _DailySummaryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${summary.consumed.kcal}',
+                          hasTargets ? '$kcalRemaining' : '${summary.consumed.kcal}',
                           style: AppTypography.dataLarge.copyWith(
-                            color: colors.primary,
+                            color: _getKcalColor(kcalRemaining, hasTargets, colors),
                           ),
                         ),
                         const SizedBox(width: 4),
-                        if (summary.hasTargets) ...[
-                          Text(
-                            '/ ${summary.targets!.kcalTarget}',
-                            style: AppTypography.dataSmall.copyWith(
-                              color: colors.onSurfaceVariant,
-                            ),
+                        Text(
+                          'kcal',
+                          style: AppTypography.dataSmall.copyWith(
+                            color: colors.onSurfaceVariant,
                           ),
-                        ],
+                        ),
                       ],
                     ),
+                    // Mostrar consumido como secundario cuando hay targets
+                    if (hasTargets) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Consumido: ${summary.consumed.kcal} / ${summary.targets!.kcalTarget}',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              if (summary.hasTargets)
+              if (hasTargets)
                 _MacroDonut(
                   progress: summary.progress.kcalPercent ?? 0,
                   remaining: summary.progress.kcalRemaining,
@@ -559,6 +558,14 @@ class _DailySummaryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Color del texto de kcal basado en estado
+  Color _getKcalColor(int remaining, bool hasTargets, ColorScheme colors) {
+    if (!hasTargets) return colors.primary;
+    if (remaining <= 0) return AppColors.error;  // Pasó el objetivo
+    if (remaining < 200) return AppColors.warning;  // Poco margen
+    return colors.primary;  // OK
   }
 }
 

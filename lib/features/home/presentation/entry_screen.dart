@@ -274,9 +274,7 @@ class _QuickActionsRow extends ConsumerWidget {
           weightKg: value,
         ));
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Peso registrado')),
-          );
+          AppSnackbar.show(context, message: 'Peso registrado');
         }
       }
     }
@@ -544,7 +542,7 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-/// Nutrition card that uses providers to show today's kcal and latest weight
+/// Nutrition card that uses providers to show remaining kcal and protein
 class _NutritionModeCard extends ConsumerWidget {
   final VoidCallback onTap;
 
@@ -553,29 +551,83 @@ class _NutritionModeCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(daySummaryProvider);
-    final latestAsync = ref.watch(latestWeighInProvider);
 
-    final kcalText = summaryAsync.when(
-      data: (s) => s.consumed.kcal.toString(),
-      loading: () => '--',
-      error: (e, _) => '--',
-    );
+    // CRIT-03 FIX: Mostrar RESTANTE en lugar de consumido
+    final (stats, subtitle) = summaryAsync.when(
+      data: (s) {
+        final hasTargets = s.hasTargets;
 
-    final weightText = latestAsync.when(
-      data: (w) => w == null ? '--' : w.weightKg.toStringAsFixed(1),
-      loading: () => '--',
-      error: (e, _) => '--',
+        if (!hasTargets) {
+          // Sin objetivos configurados: mostrar consumido
+          return (
+            [
+              _Stat(
+                icon: Icons.local_fire_department,
+                value: '${s.consumed.kcal}',
+                label: 'kcal',
+              ),
+              _Stat(
+                icon: Icons.egg_alt,
+                value: '${s.consumed.protein.toInt()}g',
+                label: 'prote',
+              ),
+            ],
+            'Configura objetivos para ver restante',
+          );
+        }
+
+        // Con objetivos: mostrar RESTANTE
+        final kcalRemaining = s.progress.kcalRemaining ?? 0;
+        final proteinTarget = s.targets?.proteinTarget ?? 0;
+        final proteinRemaining = (proteinTarget - s.consumed.protein).clamp(0, proteinTarget);
+
+        String subtitle;
+        if (kcalRemaining <= 0) {
+          subtitle = '¡Objetivo alcanzado!';
+        } else if (kcalRemaining < 300) {
+          subtitle = 'Casi llegas a tu objetivo';
+        } else {
+          subtitle = 'Te quedan $kcalRemaining kcal';
+        }
+
+        return (
+          [
+            _Stat(
+              icon: Icons.local_fire_department,
+              value: '$kcalRemaining',
+              label: 'restantes',
+            ),
+            _Stat(
+              icon: Icons.egg_alt,
+              value: '${proteinRemaining.toInt()}g',
+              label: 'prote',
+            ),
+          ],
+          subtitle,
+        );
+      },
+      loading: () => (
+        [
+          const _Stat(icon: Icons.local_fire_department, value: '--', label: 'kcal'),
+          const _Stat(icon: Icons.egg_alt, value: '--', label: 'prote'),
+        ],
+        'Cargando...',
+      ),
+      error: (e, _) => (
+        [
+          const _Stat(icon: Icons.local_fire_department, value: '--', label: 'kcal'),
+          const _Stat(icon: Icons.egg_alt, value: '--', label: 'prote'),
+        ],
+        'Error al cargar datos',
+      ),
     );
 
     return _ModeCard(
       title: 'Nutrición',
-      subtitle: 'Diario, alimentos, peso y resumen',
+      subtitle: subtitle,
       icon: Icons.restaurant_menu_rounded,
       gradientColors: [AppColors.primary, AppColors.primaryLight],
-      stats: [
-        _Stat(icon: Icons.local_fire_department, value: kcalText, label: 'kcal'),
-        _Stat(icon: Icons.scale, value: weightText, label: 'kg'),
-      ],
+      stats: stats,
       onTap: onTap,
     );
   }
@@ -588,34 +640,55 @@ class _TrainingModeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rutinasAsync = ref.watch(rutinasStreamProvider);
+    // CRIT-02 FIX: Usar smartSuggestionProvider en lugar de rutinasStreamProvider
+    final suggestionAsync = ref.watch(smartSuggestionProvider);
 
-    final stats = rutinasAsync.when(
-      data: (rutinas) {
-        if (rutinas.isEmpty) {
-          return [
-            const _Stat(icon: Icons.calendar_today, value: '—', label: 'Hoy'),
-            const _Stat(icon: Icons.timer, value: '--', label: 'min'),
-          ];
+    final (stats, subtitle) = suggestionAsync.when(
+      data: (suggestion) {
+        if (suggestion == null) {
+          return (
+            [
+              const _Stat(icon: Icons.add_circle_outline, value: 'Crear', label: 'rutina'),
+              const _Stat(icon: Icons.timer, value: '--', label: 'min'),
+            ],
+            'Crea tu primera rutina para empezar',
+          );
         }
-        return [
-          const _Stat(icon: Icons.calendar_today, value: '—', label: 'Hoy'),
-          const _Stat(icon: Icons.timer, value: '--', label: 'min'),
-        ];
+        return (
+          [
+            _Stat(
+              icon: Icons.fitness_center,
+              value: suggestion.dayName,
+              label: 'hoy',
+            ),
+            _Stat(
+              icon: Icons.history,
+              value: suggestion.timeSinceFormatted,
+              label: 'última',
+            ),
+          ],
+          'Toca ${suggestion.dayName} hoy',
+        );
       },
-      loading: () => [
-        const _Stat(icon: Icons.calendar_today, value: '—', label: 'Hoy'),
-        const _Stat(icon: Icons.timer, value: '--', label: 'min'),
-      ],
-      error: (e, _) => [
-        const _Stat(icon: Icons.calendar_today, value: '—', label: 'Hoy'),
-        const _Stat(icon: Icons.timer, value: '--', label: 'min'),
-      ],
+      loading: () => (
+        [
+          const _Stat(icon: Icons.fitness_center, value: '...', label: 'hoy'),
+          const _Stat(icon: Icons.history, value: '--', label: 'última'),
+        ],
+        'Cargando...',
+      ),
+      error: (e, _) => (
+        [
+          const _Stat(icon: Icons.calendar_today, value: '—', label: 'hoy'),
+          const _Stat(icon: Icons.timer, value: '--', label: 'min'),
+        ],
+        'Sesiones, rutinas, análisis y progreso',
+      ),
     );
 
     return _ModeCard(
       title: 'Entrenamiento',
-      subtitle: 'Sesiones, rutinas, análisis y progreso',
+      subtitle: subtitle,
       icon: Icons.fitness_center_rounded,
       gradientColors: [AppColors.ironRed, AppColors.ironRedLight],
       isDark: true,
