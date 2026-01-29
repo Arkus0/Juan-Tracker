@@ -667,7 +667,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     final scheme = Theme.of(context).colorScheme;
     // Wrap in Scaffold to have its own ScaffoldMessenger for snackbars
     return Scaffold(
-      backgroundColor: scheme.background,
+      backgroundColor: scheme.surface,
       body: SizedBox(
         height: MediaQuery.of(context).size.height * 0.9,
         child: Column(

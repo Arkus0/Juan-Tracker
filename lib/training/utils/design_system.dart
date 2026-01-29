@@ -689,6 +689,7 @@ ThemeData buildAppTheme() {
         onSecondary: AppColors.textOnAccent,
         tertiary: AppColors.goldAccent,
         onTertiary: AppColors.bgDeep,
+        // ignore: deprecated_member_use
         background: AppColors.bgDeep,
         surface: AppColors.bgElevated,
         surfaceContainerHighest: AppColors.bgInteractive,
@@ -703,7 +704,7 @@ ThemeData buildAppTheme() {
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: scheme,
-    scaffoldBackgroundColor: scheme.background,
+    scaffoldBackgroundColor: scheme.surface,
     primaryColor: scheme.primary,
 
     // ═════════════════════════════════════════════════════════════════════════

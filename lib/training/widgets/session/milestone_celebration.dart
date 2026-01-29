@@ -110,7 +110,7 @@ void _showCompletionCelebration(BuildContext context) {
 
   // Auto-cerrar después de 2 segundos
   Future.delayed(const Duration(milliseconds: 2000), () {
-    if (Navigator.of(context, rootNavigator: true).canPop()) {
+    if (context.mounted && Navigator.of(context, rootNavigator: true).canPop()) {
       Navigator.of(context, rootNavigator: true).pop();
     }
   });

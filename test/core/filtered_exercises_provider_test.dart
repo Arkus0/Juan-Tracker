@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:juan_tracker/core/models/training_exercise.dart';
 import 'package:juan_tracker/core/providers/exercise_providers.dart';
 
