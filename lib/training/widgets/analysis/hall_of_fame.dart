@@ -85,7 +85,7 @@ class HallOfFame extends ConsumerWidget {
               return _buildPRGrid(prs);
             },
             loading: () => _buildLoading(scheme),
-            error: (_, __) => _buildEmptyState(scheme),
+            error: (_, _) => _buildEmptyState(scheme),
           ),
         ],
       ),

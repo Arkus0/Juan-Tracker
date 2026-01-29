@@ -93,7 +93,7 @@ final filteredExercisesProvider = Provider<List<TrainingExercise>>((ref) {
     return exercises.where(passesFilters).toList();
   }
 
-  List<String> _expandQuery(String normalized) {
+  List<String> expandQuery(String normalized) {
     final expanded = <String>{};
     if (normalized.isEmpty) return [];
     expanded.add(normalized);
@@ -117,7 +117,7 @@ final filteredExercisesProvider = Provider<List<TrainingExercise>>((ref) {
     return expanded.toList();
   }
 
-  int _scoreExercise(String term, TrainingExercise e) {
+  int scoreExercise(String term, TrainingExercise e) {
     final name = normalize(e.nombre);
     final muscleGroup = normalize(e.grupoMuscular);
     final equip = normalize(e.equipo);
@@ -148,14 +148,14 @@ final filteredExercisesProvider = Provider<List<TrainingExercise>>((ref) {
     return 0;
   }
 
-  final expanded = _expandQuery(queryNorm);
+  final expanded = expandQuery(queryNorm);
 
   final scored = <MapEntry<TrainingExercise, int>>[];
   for (final e in exercises) {
     if (!passesFilters(e)) continue;
     var best = 0;
     for (final term in expanded) {
-      final s = _scoreExercise(term, e);
+      final s = scoreExercise(term, e);
       if (s > best) best = s;
     }
     if (best > 0) {

@@ -137,12 +137,12 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     if (nameNorm == queryNorm) return 100;
     
     // 2. El nombre empieza exactamente con la query (95 pts)
-    if (nameNorm.startsWith(queryNorm + ' ')) return 95;
+    if (nameNorm.startsWith('$queryNorm ')) return 95;
     if (nameNorm.startsWith(queryNorm)) return 90;
     
     // 3. Query está contenida en el nombre como palabra completa (85 pts)
-    if (nameNorm.contains(' ' + queryNorm + ' ')) return 85;
-    if (nameNorm.contains(' ' + queryNorm) || nameNorm.contains(queryNorm + ' ')) return 80;
+    if (nameNorm.contains(' $queryNorm ')) return 85;
+    if (nameNorm.contains(' $queryNorm') || nameNorm.contains('$queryNorm ')) return 80;
     
     // 4. Query contenida en cualquier parte del nombre (70 pts)
     if (nameNorm.contains(queryNorm)) return 70;
@@ -863,7 +863,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: _recentlyAdded.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
                         itemBuilder: (ctx, idx) {
                           final ex = _recentlyAdded[idx];
                           return ActionChip(
@@ -959,7 +959,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: _suggestions.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
                         itemBuilder: (ctx, idx) {
                           final ex = _suggestions[idx];
                           return ActionChip(

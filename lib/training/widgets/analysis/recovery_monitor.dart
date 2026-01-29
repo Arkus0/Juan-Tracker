@@ -61,7 +61,7 @@ class RecoveryMonitor extends ConsumerWidget {
             return _buildRecoveryList(recoveries);
           },
           loading: () => _buildLoading(),
-          error: (_, __) => _buildEmptyState(),
+          error: (_, _) => _buildEmptyState(),
         ),
       ],
     );

@@ -102,7 +102,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: muscleGroups.take(8).length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   final muscle = muscleGroups[index];
                   final isSelected = filters.muscleGroup == muscle;
@@ -123,7 +123,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: equipment.take(8).length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   final item = equipment[index];
                   final isSelected = filters.equipment == item;

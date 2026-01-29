@@ -421,7 +421,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                     )
                   : const SizedBox.shrink(),
               loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
             ),
             IconButton(
               icon: Icon(showTimerBar ? Icons.timer : Icons.timer_outlined),

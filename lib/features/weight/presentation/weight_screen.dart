@@ -72,7 +72,7 @@ class _CurrentWeightCard extends ConsumerWidget {
         return _WeightCard(weighIn: latest);
       },
       loading: () => const _LoadingWeightState(),
-      error: (_, __) => const _EmptyWeightState(),
+      error: (_, _) => const _EmptyWeightState(),
     );
   }
 }

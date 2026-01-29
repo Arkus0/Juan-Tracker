@@ -121,7 +121,7 @@ class AlternativasDialog extends StatelessWidget {
     return ListView.separated(
       shrinkWrap: true,
       itemCount: alternativas.length,
-      separatorBuilder: (_, __) =>
+      separatorBuilder: (_, _) =>
           const Divider(height: 1, color: AppColors.bgDeep),
       itemBuilder: (context, index) {
         final alternativa = alternativas[index];

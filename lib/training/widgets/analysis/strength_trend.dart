@@ -134,7 +134,7 @@ class StrengthTrend extends ConsumerWidget {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
 
           const SizedBox(height: 16),
@@ -148,7 +148,7 @@ class StrengthTrend extends ConsumerWidget {
               return _buildChart(scheme, dataPoints);
             },
             loading: () => _buildLoading(scheme),
-            error: (_, __) => _buildEmptyState(scheme),
+            error: (_, _) => _buildEmptyState(scheme),
           ),
         ],
       ),
