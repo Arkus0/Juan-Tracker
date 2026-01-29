@@ -1161,9 +1161,12 @@ class _WeightListTile extends ConsumerWidget {
         await repo.delete(weighIn.id);
 
         if (context.mounted) {
+          // Avoid stacking snackbars and show for 1.5s (1500ms) per UX request
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('Registro eliminado'),
+              duration: const Duration(milliseconds: 1500),
               action: SnackBarAction(
                 label: 'Deshacer',
                 onPressed: () async {

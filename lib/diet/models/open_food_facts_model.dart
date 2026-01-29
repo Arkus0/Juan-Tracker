@@ -50,8 +50,8 @@ class OpenFoodFactsResult {
 
   /// Crea un resultado a partir del JSON de la API de Open Food Facts
   factory OpenFoodFactsResult.fromApiJson(Map<String, dynamic> json) {
-    final product = json['product'] as Map<String, dynamic>? ?? {};
-    final nutriments = product['nutriments'] as Map<String, dynamic>? ?? {};
+    final product = Map<String, dynamic>.from(json['product'] as Map? ?? {});
+    final nutriments = Map<String, dynamic>.from(product['nutriments'] as Map? ?? {});
 
     // Extraer nombre (varias fuentes posibles)
     String name = product['product_name'] as String? ?? '';
@@ -199,7 +199,7 @@ class OpenFoodFactsSearchResponse {
 
   factory OpenFoodFactsSearchResponse.fromApiJson(Map<String, dynamic> json) {
     final products = (json['products'] as List<dynamic>? ?? [])
-        .cast<Map<String, dynamic>>()
+        .map((p) => Map<String, dynamic>.from(p as Map))
         .map((p) => OpenFoodFactsResult.fromApiJson({'product': p, 'code': p['code'] ?? ''}))
         .where((p) => p.hasValidNutrition) // Solo productos con datos válidos
         .toList();

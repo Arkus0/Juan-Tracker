@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/providers/database_provider.dart';
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
 import 'add_entry_dialog.dart';
+import 'external_food_search_screen.dart';
 
 /// Pantalla de búsqueda de alimentos para añadir al diario
 /// Paso 1: Buscar/Seleccionar alimento o Quick Add
@@ -83,6 +85,11 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
             onTap: () => _showQuickAddDialog(context),
           ),
 
+          // Opción Buscar Externo
+          _ExternalSearchButton(
+            onTap: () => _showExternalSearch(context),
+          ),
+
           const Divider(height: 1),
 
           // Lista de resultados
@@ -155,6 +162,20 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
       await repo.insert(entry);
     }
   }
+
+  Future<void> _showExternalSearch(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final result = await navigator.push<DiaryEntryModel>(
+      MaterialPageRoute(
+        builder: (ctx) => const ExternalFoodSearchScreen(),
+      ),
+    );
+
+    if (result != null && mounted) {
+      await _saveEntry(result);
+      if (mounted) navigator.pop();
+    }
+  }
 }
 
 /// Botón de Quick Add
@@ -180,6 +201,36 @@ class _QuickAddButton extends StatelessWidget {
         style: TextStyle(fontWeight: FontWeight.w600),
       ),
       subtitle: const Text('Introduce kcal y macros directamente'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+}
+
+/// Botón de búsqueda externa (Open Food Facts)
+class _ExternalSearchButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ExternalSearchButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(Icons.public, color: theme.colorScheme.primary),
+      ),
+      title: const Text(
+        'Buscar Online',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+      subtitle: const Text('Más de 3M de productos (Open Food Facts)'),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
     );
