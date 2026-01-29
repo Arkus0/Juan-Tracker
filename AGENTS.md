@@ -1534,3 +1534,104 @@ Antes de commit, verificar:
 ---
 
 *Última actualización: Enero 2026 - Optimizaciones de rendimiento implementadas, bugs de UX/data corregidos*
+
+
+---
+
+## Navegación con GoRouter (Enero 2026)
+
+El proyecto usa **go_router** para navegación declarativa y deep linking.
+
+### Configuración
+
+**Archivo**: `lib/core/router/app_router.dart`
+
+```dart
+// Router provider para usar con Riverpod
+final appRouterProvider = Provider<GoRouter>((ref) => AppRouter.router);
+
+// En app.dart:
+MaterialApp.router(
+  routerConfig: router,
+  // ... resto de configuración
+);
+```
+
+### Rutas Principales
+
+| Ruta | Descripción |
+|------|-------------|
+| `/` | EntryScreen con SplashWrapper |
+| `/nutrition` | Home de nutrición |
+| `/nutrition/diary` | Diario de alimentos |
+| `/nutrition/foods` | Base de datos de alimentos |
+| `/nutrition/weight` | Tracking de peso |
+| `/nutrition/coach` | Coach Adaptativo |
+| `/training` | Home de entrenamiento |
+| `/training/history` | Historial de sesiones |
+| `/training/routines` | Gestión de rutinas |
+| `/training/session` | Sesión activa |
+
+### Deep Links
+
+Configurados en `AndroidManifest.xml`:
+- Esquema personalizado: `juantracker://nutrition/diary`
+- HTTPS: `https://juantracker.app/training/history`
+
+### Extensiones de Navegación
+
+```dart
+// Uso simplificado desde cualquier BuildContext
+context.goToNutrition();     // Ir a nutrición
+context.goToDiary();         // Ir al diario
+context.goToTraining();      // Ir a entrenamiento
+context.goToCoach();         // Ir al coach
+```
+
+### Navegación Programática
+
+```dart
+import 'package:go_router/go_router.dart';
+
+// Navegar a ruta
+context.go('/nutrition/diary');
+
+// Navegar con push (mantiene stack)
+context.push('/nutrition/foods');
+
+// Volver
+context.pop();
+
+// Reemplazar ruta actual
+context.replace('/training');
+```
+
+---
+
+## Actualizaciones Recientes (Enero 2026)
+
+### Fase A: UX/UI Improvements
+- **UX-001**: Onboarding con skip opcional
+- **UX-002**: Quick Add con accesos directos inteligentes
+- **UX-003**: Timer de descanso con touch targets 64dp + gestos
+- **UX-004**: Celebraciones al completar series (confetti + scale animations)
+- **UX-005**: Edge-to-edge rendering para Android 15+
+- **UX-006**: TalkBack labels en todas las acciones críticas
+
+### Fase B: GoRouter Implementation
+- Navegación declarativa con go_router v14.8.1
+- Deep links: `juantracker://` y `https://juantracker.app`
+- 17 rutas configuradas (nutrición + entrenamiento)
+- Extensiones de navegación para rutas comunes
+
+### Fase C: Performance Optimizations
+- **PC-001**: Debounce 300ms en búsqueda de alimentos
+- **PC-002**: RepaintBoundary en gráficos de fuerza
+
+### Tests de Integración
+- 17 nuevos tests para UX-003, UX-004, MD-002, MA-003
+- Todos los tests pasando (172 total)
+
+---
+
+*Última actualización: Enero 2026 - GoRouter implementado, optimizaciones de performance, 172 tests*
