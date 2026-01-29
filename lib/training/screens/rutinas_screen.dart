@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import 'package:juan_tracker/core/design_system/design_system.dart';
+import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import '../providers/training_provider.dart';
 
@@ -68,6 +68,7 @@ class RutinasScreen extends ConsumerWidget {
 
   void _navigateToCreate(BuildContext context) {
     HapticFeedback.mediumImpact();
+    // TODO: Esta pantalla requiere parámetros para edición, mantener MaterialPageRoute hasta refactorizar
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const CreateEditRoutineScreen(),
