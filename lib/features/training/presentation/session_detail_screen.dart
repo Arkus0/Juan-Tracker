@@ -48,7 +48,7 @@ class SessionDetailScreen extends StatelessWidget {
             const SizedBox(height: 8),
             for (final log in ejercicio.logs)
               Text(
-                '  ${log.peso} x ${log.reps}${log.rpe != null ? ' rpe ${log.rpe}' : ''}',
+                '  ${log.peso % 1 == 0 ? log.peso.toInt() : log.peso.toStringAsFixed(1)} x ${log.reps}${log.rpe != null ? ' rpe ${log.rpe}' : ''}',
               ),
             const SizedBox(height: 16),
           ],
@@ -85,7 +85,8 @@ String _exportSessionText(Sesion sesion) {
     buffer.writeln('- ${ejercicio.nombre}:');
     for (final log in ejercicio.logs) {
       final rpe = log.rpe != null ? ' rpe ${log.rpe}' : '';
-      buffer.writeln('  ${log.peso} x ${log.reps}$rpe');
+      final pesoText = log.peso % 1 == 0 ? log.peso.toInt().toString() : log.peso.toStringAsFixed(1);
+      buffer.writeln('  $pesoText x ${log.reps}$rpe');
     }
   }
   return buffer.toString().trim();

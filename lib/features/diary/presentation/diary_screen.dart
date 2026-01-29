@@ -367,7 +367,7 @@ class _MealSection extends ConsumerWidget {
   }
 
   void _showAddEntry(BuildContext context, WidgetRef ref) {
-    ref.read(selectedMealTypeProvider.notifier).state = mealType;
+    ref.read(selectedMealTypeProvider.notifier).meal = mealType;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const FoodSearchScreen(),
@@ -490,8 +490,8 @@ class _EntryTile extends ConsumerWidget {
   }
 
   Future<void> _editEntry(BuildContext context, WidgetRef ref) async {
-    ref.read(editingEntryProvider.notifier).state = entry;
-    ref.read(selectedMealTypeProvider.notifier).state = entry.mealType;
+    ref.read(editingEntryProvider.notifier).editing = entry;
+    ref.read(selectedMealTypeProvider.notifier).meal = entry.mealType;
     
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -499,7 +499,7 @@ class _EntryTile extends ConsumerWidget {
       ),
     );
     
-    ref.read(editingEntryProvider.notifier).state = null;
+    ref.read(editingEntryProvider.notifier).editing = null;
   }
 
   Future<void> _deleteEntry(WidgetRef ref) async {

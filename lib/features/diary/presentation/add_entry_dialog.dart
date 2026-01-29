@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -80,7 +79,7 @@ class _AddEntryDialogState extends ConsumerState<AddEntryDialog> {
                 Expanded(
                   flex: 2,
                   child: DropdownButtonFormField<ServingUnit>(
-                    value: _selectedUnit,
+                    initialValue: _selectedUnit,
                     decoration: const InputDecoration(
                       labelText: 'Unidad',
                       border: OutlineInputBorder(),

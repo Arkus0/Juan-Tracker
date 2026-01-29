@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
@@ -27,7 +26,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     _searchController = TextEditingController();
     // Limpiar búsqueda al entrar
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(foodSearchQueryProvider.notifier).state = '';
+      ref.read(foodSearchQueryProvider.notifier).query = '';
     });
   }
 
@@ -63,7 +62,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _searchController.clear();
-                          ref.read(foodSearchQueryProvider.notifier).state = '';
+                          ref.read(foodSearchQueryProvider.notifier).query = '';
                         },
                       )
                     : null,
@@ -74,7 +73,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                 fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ),
               onChanged: (value) {
-                ref.read(foodSearchQueryProvider.notifier).state = value;
+                ref.read(foodSearchQueryProvider.notifier).query = value;
               },
             ),
           ),
@@ -117,7 +116,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   }
 
   Future<void> _selectFood(BuildContext context, FoodModel food) async {
-    ref.read(selectedFoodProvider.notifier).state = food;
+    ref.read(selectedFoodProvider.notifier).selected = food;
     
     final result = await showDialog<DiaryEntryModel>(
       context: context,
