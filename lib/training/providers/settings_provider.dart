@@ -16,6 +16,7 @@ class SettingsKeys {
   static const String lockScreenTimerEnabled = 'lock_screen_timer_enabled';
   static const String useFocusedInputMode = 'use_focused_input_mode';
   static const String mediaControlsEnabled = 'media_controls_enabled';
+  static const String autofocusEnabled = 'autofocus_enabled';
 }
 
 /// Estado inmutable de las preferencias del usuario
@@ -46,6 +47,9 @@ class UserSettings {
   /// Solo aparece si hay música activa (Spotify, etc), no con beeps del timer
   final bool mediaControlsEnabled;
 
+  /// Autofocus en inputs de peso/reps durante entrenamiento
+  final bool autofocusEnabled;
+
   const UserSettings({
     this.timerSoundEnabled =
         false, // Desactivado por defecto (gym = sin sonido)
@@ -60,6 +64,7 @@ class UserSettings {
     this.lockScreenTimerEnabled = true, // Activado por defecto
     this.useFocusedInputMode = true, // Activado por defecto - UX optimizada
     this.mediaControlsEnabled = true, // Activado por defecto
+    this.autofocusEnabled = true, // Activado por defecto
   });
 
   UserSettings copyWith({
@@ -75,6 +80,7 @@ class UserSettings {
     bool? lockScreenTimerEnabled,
     bool? useFocusedInputMode,
     bool? mediaControlsEnabled,
+    bool? autofocusEnabled,
   }) {
     return UserSettings(
       timerSoundEnabled: timerSoundEnabled ?? this.timerSoundEnabled,
@@ -93,6 +99,7 @@ class UserSettings {
           lockScreenTimerEnabled ?? this.lockScreenTimerEnabled,
       useFocusedInputMode: useFocusedInputMode ?? this.useFocusedInputMode,
       mediaControlsEnabled: mediaControlsEnabled ?? this.mediaControlsEnabled,
+      autofocusEnabled: autofocusEnabled ?? this.autofocusEnabled,
     );
   }
 }
@@ -136,6 +143,8 @@ class SettingsNotifier extends Notifier<UserSettings> {
           prefs.getBool(SettingsKeys.useFocusedInputMode) ?? true,
       mediaControlsEnabled:
           prefs.getBool(SettingsKeys.mediaControlsEnabled) ?? true,
+      autofocusEnabled:
+          prefs.getBool(SettingsKeys.autofocusEnabled) ?? true,
     );
   }
 
@@ -237,6 +246,13 @@ class SettingsNotifier extends Notifier<UserSettings> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.mediaControlsEnabled, value);
     state = state.copyWith(mediaControlsEnabled: value);
+  }
+
+  /// Activar/desactivar autofocus en inputs de entrenamiento
+  Future<void> setAutofocusEnabled({required bool value}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(SettingsKeys.autofocusEnabled, value);
+    state = state.copyWith(autofocusEnabled: value);
   }
 }
 

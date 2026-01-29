@@ -7,7 +7,7 @@ import '../services/adaptive_coach_service.dart';
 
 /// Repositorio para guardar/cargar el plan del Coach
 class CoachRepository {
-  static const String _planKey = 'coach_plan_v1';
+  static const String _planKey = 'coach_plan_v2';
   static const String _checkInHistoryKey = 'coach_checkin_history_v1';
 
   final SharedPreferences _prefs;
@@ -73,10 +73,23 @@ class CoachRepository {
 
   /// Serialización manual de CoachPlan
   CoachPlan _planFromJson(Map<String, dynamic> json) {
+    // Migración de datos antiguos (weeklyRatePercent -> weeklyRateKg)
+    double weeklyRateKg;
+    if (json.containsKey('weeklyRateKg')) {
+      weeklyRateKg = (json['weeklyRateKg'] as num).toDouble();
+    } else if (json.containsKey('weeklyRatePercent')) {
+      // Legacy: convertir % a kg usando startingWeight
+      final percent = (json['weeklyRatePercent'] as num).toDouble();
+      final weight = (json['startingWeight'] as num).toDouble();
+      weeklyRateKg = weight * percent;
+    } else {
+      weeklyRateKg = 0.5; // Default
+    }
+
     return CoachPlan(
       id: json['id'] as String,
       goal: WeightGoal.values.byName(json['goal'] as String),
-      weeklyRatePercent: (json['weeklyRatePercent'] as num).toDouble(),
+      weeklyRateKg: weeklyRateKg,
       initialTdeeEstimate: json['initialTdeeEstimate'] as int,
       startingWeight: (json['startingWeight'] as num).toDouble(),
       startDate: DateTime.parse(json['startDate'] as String),
@@ -86,6 +99,9 @@ class CoachRepository {
       currentTargetId: json['currentTargetId'] as String?,
       currentKcalTarget: json['currentKcalTarget'] as int?,
       notes: json['notes'] as String?,
+      macroPreset: json.containsKey('macroPreset')
+          ? MacroPreset.values.byName(json['macroPreset'] as String)
+          : MacroPreset.balanced,
     );
   }
 }
@@ -95,7 +111,7 @@ extension CoachPlanJson on CoachPlan {
   Map<String, dynamic> toJson() => {
     'id': id,
     'goal': goal.name,
-    'weeklyRatePercent': weeklyRatePercent,
+    'weeklyRateKg': weeklyRateKg,
     'initialTdeeEstimate': initialTdeeEstimate,
     'startingWeight': startingWeight,
     'startDate': startDate.toIso8601String(),
@@ -103,5 +119,6 @@ extension CoachPlanJson on CoachPlan {
     'currentTargetId': currentTargetId,
     'currentKcalTarget': currentKcalTarget,
     'notes': notes,
+    'macroPreset': macroPreset.name,
   };
 }

@@ -133,10 +133,22 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
+          _SettingsTile(
+            icon: Icons.center_focus_strong,
+            title: 'Autofocus',
+            subtitle: 'Enfocar automáticamente el input de peso/reps',
+            trailing: Switch(
+              value: settings.autofocusEnabled,
+              onChanged: (value) =>
+                  notifier.setAutofocusEnabled(value: value),
+              activeThumbColor: AppColors.completedGreen,
+            ),
+          ),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-              'Optimizado para gimnasio: botones grandes, contexto visible, auto-completado.',
+              'Optimizado para gimnasio: botones grandes, contexto visible, auto-completado. Desactiva autofocus si prefieres control manual.',
               style: GoogleFonts.montserrat(
                 color: AppColors.textTertiary,
                 fontSize: 11,

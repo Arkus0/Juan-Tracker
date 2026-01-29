@@ -123,10 +123,10 @@ class _RutinaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final totalExercises = rutina.dias.fold<int>(
-      0,
-      (sum, day) => sum + day.ejercicios.length,
-    );
+    int totalExercises = 0;
+    for (final day in rutina.dias) {
+      totalExercises += (day?.ejercicios?.length ?? 0) as int;
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),

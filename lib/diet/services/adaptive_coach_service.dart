@@ -12,21 +12,76 @@ const int kMinDiaryDays = 4;
 const int kMinKcalTarget = 1200;
 const int kMaxKcalTarget = 6000;
 
+/// Presets de distribución de macros
+enum MacroPreset {
+  lowCarb('Low Carb', 'Bajo en carbohidratos, alto en grasas', 0.25, 0.45, 0.30),
+  balanced('Balanceado', 'Distribución equilibrada', 0.30, 0.35, 0.35),
+  highProtein('High Protein', 'Alto en proteínas para ganancia muscular', 0.40, 0.30, 0.30),
+  highCarb('High Carb', 'Alto en carbohidratos para energía', 0.25, 0.50, 0.25),
+  keto('Keto', 'Muy bajo en carbohidratos', 0.30, 0.05, 0.65),
+  custom('Personalizado', 'Macros ajustados manualmente', 0.30, 0.35, 0.35);
+
+  final String displayName;
+  final String description;
+  final double proteinPercent;
+  final double carbsPercent;
+  final double fatPercent;
+
+  const MacroPreset(
+    this.displayName,
+    this.description,
+    this.proteinPercent,
+    this.carbsPercent,
+    this.fatPercent,
+  );
+
+  /// Calcula los gramos de macros basado en las calorías totales
+  MacroGrams calculateGrams(int totalKcal) {
+    final proteinKcal = totalKcal * proteinPercent;
+    final carbsKcal = totalKcal * carbsPercent;
+    final fatKcal = totalKcal * fatPercent;
+
+    return MacroGrams(
+      protein: (proteinKcal / 4).round(),
+      carbs: (carbsKcal / 4).round(),
+      fat: (fatKcal / 9).round(),
+    );
+  }
+}
+
+/// Gramos de macros calculados
+class MacroGrams {
+  final int protein;
+  final int carbs;
+  final int fat;
+
+  const MacroGrams({
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+  });
+
+  int get totalKcal => (protein * 4) + (carbs * 4) + (fat * 9);
+}
+
+/// Configuración del Coach Adaptativo
 class AdaptiveCoachConfig {
   final int maxWeeklyKcalChange;
   final double kcalPerKg;
   final int minWeighInDays;
   final int minDiaryDays;
-  final double proteinMultiplier;
-  final double? fatPercentage;
+  final MacroPreset macroPreset;
+  final double? proteinMultiplier; // Null si usamos presets
+  final double? fatPercentage;     // Null si usamos presets
 
   const AdaptiveCoachConfig({
     this.maxWeeklyKcalChange = kMaxWeeklyKcalChange,
     this.kcalPerKg = kKcalPerKg,
     this.minWeighInDays = kMinWeighInDays,
     this.minDiaryDays = kMinDiaryDays,
-    this.proteinMultiplier = 2.0,
-    this.fatPercentage = 0.25,
+    this.macroPreset = MacroPreset.balanced,
+    this.proteinMultiplier,
+    this.fatPercentage,
   });
 
   static const defaultConfig = AdaptiveCoachConfig();
@@ -40,7 +95,7 @@ enum CheckInStatus { ready, insufficientData, notEnoughTime, error }
 class CoachPlan {
   final String id;
   final WeightGoal goal;
-  final double weeklyRatePercent;
+  final double weeklyRateKg; // AHORA EN KG en lugar de %
   final int initialTdeeEstimate;
   final double startingWeight;
   final DateTime startDate;
@@ -48,11 +103,12 @@ class CoachPlan {
   final String? currentTargetId;
   final int? currentKcalTarget; // Necesario para clamps
   final String? notes;
+  final MacroPreset macroPreset;
 
   const CoachPlan({
     required this.id,
     required this.goal,
-    required this.weeklyRatePercent,
+    required this.weeklyRateKg,
     required this.initialTdeeEstimate,
     required this.startingWeight,
     required this.startDate,
@@ -60,31 +116,51 @@ class CoachPlan {
     this.currentTargetId,
     this.currentKcalTarget,
     this.notes,
+    this.macroPreset = MacroPreset.balanced,
   });
 
-  double weeklyRateKg(double currentWeight) => currentWeight * weeklyRatePercent;
+  /// Velocidad semanal en kg (ya no %)
+  double get weeklyRateDisplay => weeklyRateKg;
 
-  int dailyAdjustmentKcal(double currentWeight) {
-    final kgPerWeek = weeklyRateKg(currentWeight);
-    return (kgPerWeek * kKcalPerKg / 7).round();
+  /// Ajuste diario en kcal (déficit o superávit)
+  int get dailyAdjustmentKcal {
+    // kg/semana * 7700 kcal/kg / 7 días = kcal/día
+    return (weeklyRateKg * kKcalPerKg / 7).round();
   }
 
+  /// Descripción del objetivo con kg/semana y kcal de ajuste
   String get goalDescription {
-    final percent = (weeklyRatePercent.abs() * 100).toStringAsFixed(1);
+    final kgString = weeklyRateKg.abs().toStringAsFixed(2);
+    final kcalString = dailyAdjustmentKcal.abs();
+    
     switch (goal) {
       case WeightGoal.lose:
-        return 'Perder $percent% peso/semana';
+        return 'Perder $kgString kg/semana (${kcalString}kcal déficit)';
       case WeightGoal.maintain:
         return 'Mantener peso';
       case WeightGoal.gain:
-        return 'Ganar $percent% peso/semana';
+        return 'Ganar $kgString kg/semana (${kcalString}kcal superávit)';
+    }
+  }
+
+  /// Descripción corta para mostrar en cards
+  String get goalDescriptionShort {
+    final kgString = weeklyRateKg.abs().toStringAsFixed(1);
+    
+    switch (goal) {
+      case WeightGoal.lose:
+        return '-$kgString kg/semana';
+      case WeightGoal.maintain:
+        return 'Mantenimiento';
+      case WeightGoal.gain:
+        return '+$kgString kg/semana';
     }
   }
 
   CoachPlan copyWith({
     String? id,
     WeightGoal? goal,
-    double? weeklyRatePercent,
+    double? weeklyRateKg,
     int? initialTdeeEstimate,
     double? startingWeight,
     DateTime? startDate,
@@ -92,11 +168,12 @@ class CoachPlan {
     String? currentTargetId,
     int? currentKcalTarget,
     String? notes,
+    MacroPreset? macroPreset,
   }) {
     return CoachPlan(
       id: id ?? this.id,
       goal: goal ?? this.goal,
-      weeklyRatePercent: weeklyRatePercent ?? this.weeklyRatePercent,
+      weeklyRateKg: weeklyRateKg ?? this.weeklyRateKg,
       initialTdeeEstimate: initialTdeeEstimate ?? this.initialTdeeEstimate,
       startingWeight: startingWeight ?? this.startingWeight,
       startDate: startDate ?? this.startDate,
@@ -104,6 +181,7 @@ class CoachPlan {
       currentTargetId: currentTargetId ?? this.currentTargetId,
       currentKcalTarget: currentKcalTarget ?? this.currentKcalTarget,
       notes: notes ?? this.notes,
+      macroPreset: macroPreset ?? this.macroPreset,
     );
   }
 }
@@ -158,6 +236,8 @@ class CheckInResult {
   final CheckInExplanation explanation;
   final bool wasClamped;
   final String? errorMessage;
+  final int dailyAdjustmentKcal;
+  final MacroGrams macroGrams;
 
   const CheckInResult({
     required this.status,
@@ -165,6 +245,8 @@ class CheckInResult {
     required this.estimatedTdee,
     required this.proposedTargets,
     required this.explanation,
+    required this.dailyAdjustmentKcal,
+    required this.macroGrams,
     this.wasClamped = false,
     this.errorMessage,
   });
@@ -179,6 +261,8 @@ class CheckInResult {
         ),
         explanation = CheckInExplanation.empty(),
         wasClamped = false,
+        dailyAdjustmentKcal = 0,
+        macroGrams = const MacroGrams(protein: 0, carbs: 0, fat: 0),
         errorMessage = reason;
 }
 
@@ -187,7 +271,7 @@ class CheckInExplanation {
   final String line1; // "Ingesta media: 2400 kcal/día"
   final String line2; // "Cambio de peso: -0.3 kg"
   final String line3; // "TDEE estimado: 2733 kcal"
-  final String line4; // "Ajuste objetivo: -550 kcal"
+  final String line4; // "Ajuste objetivo: -550 kcal (déficit)"
   final String line5; // "Nuevo target: 2183 kcal"
 
   const CheckInExplanation({
@@ -239,8 +323,8 @@ class AdaptiveCoachService {
     // Calcular TDEE real basado en datos
     final calculatedTdee = weeklyData.calculatedTdee;
 
-    // Calcular ajuste necesario para cumplir objetivo
-    final adjustment = plan.dailyAdjustmentKcal(currentWeight);
+    // Calcular ajuste necesario para cumplir objetivo (en kcal, no %)
+    final adjustment = plan.dailyAdjustmentKcal;
 
     // Nuevo target teórico
     int newTarget = (calculatedTdee + adjustment).round();
@@ -271,26 +355,22 @@ class AdaptiveCoachService {
       wasClamped = true;
     }
 
-    // Calcular macros
-    final proteinGrams = (currentWeight * config.proteinMultiplier).round();
-    final proteinKcal = proteinGrams * 4;
+    // Calcular macros usando el preset seleccionado
+    final macroGrams = plan.macroPreset.calculateGrams(newTarget);
 
-    double? fatGrams;
-    if (config.fatPercentage != null) {
-      final fatKcal = newTarget * config.fatPercentage!;
-      fatGrams = fatKcal / 9;
-    }
+    // Crear explicación con info de déficit/superávit
+    final adjustmentText = adjustment < 0 
+        ? '${adjustment}kcal (déficit)'
+        : adjustment > 0
+            ? '+${adjustment}kcal (superávit)'
+            : '0kcal (mantenimiento)';
 
-    final remainingKcal = newTarget - proteinKcal - (fatGrams != null ? fatGrams * 9 : 0);
-    final carbsGrams = (remainingKcal / 4).round();
-
-    // Crear explicación
     final explanation = CheckInExplanation(
       line1: 'Ingesta media: ${weeklyData.avgDailyKcal.round()} kcal/día',
       line2: 'Cambio de trend: ${weeklyData.trendChangeKg > 0 ? "+" : ""}'
           '${weeklyData.trendChangeKg.toStringAsFixed(2)} kg',
       line3: 'TDEE estimado: ${calculatedTdee.round()} kcal',
-      line4: 'Ajuste objetivo: ${adjustment > 0 ? "+" : ""}$adjustment kcal',
+      line4: 'Ajuste objetivo: $adjustmentText',
       line5: 'Nuevo target: $newTarget kcal',
     );
 
@@ -298,10 +378,11 @@ class AdaptiveCoachService {
       id: 'coach_${checkInDate.millisecondsSinceEpoch}',
       validFrom: checkInDate,
       kcalTarget: newTarget,
-      proteinTarget: proteinGrams.toDouble(),
-      carbsTarget: carbsGrams.toDouble(),
-      fatTarget: fatGrams,
-      notes: 'Generado por Coach Adaptativo. TDEE estimado: ${calculatedTdee.round()}',
+      proteinTarget: macroGrams.protein.toDouble(),
+      carbsTarget: macroGrams.carbs.toDouble(),
+      fatTarget: macroGrams.fat.toDouble(),
+      notes: 'Generado por Coach Adaptativo. TDEE estimado: ${calculatedTdee.round()}. '
+          'Preset: ${plan.macroPreset.displayName}',
     );
 
     return CheckInResult(
@@ -311,6 +392,8 @@ class AdaptiveCoachService {
       proposedTargets: proposedTargets,
       explanation: explanation,
       wasClamped: wasClamped,
+      dailyAdjustmentKcal: adjustment,
+      macroGrams: macroGrams,
     );
   }
 

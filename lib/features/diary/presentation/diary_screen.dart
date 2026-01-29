@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
@@ -11,7 +12,27 @@ import 'package:juan_tracker/diet/services/day_summary_calculator.dart';
 import 'package:juan_tracker/features/targets/presentation/targets_screen.dart';
 import 'food_search_screen.dart';
 
-/// Pantalla principal del Diario con diseño mejorado
+enum DiaryViewMode { list, calendar }
+
+/// Notifier para controlar el modo de vista del diario
+class DiaryViewModeNotifier extends Notifier<DiaryViewMode> {
+  @override
+  DiaryViewMode build() => DiaryViewMode.list;
+
+  void toggle() {
+    state = state == DiaryViewMode.list 
+        ? DiaryViewMode.calendar 
+        : DiaryViewMode.list;
+  }
+
+  void setMode(DiaryViewMode mode) => state = mode;
+}
+
+final diaryViewModeProvider = NotifierProvider<DiaryViewModeNotifier, DiaryViewMode>(
+  DiaryViewModeNotifier.new,
+);
+
+/// Pantalla principal del Diario con diseño mejorado y vista de calendario
 class DiaryScreen extends ConsumerWidget {
   const DiaryScreen({super.key});
 
@@ -20,6 +41,7 @@ class DiaryScreen extends ConsumerWidget {
     final selectedDate = ref.watch(selectedDateProvider);
     final entriesAsync = ref.watch(dayEntriesStreamProvider);
     final summaryAsync = ref.watch(daySummaryProvider);
+    final viewMode = ref.watch(diaryViewModeProvider);
 
     return Scaffold(
       body: CustomScrollView(
@@ -31,6 +53,20 @@ class DiaryScreen extends ConsumerWidget {
             title: const Text('Diario'),
             centerTitle: true,
             actions: [
+              // Toggle vista
+              IconButton(
+                icon: Icon(
+                  viewMode == DiaryViewMode.list 
+                      ? Icons.calendar_month 
+                      : Icons.list,
+                ),
+                tooltip: viewMode == DiaryViewMode.list 
+                    ? 'Vista calendario' 
+                    : 'Vista lista',
+                onPressed: () {
+                  ref.read(diaryViewModeProvider.notifier).toggle();
+                },
+              ),
               TextButton(
                 onPressed: () => ref.read(selectedDateProvider.notifier).goToToday(),
                 child: const Text('HOY'),
@@ -38,60 +74,82 @@ class DiaryScreen extends ConsumerWidget {
             ],
           ),
 
-          // Selector de fecha horizontal (calendario semanal)
-          SliverToBoxAdapter(
-            child: _WeekCalendar(
-              selectedDate: selectedDate,
-              onDateSelected: (date) {
-                ref.read(selectedDateProvider.notifier).setDate(date);
-              },
-            ),
-          ),
-
-          // Resumen del día con progreso
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: summaryAsync.when(
-                data: (summary) => _DailySummaryCard(summary: summary),
-                loading: () => const AppSkeleton(
-                  width: double.infinity,
-                  height: 200,
-                ),
-                error: (_, _) => AppError(
-                  message: 'Error al cargar resumen',
-                  onRetry: () => ref.invalidate(daySummaryProvider),
-                ),
+          // Selector de fecha horizontal (calendario semanal) - solo en vista lista
+          if (viewMode == DiaryViewMode.list)
+            SliverToBoxAdapter(
+              child: _WeekCalendar(
+                selectedDate: selectedDate,
+                onDateSelected: (date) {
+                  ref.read(selectedDateProvider.notifier).setDate(date);
+                },
               ),
             ),
-          ),
 
-          // Lista de comidas
-          entriesAsync.when(
-            data: (entries) {
-              if (entries.isEmpty) {
-                return SliverFillRemaining(
-                  child: AppEmpty(
-                    icon: Icons.restaurant_menu_outlined,
-                    title: 'Sin entradas hoy',
-                    subtitle: 'Añade tu primera comida para empezar a trackear',
-                    actionLabel: 'AÑADIR COMIDA',
-                    onAction: () => _showAddEntry(context, ref, MealType.breakfast),
+          // Vista de calendario mensual
+          if (viewMode == DiaryViewMode.calendar)
+            SliverToBoxAdapter(
+              child: _MonthCalendar(
+                selectedDate: selectedDate,
+                onDateSelected: (date) {
+                  ref.read(selectedDateProvider.notifier).setDate(date);
+                  // Volver a vista lista al seleccionar
+                  ref.read(diaryViewModeProvider.notifier).setMode(DiaryViewMode.list);
+                },
+              ),
+            ),
+
+          // Resumen del día con progreso - solo en vista lista
+          if (viewMode == DiaryViewMode.list)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: summaryAsync.when(
+                  data: (summary) => _DailySummaryCard(summary: summary),
+                  loading: () => const AppSkeleton(
+                    width: double.infinity,
+                    height: 200,
                   ),
-                );
-              }
-              return _MealsListSliver(entries: entries);
-            },
-            loading: () => const SliverFillRemaining(
-              child: AppLoading(message: 'Cargando entradas...'),
-            ),
-            error: (e, _) => SliverFillRemaining(
-              child: AppError(
-                message: 'Error al cargar entradas',
-                details: e.toString(),
+                  error: (_, _) => AppError(
+                    message: 'Error al cargar resumen',
+                    onRetry: () => ref.invalidate(daySummaryProvider),
+                  ),
+                ),
               ),
             ),
-          ),
+
+          // Lista de comidas - solo en vista lista
+          if (viewMode == DiaryViewMode.list)
+            entriesAsync.when(
+              data: (entries) {
+                if (entries.isEmpty) {
+                  return SliverFillRemaining(
+                    child: AppEmpty(
+                      icon: Icons.restaurant_menu_outlined,
+                      title: 'Sin entradas hoy',
+                      subtitle: 'Añade tu primera comida para empezar a trackear',
+                      actionLabel: 'AÑADIR COMIDA',
+                      onAction: () => _showAddEntry(context, ref, MealType.breakfast),
+                    ),
+                  );
+                }
+                return _MealsListSliver(entries: entries);
+              },
+              loading: () => const SliverFillRemaining(
+                child: AppLoading(message: 'Cargando entradas...'),
+              ),
+              error: (e, _) => SliverFillRemaining(
+                child: AppError(
+                  message: 'Error al cargar entradas',
+                  details: e.toString(),
+                ),
+              ),
+            ),
+
+          // Espacio en vista calendario
+          if (viewMode == DiaryViewMode.calendar)
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 100),
+            ),
 
           const SliverToBoxAdapter(
             child: SizedBox(height: 100),
@@ -116,6 +174,87 @@ class DiaryScreen extends ConsumerWidget {
   }
 }
 
+/// Vista de calendario mensual
+class _MonthCalendar extends ConsumerWidget {
+  final DateTime selectedDate;
+  final ValueChanged<DateTime> onDateSelected;
+
+  const _MonthCalendar({
+    required this.selectedDate,
+    required this.onDateSelected,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Card(
+      margin: const EdgeInsets.all(AppSpacing.lg),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: TableCalendar(
+          firstDay: DateTime.now().subtract(const Duration(days: 365)),
+          lastDay: DateTime.now().add(const Duration(days: 365)),
+          focusedDay: selectedDate,
+          selectedDayPredicate: (day) => isSameDay(day, selectedDate),
+          onDaySelected: (selectedDay, focusedDay) {
+            onDateSelected(selectedDay);
+          },
+          calendarFormat: CalendarFormat.month,
+          startingDayOfWeek: StartingDayOfWeek.monday,
+          locale: 'es_ES',
+          headerStyle: HeaderStyle(
+            titleCentered: true,
+            formatButtonVisible: false,
+            leftChevronIcon: Icon(
+              Icons.chevron_left,
+              color: colorScheme.onSurface,
+            ),
+            rightChevronIcon: Icon(
+              Icons.chevron_right,
+              color: colorScheme.onSurface,
+            ),
+            titleTextStyle: AppTypography.titleMedium.copyWith(
+              color: colorScheme.onSurface,
+            ),
+          ),
+          calendarStyle: CalendarStyle(
+            outsideDaysVisible: false,
+            weekendTextStyle: TextStyle(color: colorScheme.onSurface),
+            holidayTextStyle: TextStyle(color: colorScheme.onSurface),
+            defaultTextStyle: TextStyle(color: colorScheme.onSurface),
+            selectedDecoration: BoxDecoration(
+              color: colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+            todayDecoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            todayTextStyle: TextStyle(
+              color: colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.bold,
+            ),
+            selectedTextStyle: TextStyle(
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+            markersMaxCount: 3,
+          ),
+          daysOfWeekStyle: DaysOfWeekStyle(
+            weekdayStyle: AppTypography.labelSmall.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            weekendStyle: AppTypography.labelSmall.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Calendario semanal horizontal
 class _WeekCalendar extends StatelessWidget {
   final DateTime selectedDate;
@@ -131,6 +270,7 @@ class _WeekCalendar extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    final dates = List.generate(14, (i) => weekStart.add(Duration(days: i)));
 
     return Container(
       height: 90,
@@ -138,9 +278,9 @@ class _WeekCalendar extends StatelessWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        itemCount: 14, // 2 semanas
+        itemCount: dates.length,
         itemBuilder: (context, index) {
-          final date = weekStart.add(Duration(days: index));
+          final date = dates[index];
           final isSelected = _isSameDay(date, selectedDate);
           final isToday = _isSameDay(date, now);
           final dayName = DateFormat('E', 'es').format(date)[0].toUpperCase();
@@ -160,47 +300,47 @@ class _WeekCalendar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? colors.primary
-                    : isToday
-                        ? colors.primaryContainer
-                        : colors.surfaceContainerHighest,
+                    : (isToday ? colors.primaryContainer : colors.surfaceContainerHighest),
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: isToday && !isSelected
-                    ? Border.all(color: colors.primary)
-                    : null,
+                border: (isToday && !isSelected) ? Border.all(color: colors.primary) : null,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    dayName,
-                    style: AppTypography.labelSmall.copyWith(
-                      color: isSelected
-                          ? colors.onPrimary
-                          : colors.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${date.day}',
-                    style: AppTypography.dataSmall.copyWith(
-                      color: isSelected
-                          ? colors.onPrimary
-                          : colors.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  if (isToday)
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? colors.onPrimary
-                            : colors.primary,
-                        shape: BoxShape.circle,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 44),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        dayName,
+                        style: AppTypography.labelSmall.copyWith(
+                          color: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                ],
+                    const SizedBox(height: 4),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '${date.day}',
+                        style: AppTypography.dataSmall.copyWith(
+                          color: isSelected ? colors.onPrimary : colors.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (isToday)
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isSelected ? colors.onPrimary : colors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           );
