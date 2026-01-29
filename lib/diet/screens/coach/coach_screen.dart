@@ -25,13 +25,16 @@ class CoachScreen extends ConsumerWidget {
           : _ActiveCoachState(
               plan: plan,
               onCheckIn: () => _navigateToCheckIn(context),
-              onEditPlan: () => _navigateToSetup(context, plan: plan),
+              onEditPlan: () => _navigateToSetup(context, plan: plan, ref: ref),
             ),
     );
   }
 
-  void _navigateToSetup(BuildContext context, {CoachPlan? plan}) {
-    // TODO: Pasar el plan existente mediante provider/extra params
+  void _navigateToSetup(BuildContext context, {CoachPlan? plan, WidgetRef? ref}) {
+    // Guardar el plan en edición si existe
+    if (plan != null && ref != null) {
+      ref.read(editingPlanProvider.notifier).setPlan(plan);
+    }
     context.goToCoachSetup();
   }
 

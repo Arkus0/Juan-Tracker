@@ -187,6 +187,25 @@ final checkInHistoryProvider = Provider<Map<String, dynamic>>((ref) {
 });
 
 // ============================================================================
+// PLAN EN EDICIÓN (para pasar entre pantallas)
+// ============================================================================
+
+/// Notifier para almacenar temporalmente el plan en edición
+/// Se usa al navegar a PlanSetupScreen para editar un plan existente
+class EditingPlanNotifier extends Notifier<CoachPlan?> {
+  @override
+  CoachPlan? build() => null;
+
+  void setPlan(CoachPlan? plan) => state = plan;
+  void clear() => state = null;
+}
+
+/// Provider para el plan en edición
+final editingPlanProvider = NotifierProvider<EditingPlanNotifier, CoachPlan?>(
+  EditingPlanNotifier.new,
+);
+
+// ============================================================================
 // UTILIDADES
 // ============================================================================
 
