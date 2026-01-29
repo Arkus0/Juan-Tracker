@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
@@ -44,7 +43,7 @@ class DiaryScreen extends ConsumerWidget {
             child: _WeekCalendar(
               selectedDate: selectedDate,
               onDateSelected: (date) {
-                ref.read(selectedDateProvider.notifier).date = date;
+                ref.read(selectedDateProvider.notifier).setDate(date);
               },
             ),
           ),
@@ -332,7 +331,7 @@ class _DailySummaryCard extends StatelessWidget {
                 child: _MacroItem(
                   label: 'Proteína',
                   value: summary.consumed.protein.toStringAsFixed(0),
-                  target: summary.targets?.proteinTarget.toStringAsFixed(0),
+                  target: summary.targets?.proteinTarget?.toStringAsFixed(0),
                   color: AppColors.error,
                   progress: summary.progress.proteinPercent ?? 0,
                 ),
@@ -341,7 +340,7 @@ class _DailySummaryCard extends StatelessWidget {
                 child: _MacroItem(
                   label: 'Carbs',
                   value: summary.consumed.carbs.toStringAsFixed(0),
-                  target: summary.targets?.carbsTarget.toStringAsFixed(0),
+                  target: summary.targets?.carbsTarget?.toStringAsFixed(0),
                   color: AppColors.warning,
                   progress: summary.progress.carbsPercent ?? 0,
                 ),
@@ -350,7 +349,7 @@ class _DailySummaryCard extends StatelessWidget {
                 child: _MacroItem(
                   label: 'Grasa',
                   value: summary.consumed.fat.toStringAsFixed(0),
-                  target: summary.targets?.fatTarget.toStringAsFixed(0),
+                  target: summary.targets?.fatTarget?.toStringAsFixed(0),
                   color: AppColors.info,
                   progress: summary.progress.fatPercent ?? 0,
                 ),
@@ -366,7 +365,7 @@ class _DailySummaryCard extends StatelessWidget {
 /// Donut de progreso calórico
 class _MacroDonut extends StatelessWidget {
   final double progress;
-  final int remaining;
+  final int? remaining;
 
   const _MacroDonut({
     required this.progress,
@@ -410,7 +409,7 @@ class _MacroDonut extends StatelessWidget {
                 ),
               ),
               Text(
-                '$remaining',
+                '${remaining ?? '--'}',
                 style: AppTypography.labelSmall.copyWith(
                   color: colors.onSurfaceVariant,
                 ),
@@ -429,7 +428,7 @@ class _MacroItem extends StatelessWidget {
   final String value;
   final String? target;
   final Color color;
-  final double progress;
+  final double? progress;
 
   const _MacroItem({
     required this.label,
@@ -483,7 +482,7 @@ class _MacroItem extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(2),
           child: LinearProgressIndicator(
-            value: progress.clamp(0.0, 1.0),
+            value: (progress ?? 0).clamp(0.0, 1.0),
             minHeight: 4,
             backgroundColor: color.withAlpha((0.2 * 255).round()),
             valueColor: AlwaysStoppedAnimation<Color>(color),
@@ -588,7 +587,7 @@ class _MealSection extends ConsumerWidget {
                 const SizedBox(width: 8),
                 AppIconButton(
                   icon: Icons.add_rounded,
-                  onTap: () => _addEntry(context, ref),
+                  onPressed: () => _addEntry(context, ref),
                   variant: AppButtonVariant.secondary,
                   size: AppButtonSize.small,
                 ),
