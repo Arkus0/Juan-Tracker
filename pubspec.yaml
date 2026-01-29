@@ -37,6 +37,7 @@ dependencies:
   http: ^1.3.0
   connectivity_plus: ^6.1.3
   mobile_scanner: ^6.0.7
+  go_router: ^14.6.3
 
 dev_dependencies:
   flutter_test:

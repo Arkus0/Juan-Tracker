@@ -94,6 +94,24 @@ abstract class AppColors {
   static const Color ironRedLight = Color(0xFFDC3A3A);
   static const Color ironTeal = Color(0xFF38BDF8);
   static const Color ironGreen = Color(0xFF22C55E);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COLORES DE CELEBRACIÓN Y LOGROS (UX-004)
+  // ═══════════════════════════════════════════════════════════════════════════
+  static const Color goldAccent = Color(0xFFF6C453);
+  static const Color goldSubtle = Color(0x26F6C453);
+  static const Color goldDark = Color(0xFFD4A73A);
+  static const Color completedGreen = Color(0xFF22C55E);
+  static const Color completedGreenBright = Color(0xFF4ADE80);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ALIASES PARA COMPATIBILIDAD
+  // ═══════════════════════════════════════════════════════════════════════════
+  static const Color bgElevated = darkSurfaceVariant;
+  static const Color bgDeep = darkBackground;
+  static const Color textSecondary = darkTextSecondary;
+  static const Color textTertiary = darkTextTertiary;
+  static const Color textPrimary = darkTextPrimary;
 }
 
 /// Espaciado estandarizado
@@ -115,6 +133,7 @@ abstract class AppRadius {
   static const double lg = 16.0;
   static const double xl = 24.0;
   static const double full = 9999.0;
+  static const double round = 9999.0; // Alias para full
 }
 
 /// Elevaciones (sombras) - Constantes estáticas para evitar recreación
