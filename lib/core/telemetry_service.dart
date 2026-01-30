@@ -13,7 +13,6 @@ class TelemetryService {
   /// Track a named event with optional properties
   void trackEvent(String name, [Map<String, dynamic>? props]) {
     _logger.i('Telemetry event: $name ${props ?? {}}');
-    // TODO: Integrate with Sentry/Firebase here if configured
   }
 
   /// Log a breadcrumb (detailed diagnostic message)
