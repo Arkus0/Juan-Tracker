@@ -357,7 +357,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   /// Callback cuando el timer de descanso termina
   /// Vibra y notifica para auto-focus al siguiente input
   // ignore: unused_element
-  void _onTimerFinished({int? lastExerciseIndex, int? lastSetIndex}) async {
+  void _onTimerFinished() async {
     // La vibración ya se maneja en el TimerBar
     // Notificar para auto-focus usando el nuevo FocusManager
     final state = ref.read(trainingSessionProvider);
