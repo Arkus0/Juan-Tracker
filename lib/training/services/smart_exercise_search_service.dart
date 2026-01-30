@@ -1,4 +1,3 @@
-import 'package:fuzzy/fuzzy.dart';
 import 'package:juan_tracker/training/features/exercises/search/exercise_aliases.dart';
 import 'package:juan_tracker/training/features/exercises/search/exercise_search_engine.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
@@ -60,7 +59,7 @@ class SmartExerciseSearchService {
     );
 
     // Convertir a ScoredExercise con puntuaciones normalizadas
-    final index = ExerciseSearchIndex.build(allExercises);
+    ExerciseSearchIndex.build(allExercises);
     final queryInfo = _buildQueryInfo(query);
 
     return results.take(limit).map((exercise) {

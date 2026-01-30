@@ -4438,6 +4438,62 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   ).withConverter<Map<String, dynamic>?>($FoodsTable.$convertersourceMetadatan);
+  static const VerificationMeta _normalizedNameMeta = const VerificationMeta(
+    'normalizedName',
+  );
+  @override
+  late final GeneratedColumn<String> normalizedName = GeneratedColumn<String>(
+    'normalized_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _useCountMeta = const VerificationMeta(
+    'useCount',
+  );
+  @override
+  late final GeneratedColumn<int> useCount = GeneratedColumn<int>(
+    'use_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastUsedAtMeta = const VerificationMeta(
+    'lastUsedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastUsedAt = GeneratedColumn<DateTime>(
+    'last_used_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nutriScoreMeta = const VerificationMeta(
+    'nutriScore',
+  );
+  @override
+  late final GeneratedColumn<String> nutriScore = GeneratedColumn<String>(
+    'nutri_score',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _novaGroupMeta = const VerificationMeta(
+    'novaGroup',
+  );
+  @override
+  late final GeneratedColumn<int> novaGroup = GeneratedColumn<int>(
+    'nova_group',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -4475,6 +4531,11 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
     userCreated,
     verifiedSource,
     sourceMetadata,
+    normalizedName,
+    useCount,
+    lastUsedAt,
+    nutriScore,
+    novaGroup,
     createdAt,
     updatedAt,
   ];
@@ -4586,6 +4647,42 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
         ),
       );
     }
+    if (data.containsKey('normalized_name')) {
+      context.handle(
+        _normalizedNameMeta,
+        normalizedName.isAcceptableOrUnknown(
+          data['normalized_name']!,
+          _normalizedNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('use_count')) {
+      context.handle(
+        _useCountMeta,
+        useCount.isAcceptableOrUnknown(data['use_count']!, _useCountMeta),
+      );
+    }
+    if (data.containsKey('last_used_at')) {
+      context.handle(
+        _lastUsedAtMeta,
+        lastUsedAt.isAcceptableOrUnknown(
+          data['last_used_at']!,
+          _lastUsedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('nutri_score')) {
+      context.handle(
+        _nutriScoreMeta,
+        nutriScore.isAcceptableOrUnknown(data['nutri_score']!, _nutriScoreMeta),
+      );
+    }
+    if (data.containsKey('nova_group')) {
+      context.handle(
+        _novaGroupMeta,
+        novaGroup.isAcceptableOrUnknown(data['nova_group']!, _novaGroupMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -4665,6 +4762,26 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
           data['${effectivePrefix}source_metadata'],
         ),
       ),
+      normalizedName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}normalized_name'],
+      ),
+      useCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}use_count'],
+      )!,
+      lastUsedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_used_at'],
+      ),
+      nutriScore: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nutri_score'],
+      ),
+      novaGroup: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}nova_group'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -4703,6 +4820,11 @@ class Food extends DataClass implements Insertable<Food> {
   final bool userCreated;
   final String? verifiedSource;
   final Map<String, dynamic>? sourceMetadata;
+  final String? normalizedName;
+  final int useCount;
+  final DateTime? lastUsedAt;
+  final String? nutriScore;
+  final int? novaGroup;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Food({
@@ -4719,6 +4841,11 @@ class Food extends DataClass implements Insertable<Food> {
     required this.userCreated,
     this.verifiedSource,
     this.sourceMetadata,
+    this.normalizedName,
+    required this.useCount,
+    this.lastUsedAt,
+    this.nutriScore,
+    this.novaGroup,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -4758,6 +4885,19 @@ class Food extends DataClass implements Insertable<Food> {
         $FoodsTable.$convertersourceMetadatan.toSql(sourceMetadata),
       );
     }
+    if (!nullToAbsent || normalizedName != null) {
+      map['normalized_name'] = Variable<String>(normalizedName);
+    }
+    map['use_count'] = Variable<int>(useCount);
+    if (!nullToAbsent || lastUsedAt != null) {
+      map['last_used_at'] = Variable<DateTime>(lastUsedAt);
+    }
+    if (!nullToAbsent || nutriScore != null) {
+      map['nutri_score'] = Variable<String>(nutriScore);
+    }
+    if (!nullToAbsent || novaGroup != null) {
+      map['nova_group'] = Variable<int>(novaGroup);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -4796,6 +4936,19 @@ class Food extends DataClass implements Insertable<Food> {
       sourceMetadata: sourceMetadata == null && nullToAbsent
           ? const Value.absent()
           : Value(sourceMetadata),
+      normalizedName: normalizedName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(normalizedName),
+      useCount: Value(useCount),
+      lastUsedAt: lastUsedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastUsedAt),
+      nutriScore: nutriScore == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nutriScore),
+      novaGroup: novaGroup == null && nullToAbsent
+          ? const Value.absent()
+          : Value(novaGroup),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -4822,6 +4975,11 @@ class Food extends DataClass implements Insertable<Food> {
       sourceMetadata: serializer.fromJson<Map<String, dynamic>?>(
         json['sourceMetadata'],
       ),
+      normalizedName: serializer.fromJson<String?>(json['normalizedName']),
+      useCount: serializer.fromJson<int>(json['useCount']),
+      lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
+      nutriScore: serializer.fromJson<String?>(json['nutriScore']),
+      novaGroup: serializer.fromJson<int?>(json['novaGroup']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -4845,6 +5003,11 @@ class Food extends DataClass implements Insertable<Food> {
       'sourceMetadata': serializer.toJson<Map<String, dynamic>?>(
         sourceMetadata,
       ),
+      'normalizedName': serializer.toJson<String?>(normalizedName),
+      'useCount': serializer.toJson<int>(useCount),
+      'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
+      'nutriScore': serializer.toJson<String?>(nutriScore),
+      'novaGroup': serializer.toJson<int?>(novaGroup),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -4864,6 +5027,11 @@ class Food extends DataClass implements Insertable<Food> {
     bool? userCreated,
     Value<String?> verifiedSource = const Value.absent(),
     Value<Map<String, dynamic>?> sourceMetadata = const Value.absent(),
+    Value<String?> normalizedName = const Value.absent(),
+    int? useCount,
+    Value<DateTime?> lastUsedAt = const Value.absent(),
+    Value<String?> nutriScore = const Value.absent(),
+    Value<int?> novaGroup = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Food(
@@ -4886,6 +5054,13 @@ class Food extends DataClass implements Insertable<Food> {
     sourceMetadata: sourceMetadata.present
         ? sourceMetadata.value
         : this.sourceMetadata,
+    normalizedName: normalizedName.present
+        ? normalizedName.value
+        : this.normalizedName,
+    useCount: useCount ?? this.useCount,
+    lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
+    nutriScore: nutriScore.present ? nutriScore.value : this.nutriScore,
+    novaGroup: novaGroup.present ? novaGroup.value : this.novaGroup,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -4922,6 +5097,17 @@ class Food extends DataClass implements Insertable<Food> {
       sourceMetadata: data.sourceMetadata.present
           ? data.sourceMetadata.value
           : this.sourceMetadata,
+      normalizedName: data.normalizedName.present
+          ? data.normalizedName.value
+          : this.normalizedName,
+      useCount: data.useCount.present ? data.useCount.value : this.useCount,
+      lastUsedAt: data.lastUsedAt.present
+          ? data.lastUsedAt.value
+          : this.lastUsedAt,
+      nutriScore: data.nutriScore.present
+          ? data.nutriScore.value
+          : this.nutriScore,
+      novaGroup: data.novaGroup.present ? data.novaGroup.value : this.novaGroup,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -4943,6 +5129,11 @@ class Food extends DataClass implements Insertable<Food> {
           ..write('userCreated: $userCreated, ')
           ..write('verifiedSource: $verifiedSource, ')
           ..write('sourceMetadata: $sourceMetadata, ')
+          ..write('normalizedName: $normalizedName, ')
+          ..write('useCount: $useCount, ')
+          ..write('lastUsedAt: $lastUsedAt, ')
+          ..write('nutriScore: $nutriScore, ')
+          ..write('novaGroup: $novaGroup, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -4964,6 +5155,11 @@ class Food extends DataClass implements Insertable<Food> {
     userCreated,
     verifiedSource,
     sourceMetadata,
+    normalizedName,
+    useCount,
+    lastUsedAt,
+    nutriScore,
+    novaGroup,
     createdAt,
     updatedAt,
   );
@@ -4984,6 +5180,11 @@ class Food extends DataClass implements Insertable<Food> {
           other.userCreated == this.userCreated &&
           other.verifiedSource == this.verifiedSource &&
           other.sourceMetadata == this.sourceMetadata &&
+          other.normalizedName == this.normalizedName &&
+          other.useCount == this.useCount &&
+          other.lastUsedAt == this.lastUsedAt &&
+          other.nutriScore == this.nutriScore &&
+          other.novaGroup == this.novaGroup &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -5002,6 +5203,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
   final Value<bool> userCreated;
   final Value<String?> verifiedSource;
   final Value<Map<String, dynamic>?> sourceMetadata;
+  final Value<String?> normalizedName;
+  final Value<int> useCount;
+  final Value<DateTime?> lastUsedAt;
+  final Value<String?> nutriScore;
+  final Value<int?> novaGroup;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -5019,6 +5225,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     this.userCreated = const Value.absent(),
     this.verifiedSource = const Value.absent(),
     this.sourceMetadata = const Value.absent(),
+    this.normalizedName = const Value.absent(),
+    this.useCount = const Value.absent(),
+    this.lastUsedAt = const Value.absent(),
+    this.nutriScore = const Value.absent(),
+    this.novaGroup = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5037,6 +5248,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     this.userCreated = const Value.absent(),
     this.verifiedSource = const Value.absent(),
     this.sourceMetadata = const Value.absent(),
+    this.normalizedName = const Value.absent(),
+    this.useCount = const Value.absent(),
+    this.lastUsedAt = const Value.absent(),
+    this.nutriScore = const Value.absent(),
+    this.novaGroup = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -5059,6 +5275,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     Expression<bool>? userCreated,
     Expression<String>? verifiedSource,
     Expression<String>? sourceMetadata,
+    Expression<String>? normalizedName,
+    Expression<int>? useCount,
+    Expression<DateTime>? lastUsedAt,
+    Expression<String>? nutriScore,
+    Expression<int>? novaGroup,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -5077,6 +5298,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       if (userCreated != null) 'user_created': userCreated,
       if (verifiedSource != null) 'verified_source': verifiedSource,
       if (sourceMetadata != null) 'source_metadata': sourceMetadata,
+      if (normalizedName != null) 'normalized_name': normalizedName,
+      if (useCount != null) 'use_count': useCount,
+      if (lastUsedAt != null) 'last_used_at': lastUsedAt,
+      if (nutriScore != null) 'nutri_score': nutriScore,
+      if (novaGroup != null) 'nova_group': novaGroup,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -5097,6 +5323,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     Value<bool>? userCreated,
     Value<String?>? verifiedSource,
     Value<Map<String, dynamic>?>? sourceMetadata,
+    Value<String?>? normalizedName,
+    Value<int>? useCount,
+    Value<DateTime?>? lastUsedAt,
+    Value<String?>? nutriScore,
+    Value<int?>? novaGroup,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -5115,6 +5346,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       userCreated: userCreated ?? this.userCreated,
       verifiedSource: verifiedSource ?? this.verifiedSource,
       sourceMetadata: sourceMetadata ?? this.sourceMetadata,
+      normalizedName: normalizedName ?? this.normalizedName,
+      useCount: useCount ?? this.useCount,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      nutriScore: nutriScore ?? this.nutriScore,
+      novaGroup: novaGroup ?? this.novaGroup,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -5165,6 +5401,21 @@ class FoodsCompanion extends UpdateCompanion<Food> {
         $FoodsTable.$convertersourceMetadatan.toSql(sourceMetadata.value),
       );
     }
+    if (normalizedName.present) {
+      map['normalized_name'] = Variable<String>(normalizedName.value);
+    }
+    if (useCount.present) {
+      map['use_count'] = Variable<int>(useCount.value);
+    }
+    if (lastUsedAt.present) {
+      map['last_used_at'] = Variable<DateTime>(lastUsedAt.value);
+    }
+    if (nutriScore.present) {
+      map['nutri_score'] = Variable<String>(nutriScore.value);
+    }
+    if (novaGroup.present) {
+      map['nova_group'] = Variable<int>(novaGroup.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -5193,6 +5444,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
           ..write('userCreated: $userCreated, ')
           ..write('verifiedSource: $verifiedSource, ')
           ..write('sourceMetadata: $sourceMetadata, ')
+          ..write('normalizedName: $normalizedName, ')
+          ..write('useCount: $useCount, ')
+          ..write('lastUsedAt: $lastUsedAt, ')
+          ..write('nutriScore: $nutriScore, ')
+          ..write('novaGroup: $novaGroup, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -8424,6 +8680,1107 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
   }
 }
 
+class $FoodsFtsTable extends FoodsFts with TableInfo<$FoodsFtsTable, FoodsFt> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FoodsFtsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  @override
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+    'brand',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [name, brand];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'foods_fts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FoodsFt> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('brand')) {
+      context.handle(
+        _brandMeta,
+        brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => const {};
+  @override
+  FoodsFt map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FoodsFt(
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      brand: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brand'],
+      ),
+    );
+  }
+
+  @override
+  $FoodsFtsTable createAlias(String alias) {
+    return $FoodsFtsTable(attachedDatabase, alias);
+  }
+}
+
+class FoodsFt extends DataClass implements Insertable<FoodsFt> {
+  final String name;
+  final String? brand;
+  const FoodsFt({required this.name, this.brand});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || brand != null) {
+      map['brand'] = Variable<String>(brand);
+    }
+    return map;
+  }
+
+  FoodsFtsCompanion toCompanion(bool nullToAbsent) {
+    return FoodsFtsCompanion(
+      name: Value(name),
+      brand: brand == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brand),
+    );
+  }
+
+  factory FoodsFt.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FoodsFt(
+      name: serializer.fromJson<String>(json['name']),
+      brand: serializer.fromJson<String?>(json['brand']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'name': serializer.toJson<String>(name),
+      'brand': serializer.toJson<String?>(brand),
+    };
+  }
+
+  FoodsFt copyWith({
+    String? name,
+    Value<String?> brand = const Value.absent(),
+  }) => FoodsFt(
+    name: name ?? this.name,
+    brand: brand.present ? brand.value : this.brand,
+  );
+  FoodsFt copyWithCompanion(FoodsFtsCompanion data) {
+    return FoodsFt(
+      name: data.name.present ? data.name.value : this.name,
+      brand: data.brand.present ? data.brand.value : this.brand,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FoodsFt(')
+          ..write('name: $name, ')
+          ..write('brand: $brand')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(name, brand);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FoodsFt &&
+          other.name == this.name &&
+          other.brand == this.brand);
+}
+
+class FoodsFtsCompanion extends UpdateCompanion<FoodsFt> {
+  final Value<String> name;
+  final Value<String?> brand;
+  final Value<int> rowid;
+  const FoodsFtsCompanion({
+    this.name = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FoodsFtsCompanion.insert({
+    required String name,
+    this.brand = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<FoodsFt> custom({
+    Expression<String>? name,
+    Expression<String>? brand,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (name != null) 'name': name,
+      if (brand != null) 'brand': brand,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FoodsFtsCompanion copyWith({
+    Value<String>? name,
+    Value<String?>? brand,
+    Value<int>? rowid,
+  }) {
+    return FoodsFtsCompanion(
+      name: name ?? this.name,
+      brand: brand ?? this.brand,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FoodsFtsCompanion(')
+          ..write('name: $name, ')
+          ..write('brand: $brand, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SearchHistoryTable extends SearchHistory
+    with TableInfo<$SearchHistoryTable, SearchHistoryData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SearchHistoryTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _queryMeta = const VerificationMeta('query');
+  @override
+  late final GeneratedColumn<String> query = GeneratedColumn<String>(
+    'query',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _normalizedQueryMeta = const VerificationMeta(
+    'normalizedQuery',
+  );
+  @override
+  late final GeneratedColumn<String> normalizedQuery = GeneratedColumn<String>(
+    'normalized_query',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _selectedFoodIdMeta = const VerificationMeta(
+    'selectedFoodId',
+  );
+  @override
+  late final GeneratedColumn<String> selectedFoodId = GeneratedColumn<String>(
+    'selected_food_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _searchedAtMeta = const VerificationMeta(
+    'searchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> searchedAt = GeneratedColumn<DateTime>(
+    'searched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _hasResultsMeta = const VerificationMeta(
+    'hasResults',
+  );
+  @override
+  late final GeneratedColumn<bool> hasResults = GeneratedColumn<bool>(
+    'has_results',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_results" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    query,
+    normalizedQuery,
+    selectedFoodId,
+    searchedAt,
+    hasResults,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'search_history';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SearchHistoryData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('query')) {
+      context.handle(
+        _queryMeta,
+        query.isAcceptableOrUnknown(data['query']!, _queryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_queryMeta);
+    }
+    if (data.containsKey('normalized_query')) {
+      context.handle(
+        _normalizedQueryMeta,
+        normalizedQuery.isAcceptableOrUnknown(
+          data['normalized_query']!,
+          _normalizedQueryMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_normalizedQueryMeta);
+    }
+    if (data.containsKey('selected_food_id')) {
+      context.handle(
+        _selectedFoodIdMeta,
+        selectedFoodId.isAcceptableOrUnknown(
+          data['selected_food_id']!,
+          _selectedFoodIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('searched_at')) {
+      context.handle(
+        _searchedAtMeta,
+        searchedAt.isAcceptableOrUnknown(data['searched_at']!, _searchedAtMeta),
+      );
+    }
+    if (data.containsKey('has_results')) {
+      context.handle(
+        _hasResultsMeta,
+        hasResults.isAcceptableOrUnknown(data['has_results']!, _hasResultsMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SearchHistoryData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SearchHistoryData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      query: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}query'],
+      )!,
+      normalizedQuery: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}normalized_query'],
+      )!,
+      selectedFoodId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}selected_food_id'],
+      ),
+      searchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}searched_at'],
+      )!,
+      hasResults: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_results'],
+      )!,
+    );
+  }
+
+  @override
+  $SearchHistoryTable createAlias(String alias) {
+    return $SearchHistoryTable(attachedDatabase, alias);
+  }
+}
+
+class SearchHistoryData extends DataClass
+    implements Insertable<SearchHistoryData> {
+  final int id;
+  final String query;
+  final String normalizedQuery;
+  final String? selectedFoodId;
+  final DateTime searchedAt;
+  final bool hasResults;
+  const SearchHistoryData({
+    required this.id,
+    required this.query,
+    required this.normalizedQuery,
+    this.selectedFoodId,
+    required this.searchedAt,
+    required this.hasResults,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['query'] = Variable<String>(query);
+    map['normalized_query'] = Variable<String>(normalizedQuery);
+    if (!nullToAbsent || selectedFoodId != null) {
+      map['selected_food_id'] = Variable<String>(selectedFoodId);
+    }
+    map['searched_at'] = Variable<DateTime>(searchedAt);
+    map['has_results'] = Variable<bool>(hasResults);
+    return map;
+  }
+
+  SearchHistoryCompanion toCompanion(bool nullToAbsent) {
+    return SearchHistoryCompanion(
+      id: Value(id),
+      query: Value(query),
+      normalizedQuery: Value(normalizedQuery),
+      selectedFoodId: selectedFoodId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(selectedFoodId),
+      searchedAt: Value(searchedAt),
+      hasResults: Value(hasResults),
+    );
+  }
+
+  factory SearchHistoryData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SearchHistoryData(
+      id: serializer.fromJson<int>(json['id']),
+      query: serializer.fromJson<String>(json['query']),
+      normalizedQuery: serializer.fromJson<String>(json['normalizedQuery']),
+      selectedFoodId: serializer.fromJson<String?>(json['selectedFoodId']),
+      searchedAt: serializer.fromJson<DateTime>(json['searchedAt']),
+      hasResults: serializer.fromJson<bool>(json['hasResults']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'query': serializer.toJson<String>(query),
+      'normalizedQuery': serializer.toJson<String>(normalizedQuery),
+      'selectedFoodId': serializer.toJson<String?>(selectedFoodId),
+      'searchedAt': serializer.toJson<DateTime>(searchedAt),
+      'hasResults': serializer.toJson<bool>(hasResults),
+    };
+  }
+
+  SearchHistoryData copyWith({
+    int? id,
+    String? query,
+    String? normalizedQuery,
+    Value<String?> selectedFoodId = const Value.absent(),
+    DateTime? searchedAt,
+    bool? hasResults,
+  }) => SearchHistoryData(
+    id: id ?? this.id,
+    query: query ?? this.query,
+    normalizedQuery: normalizedQuery ?? this.normalizedQuery,
+    selectedFoodId: selectedFoodId.present
+        ? selectedFoodId.value
+        : this.selectedFoodId,
+    searchedAt: searchedAt ?? this.searchedAt,
+    hasResults: hasResults ?? this.hasResults,
+  );
+  SearchHistoryData copyWithCompanion(SearchHistoryCompanion data) {
+    return SearchHistoryData(
+      id: data.id.present ? data.id.value : this.id,
+      query: data.query.present ? data.query.value : this.query,
+      normalizedQuery: data.normalizedQuery.present
+          ? data.normalizedQuery.value
+          : this.normalizedQuery,
+      selectedFoodId: data.selectedFoodId.present
+          ? data.selectedFoodId.value
+          : this.selectedFoodId,
+      searchedAt: data.searchedAt.present
+          ? data.searchedAt.value
+          : this.searchedAt,
+      hasResults: data.hasResults.present
+          ? data.hasResults.value
+          : this.hasResults,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SearchHistoryData(')
+          ..write('id: $id, ')
+          ..write('query: $query, ')
+          ..write('normalizedQuery: $normalizedQuery, ')
+          ..write('selectedFoodId: $selectedFoodId, ')
+          ..write('searchedAt: $searchedAt, ')
+          ..write('hasResults: $hasResults')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    query,
+    normalizedQuery,
+    selectedFoodId,
+    searchedAt,
+    hasResults,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SearchHistoryData &&
+          other.id == this.id &&
+          other.query == this.query &&
+          other.normalizedQuery == this.normalizedQuery &&
+          other.selectedFoodId == this.selectedFoodId &&
+          other.searchedAt == this.searchedAt &&
+          other.hasResults == this.hasResults);
+}
+
+class SearchHistoryCompanion extends UpdateCompanion<SearchHistoryData> {
+  final Value<int> id;
+  final Value<String> query;
+  final Value<String> normalizedQuery;
+  final Value<String?> selectedFoodId;
+  final Value<DateTime> searchedAt;
+  final Value<bool> hasResults;
+  const SearchHistoryCompanion({
+    this.id = const Value.absent(),
+    this.query = const Value.absent(),
+    this.normalizedQuery = const Value.absent(),
+    this.selectedFoodId = const Value.absent(),
+    this.searchedAt = const Value.absent(),
+    this.hasResults = const Value.absent(),
+  });
+  SearchHistoryCompanion.insert({
+    this.id = const Value.absent(),
+    required String query,
+    required String normalizedQuery,
+    this.selectedFoodId = const Value.absent(),
+    this.searchedAt = const Value.absent(),
+    this.hasResults = const Value.absent(),
+  }) : query = Value(query),
+       normalizedQuery = Value(normalizedQuery);
+  static Insertable<SearchHistoryData> custom({
+    Expression<int>? id,
+    Expression<String>? query,
+    Expression<String>? normalizedQuery,
+    Expression<String>? selectedFoodId,
+    Expression<DateTime>? searchedAt,
+    Expression<bool>? hasResults,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (query != null) 'query': query,
+      if (normalizedQuery != null) 'normalized_query': normalizedQuery,
+      if (selectedFoodId != null) 'selected_food_id': selectedFoodId,
+      if (searchedAt != null) 'searched_at': searchedAt,
+      if (hasResults != null) 'has_results': hasResults,
+    });
+  }
+
+  SearchHistoryCompanion copyWith({
+    Value<int>? id,
+    Value<String>? query,
+    Value<String>? normalizedQuery,
+    Value<String?>? selectedFoodId,
+    Value<DateTime>? searchedAt,
+    Value<bool>? hasResults,
+  }) {
+    return SearchHistoryCompanion(
+      id: id ?? this.id,
+      query: query ?? this.query,
+      normalizedQuery: normalizedQuery ?? this.normalizedQuery,
+      selectedFoodId: selectedFoodId ?? this.selectedFoodId,
+      searchedAt: searchedAt ?? this.searchedAt,
+      hasResults: hasResults ?? this.hasResults,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (query.present) {
+      map['query'] = Variable<String>(query.value);
+    }
+    if (normalizedQuery.present) {
+      map['normalized_query'] = Variable<String>(normalizedQuery.value);
+    }
+    if (selectedFoodId.present) {
+      map['selected_food_id'] = Variable<String>(selectedFoodId.value);
+    }
+    if (searchedAt.present) {
+      map['searched_at'] = Variable<DateTime>(searchedAt.value);
+    }
+    if (hasResults.present) {
+      map['has_results'] = Variable<bool>(hasResults.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SearchHistoryCompanion(')
+          ..write('id: $id, ')
+          ..write('query: $query, ')
+          ..write('normalizedQuery: $normalizedQuery, ')
+          ..write('selectedFoodId: $selectedFoodId, ')
+          ..write('searchedAt: $searchedAt, ')
+          ..write('hasResults: $hasResults')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ConsumptionPatternsTable extends ConsumptionPatterns
+    with TableInfo<$ConsumptionPatternsTable, ConsumptionPattern> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConsumptionPatternsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _foodIdMeta = const VerificationMeta('foodId');
+  @override
+  late final GeneratedColumn<String> foodId = GeneratedColumn<String>(
+    'food_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES foods (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _hourOfDayMeta = const VerificationMeta(
+    'hourOfDay',
+  );
+  @override
+  late final GeneratedColumn<int> hourOfDay = GeneratedColumn<int>(
+    'hour_of_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayOfWeekMeta = const VerificationMeta(
+    'dayOfWeek',
+  );
+  @override
+  late final GeneratedColumn<int> dayOfWeek = GeneratedColumn<int>(
+    'day_of_week',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<MealType?, String> mealType =
+      GeneratedColumn<String>(
+        'meal_type',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<MealType?>($ConsumptionPatternsTable.$convertermealTypen);
+  static const VerificationMeta _frequencyMeta = const VerificationMeta(
+    'frequency',
+  );
+  @override
+  late final GeneratedColumn<int> frequency = GeneratedColumn<int>(
+    'frequency',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _lastConsumedAtMeta = const VerificationMeta(
+    'lastConsumedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastConsumedAt =
+      GeneratedColumn<DateTime>(
+        'last_consumed_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    foodId,
+    hourOfDay,
+    dayOfWeek,
+    mealType,
+    frequency,
+    lastConsumedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'consumption_patterns';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ConsumptionPattern> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('food_id')) {
+      context.handle(
+        _foodIdMeta,
+        foodId.isAcceptableOrUnknown(data['food_id']!, _foodIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_foodIdMeta);
+    }
+    if (data.containsKey('hour_of_day')) {
+      context.handle(
+        _hourOfDayMeta,
+        hourOfDay.isAcceptableOrUnknown(data['hour_of_day']!, _hourOfDayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hourOfDayMeta);
+    }
+    if (data.containsKey('day_of_week')) {
+      context.handle(
+        _dayOfWeekMeta,
+        dayOfWeek.isAcceptableOrUnknown(data['day_of_week']!, _dayOfWeekMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayOfWeekMeta);
+    }
+    if (data.containsKey('frequency')) {
+      context.handle(
+        _frequencyMeta,
+        frequency.isAcceptableOrUnknown(data['frequency']!, _frequencyMeta),
+      );
+    }
+    if (data.containsKey('last_consumed_at')) {
+      context.handle(
+        _lastConsumedAtMeta,
+        lastConsumedAt.isAcceptableOrUnknown(
+          data['last_consumed_at']!,
+          _lastConsumedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastConsumedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ConsumptionPattern map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ConsumptionPattern(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      foodId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}food_id'],
+      )!,
+      hourOfDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hour_of_day'],
+      )!,
+      dayOfWeek: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}day_of_week'],
+      )!,
+      mealType: $ConsumptionPatternsTable.$convertermealTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}meal_type'],
+        ),
+      ),
+      frequency: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}frequency'],
+      )!,
+      lastConsumedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_consumed_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ConsumptionPatternsTable createAlias(String alias) {
+    return $ConsumptionPatternsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<MealType, String> $convertermealType =
+      const MealTypeConverter();
+  static TypeConverter<MealType?, String?> $convertermealTypen =
+      NullAwareTypeConverter.wrap($convertermealType);
+}
+
+class ConsumptionPattern extends DataClass
+    implements Insertable<ConsumptionPattern> {
+  final int id;
+  final String foodId;
+  final int hourOfDay;
+  final int dayOfWeek;
+  final MealType? mealType;
+  final int frequency;
+  final DateTime lastConsumedAt;
+  const ConsumptionPattern({
+    required this.id,
+    required this.foodId,
+    required this.hourOfDay,
+    required this.dayOfWeek,
+    this.mealType,
+    required this.frequency,
+    required this.lastConsumedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['food_id'] = Variable<String>(foodId);
+    map['hour_of_day'] = Variable<int>(hourOfDay);
+    map['day_of_week'] = Variable<int>(dayOfWeek);
+    if (!nullToAbsent || mealType != null) {
+      map['meal_type'] = Variable<String>(
+        $ConsumptionPatternsTable.$convertermealTypen.toSql(mealType),
+      );
+    }
+    map['frequency'] = Variable<int>(frequency);
+    map['last_consumed_at'] = Variable<DateTime>(lastConsumedAt);
+    return map;
+  }
+
+  ConsumptionPatternsCompanion toCompanion(bool nullToAbsent) {
+    return ConsumptionPatternsCompanion(
+      id: Value(id),
+      foodId: Value(foodId),
+      hourOfDay: Value(hourOfDay),
+      dayOfWeek: Value(dayOfWeek),
+      mealType: mealType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mealType),
+      frequency: Value(frequency),
+      lastConsumedAt: Value(lastConsumedAt),
+    );
+  }
+
+  factory ConsumptionPattern.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ConsumptionPattern(
+      id: serializer.fromJson<int>(json['id']),
+      foodId: serializer.fromJson<String>(json['foodId']),
+      hourOfDay: serializer.fromJson<int>(json['hourOfDay']),
+      dayOfWeek: serializer.fromJson<int>(json['dayOfWeek']),
+      mealType: serializer.fromJson<MealType?>(json['mealType']),
+      frequency: serializer.fromJson<int>(json['frequency']),
+      lastConsumedAt: serializer.fromJson<DateTime>(json['lastConsumedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'foodId': serializer.toJson<String>(foodId),
+      'hourOfDay': serializer.toJson<int>(hourOfDay),
+      'dayOfWeek': serializer.toJson<int>(dayOfWeek),
+      'mealType': serializer.toJson<MealType?>(mealType),
+      'frequency': serializer.toJson<int>(frequency),
+      'lastConsumedAt': serializer.toJson<DateTime>(lastConsumedAt),
+    };
+  }
+
+  ConsumptionPattern copyWith({
+    int? id,
+    String? foodId,
+    int? hourOfDay,
+    int? dayOfWeek,
+    Value<MealType?> mealType = const Value.absent(),
+    int? frequency,
+    DateTime? lastConsumedAt,
+  }) => ConsumptionPattern(
+    id: id ?? this.id,
+    foodId: foodId ?? this.foodId,
+    hourOfDay: hourOfDay ?? this.hourOfDay,
+    dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+    mealType: mealType.present ? mealType.value : this.mealType,
+    frequency: frequency ?? this.frequency,
+    lastConsumedAt: lastConsumedAt ?? this.lastConsumedAt,
+  );
+  ConsumptionPattern copyWithCompanion(ConsumptionPatternsCompanion data) {
+    return ConsumptionPattern(
+      id: data.id.present ? data.id.value : this.id,
+      foodId: data.foodId.present ? data.foodId.value : this.foodId,
+      hourOfDay: data.hourOfDay.present ? data.hourOfDay.value : this.hourOfDay,
+      dayOfWeek: data.dayOfWeek.present ? data.dayOfWeek.value : this.dayOfWeek,
+      mealType: data.mealType.present ? data.mealType.value : this.mealType,
+      frequency: data.frequency.present ? data.frequency.value : this.frequency,
+      lastConsumedAt: data.lastConsumedAt.present
+          ? data.lastConsumedAt.value
+          : this.lastConsumedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConsumptionPattern(')
+          ..write('id: $id, ')
+          ..write('foodId: $foodId, ')
+          ..write('hourOfDay: $hourOfDay, ')
+          ..write('dayOfWeek: $dayOfWeek, ')
+          ..write('mealType: $mealType, ')
+          ..write('frequency: $frequency, ')
+          ..write('lastConsumedAt: $lastConsumedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    foodId,
+    hourOfDay,
+    dayOfWeek,
+    mealType,
+    frequency,
+    lastConsumedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ConsumptionPattern &&
+          other.id == this.id &&
+          other.foodId == this.foodId &&
+          other.hourOfDay == this.hourOfDay &&
+          other.dayOfWeek == this.dayOfWeek &&
+          other.mealType == this.mealType &&
+          other.frequency == this.frequency &&
+          other.lastConsumedAt == this.lastConsumedAt);
+}
+
+class ConsumptionPatternsCompanion extends UpdateCompanion<ConsumptionPattern> {
+  final Value<int> id;
+  final Value<String> foodId;
+  final Value<int> hourOfDay;
+  final Value<int> dayOfWeek;
+  final Value<MealType?> mealType;
+  final Value<int> frequency;
+  final Value<DateTime> lastConsumedAt;
+  const ConsumptionPatternsCompanion({
+    this.id = const Value.absent(),
+    this.foodId = const Value.absent(),
+    this.hourOfDay = const Value.absent(),
+    this.dayOfWeek = const Value.absent(),
+    this.mealType = const Value.absent(),
+    this.frequency = const Value.absent(),
+    this.lastConsumedAt = const Value.absent(),
+  });
+  ConsumptionPatternsCompanion.insert({
+    this.id = const Value.absent(),
+    required String foodId,
+    required int hourOfDay,
+    required int dayOfWeek,
+    this.mealType = const Value.absent(),
+    this.frequency = const Value.absent(),
+    required DateTime lastConsumedAt,
+  }) : foodId = Value(foodId),
+       hourOfDay = Value(hourOfDay),
+       dayOfWeek = Value(dayOfWeek),
+       lastConsumedAt = Value(lastConsumedAt);
+  static Insertable<ConsumptionPattern> custom({
+    Expression<int>? id,
+    Expression<String>? foodId,
+    Expression<int>? hourOfDay,
+    Expression<int>? dayOfWeek,
+    Expression<String>? mealType,
+    Expression<int>? frequency,
+    Expression<DateTime>? lastConsumedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (foodId != null) 'food_id': foodId,
+      if (hourOfDay != null) 'hour_of_day': hourOfDay,
+      if (dayOfWeek != null) 'day_of_week': dayOfWeek,
+      if (mealType != null) 'meal_type': mealType,
+      if (frequency != null) 'frequency': frequency,
+      if (lastConsumedAt != null) 'last_consumed_at': lastConsumedAt,
+    });
+  }
+
+  ConsumptionPatternsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? foodId,
+    Value<int>? hourOfDay,
+    Value<int>? dayOfWeek,
+    Value<MealType?>? mealType,
+    Value<int>? frequency,
+    Value<DateTime>? lastConsumedAt,
+  }) {
+    return ConsumptionPatternsCompanion(
+      id: id ?? this.id,
+      foodId: foodId ?? this.foodId,
+      hourOfDay: hourOfDay ?? this.hourOfDay,
+      dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+      mealType: mealType ?? this.mealType,
+      frequency: frequency ?? this.frequency,
+      lastConsumedAt: lastConsumedAt ?? this.lastConsumedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (foodId.present) {
+      map['food_id'] = Variable<String>(foodId.value);
+    }
+    if (hourOfDay.present) {
+      map['hour_of_day'] = Variable<int>(hourOfDay.value);
+    }
+    if (dayOfWeek.present) {
+      map['day_of_week'] = Variable<int>(dayOfWeek.value);
+    }
+    if (mealType.present) {
+      map['meal_type'] = Variable<String>(
+        $ConsumptionPatternsTable.$convertermealTypen.toSql(mealType.value),
+      );
+    }
+    if (frequency.present) {
+      map['frequency'] = Variable<int>(frequency.value);
+    }
+    if (lastConsumedAt.present) {
+      map['last_consumed_at'] = Variable<DateTime>(lastConsumedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConsumptionPatternsCompanion(')
+          ..write('id: $id, ')
+          ..write('foodId: $foodId, ')
+          ..write('hourOfDay: $hourOfDay, ')
+          ..write('dayOfWeek: $dayOfWeek, ')
+          ..write('mealType: $mealType, ')
+          ..write('frequency: $frequency, ')
+          ..write('lastConsumedAt: $lastConsumedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8445,6 +9802,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TargetsTable targets = $TargetsTable(this);
   late final $RecipesTable recipes = $RecipesTable(this);
   late final $RecipeItemsTable recipeItems = $RecipeItemsTable(this);
+  late final $FoodsFtsTable foodsFts = $FoodsFtsTable(this);
+  late final $SearchHistoryTable searchHistory = $SearchHistoryTable(this);
+  late final $ConsumptionPatternsTable consumptionPatterns =
+      $ConsumptionPatternsTable(this);
   late final Index sessionExercisesNameIdx = Index(
     'session_exercises_name_idx',
     'CREATE INDEX session_exercises_name_idx ON session_exercises (name)',
@@ -8473,6 +9834,22 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'targets_validfrom_idx',
     'CREATE INDEX targets_validfrom_idx ON targets (valid_from)',
   );
+  late final Index foodsFtsIdx = Index(
+    'foods_fts_idx',
+    'CREATE INDEX foods_fts_idx ON foods_fts (name, brand)',
+  );
+  late final Index searchHistoryQueryIdx = Index(
+    'search_history_query_idx',
+    'CREATE INDEX search_history_query_idx ON search_history (normalized_query)',
+  );
+  late final Index searchHistoryDateIdx = Index(
+    'search_history_date_idx',
+    'CREATE INDEX search_history_date_idx ON search_history (searched_at)',
+  );
+  late final Index consumptionPatternsUniqueIdx = Index(
+    'consumption_patterns_unique_idx',
+    'CREATE INDEX consumption_patterns_unique_idx ON consumption_patterns (food_id, hour_of_day, day_of_week)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -8492,6 +9869,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     targets,
     recipes,
     recipeItems,
+    foodsFts,
+    searchHistory,
+    consumptionPatterns,
     sessionExercisesNameIdx,
     foodsNameIdx,
     foodsBarcodeIdx,
@@ -8499,6 +9879,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     diaryDateMealIdx,
     weighinDateIdx,
     targetsValidfromIdx,
+    foodsFtsIdx,
+    searchHistoryQueryIdx,
+    searchHistoryDateIdx,
+    consumptionPatternsUniqueIdx,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -8550,6 +9934,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('recipe_items', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'foods',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('consumption_patterns', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -11609,6 +13000,11 @@ typedef $$FoodsTableCreateCompanionBuilder =
       Value<bool> userCreated,
       Value<String?> verifiedSource,
       Value<Map<String, dynamic>?> sourceMetadata,
+      Value<String?> normalizedName,
+      Value<int> useCount,
+      Value<DateTime?> lastUsedAt,
+      Value<String?> nutriScore,
+      Value<int?> novaGroup,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -11628,6 +13024,11 @@ typedef $$FoodsTableUpdateCompanionBuilder =
       Value<bool> userCreated,
       Value<String?> verifiedSource,
       Value<Map<String, dynamic>?> sourceMetadata,
+      Value<String?> normalizedName,
+      Value<int> useCount,
+      Value<DateTime?> lastUsedAt,
+      Value<String?> nutriScore,
+      Value<int?> novaGroup,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -11668,6 +13069,33 @@ final class $$FoodsTableReferences
     ).filter((f) => f.foodId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_recipeItemsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ConsumptionPatternsTable,
+    List<ConsumptionPattern>
+  >
+  _consumptionPatternsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.consumptionPatterns,
+        aliasName: $_aliasNameGenerator(
+          db.foods.id,
+          db.consumptionPatterns.foodId,
+        ),
+      );
+
+  $$ConsumptionPatternsTableProcessedTableManager get consumptionPatternsRefs {
+    final manager = $$ConsumptionPatternsTableTableManager(
+      $_db,
+      $_db.consumptionPatterns,
+    ).filter((f) => f.foodId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _consumptionPatternsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -11752,6 +13180,31 @@ class $$FoodsTableFilterComposer extends Composer<_$AppDatabase, $FoodsTable> {
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
+  ColumnFilters<String> get normalizedName => $composableBuilder(
+    column: $table.normalizedName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get useCount => $composableBuilder(
+    column: $table.useCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nutriScore => $composableBuilder(
+    column: $table.nutriScore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get novaGroup => $composableBuilder(
+    column: $table.novaGroup,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -11803,6 +13256,31 @@ class $$FoodsTableFilterComposer extends Composer<_$AppDatabase, $FoodsTable> {
           }) => $$RecipeItemsTableFilterComposer(
             $db: $db,
             $table: $db.recipeItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> consumptionPatternsRefs(
+    Expression<bool> Function($$ConsumptionPatternsTableFilterComposer f) f,
+  ) {
+    final $$ConsumptionPatternsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.consumptionPatterns,
+      getReferencedColumn: (t) => t.foodId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConsumptionPatternsTableFilterComposer(
+            $db: $db,
+            $table: $db.consumptionPatterns,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11887,6 +13365,31 @@ class $$FoodsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get normalizedName => $composableBuilder(
+    column: $table.normalizedName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get useCount => $composableBuilder(
+    column: $table.useCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nutriScore => $composableBuilder(
+    column: $table.nutriScore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get novaGroup => $composableBuilder(
+    column: $table.novaGroup,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -11965,6 +13468,27 @@ class $$FoodsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get normalizedName => $composableBuilder(
+    column: $table.normalizedName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get useCount =>
+      $composableBuilder(column: $table.useCount, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nutriScore => $composableBuilder(
+    column: $table.nutriScore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get novaGroup =>
+      $composableBuilder(column: $table.novaGroup, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -12020,6 +13544,32 @@ class $$FoodsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> consumptionPatternsRefs<T extends Object>(
+    Expression<T> Function($$ConsumptionPatternsTableAnnotationComposer a) f,
+  ) {
+    final $$ConsumptionPatternsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.consumptionPatterns,
+          getReferencedColumn: (t) => t.foodId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConsumptionPatternsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.consumptionPatterns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$FoodsTableTableManager
@@ -12035,7 +13585,11 @@ class $$FoodsTableTableManager
           $$FoodsTableUpdateCompanionBuilder,
           (Food, $$FoodsTableReferences),
           Food,
-          PrefetchHooks Function({bool diaryEntriesRefs, bool recipeItemsRefs})
+          PrefetchHooks Function({
+            bool diaryEntriesRefs,
+            bool recipeItemsRefs,
+            bool consumptionPatternsRefs,
+          })
         > {
   $$FoodsTableTableManager(_$AppDatabase db, $FoodsTable table)
     : super(
@@ -12064,6 +13618,11 @@ class $$FoodsTableTableManager
                 Value<String?> verifiedSource = const Value.absent(),
                 Value<Map<String, dynamic>?> sourceMetadata =
                     const Value.absent(),
+                Value<String?> normalizedName = const Value.absent(),
+                Value<int> useCount = const Value.absent(),
+                Value<DateTime?> lastUsedAt = const Value.absent(),
+                Value<String?> nutriScore = const Value.absent(),
+                Value<int?> novaGroup = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -12081,6 +13640,11 @@ class $$FoodsTableTableManager
                 userCreated: userCreated,
                 verifiedSource: verifiedSource,
                 sourceMetadata: sourceMetadata,
+                normalizedName: normalizedName,
+                useCount: useCount,
+                lastUsedAt: lastUsedAt,
+                nutriScore: nutriScore,
+                novaGroup: novaGroup,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -12101,6 +13665,11 @@ class $$FoodsTableTableManager
                 Value<String?> verifiedSource = const Value.absent(),
                 Value<Map<String, dynamic>?> sourceMetadata =
                     const Value.absent(),
+                Value<String?> normalizedName = const Value.absent(),
+                Value<int> useCount = const Value.absent(),
+                Value<DateTime?> lastUsedAt = const Value.absent(),
+                Value<String?> nutriScore = const Value.absent(),
+                Value<int?> novaGroup = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -12118,6 +13687,11 @@ class $$FoodsTableTableManager
                 userCreated: userCreated,
                 verifiedSource: verifiedSource,
                 sourceMetadata: sourceMetadata,
+                normalizedName: normalizedName,
+                useCount: useCount,
+                lastUsedAt: lastUsedAt,
+                nutriScore: nutriScore,
+                novaGroup: novaGroup,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -12129,12 +13703,17 @@ class $$FoodsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({diaryEntriesRefs = false, recipeItemsRefs = false}) {
+              ({
+                diaryEntriesRefs = false,
+                recipeItemsRefs = false,
+                consumptionPatternsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (diaryEntriesRefs) db.diaryEntries,
                     if (recipeItemsRefs) db.recipeItems,
+                    if (consumptionPatternsRefs) db.consumptionPatterns,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -12181,6 +13760,27 @@ class $$FoodsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (consumptionPatternsRefs)
+                        await $_getPrefetchedData<
+                          Food,
+                          $FoodsTable,
+                          ConsumptionPattern
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FoodsTableReferences
+                              ._consumptionPatternsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FoodsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).consumptionPatternsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.foodId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -12201,7 +13801,11 @@ typedef $$FoodsTableProcessedTableManager =
       $$FoodsTableUpdateCompanionBuilder,
       (Food, $$FoodsTableReferences),
       Food,
-      PrefetchHooks Function({bool diaryEntriesRefs, bool recipeItemsRefs})
+      PrefetchHooks Function({
+        bool diaryEntriesRefs,
+        bool recipeItemsRefs,
+        bool consumptionPatternsRefs,
+      })
     >;
 typedef $$DiaryEntriesTableCreateCompanionBuilder =
     DiaryEntriesCompanion Function({
@@ -14163,6 +15767,736 @@ typedef $$RecipeItemsTableProcessedTableManager =
       RecipeItem,
       PrefetchHooks Function({bool recipeId, bool foodId})
     >;
+typedef $$FoodsFtsTableCreateCompanionBuilder =
+    FoodsFtsCompanion Function({
+      required String name,
+      Value<String?> brand,
+      Value<int> rowid,
+    });
+typedef $$FoodsFtsTableUpdateCompanionBuilder =
+    FoodsFtsCompanion Function({
+      Value<String> name,
+      Value<String?> brand,
+      Value<int> rowid,
+    });
+
+class $$FoodsFtsTableFilterComposer
+    extends Composer<_$AppDatabase, $FoodsFtsTable> {
+  $$FoodsFtsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FoodsFtsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FoodsFtsTable> {
+  $$FoodsFtsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FoodsFtsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FoodsFtsTable> {
+  $$FoodsFtsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
+}
+
+class $$FoodsFtsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FoodsFtsTable,
+          FoodsFt,
+          $$FoodsFtsTableFilterComposer,
+          $$FoodsFtsTableOrderingComposer,
+          $$FoodsFtsTableAnnotationComposer,
+          $$FoodsFtsTableCreateCompanionBuilder,
+          $$FoodsFtsTableUpdateCompanionBuilder,
+          (FoodsFt, BaseReferences<_$AppDatabase, $FoodsFtsTable, FoodsFt>),
+          FoodsFt,
+          PrefetchHooks Function()
+        > {
+  $$FoodsFtsTableTableManager(_$AppDatabase db, $FoodsFtsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FoodsFtsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FoodsFtsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FoodsFtsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> name = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FoodsFtsCompanion(name: name, brand: brand, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String name,
+                Value<String?> brand = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FoodsFtsCompanion.insert(
+                name: name,
+                brand: brand,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FoodsFtsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FoodsFtsTable,
+      FoodsFt,
+      $$FoodsFtsTableFilterComposer,
+      $$FoodsFtsTableOrderingComposer,
+      $$FoodsFtsTableAnnotationComposer,
+      $$FoodsFtsTableCreateCompanionBuilder,
+      $$FoodsFtsTableUpdateCompanionBuilder,
+      (FoodsFt, BaseReferences<_$AppDatabase, $FoodsFtsTable, FoodsFt>),
+      FoodsFt,
+      PrefetchHooks Function()
+    >;
+typedef $$SearchHistoryTableCreateCompanionBuilder =
+    SearchHistoryCompanion Function({
+      Value<int> id,
+      required String query,
+      required String normalizedQuery,
+      Value<String?> selectedFoodId,
+      Value<DateTime> searchedAt,
+      Value<bool> hasResults,
+    });
+typedef $$SearchHistoryTableUpdateCompanionBuilder =
+    SearchHistoryCompanion Function({
+      Value<int> id,
+      Value<String> query,
+      Value<String> normalizedQuery,
+      Value<String?> selectedFoodId,
+      Value<DateTime> searchedAt,
+      Value<bool> hasResults,
+    });
+
+class $$SearchHistoryTableFilterComposer
+    extends Composer<_$AppDatabase, $SearchHistoryTable> {
+  $$SearchHistoryTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get query => $composableBuilder(
+    column: $table.query,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get normalizedQuery => $composableBuilder(
+    column: $table.normalizedQuery,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get selectedFoodId => $composableBuilder(
+    column: $table.selectedFoodId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasResults => $composableBuilder(
+    column: $table.hasResults,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SearchHistoryTableOrderingComposer
+    extends Composer<_$AppDatabase, $SearchHistoryTable> {
+  $$SearchHistoryTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get query => $composableBuilder(
+    column: $table.query,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get normalizedQuery => $composableBuilder(
+    column: $table.normalizedQuery,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get selectedFoodId => $composableBuilder(
+    column: $table.selectedFoodId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasResults => $composableBuilder(
+    column: $table.hasResults,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SearchHistoryTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SearchHistoryTable> {
+  $$SearchHistoryTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get query =>
+      $composableBuilder(column: $table.query, builder: (column) => column);
+
+  GeneratedColumn<String> get normalizedQuery => $composableBuilder(
+    column: $table.normalizedQuery,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get selectedFoodId => $composableBuilder(
+    column: $table.selectedFoodId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasResults => $composableBuilder(
+    column: $table.hasResults,
+    builder: (column) => column,
+  );
+}
+
+class $$SearchHistoryTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SearchHistoryTable,
+          SearchHistoryData,
+          $$SearchHistoryTableFilterComposer,
+          $$SearchHistoryTableOrderingComposer,
+          $$SearchHistoryTableAnnotationComposer,
+          $$SearchHistoryTableCreateCompanionBuilder,
+          $$SearchHistoryTableUpdateCompanionBuilder,
+          (
+            SearchHistoryData,
+            BaseReferences<
+              _$AppDatabase,
+              $SearchHistoryTable,
+              SearchHistoryData
+            >,
+          ),
+          SearchHistoryData,
+          PrefetchHooks Function()
+        > {
+  $$SearchHistoryTableTableManager(_$AppDatabase db, $SearchHistoryTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SearchHistoryTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SearchHistoryTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SearchHistoryTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> query = const Value.absent(),
+                Value<String> normalizedQuery = const Value.absent(),
+                Value<String?> selectedFoodId = const Value.absent(),
+                Value<DateTime> searchedAt = const Value.absent(),
+                Value<bool> hasResults = const Value.absent(),
+              }) => SearchHistoryCompanion(
+                id: id,
+                query: query,
+                normalizedQuery: normalizedQuery,
+                selectedFoodId: selectedFoodId,
+                searchedAt: searchedAt,
+                hasResults: hasResults,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String query,
+                required String normalizedQuery,
+                Value<String?> selectedFoodId = const Value.absent(),
+                Value<DateTime> searchedAt = const Value.absent(),
+                Value<bool> hasResults = const Value.absent(),
+              }) => SearchHistoryCompanion.insert(
+                id: id,
+                query: query,
+                normalizedQuery: normalizedQuery,
+                selectedFoodId: selectedFoodId,
+                searchedAt: searchedAt,
+                hasResults: hasResults,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SearchHistoryTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SearchHistoryTable,
+      SearchHistoryData,
+      $$SearchHistoryTableFilterComposer,
+      $$SearchHistoryTableOrderingComposer,
+      $$SearchHistoryTableAnnotationComposer,
+      $$SearchHistoryTableCreateCompanionBuilder,
+      $$SearchHistoryTableUpdateCompanionBuilder,
+      (
+        SearchHistoryData,
+        BaseReferences<_$AppDatabase, $SearchHistoryTable, SearchHistoryData>,
+      ),
+      SearchHistoryData,
+      PrefetchHooks Function()
+    >;
+typedef $$ConsumptionPatternsTableCreateCompanionBuilder =
+    ConsumptionPatternsCompanion Function({
+      Value<int> id,
+      required String foodId,
+      required int hourOfDay,
+      required int dayOfWeek,
+      Value<MealType?> mealType,
+      Value<int> frequency,
+      required DateTime lastConsumedAt,
+    });
+typedef $$ConsumptionPatternsTableUpdateCompanionBuilder =
+    ConsumptionPatternsCompanion Function({
+      Value<int> id,
+      Value<String> foodId,
+      Value<int> hourOfDay,
+      Value<int> dayOfWeek,
+      Value<MealType?> mealType,
+      Value<int> frequency,
+      Value<DateTime> lastConsumedAt,
+    });
+
+final class $$ConsumptionPatternsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ConsumptionPatternsTable,
+          ConsumptionPattern
+        > {
+  $$ConsumptionPatternsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $FoodsTable _foodIdTable(_$AppDatabase db) => db.foods.createAlias(
+    $_aliasNameGenerator(db.consumptionPatterns.foodId, db.foods.id),
+  );
+
+  $$FoodsTableProcessedTableManager get foodId {
+    final $_column = $_itemColumn<String>('food_id')!;
+
+    final manager = $$FoodsTableTableManager(
+      $_db,
+      $_db.foods,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_foodIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ConsumptionPatternsTableFilterComposer
+    extends Composer<_$AppDatabase, $ConsumptionPatternsTable> {
+  $$ConsumptionPatternsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hourOfDay => $composableBuilder(
+    column: $table.hourOfDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dayOfWeek => $composableBuilder(
+    column: $table.dayOfWeek,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<MealType?, MealType, String> get mealType =>
+      $composableBuilder(
+        column: $table.mealType,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get frequency => $composableBuilder(
+    column: $table.frequency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastConsumedAt => $composableBuilder(
+    column: $table.lastConsumedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$FoodsTableFilterComposer get foodId {
+    final $$FoodsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.foodId,
+      referencedTable: $db.foods,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoodsTableFilterComposer(
+            $db: $db,
+            $table: $db.foods,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConsumptionPatternsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConsumptionPatternsTable> {
+  $$ConsumptionPatternsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hourOfDay => $composableBuilder(
+    column: $table.hourOfDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dayOfWeek => $composableBuilder(
+    column: $table.dayOfWeek,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mealType => $composableBuilder(
+    column: $table.mealType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get frequency => $composableBuilder(
+    column: $table.frequency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastConsumedAt => $composableBuilder(
+    column: $table.lastConsumedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$FoodsTableOrderingComposer get foodId {
+    final $$FoodsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.foodId,
+      referencedTable: $db.foods,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoodsTableOrderingComposer(
+            $db: $db,
+            $table: $db.foods,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConsumptionPatternsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConsumptionPatternsTable> {
+  $$ConsumptionPatternsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get hourOfDay =>
+      $composableBuilder(column: $table.hourOfDay, builder: (column) => column);
+
+  GeneratedColumn<int> get dayOfWeek =>
+      $composableBuilder(column: $table.dayOfWeek, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<MealType?, String> get mealType =>
+      $composableBuilder(column: $table.mealType, builder: (column) => column);
+
+  GeneratedColumn<int> get frequency =>
+      $composableBuilder(column: $table.frequency, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastConsumedAt => $composableBuilder(
+    column: $table.lastConsumedAt,
+    builder: (column) => column,
+  );
+
+  $$FoodsTableAnnotationComposer get foodId {
+    final $$FoodsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.foodId,
+      referencedTable: $db.foods,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FoodsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.foods,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConsumptionPatternsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConsumptionPatternsTable,
+          ConsumptionPattern,
+          $$ConsumptionPatternsTableFilterComposer,
+          $$ConsumptionPatternsTableOrderingComposer,
+          $$ConsumptionPatternsTableAnnotationComposer,
+          $$ConsumptionPatternsTableCreateCompanionBuilder,
+          $$ConsumptionPatternsTableUpdateCompanionBuilder,
+          (ConsumptionPattern, $$ConsumptionPatternsTableReferences),
+          ConsumptionPattern,
+          PrefetchHooks Function({bool foodId})
+        > {
+  $$ConsumptionPatternsTableTableManager(
+    _$AppDatabase db,
+    $ConsumptionPatternsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConsumptionPatternsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ConsumptionPatternsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ConsumptionPatternsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> foodId = const Value.absent(),
+                Value<int> hourOfDay = const Value.absent(),
+                Value<int> dayOfWeek = const Value.absent(),
+                Value<MealType?> mealType = const Value.absent(),
+                Value<int> frequency = const Value.absent(),
+                Value<DateTime> lastConsumedAt = const Value.absent(),
+              }) => ConsumptionPatternsCompanion(
+                id: id,
+                foodId: foodId,
+                hourOfDay: hourOfDay,
+                dayOfWeek: dayOfWeek,
+                mealType: mealType,
+                frequency: frequency,
+                lastConsumedAt: lastConsumedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String foodId,
+                required int hourOfDay,
+                required int dayOfWeek,
+                Value<MealType?> mealType = const Value.absent(),
+                Value<int> frequency = const Value.absent(),
+                required DateTime lastConsumedAt,
+              }) => ConsumptionPatternsCompanion.insert(
+                id: id,
+                foodId: foodId,
+                hourOfDay: hourOfDay,
+                dayOfWeek: dayOfWeek,
+                mealType: mealType,
+                frequency: frequency,
+                lastConsumedAt: lastConsumedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ConsumptionPatternsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({foodId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (foodId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.foodId,
+                                referencedTable:
+                                    $$ConsumptionPatternsTableReferences
+                                        ._foodIdTable(db),
+                                referencedColumn:
+                                    $$ConsumptionPatternsTableReferences
+                                        ._foodIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ConsumptionPatternsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConsumptionPatternsTable,
+      ConsumptionPattern,
+      $$ConsumptionPatternsTableFilterComposer,
+      $$ConsumptionPatternsTableOrderingComposer,
+      $$ConsumptionPatternsTableAnnotationComposer,
+      $$ConsumptionPatternsTableCreateCompanionBuilder,
+      $$ConsumptionPatternsTableUpdateCompanionBuilder,
+      (ConsumptionPattern, $$ConsumptionPatternsTableReferences),
+      ConsumptionPattern,
+      PrefetchHooks Function({bool foodId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -14195,4 +16529,10 @@ class $AppDatabaseManager {
       $$RecipesTableTableManager(_db, _db.recipes);
   $$RecipeItemsTableTableManager get recipeItems =>
       $$RecipeItemsTableTableManager(_db, _db.recipeItems);
+  $$FoodsFtsTableTableManager get foodsFts =>
+      $$FoodsFtsTableTableManager(_db, _db.foodsFts);
+  $$SearchHistoryTableTableManager get searchHistory =>
+      $$SearchHistoryTableTableManager(_db, _db.searchHistory);
+  $$ConsumptionPatternsTableTableManager get consumptionPatterns =>
+      $$ConsumptionPatternsTableTableManager(_db, _db.consumptionPatterns);
 }

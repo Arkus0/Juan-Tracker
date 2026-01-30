@@ -104,28 +104,6 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     'Polea', 'Peso corporal', 'Banco',
   ];
 
-  /// Normaliza texto para búsqueda (sin acentos, minúsculas)
-  String _normalize(String input) {
-    if (input.trim().isEmpty) return '';
-    final lower = input.toLowerCase();
-    const accents = {
-      'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
-      'ü': 'u', 'ñ': 'n',
-    };
-    var result = lower;
-    accents.forEach((accent, normal) {
-      result = result.replaceAll(accent, normal);
-    });
-    return result.replaceAll(RegExp(r'[^a-z0-9\s]'), ' ').trim();
-  }
-
-  /// Tokeniza una query en palabras individuales
-  List<String> _tokenize(String input) {
-    final normalized = _normalize(input);
-    if (normalized.isEmpty) return [];
-    return normalized.split(RegExp(r'\s+')).where((t) => t.length >= 2).toList();
-  }
-
   /// SmartExerciseSearchService para búsqueda inteligente
   final SmartExerciseSearchService _searchService = SmartExerciseSearchService();
 
@@ -138,17 +116,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     final results = _searchService.search(query, exercises, limit: 200);
     return results.map((r) => r.exercise).toList();
   }
-  
-  /// Obtiene sugerencias cuando no hay resultados exactos
-  List<LibraryExercise> _getSuggestions(
-    List<LibraryExercise> exercises,
-    String query,
-  ) {
-    if (query.length < 3) return [];
-    final suggestions = _searchService.suggestAlternatives(query, exercises, limit: 5);
-    return suggestions.map((s) => s.exercise).toList();
-  }
-  
+
   /// Aplica filtros opcionales (solo cuando no hay búsqueda de texto)
   List<LibraryExercise> _applyOptionalFilters(List<LibraryExercise> exercises) {
     // Si hay búsqueda de texto, ignorar filtros para no perder resultados
@@ -1272,10 +1240,4 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
   }
 }
 
-/// Helper class para scoring
-class _ScoredExercise {
-  final LibraryExercise exercise;
-  final int score;
-  
-  _ScoredExercise(this.exercise, this.score);
-}
+

@@ -20,6 +20,10 @@ class OpenFoodFactsResult {
   final String? portionName;
   final double? portionGrams;
 
+  // Scores de calidad
+  final String? nutriScore; // 'a', 'b', 'c', 'd', 'e'
+  final int? novaGroup; // 1, 2, 3, 4
+
   // Metadata
   final String source;
   final DateTime fetchedAt;
@@ -40,6 +44,8 @@ class OpenFoodFactsResult {
     this.sodiumPer100g,
     this.portionName,
     this.portionGrams,
+    this.nutriScore,
+    this.novaGroup,
     this.source = 'OFF',
     required this.fetchedAt,
     this.rawData,
@@ -96,6 +102,10 @@ class OpenFoodFactsResult {
       sodiumPer100g: _extractDouble(nutriments, 'sodium_100g'),
       portionName: portionName,
       portionGrams: portionGrams,
+      nutriScore: product['nutriscore_grade'] as String?,
+      novaGroup: product['nova_group'] != null 
+          ? int.tryParse(product['nova_group'].toString()) 
+          : null,
       fetchedAt: DateTime.now(),
       rawData: product,
     );
@@ -151,6 +161,8 @@ class OpenFoodFactsResult {
     'sodiumPer100g': sodiumPer100g,
     'portionName': portionName,
     'portionGrams': portionGrams,
+    'nutriScore': nutriScore,
+    'novaGroup': novaGroup,
     'source': source,
     'fetchedAt': fetchedAt.toIso8601String(),
   };
@@ -172,6 +184,8 @@ class OpenFoodFactsResult {
       sodiumPer100g: (json['sodiumPer100g'] as num?)?.toDouble(),
       portionName: json['portionName'] as String?,
       portionGrams: (json['portionGrams'] as num?)?.toDouble(),
+      nutriScore: json['nutriScore'] as String?,
+      novaGroup: json['novaGroup'] as int?,
       source: json['source'] as String,
       fetchedAt: DateTime.parse(json['fetchedAt'] as String),
     );

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/food_model.dart';
@@ -11,8 +12,6 @@ import '../services/food_fts_service.dart';
 import '../services/food_search_index.dart';
 import '../services/food_search_scoring.dart';
 import '../services/open_food_facts_service.dart';
-
-// Scoring de resultados ahora manejado por FoodSearchScoring con BM25
 
 /// Estados posibles de la búsqueda
 enum ExternalSearchStatus {
@@ -36,6 +35,11 @@ class ExternalSearchState {
   final bool isOnline;
   final List<String> recentSearches;
   final List<OpenFoodFactsResult> offlineSuggestions;
+  
+  // 🆕 NUEVO: Estado "Sin resultados" inteligente
+  final List<String> suggestedQueries; // "¿Quisiste decir...?"
+  final List<OpenFoodFactsResult> popularAlternatives; // Alternativas populares
+  final bool showCreateCustomOption; // Mostrar opción de crear alimento
 
   const ExternalSearchState({
     this.status = ExternalSearchStatus.idle,
@@ -47,6 +51,10 @@ class ExternalSearchState {
     this.isOnline = true,
     this.recentSearches = const [],
     this.offlineSuggestions = const [],
+    // 🆕 Nuevos campos
+    this.suggestedQueries = const [],
+    this.popularAlternatives = const [],
+    this.showCreateCustomOption = false,
   });
 
   ExternalSearchState copyWith({
@@ -59,6 +67,9 @@ class ExternalSearchState {
     bool? isOnline,
     List<String>? recentSearches,
     List<OpenFoodFactsResult>? offlineSuggestions,
+    List<String>? suggestedQueries,
+    List<OpenFoodFactsResult>? popularAlternatives,
+    bool? showCreateCustomOption,
   }) {
     return ExternalSearchState(
       status: status ?? this.status,
@@ -70,6 +81,9 @@ class ExternalSearchState {
       isOnline: isOnline ?? this.isOnline,
       recentSearches: recentSearches ?? this.recentSearches,
       offlineSuggestions: offlineSuggestions ?? this.offlineSuggestions,
+      suggestedQueries: suggestedQueries ?? this.suggestedQueries,
+      popularAlternatives: popularAlternatives ?? this.popularAlternatives,
+      showCreateCustomOption: showCreateCustomOption ?? this.showCreateCustomOption,
     );
   }
 
@@ -83,11 +97,11 @@ class ExternalSearchState {
 
 /// Notifier que maneja la búsqueda de alimentos externos
 /// 
-/// Flujo:
-/// 1. Verifica conectividad
-/// 2. Si online: busca en API + guarda en cache
-/// 3. Si offline: busca en cache local
-/// 4. Muestra estados apropiados en UI
+/// Características:
+/// - ✅ Debounce de 300ms para evitar búsquedas mientras el usuario escribe
+/// - ✅ Cancelación de requests previos con CancelToken
+/// - ✅ Estado "sin resultados" inteligente con sugerencias
+/// - Búsqueda online/offline con cache local
 class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   late final OpenFoodFactsService _apiService;
   late final FoodCacheService _cacheService;
@@ -95,6 +109,15 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   late final FoodSearchIndex _searchIndex;
   late final FoodAutocompleteService _autocomplete;
   late final FoodFTSService _fts;
+
+  // 🆕 NUEVO: Timer para debounce
+  Timer? _debounceTimer;
+  
+  // 🆕 NUEVO: CancelToken para cancelar requests
+  CancelToken? _cancelToken;
+  
+  // 🆕 Constante de debounce
+  static const _debounceDuration = Duration(milliseconds: 300);
 
   @override
   ExternalSearchState build() {
@@ -104,6 +127,12 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     _searchIndex = FoodSearchIndex();
     _autocomplete = FoodAutocompleteService();
     _fts = FoodFTSService();
+
+    // 🆕 NUEVO: Cleanup al dispose
+    ref.onDispose(() {
+      _debounceTimer?.cancel();
+      _cancelToken?.cancel();
+    });
 
     // Inicializar en background
     _init();
@@ -162,53 +191,64 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     state = state.copyWith(recentSearches: recent);
   }
 
-  /// Realiza una búsqueda nueva
+  // ============================================================================
+  // 🆕 NUEVO: BÚSQUEDA CON DEBOUNCE Y CANCELACIÓN
+  // ============================================================================
+
+  /// Realiza una búsqueda nueva con debounce y cancelación
+  /// 
+  /// El debounce de 300ms asegura que no se disparen búsquedas
+  /// mientras el usuario está escribiendo rápidamente.
   Future<void> search(String query, {bool forceOffline = false}) async {
+    // Cancelar timer y request previos
+    _debounceTimer?.cancel();
+    _cancelToken?.cancel();
+
     if (query.trim().isEmpty) {
-      state = state.copyWith(
-        status: ExternalSearchStatus.idle,
-        results: const [],
-        query: '',
-        errorMessage: null,
-      );
+      state = const ExternalSearchState();
       return;
     }
+
+    // Estado de "escribiendo" inmediato
+    state = state.copyWith(
+      status: ExternalSearchStatus.loading,
+      query: query.trim(),
+      suggestedQueries: const [],
+      popularAlternatives: const [],
+      showCreateCustomOption: false,
+    );
+
+    // Debounce de 300ms
+    _debounceTimer = Timer(_debounceDuration, () async {
+      await _performSearch(query.trim(), forceOffline: forceOffline);
+    });
+  }
+
+  /// Ejecuta la búsqueda real después del debounce
+  Future<void> _performSearch(String query, {bool forceOffline = false}) async {
+    // Crear nuevo CancelToken para esta búsqueda
+    _cancelToken = CancelToken();
 
     // Verificar conectividad
     await _checkConnectivity();
     final isOnline = state.isOnline && !forceOffline;
 
-    // Establecer estado de carga
-    state = state.copyWith(
-      status: ExternalSearchStatus.loading,
-      query: query.trim(),
-      page: 1,
-      errorMessage: null,
-    );
-
     try {
       if (isOnline) {
-        await _searchOnline(query.trim());
+        await _searchOnline(query.trim(), cancelToken: _cancelToken);
       } else {
         await _searchOffline(query.trim());
       }
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        // Ignorar - el usuario inició una nueva búsqueda
+        return;
+      }
+      // Error de red - intentar fallback offline
+      await _tryOfflineFallback(query.trim());
     } on OpenFoodFactsException catch (e) {
       // Error de API - intentar fallback offline
-      final offlineResults = await _cacheService.searchOffline(query.trim());
-      
-      if (offlineResults.isNotEmpty) {
-        state = state.copyWith(
-          status: ExternalSearchStatus.offline,
-          results: offlineResults,
-          offlineSuggestions: offlineResults,
-          errorMessage: '${e.message}\nMostrando resultados guardados.',
-        );
-      } else {
-        state = state.copyWith(
-          status: ExternalSearchStatus.error,
-          errorMessage: e.message,
-        );
-      }
+      await _tryOfflineFallback(query.trim(), errorMessage: e.message);
     } catch (e) {
       state = state.copyWith(
         status: ExternalSearchStatus.error,
@@ -218,7 +258,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   }
 
   /// Búsqueda híbrida: local primero, API después
-  Future<void> _searchOnline(String query) async {
+  Future<void> _searchOnline(String query, {CancelToken? cancelToken}) async {
     // PASO 1: Búsqueda INSTANTÁNEA en índice local
     final localResults = _searchIndex.search(query, maxResults: 10);
     
@@ -253,8 +293,12 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
       );
     }
 
-    // PASO 3: Llamar a API Open Food Facts
-    final response = await _apiService.searchProducts(query, page: 1);
+    // PASO 3: Llamar a API Open Food Facts (con cancelación)
+    final response = await _apiService.searchProducts(
+      query, 
+      page: 1,
+      cancelToken: cancelToken,
+    );
 
     // PASO 4: Filtrar y ordenar resultados con BM25
     final filteredProducts = _rankWithBM25(response.products, query);
@@ -276,21 +320,108 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
 
     // PASO 7: Actualizar estado final
     if (finalResults.isEmpty) {
-      state = state.copyWith(
-        status: ExternalSearchStatus.empty,
-        results: const [],
-        hasMore: false,
-      );
+      // 🆕 NUEVO: Estado vacío inteligente con sugerencias
+      await _handleEmptyResults(query);
     } else {
       state = state.copyWith(
         status: ExternalSearchStatus.success,
         results: finalResults,
         hasMore: response.hasMore,
         page: 1,
+        suggestedQueries: const [],
+        popularAlternatives: const [],
+        showCreateCustomOption: false,
       );
     }
 
     await _loadRecentSearches();
+  }
+
+  // ============================================================================
+  // 🆕 NUEVO: MANEJO DE "SIN RESULTADOS" INTELIGENTE
+  // ============================================================================
+
+  /// Maneja el caso de búsqueda sin resultados con sugerencias inteligentes
+  Future<void> _handleEmptyResults(String query) async {
+    // Generar sugerencias de queries similares
+    final suggestions = _generateSuggestions(query);
+    
+    // Buscar alternativas populares en el cache
+    final alternatives = await _getPopularAlternatives(query);
+
+    state = state.copyWith(
+      status: ExternalSearchStatus.empty,
+      results: const [],
+      hasMore: false,
+      suggestedQueries: suggestions,
+      popularAlternatives: alternatives,
+      showCreateCustomOption: true,
+    );
+  }
+
+  /// Genera sugerencias de queries similares
+  List<String> _generateSuggestions(String query) {
+    final suggestions = <String>[];
+    final lowerQuery = query.toLowerCase().trim();
+    
+    // Sugerencias basadas en correcciones ortográficas
+    final terms = lowerQuery.split(' ');
+    for (final term in terms) {
+      if (term.length >= 3) {
+        final corrections = _fts.suggestCorrections(term, maxSuggestions: 2);
+        for (final correction in corrections) {
+          final suggestedQuery = lowerQuery.replaceFirst(term, correction);
+          if (!suggestions.contains(suggestedQuery)) {
+            suggestions.add(suggestedQuery);
+          }
+        }
+      }
+    }
+    
+    // Sugerencias basadas en términos más genéricos
+    if (terms.length > 1) {
+      // Sugerir solo con la primera palabra
+      suggestions.add(terms.first);
+    }
+    
+    return suggestions.take(3).toList();
+  }
+
+  /// Obtiene alternativas populares basadas en el query
+  Future<List<OpenFoodFactsResult>> _getPopularAlternatives(String query) async {
+    final alternatives = <OpenFoodFactsResult>[];
+    final lowerQuery = query.toLowerCase().trim();
+    
+    // Buscar en alimentos guardados que coincidan parcialmente
+    final savedFoods = await _cacheService.getSavedExternalFoods();
+    final queryTerms = lowerQuery.split(' ');
+    
+    for (final food in savedFoods) {
+      final foodName = food.name.toLowerCase();
+      // Coincidencia parcial: al menos un término coincide
+      for (final term in queryTerms) {
+        if (term.length >= 3 && foodName.contains(term)) {
+          alternatives.add(OpenFoodFactsResult(
+            code: food.barcode ?? food.id,
+            name: food.name,
+            brand: food.brand,
+            kcalPer100g: food.kcalPer100g.toDouble(),
+            proteinPer100g: food.proteinPer100g,
+            carbsPer100g: food.carbsPer100g,
+            fatPer100g: food.fatPer100g,
+            portionName: food.portionName,
+            portionGrams: food.portionGrams,
+            fetchedAt: food.updatedAt,
+          ));
+          break;
+        }
+      }
+    }
+    
+    // Ordenar por popularidad (alimentos más usados primero)
+    alternatives.sort((a, b) => b.kcalPer100g.compareTo(a.kcalPer100g));
+    
+    return alternatives.take(5).toList();
   }
 
   /// Combina resultados de múltiples fuentes sin duplicados
@@ -383,6 +514,29 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     }
   }
 
+  /// Intenta fallback offline cuando falla la búsqueda online
+  Future<void> _tryOfflineFallback(String query, {String? errorMessage}) async {
+    final offlineResults = await _cacheService.searchOffline(query);
+    
+    if (offlineResults.isNotEmpty) {
+      state = state.copyWith(
+        status: ExternalSearchStatus.offline,
+        results: offlineResults,
+        offlineSuggestions: offlineResults,
+        errorMessage: errorMessage != null 
+            ? '$errorMessage\nMostrando resultados guardados.' 
+            : 'Sin conexión. Mostrando resultados guardados.',
+        showCreateCustomOption: true,
+      );
+    } else {
+      state = state.copyWith(
+        status: ExternalSearchStatus.error,
+        errorMessage: errorMessage ?? 'Error de búsqueda. Sin resultados guardados.',
+        showCreateCustomOption: true,
+      );
+    }
+  }
+
   /// Búsqueda offline (cache local)
   Future<void> _searchOffline(String query) async {
     final results = await _cacheService.searchOffline(query);
@@ -392,6 +546,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
         status: ExternalSearchStatus.offline,
         results: const [],
         errorMessage: 'Sin conexión y no hay resultados guardados para "$query"',
+        showCreateCustomOption: true,
       );
     } else {
       state = state.copyWith(
@@ -399,6 +554,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
         results: results,
         offlineSuggestions: results,
         hasMore: false,
+        showCreateCustomOption: true,
       );
     }
   }
@@ -411,11 +567,16 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
 
     state = state.copyWith(status: ExternalSearchStatus.loadingMore);
 
+    // Cancelar request previo si existe
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
+
     try {
       final nextPage = state.page + 1;
       final response = await _apiService.searchProducts(
         state.query,
         page: nextPage,
+        cancelToken: _cancelToken,
       );
 
       final allResults = [...state.results, ...response.products];
@@ -426,6 +587,13 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
         page: nextPage,
         hasMore: response.hasMore,
       );
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        // Ignorar cancelaciones
+        state = state.copyWith(status: ExternalSearchStatus.success);
+        return;
+      }
+      rethrow;
     } on OpenFoodFactsException {
       state = state.copyWith(
         status: ExternalSearchStatus.success, // Mantener resultados actuales
@@ -443,6 +611,10 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   Future<OpenFoodFactsResult?> searchByBarcode(String barcode) async {
     await _checkConnectivity();
 
+    // Cancelar request previo
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
+
     if (!state.isOnline) {
       // Buscar en cache local
       final offlineResults = await _cacheService.searchOffline(barcode);
@@ -455,12 +627,20 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     }
 
     try {
-      final result = await _apiService.searchByBarcode(barcode);
+      final result = await _apiService.searchByBarcode(
+        barcode,
+        cancelToken: _cancelToken,
+      );
       if (result != null) {
         // Guardar en cache
         await _cacheService.cacheSearchResults(barcode, [result]);
       }
       return result;
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        return null;
+      }
+      rethrow;
     } on OpenFoodFactsException {
       // Fallback a cache
       final offlineResults = await _cacheService.searchOffline(barcode);
@@ -489,6 +669,8 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
 
   /// Limpia la búsqueda actual
   void clear() {
+    _debounceTimer?.cancel();
+    _cancelToken?.cancel();
     state = const ExternalSearchState();
     _loadRecentSearches();
   }
@@ -509,8 +691,6 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     await _loadRecentSearches();
   }
 
-  // El scoring antiguo ha sido reemplazado por BM25 en FoodSearchScoring
-  
   /// Obtiene sugerencias offline basadas en búsquedas previas
   Future<void> loadOfflineSuggestions() async {
     final allCached = <OpenFoodFactsResult>[];

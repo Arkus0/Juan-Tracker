@@ -86,7 +86,9 @@ class ServingUnitConverter extends TypeConverter<ServingUnit, String> {
   }
 }
 
-// Tables
+// ============================================================================
+// TRAINING TABLES
+// ============================================================================
 
 // 1. Routines
 class Routines extends Table {
@@ -270,6 +272,13 @@ class Foods extends Table {
   TextColumn get sourceMetadata =>
       text().map(const JsonMapConverter()).nullable()(); // datos crudos de la fuente
 
+  // 🆕 NUEVO: Campos para sistema de búsqueda inteligente
+  TextColumn get normalizedName => text().nullable()(); // nombre normalizado para búsqueda
+  IntColumn get useCount => integer().withDefault(const Constant(0))(); // contador de uso
+  DateTimeColumn get lastUsedAt => dateTime().nullable()(); // última vez usado
+  TextColumn get nutriScore => text().nullable()(); // Nutri-Score (a-e)
+  IntColumn get novaGroup => integer().nullable()(); // Grupo NOVA (1-4)
+
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -397,6 +406,45 @@ class RecipeItems extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// ============================================================================
+// 🆕 NUEVO: TABLAS PARA SISTEMA DE BÚSQUEDA INTELIGENTE (Schema v7)
+// ============================================================================
+
+/// Tabla FTS5 para búsqueda de texto completo en alimentos
+/// Esta es una tabla virtual que mantiene un índice invertido de los alimentos
+@TableIndex(name: 'foods_fts_idx', columns: {#name, #brand})
+class FoodsFts extends Table {
+  TextColumn get name => text()();
+  TextColumn get brand => text().nullable()();
+  
+  // rowid se mapea automáticamente al id de Foods
+}
+
+/// Historial de búsquedas para sugerencias y análisis
+@TableIndex(name: 'search_history_query_idx', columns: {#normalizedQuery})
+@TableIndex(name: 'search_history_date_idx', columns: {#searchedAt})
+class SearchHistory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get query => text()(); // Query original
+  TextColumn get normalizedQuery => text()(); // Query normalizado (lowercase, trimmed)
+  TextColumn get selectedFoodId => text().nullable()(); // ID del alimento seleccionado (si aplica)
+  DateTimeColumn get searchedAt => dateTime().withDefault(currentDateAndTime)();
+  BoolColumn get hasResults => boolean().withDefault(const Constant(true))();
+}
+
+/// Patrones de consumo para ML predictivo
+/// Almacena cuándo y qué alimentos consume el usuario para sugerencias inteligentes
+@TableIndex(name: 'consumption_patterns_unique_idx', columns: {#foodId, #hourOfDay, #dayOfWeek})
+class ConsumptionPatterns extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get foodId => text().references(Foods, #id, onDelete: KeyAction.cascade)();
+  IntColumn get hourOfDay => integer()(); // 0-23
+  IntColumn get dayOfWeek => integer()(); // 1-7 (lunes=1, domingo=7)
+  TextColumn get mealType => text().map(const MealTypeConverter()).nullable()();
+  IntColumn get frequency => integer().withDefault(const Constant(1))(); // Cuántas veces se ha consumido
+  DateTimeColumn get lastConsumedAt => dateTime()();
+}
+
 @DriftDatabase(
   tables: [
     // Training
@@ -416,6 +464,10 @@ class RecipeItems extends Table {
     Targets,
     Recipes,
     RecipeItems,
+    // 🆕 Search System
+    FoodsFts,
+    SearchHistory,
+    ConsumptionPatterns,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -429,6 +481,8 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
+      // 🆕 Crear índices FTS5 virtuales
+      await _createFts5Triggers(m);
     },
     onUpgrade: (m, from, to) async {
       // Migration path to version 2: add supersetId column to routine_exercises
@@ -480,9 +534,283 @@ class AppDatabase extends _$AppDatabase {
           // Table might already exist
         }
       }
+      // 🆕 Migration path to version 7: add Search System tables (FoodsFts, SearchHistory, ConsumptionPatterns)
+      if (from < 7) {
+        try {
+          // Agregar columnas nuevas a Foods
+          await m.addColumn(foods, foods.normalizedName);
+          await m.addColumn(foods, foods.useCount);
+          await m.addColumn(foods, foods.lastUsedAt);
+          await m.addColumn(foods, foods.nutriScore);
+          await m.addColumn(foods, foods.novaGroup);
+          
+          // Crear tablas de búsqueda
+          await m.createTable(searchHistory);
+          await m.createTable(consumptionPatterns);
+          
+          // Crear tabla FTS5 virtual y triggers
+          await _createFts5Tables(m);
+        } catch (e) {
+          // Tables or columns might already exist
+        }
+      }
     },
   );
 
+  /// 🆕 Crea tabla FTS5 virtual y triggers para sincronización
+  Future<void> _createFts5Tables(Migrator m) async {
+    // Crear tabla virtual FTS5
+    await customStatement('''
+      CREATE VIRTUAL TABLE IF NOT EXISTS foods_fts USING fts5(
+        name,
+        brand,
+        content='foods',
+        content_rowid='id'
+      )
+    ''');
+    
+    await _createFts5Triggers(m);
+  }
+
+  /// 🆕 Crea triggers para mantener FTS sincronizado
+  Future<void> _createFts5Triggers(Migrator m) async {
+    // Trigger para INSERT
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS foods_fts_insert AFTER INSERT ON foods BEGIN
+        INSERT INTO foods_fts(rowid, name, brand)
+        VALUES (new.id, new.name, new.brand);
+      END
+    ''');
+    
+    // Trigger para UPDATE
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS foods_fts_update AFTER UPDATE ON foods BEGIN
+        UPDATE foods_fts SET 
+          name = new.name,
+          brand = new.brand
+        WHERE rowid = old.id;
+      END
+    ''');
+    
+    // Trigger para DELETE
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS foods_fts_delete AFTER DELETE ON foods BEGIN
+        DELETE FROM foods_fts WHERE rowid = old.id;
+      END
+    ''');
+  }
+
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
+
+  // ============================================================================
+  // 🆕 NUEVO: MÉTODOS DE BÚSQUEDA FTS5
+  // ============================================================================
+
+  /// Búsqueda FTS5 con ranking por relevancia
+  Future<List<Food>> searchFoodsFTS(String query, {int limit = 50}) async {
+    if (query.trim().isEmpty) return [];
+    
+    // Normalizar query para FTS (agregar wildcard para búsqueda por prefijo)
+    final ftsQuery = '${query.trim()}*';
+    
+    // Usar SQL directo y mapear resultados manualmente
+    final results = await customSelect(
+      'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
+      'f.kcal_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, '
+      'f.portion_name, f.portion_grams, f.user_created, f.verified_source, '
+      'f.source_metadata, f.use_count, f.last_used_at, f.nutri_score, f.nova_group, '
+      'f.created_at, f.updated_at FROM foods f '
+      'INNER JOIN foods_fts fts ON f.id = fts.rowid '
+      'WHERE foods_fts MATCH ? '
+      'ORDER BY rank '
+      'LIMIT ?',
+      variables: [Variable(ftsQuery), Variable(limit)],
+    ).get();
+    
+    return results.map((row) => _mapRowToFood(row)).toList();
+  }
+  
+  /// Mapea una fila de query a Food
+  Food _mapRowToFood(QueryRow row) {
+    return Food(
+      id: row.read<String>('id'),
+      name: row.read<String>('name'),
+      normalizedName: row.read<String?>('normalized_name'),
+      brand: row.read<String?>('brand'),
+      barcode: row.read<String?>('barcode'),
+      kcalPer100g: row.read<int>('kcal_per_100g'),
+      proteinPer100g: row.read<double?>('protein_per_100g'),
+      carbsPer100g: row.read<double?>('carbs_per_100g'),
+      fatPer100g: row.read<double?>('fat_per_100g'),
+      portionName: row.read<String?>('portion_name'),
+      portionGrams: row.read<double?>('portion_grams'),
+      userCreated: row.read<bool>('user_created'),
+      verifiedSource: row.read<String?>('verified_source'),
+      sourceMetadata: _jsonFromString(row.read<String?>('source_metadata')),
+      useCount: row.read<int>('use_count'),
+      lastUsedAt: _dateTimeFromString(row.read<String?>('last_used_at')),
+      nutriScore: row.read<String?>('nutri_score'),
+      novaGroup: row.read<int?>('nova_group'),
+      createdAt: DateTime.parse(row.read<String>('created_at')),
+      updatedAt: DateTime.parse(row.read<String>('updated_at')),
+    );
+  }
+  
+  /// Helper para convertir string JSON a Map
+  Map<String, dynamic>? _jsonFromString(String? json) {
+    if (json == null || json.isEmpty) return null;
+    try {
+      return Map<String, dynamic>.from(jsonDecode(json));
+    } catch (_) {
+      return null;
+    }
+  }
+  
+  /// Helper para convertir string a DateTime
+  DateTime? _dateTimeFromString(String? value) {
+    if (value == null) return null;
+    try {
+      return DateTime.parse(value);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Búsqueda por prefijo (para autocompletado rápido)
+  Future<List<Food>> searchFoodsByPrefix(String prefix, {int limit = 10}) async {
+    final normalized = prefix.toLowerCase().trim();
+    
+    return (select(foods)
+      ..where((f) => f.normalizedName.like('$normalized%'))
+      ..orderBy([
+        (f) => OrderingTerm.desc(f.useCount),
+        (f) => OrderingTerm.asc(f.normalizedName),
+      ])
+      ..limit(limit))
+      .get();
+  }
+
+  /// Búsqueda offline completa (FTS + fallback a LIKE)
+  Future<List<Food>> searchFoodsOffline(String query, {int limit = 50}) async {
+    // Intentar FTS primero
+    final ftsResults = await searchFoodsFTS(query, limit: limit);
+    if (ftsResults.isNotEmpty) return ftsResults;
+    
+    // Fallback a LIKE en nombre y marca
+    final normalized = query.toLowerCase().trim();
+    return (select(foods)
+      ..where((f) => 
+        f.normalizedName.like('%$normalized%') | 
+        f.brand.like('%$normalized%')
+      )
+      ..orderBy([
+        (f) => OrderingTerm.desc(f.useCount),
+        (f) => OrderingTerm.desc(f.lastUsedAt),
+      ])
+      ..limit(limit))
+      .get();
+  }
+
+  /// Sugerencias de autocompletado basadas en historial y alimentos populares
+  Future<List<String>> getSearchSuggestions(String prefix, {int limit = 10}) async {
+    final normalized = prefix.toLowerCase().trim();
+    
+    // 1. Buscar en historial de búsquedas
+    final historial = await (select(searchHistory)
+      ..where((h) => h.normalizedQuery.like('$normalized%'))
+      ..orderBy([(h) => OrderingTerm.desc(h.searchedAt)])
+      ..limit(limit))
+      .map((h) => h.query)
+      .get();
+    
+    // 2. Buscar en nombres de alimentos populares
+    final populares = await (select(foods)
+      ..where((f) => f.normalizedName.like('$normalized%'))
+      ..orderBy([(f) => OrderingTerm.desc(f.useCount)])
+      ..limit(limit))
+      .map((f) => f.name)
+      .get();
+    
+    // Combinar sin duplicados manteniendo orden
+    return {...historial, ...populares}.take(limit).toList();
+  }
+
+  /// Alimentos más usados recientemente (para sugerencias predictivas)
+  Future<List<Food>> getHabitualFoods({
+    int? hourOfDay,
+    int? dayOfWeek,
+    int limit = 20,
+  }) async {
+    // Si tenemos contexto temporal, buscar patrones de consumo
+    if (hourOfDay != null && dayOfWeek != null) {
+      final patrones = await (select(consumptionPatterns)
+        ..where((p) => p.hourOfDay.equals(hourOfDay) & p.dayOfWeek.equals(dayOfWeek))
+        ..orderBy([(p) => OrderingTerm.desc(p.frequency)])
+        ..limit(limit))
+        .get();
+      
+      if (patrones.isNotEmpty) {
+        final foodIds = patrones.map((p) => p.foodId).toList();
+        return (select(foods)
+          ..where((f) => f.id.isIn(foodIds)))
+          .get();
+      }
+    }
+    
+    // Fallback: alimentos más usados globalmente
+    return (select(foods)
+      ..where((f) => f.useCount.isBiggerThanValue(0))
+      ..orderBy([
+        (f) => OrderingTerm.desc(f.useCount),
+        (f) => OrderingTerm.desc(f.lastUsedAt),
+      ])
+      ..limit(limit))
+      .get();
+  }
+
+  /// Registrar uso de un alimento (para estadísticas y ML predictivo)
+  Future<void> recordFoodUsage(String foodId, {MealType? mealType}) async {
+    final now = DateTime.now();
+    
+    // Actualizar contador del alimento con SQL directo
+    await customStatement(
+      'UPDATE foods SET use_count = use_count + 1, last_used_at = ? WHERE id = ?',
+      [now.toIso8601String(), foodId],
+    );
+    
+    // Actualizar patrón de consumo con SQL directo (UPSERT)
+    await customStatement('''
+      INSERT INTO consumption_patterns (food_id, hour_of_day, day_of_week, meal_type, frequency, last_consumed_at)
+      VALUES (?, ?, ?, ?, 1, ?)
+      ON CONFLICT(food_id, hour_of_day, day_of_week) DO UPDATE SET
+        frequency = frequency + 1,
+        last_consumed_at = excluded.last_consumed_at,
+        meal_type = excluded.meal_type
+    ''', [foodId, now.hour, now.weekday, mealType?.name, now.toIso8601String()]);
+  }
+
+  /// Guardar búsqueda en historial
+  Future<void> saveSearchHistory(String query, {String? selectedFoodId, bool hasResults = true}) async {
+    await into(searchHistory).insert(
+      SearchHistoryCompanion(
+        query: Value(query),
+        normalizedQuery: Value(query.toLowerCase().trim()),
+        selectedFoodId: Value(selectedFoodId),
+        hasResults: Value(hasResults),
+      ),
+    );
+  }
+
+  /// Limpiar historial de búsquedas antiguo (mantener últimos 100)
+  Future<void> cleanupOldSearchHistory() async {
+    await customStatement('''
+      DELETE FROM search_history 
+      WHERE id NOT IN (
+        SELECT id FROM search_history 
+        ORDER BY searched_at DESC 
+        LIMIT 100
+      )
+    ''');
+  }
 }
