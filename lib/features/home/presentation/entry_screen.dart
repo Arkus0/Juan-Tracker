@@ -27,10 +27,49 @@ class EntryScreen extends StatelessWidget {
     return DateFormat('EEEE, d MMMM', 'es').format(DateTime.now());
   }
 
+  // 🎯 MED-003: Warm Start - Sugerencia contextual basada en la hora
+  String get _warmStartHint {
+    final hour = DateTime.now().hour;
+    final dayOfWeek = DateTime.now().weekday; // 1=Monday, 7=Sunday
+
+    // Mañana (6-11): Sugerir desayuno
+    if (hour >= 6 && hour < 11) {
+      return '¿Ya desayunaste? Registra tu primera comida del día';
+    }
+
+    // Mediodía (11-14): Sugerir almuerzo
+    if (hour >= 11 && hour < 14) {
+      return '¿Hora de comer? Registra tu almuerzo';
+    }
+
+    // Tarde (14-17): Típica hora de gym
+    if (hour >= 14 && hour < 17) {
+      // Fines de semana o cualquier día
+      if (dayOfWeek == 6 || dayOfWeek == 7) {
+        return '¿Fin de semana activo? Buen momento para entrenar';
+      }
+      return '¿Listo para entrenar? El gym te espera';
+    }
+
+    // Tarde-noche (17-20): Post-gym o cena
+    if (hour >= 17 && hour < 20) {
+      return '¿Terminaste de entrenar? Registra tu sesión';
+    }
+
+    // Noche (20-23): Revisar el día
+    if (hour >= 20 && hour < 23) {
+      return '¿Cómo fue tu día? Revisa tu progreso';
+    }
+
+    // Madrugada: Sin sugerencia
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
+    // 🎯 MED-004: Usar Stack para posicionar accesos rápidos en thumb zone (bottom)
     return Scaffold(
       backgroundColor: colors.surface,
       // UX-005: Edge-to-edge support
@@ -66,46 +105,61 @@ class EntryScreen extends StatelessWidget {
                         letterSpacing: 1,
                       ),
                     ),
+                  ),
+                ),
+
+                // Selector de modo
+                SliverPadding(
+                  padding: const EdgeInsets.all(24),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _NutritionModeCard(onTap: () => _navigateToNutrition(context)),
+                      const SizedBox(height: 16),
+                      _TrainingModeCard(onTap: () => _navigateToTraining(context)),
+                    ]),
+                  ),
+                ),
+
+                // Indicador de racha
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: const StreakCounter(),
+                  ),
+                ),
+
+                // Spacer para que el contenido no quede detrás del bottom bar
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 120),
+                ),
+              ],
+            ),
+
+            // 🎯 MED-004: Accesos rápidos fijos en thumb zone (bottom 25%)
+            // Esto mejora el uso con una mano según Fitts's Law
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.shadow.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
                   ],
                 ),
+                child: const SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(24, 12, 24, 12),
+                    child: _QuickActionsRow(),
+                  ),
+                ),
               ),
-            ),
-
-            // Selector de modo
-            SliverPadding(
-              padding: const EdgeInsets.all(24),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _NutritionModeCard(onTap: () => _navigateToNutrition(context)),
-                  const SizedBox(height: 16),
-                  _TrainingModeCard(onTap: () => _navigateToTraining(context)),
-                ]),
-              ),
-            ),
-
-            // Accesos rápidos
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: _QuickActionsRow(),
-              ),
-            ),
-
-            // Spacer
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 32),
-            ),
-
-            // Indicador de racha
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: const StreakCounter(),
-              ),
-            ),
-
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 40),
             ),
           ],
         ),

@@ -128,6 +128,14 @@ class DiaryScreen extends ConsumerWidget {
               ),
             ),
 
+          // 🎯 HIGH-003: Smart Suggestions - Sugerencias basadas en hora/historial
+          if (viewMode == DiaryViewMode.list)
+            SliverToBoxAdapter(
+              child: _SmartSuggestionsSection(
+                onSuggestionTap: (suggestion) => _quickAddFromSuggestion(context, ref, suggestion),
+              ),
+            ),
+
           // Quick Add - Comidas recientes (UX-003)
           if (viewMode == DiaryViewMode.list)
             SliverToBoxAdapter(
@@ -139,15 +147,35 @@ class DiaryScreen extends ConsumerWidget {
           // Lista de comidas - solo en vista lista
           if (viewMode == DiaryViewMode.list)
             entriesAsync.when(
+              // 🎯 MED-006: Empty state educativo con contexto temporal
               data: (entries) {
                 if (entries.isEmpty) {
+                  final hour = DateTime.now().hour;
+                  final mealSuggestion = hour < 11
+                      ? 'desayuno'
+                      : hour < 15
+                          ? 'almuerzo'
+                          : hour < 19
+                              ? 'merienda'
+                              : 'cena';
+                  final suggestedMealType = hour < 11
+                      ? MealType.breakfast
+                      : hour < 15
+                          ? MealType.lunch
+                          : hour < 19
+                              ? MealType.snack
+                              : MealType.dinner;
+
                   return SliverFillRemaining(
                     child: AppEmpty(
                       icon: Icons.restaurant_menu_outlined,
-                      title: 'Sin entradas hoy',
-                      subtitle: 'Añade tu primera comida para empezar a trackear',
-                      actionLabel: 'AÑADIR COMIDA',
-                      onAction: () => _showAddEntry(context, ref, MealType.breakfast),
+                      title: '¡Empieza a registrar tu día!',
+                      subtitle:
+                          'Registrar lo que comes te ayuda a entender tus patrones '
+                          'y alcanzar tus objetivos. Tus comidas frecuentes se guardarán '
+                          'para añadirlas más rápido la próxima vez.',
+                      actionLabel: 'AÑADIR $mealSuggestion'.toUpperCase(),
+                      onAction: () => _showAddEntry(context, ref, suggestedMealType),
                     ),
                   );
                 }
@@ -186,6 +214,34 @@ class DiaryScreen extends ConsumerWidget {
   void _showAddEntry(BuildContext context, WidgetRef ref, MealType mealType) {
     ref.read(selectedMealTypeProvider.notifier).meal = mealType;
     context.pushTo(AppRouter.nutritionFoods);
+  }
+
+  /// 🎯 HIGH-003: Quick add desde sugerencia inteligente
+  Future<void> _quickAddFromSuggestion(BuildContext context, WidgetRef ref, SmartFoodSuggestion suggestion) async {
+    HapticFeedback.mediumImpact();
+
+    final selectedDate = ref.read(selectedDateProvider);
+    final repo = ref.read(diaryRepositoryProvider);
+    final currentMealType = ref.read(currentMealTypeProvider);
+
+    // Crear nueva entrada basada en la sugerencia
+    final newEntry = suggestion.toEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      date: selectedDate,
+      mealType: currentMealType,
+    );
+
+    await repo.insert(newEntry);
+
+    if (context.mounted) {
+      AppSnackbar.showWithUndo(
+        context,
+        message: '${suggestion.foodName} añadido a ${currentMealType.displayName}',
+        onUndo: () async {
+          await repo.delete(newEntry.id);
+        },
+      );
+    }
   }
 
   /// Quick add: copia una entrada existente al día seleccionado
@@ -229,6 +285,7 @@ class DiaryScreen extends ConsumerWidget {
 }
 
 /// Vista de calendario mensual
+/// 🎯 MED-002: Añade indicadores de cumplimiento
 class _MonthCalendar extends ConsumerWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateSelected;
@@ -241,68 +298,102 @@ class _MonthCalendar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Card(
       margin: const EdgeInsets.all(AppSpacing.lg),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
-        child: TableCalendar(
-          firstDay: DateTime.now().subtract(const Duration(days: 365)),
-          lastDay: DateTime.now().add(const Duration(days: 365)),
-          focusedDay: selectedDate,
-          selectedDayPredicate: (day) => isSameDay(day, selectedDate),
-          onDaySelected: (selectedDay, focusedDay) {
-            onDateSelected(selectedDay);
-          },
-          calendarFormat: CalendarFormat.month,
-          startingDayOfWeek: StartingDayOfWeek.monday,
-          locale: 'es_ES',
-          headerStyle: HeaderStyle(
-            titleCentered: true,
-            formatButtonVisible: false,
-            leftChevronIcon: Icon(
-              Icons.chevron_left,
-              color: colorScheme.onSurface,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TableCalendar(
+              firstDay: DateTime.now().subtract(const Duration(days: 365)),
+              lastDay: DateTime.now().add(const Duration(days: 365)),
+              focusedDay: selectedDate,
+              selectedDayPredicate: (day) => isSameDay(day, selectedDate),
+              onDaySelected: (selectedDay, focusedDay) {
+                onDateSelected(selectedDay);
+              },
+              calendarFormat: CalendarFormat.month,
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              locale: 'es_ES',
+              headerStyle: HeaderStyle(
+                titleCentered: true,
+                formatButtonVisible: false,
+                leftChevronIcon: Icon(
+                  Icons.chevron_left,
+                  color: colorScheme.onSurface,
+                ),
+                rightChevronIcon: Icon(
+                  Icons.chevron_right,
+                  color: colorScheme.onSurface,
+                ),
+                titleTextStyle: AppTypography.titleMedium.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              calendarStyle: CalendarStyle(
+                outsideDaysVisible: false,
+                weekendTextStyle: TextStyle(color: colorScheme.onSurface),
+                holidayTextStyle: TextStyle(color: colorScheme.onSurface),
+                defaultTextStyle: TextStyle(color: colorScheme.onSurface),
+                selectedDecoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                todayTextStyle: TextStyle(
+                  color: colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+                selectedTextStyle: TextStyle(
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+                markersMaxCount: 1,
+                markerSize: 6,
+                markerDecoration: BoxDecoration(
+                  color: colorScheme.tertiary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              daysOfWeekStyle: DaysOfWeekStyle(
+                weekdayStyle: AppTypography.labelSmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                weekendStyle: AppTypography.labelSmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
-            rightChevronIcon: Icon(
-              Icons.chevron_right,
-              color: colorScheme.onSurface,
+            // 🎯 MED-002: Leyenda de marcadores
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Día con registros',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            titleTextStyle: AppTypography.titleMedium.copyWith(
-              color: colorScheme.onSurface,
-            ),
-          ),
-          calendarStyle: CalendarStyle(
-            outsideDaysVisible: false,
-            weekendTextStyle: TextStyle(color: colorScheme.onSurface),
-            holidayTextStyle: TextStyle(color: colorScheme.onSurface),
-            defaultTextStyle: TextStyle(color: colorScheme.onSurface),
-            selectedDecoration: BoxDecoration(
-              color: colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            todayDecoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            todayTextStyle: TextStyle(
-              color: colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.bold,
-            ),
-            selectedTextStyle: TextStyle(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-            markersMaxCount: 3,
-          ),
-          daysOfWeekStyle: DaysOfWeekStyle(
-            weekdayStyle: AppTypography.labelSmall.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            weekendStyle: AppTypography.labelSmall.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -703,6 +794,186 @@ class _MacroItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 🎯 HIGH-003: Sección de sugerencias inteligentes basadas en hora e historial
+class _SmartSuggestionsSection extends ConsumerWidget {
+  final void Function(SmartFoodSuggestion) onSuggestionTap;
+
+  const _SmartSuggestionsSection({required this.onSuggestionTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final suggestionsAsync = ref.watch(smartFoodSuggestionsProvider);
+    final contextMessage = ref.watch(mealContextMessageProvider);
+    final currentMealType = ref.watch(currentMealTypeProvider);
+    final colors = Theme.of(context).colorScheme;
+
+    return suggestionsAsync.when(
+      data: (suggestions) {
+        if (suggestions.isEmpty) {
+          // Sin historial para este tipo de comida - no mostrar nada
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header con contexto temporal
+              Row(
+                children: [
+                  Icon(
+                    _getMealIcon(currentMealType),
+                    size: 16,
+                    color: AppColors.goldAccent,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      contextMessage.toUpperCase(),
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppColors.goldAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    currentMealType.displayName,
+                    style: AppTypography.labelSmall.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+
+              // Grid de sugerencias
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: suggestions.take(3).map((suggestion) {
+                  return _SmartSuggestionChip(
+                    suggestion: suggestion,
+                    onTap: () => onSuggestionTap(suggestion),
+                  );
+                }).toList(),
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  IconData _getMealIcon(MealType mealType) {
+    switch (mealType) {
+      case MealType.breakfast:
+        return Icons.wb_sunny_outlined;
+      case MealType.lunch:
+        return Icons.wb_cloudy_outlined;
+      case MealType.dinner:
+        return Icons.nights_stay_outlined;
+      case MealType.snack:
+        return Icons.cookie_outlined;
+    }
+  }
+}
+
+/// Chip de sugerencia inteligente con contexto
+class _SmartSuggestionChip extends StatelessWidget {
+  final SmartFoodSuggestion suggestion;
+  final VoidCallback onTap;
+
+  const _SmartSuggestionChip({
+    required this.suggestion,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Material(
+      color: AppColors.goldAccent.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: AppColors.goldAccent.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.add_circle_outline,
+                size: 16,
+                color: AppColors.goldAccent,
+              ),
+              const SizedBox(width: 6),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    suggestion.foodName.length > 18
+                        ? '${suggestion.foodName.substring(0, 18)}...'
+                        : suggestion.foodName,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: colors.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        '${suggestion.kcal} kcal',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.goldAccent.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          suggestion.reason,
+                          style: AppTypography.meta.copyWith(
+                            color: AppColors.goldAccent,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
