@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/food_model.dart';
 import '../models/open_food_facts_model.dart';
+import '../services/food_autocomplete_service.dart';
 import '../services/food_cache_service.dart';
+import '../services/food_fts_service.dart';
 import '../services/food_search_index.dart';
 import '../services/food_search_scoring.dart';
 import '../services/open_food_facts_service.dart';
@@ -91,6 +93,8 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   late final FoodCacheService _cacheService;
   late final Connectivity _connectivity;
   late final FoodSearchIndex _searchIndex;
+  late final FoodAutocompleteService _autocomplete;
+  late final FoodFTSService _fts;
 
   @override
   ExternalSearchState build() {
@@ -98,6 +102,8 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     _cacheService = ref.read(foodCacheServiceProvider);
     _connectivity = Connectivity();
     _searchIndex = FoodSearchIndex();
+    _autocomplete = FoodAutocompleteService();
+    _fts = FoodFTSService();
 
     // Inicializar en background
     _init();
@@ -110,6 +116,16 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     await _loadRecentSearches();
     await _checkConnectivity();
     await _rebuildSearchIndex();
+    _initializeAutocomplete();
+  }
+
+  void _initializeAutocomplete() {
+    _autocomplete.initialize();
+    
+    // Registrar búsquedas recientes en autocomplete
+    for (final recent in state.recentSearches) {
+      _autocomplete.recordSearch(recent);
+    }
   }
 
   /// Reconstruye el índice de búsqueda local
@@ -312,6 +328,58 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   ) {
     final scored = FoodSearchScoring.rankProducts(products, query);
     return scored.map((s) => s.product).toList();
+  }
+
+  // ============================================================================
+  // AUTOCOMPLETE Y SUGERENCIAS
+  // ============================================================================
+
+  /// Obtiene sugerencias de autocompletar
+  List<AutocompleteSuggestion> getAutocompleteSuggestions(
+    String query, {
+    int maxResults = 8,
+  }) {
+    return _autocomplete.getSuggestions(query, maxResults: maxResults);
+  }
+
+  /// Busca usando FTS (Full-Text Search) - más rápido que búsqueda normal
+  Future<List<FTSResult>> searchWithFTS(String query) async {
+    // FTS es instantáneo (índice en memoria)
+    final results = _fts.search(query, maxResults: 20);
+    
+    if (results.isEmpty && _fts.stats['totalDocuments'] == 0) {
+      // Si el índice FTS está vacío, reconstruirlo
+      await _rebuildFTSIndex();
+      return _fts.search(query, maxResults: 20);
+    }
+    
+    return results;
+  }
+
+  /// Sugerencias de corrección ortográfica
+  List<String> getSpellingSuggestions(String term) {
+    return _fts.suggestCorrections(term);
+  }
+
+  Future<void> _rebuildFTSIndex() async {
+    _fts.clear();
+    
+    // Indexar alimentos guardados
+    final savedFoods = await _cacheService.getSavedExternalFoods();
+    for (final food in savedFoods) {
+      _fts.indexLocalFood(food);
+    }
+
+    // Indexar cache de búsquedas
+    final recentSearches = await _cacheService.getRecentSearches();
+    for (final query in recentSearches.take(10)) {
+      final results = await _cacheService.getCachedSearchResults(query);
+      if (results != null) {
+        for (final product in results) {
+          _fts.indexExternalFood(product);
+        }
+      }
+    }
   }
 
   /// Búsqueda offline (cache local)
