@@ -2,7 +2,7 @@
 
 > **Fecha de creación**: 30 Enero 2026  
 > **Última actualización**: 30 Enero 2026  
-> **Estado**: Fases 1-7 completadas ✅ (parcial - base implementada)  
+> **Estado**: Fases 1-8 completadas ✅  
 > **Tiempo estimado total**: ~21 días de trabajo efectivo
 
 ---
@@ -132,6 +132,17 @@ Implementación incremental en 10 fases, priorizando **quick wins** primero para
 
 ---
 
+### ✅ FASE 8: Features Import (~3 días)
+**Fecha**: 30 Enero 2026  
+**Estado**: COMPLETADA
+
+| Tarea | Descripción | Archivos | Estado |
+|-------|-------------|----------|--------|
+| TODO-2 | Smart import desde rutinas | `search_exercise_screen.dart` | ✅ |
+| TODO-3 | OCR para importar (pendiente - requiere ML Kit) | - | ⏳ |
+
+---
+
 ## CALENDARIO DE IMPLEMENTACIÓN
 
 ```
@@ -174,6 +185,10 @@ FASE                          DURACIÓN    DÍAS        DEPENDENCIA
    ├─ WeeklyAnchoredConfig y Scheduler
    └─ FloatingCycleScheduler (base)
    ⚠️  UI config semana, Migración automática: Pendiente futuro
+───────────────────────────────────────────────────────────────────────────────
+✅ FASE 8: Features Import          ~3d        Día 16-18   Ninguna
+   ├─ TODO-2: Smart import
+   └─ TODO-3: OCR import
 ───────────────────────────────────────────────────────────────────────────────
 ⏳ FASE 7: Scheduling Avanzado  ~5d        Día 11-15   Fase 5, 6
    ├─ WeeklyAnchoredScheduler
