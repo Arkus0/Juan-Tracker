@@ -163,7 +163,8 @@ class OpenFoodFactsService {
   }
 
   /// Genera clave de cache para una búsqueda
-  String _cacheKey(String query, int page) => '${query.toLowerCase().trim()}:$page';
+  String _cacheKey(String query, int page, int pageSize, String country) =>
+      '${query.toLowerCase().trim()}:$page:$pageSize:$country';
 
   /// Obtiene resultado de cache en memoria si es válido
   OpenFoodFactsSearchResponse? _getFromMemoryCache(String key) {
@@ -212,7 +213,7 @@ class OpenFoodFactsService {
     }
 
     final trimmedQuery = query.trim();
-    final cacheKey = _cacheKey(trimmedQuery, page);
+    final cacheKey = _cacheKey(trimmedQuery, page, pageSize, country);
 
     // Verificar cache en memoria primero
     final cachedResponse = _getFromMemoryCache(cacheKey);
