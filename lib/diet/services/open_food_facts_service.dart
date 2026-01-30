@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/open_food_facts_model.dart';
@@ -31,25 +32,36 @@ class NotFoundException extends OpenFoodFactsException {
 }
 
 /// Servicio para interactuar con la API de Open Food Facts
-/// 
+///
 /// Características:
 /// - Timeout configurable (default: 10 segundos)
 /// - Rate limiting: máximo 100 peticiones/minuto (límite conservador de OFF)
 /// - User-Agent personalizado para identificación
+/// - Retry pattern: 3 intentos con backoff exponencial
 /// - Manejo de errores limpio
+/// - Cache en memoria de últimos 20 resultados
 class OpenFoodFactsService {
   final http.Client _client;
   final Duration _timeout;
-  
+
   // Rate limiting
   final List<DateTime> _requestTimestamps = [];
   static const int _maxRequestsPerMinute = 60; // Conservador
   static const int _maxRequestsBurst = 10; // Máximo en ventana corta
-  
+
+  // Retry configuration
+  static const int _maxRetries = 3;
+  static const Duration _initialRetryDelay = Duration(milliseconds: 500);
+
+  // In-memory cache (últimos 20 resultados)
+  final Map<String, _CachedResponse> _memoryCache = {};
+  static const int _maxMemoryCacheSize = 20;
+  static const Duration _memoryCacheTTL = Duration(minutes: 5);
+
   // URLs base
   static const String baseUrl = 'https://world.openfoodfacts.org';
   static const String apiUrl = '$baseUrl/api/v2';
-  
+
   // User-Agent personalizado (requerido por OFF)
   static const String _userAgent = 'JuanTracker/1.0 (contact@juantracker.app)';
 
@@ -98,12 +110,92 @@ class OpenFoodFactsService {
 
   /// Headers comunes para todas las peticiones
   Map<String, String> get _headers => {
-    'User-Agent': _userAgent,
-    'Accept': 'application/json',
-  };
+        'User-Agent': _userAgent,
+        'Accept': 'application/json',
+      };
+
+  /// Log de debug para desarrollo
+  void _debugLog(String message) {
+    if (kDebugMode) {
+      debugPrint('[OpenFoodFacts] $message');
+    }
+  }
+
+  /// Ejecuta una petición HTTP con retry pattern
+  Future<http.Response> _executeWithRetry(
+    Uri uri, {
+    int attempt = 1,
+  }) async {
+    try {
+      _debugLog('Request (attempt $attempt): $uri');
+      _recordRequest();
+
+      final response = await _client.get(uri, headers: _headers).timeout(_timeout);
+
+      _debugLog('Response: ${response.statusCode} (${response.body.length} bytes)');
+
+      // Si es error de servidor y aún tenemos reintentos, intentar de nuevo
+      if (response.statusCode >= 500 && attempt < _maxRetries) {
+        final delay = _initialRetryDelay * (1 << (attempt - 1)); // Exponential backoff
+        _debugLog('Server error ${response.statusCode}, retrying in ${delay.inMilliseconds}ms...');
+        await Future<void>.delayed(delay);
+        return _executeWithRetry(uri, attempt: attempt + 1);
+      }
+
+      return response;
+    } on SocketException catch (e) {
+      if (attempt < _maxRetries) {
+        final delay = _initialRetryDelay * (1 << (attempt - 1));
+        _debugLog('Network error: $e, retrying in ${delay.inMilliseconds}ms...');
+        await Future<void>.delayed(delay);
+        return _executeWithRetry(uri, attempt: attempt + 1);
+      }
+      rethrow;
+    } on http.ClientException catch (e) {
+      if (attempt < _maxRetries) {
+        final delay = _initialRetryDelay * (1 << (attempt - 1));
+        _debugLog('Client error: $e, retrying in ${delay.inMilliseconds}ms...');
+        await Future<void>.delayed(delay);
+        return _executeWithRetry(uri, attempt: attempt + 1);
+      }
+      rethrow;
+    }
+  }
+
+  /// Genera clave de cache para una búsqueda
+  String _cacheKey(String query, int page) => '${query.toLowerCase().trim()}:$page';
+
+  /// Obtiene resultado de cache en memoria si es válido
+  OpenFoodFactsSearchResponse? _getFromMemoryCache(String key) {
+    final cached = _memoryCache[key];
+    if (cached == null) return null;
+
+    if (DateTime.now().difference(cached.timestamp) > _memoryCacheTTL) {
+      _memoryCache.remove(key);
+      return null;
+    }
+
+    _debugLog('Cache hit for: $key');
+    return cached.response;
+  }
+
+  /// Guarda resultado en cache en memoria
+  void _saveToMemoryCache(String key, OpenFoodFactsSearchResponse response) {
+    // Limpiar cache si excede límite
+    if (_memoryCache.length >= _maxMemoryCacheSize) {
+      // Eliminar la entrada más antigua
+      final oldestKey = _memoryCache.entries
+          .reduce((a, b) => a.value.timestamp.isBefore(b.value.timestamp) ? a : b)
+          .key;
+      _memoryCache.remove(oldestKey);
+    }
+
+    _memoryCache[key] = _CachedResponse(response, DateTime.now());
+    _debugLog('Cached response for: $key');
+  }
 
   /// Busca productos por texto
-  /// 
+  ///
   /// Parámetros:
   /// - [query]: Término de búsqueda
   /// - [page]: Página de resultados (1-based)
@@ -112,34 +204,43 @@ class OpenFoodFactsService {
   Future<OpenFoodFactsSearchResponse> searchProducts(
     String query, {
     int page = 1,
-    int pageSize = 24,
+    int pageSize = 20,
     String country = 'es',
   }) async {
     if (query.trim().isEmpty) {
       return const OpenFoodFactsSearchResponse.empty();
     }
 
+    final trimmedQuery = query.trim();
+    final cacheKey = _cacheKey(trimmedQuery, page);
+
+    // Verificar cache en memoria primero
+    final cachedResponse = _getFromMemoryCache(cacheKey);
+    if (cachedResponse != null) {
+      return cachedResponse;
+    }
+
     await _waitForRateLimit();
 
+    // Construir URL con parámetros optimizados según la documentación de OFF v2
     final uri = Uri.parse('$apiUrl/search').replace(
       queryParameters: {
-        'search_terms2': query.trim(), // Usar search_terms2 para mejor relevancia
+        'search_terms': trimmedQuery, // Parámetro correcto de la API v2
         'page': page.toString(),
         'page_size': pageSize.toString(),
-        'countries_tags': country,
-        'fields': 'code,product_name,brands,image_url,image_small_url,'
-            'ingredients_text,serving_size,nutriments,product_quantity',
-        // No usar sort_by para obtener resultados por relevancia de búsqueda
-        'states_tags': 'en:complete', // Solo productos completos
+        'countries_tags_en': country, // Preferir resultados del país
+        'fields':
+            'code,product_name,generic_name,brands,image_url,image_small_url,'
+                'ingredients_text,serving_size,nutriments,product_quantity',
+        'sort_by': 'popularity_key', // Ordenar por popularidad
       },
     );
 
+    _debugLog('Search query: "$trimmedQuery" (page $page, size $pageSize)');
+    _debugLog('Full URL: $uri');
+
     try {
-      _recordRequest();
-      
-      final response = await _client
-          .get(uri, headers: _headers)
-          .timeout(_timeout);
+      final response = await _executeWithRetry(uri);
 
       if (response.statusCode == 429) {
         throw const RateLimitException();
@@ -147,7 +248,15 @@ class OpenFoodFactsService {
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
-        return OpenFoodFactsSearchResponse.fromApiJson(json);
+        final result = OpenFoodFactsSearchResponse.fromApiJson(json);
+
+        _debugLog(
+            'Found ${result.products.length} valid products (total: ${result.count})');
+
+        // Guardar en cache en memoria
+        _saveToMemoryCache(cacheKey, result);
+
+        return result;
       }
 
       if (response.statusCode >= 500) {
@@ -177,19 +286,30 @@ class OpenFoodFactsService {
     await _waitForRateLimit();
 
     final cleanBarcode = barcode.trim();
+
+    // Verificar cache en memoria
+    final cacheKey = 'barcode:$cleanBarcode';
+    final cached = _memoryCache[cacheKey];
+    if (cached != null &&
+        DateTime.now().difference(cached.timestamp) <= _memoryCacheTTL) {
+      _debugLog('Cache hit for barcode: $cleanBarcode');
+      return cached.response.products.isNotEmpty
+          ? cached.response.products.first
+          : null;
+    }
+
     final uri = Uri.parse('$apiUrl/product/$cleanBarcode').replace(
       queryParameters: {
-        'fields': 'code,product_name,brands,image_url,image_small_url,'
+        'fields': 'code,product_name,generic_name,brands,image_url,image_small_url,'
             'ingredients_text,serving_size,nutriments',
       },
     );
 
+    _debugLog('Barcode search: $cleanBarcode');
+    _debugLog('Full URL: $uri');
+
     try {
-      _recordRequest();
-      
-      final response = await _client
-          .get(uri, headers: _headers)
-          .timeout(_timeout);
+      final response = await _executeWithRetry(uri);
 
       if (response.statusCode == 429) {
         throw const RateLimitException();
@@ -202,15 +322,30 @@ class OpenFoodFactsService {
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         final status = json['status'] as int? ?? 0;
-        
+
         if (status == 0) {
+          _debugLog('Product not found for barcode: $cleanBarcode');
           throw const NotFoundException();
         }
 
         final result = OpenFoodFactsResult.fromApiJson(json);
         if (!result.hasValidNutrition) {
+          _debugLog('Product has no valid nutrition data: $cleanBarcode');
           return null; // Producto sin datos nutricionales
         }
+
+        // Cache el resultado
+        _memoryCache[cacheKey] = _CachedResponse(
+          OpenFoodFactsSearchResponse(
+            products: [result],
+            count: 1,
+            page: 1,
+            pageSize: 1,
+          ),
+          DateTime.now(),
+        );
+
+        _debugLog('Found product: ${result.name} (${result.brand ?? "sin marca"})');
         return result;
       }
 
@@ -250,8 +385,23 @@ class OpenFoodFactsService {
     }
   }
 
+  /// Limpia el cache en memoria
+  void clearMemoryCache() {
+    _memoryCache.clear();
+    _debugLog('Memory cache cleared');
+  }
+
   /// Cierra el cliente HTTP
   void dispose() {
     _client.close();
+    _memoryCache.clear();
   }
+}
+
+/// Entrada de cache en memoria
+class _CachedResponse {
+  final OpenFoodFactsSearchResponse response;
+  final DateTime timestamp;
+
+  _CachedResponse(this.response, this.timestamp);
 }
