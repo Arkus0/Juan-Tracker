@@ -68,10 +68,6 @@ class ScoringWeights {
 
 /// Scoring con BM25 + categorías
 class FoodSearchScoring {
-  // Parámetros BM25
-  static const double _k1 = 1.2; // Control de saturación de frecuencia
-  static const double _b = 0.75; // Normalización por longitud
-
   // Pesos por defecto
   static const ScoringWeights _defaultWeights = ScoringWeights();
 
@@ -104,55 +100,81 @@ class FoodSearchScoring {
     'marinado', 'especiado', 'condimentado',
   };
 
-  /// Calcula el score BM25 para un documento
+  /// Calcula score de coincidencia de texto con múltiples niveles
   ///
-  /// BM25 es un algoritmo de ranking probabilístico que mejora TF-IDF
-  /// considerando la saturación de términos y la longitud del documento
-  static double _bm25Score(
+  /// 1. Coincidencia exacta de palabra completa (score alto)
+  /// 2. Coincidencia de prefijo al inicio de palabra (score medio)
+  /// 3. Coincidencia parcial (score bajo, penalizado)
+  static double _textMatchScore(
     List<String> queryTerms,
     String document,
-    Map<String, double> idfScores,
-    double avgDocLength,
+    String query,
   ) {
-    final docTerms = _tokenize(document);
-    final docLength = docTerms.length.toDouble();
+    final docLower = document.toLowerCase();
+    final queryLower = query.toLowerCase().trim();
     double score = 0;
+    int exactMatches = 0;
+    int prefixMatches = 0;
+    int partialMatches = 0;
 
-    for (final term in queryTerms) {
-      final tf = docTerms.where((t) => t == term).length;
-      if (tf == 0) continue;
+    // 1. Coincidencia exacta del nombre completo (máximo puntaje)
+    if (docLower == queryLower) {
+      return 1000.0;
+    }
 
-      final idf = idfScores[term] ?? 0;
-      
-      // Fórmula BM25
-      final numerator = tf * (_k1 + 1);
-      final denominator = tf + _k1 * (1 - _b + _b * (docLength / avgDocLength));
-      
-      score += idf * (numerator / denominator);
+    // 2. Coincidencia al inicio del documento
+    if (docLower.startsWith(queryLower)) {
+      score += 100.0;
+    }
+
+    // 3. Coincidencia de palabras individuales
+    final docTerms = _tokenize(document);
+    
+    for (final queryTerm in queryTerms) {
+      // 3a. Coincidencia exacta de palabra
+      if (docTerms.contains(queryTerm)) {
+        score += 50.0;
+        exactMatches++;
+        continue;
+      }
+
+      // 3b. Coincidencia de prefijo al inicio de palabra
+      bool prefixMatch = false;
+      for (final docTerm in docTerms) {
+        if (docTerm.startsWith(queryTerm)) {
+          score += 20.0;
+          prefixMatches++;
+          prefixMatch = true;
+          break;
+        }
+      }
+      if (prefixMatch) continue;
+
+      // 3c. Coincidencia parcial (penalizada)
+      for (final docTerm in docTerms) {
+        if (docTerm.contains(queryTerm)) {
+          // Penalización fuerte para coincidencias parciales
+          // "pollo" en "polvo" solo da 2 puntos, no 50
+          score += 2.0;
+          partialMatches++;
+          break;
+        }
+      }
+    }
+
+    // Bonus por múltiples coincidencias exactas
+    if (exactMatches == queryTerms.length) {
+      score *= 2.0; // Todas las palabras coinciden exactamente
+    } else if (exactMatches > 0) {
+      score *= (1.0 + exactMatches * 0.3);
+    }
+
+    // Penalización si solo hay coincidencias parciales
+    if (exactMatches == 0 && prefixMatches == 0 && partialMatches > 0) {
+      score *= 0.3; // Reducir drásticamente score de falsos positivos
     }
 
     return score;
-  }
-
-  /// Calcula scores IDF para los términos de la query
-  static Map<String, double> _calculateIdfScores(
-    List<String> queryTerms,
-    List<String> documents,
-  ) {
-    final idfScores = <String, double>{};
-    final totalDocs = documents.length.toDouble();
-
-    for (final term in queryTerms) {
-      // Número de documentos que contienen el término
-      final docsWithTerm = documents.where((d) => _tokenize(d).contains(term)).length;
-      
-      // IDF = log((N - n + 0.5) / (n + 0.5) + 1)
-      // Usamos versión suavizada para evitar división por cero
-      final n = docsWithTerm > 0 ? docsWithTerm : 0.5;
-      idfScores[term] = log((totalDocs - n + 0.5) / (n + 0.5) + 1);
-    }
-
-    return idfScores;
   }
 
   /// Score por categorías del producto
@@ -266,8 +288,6 @@ class FoodSearchScoring {
         .toList();
   }
 
-  static double log(double x) => x <= 0 ? 0 : x.toString().length as double; // Fallback simple
-
   /// Ordena productos por relevancia usando BM25 + categorías
   static List<ScoredResult> rankProducts(
     List<OpenFoodFactsResult> products,
@@ -291,24 +311,14 @@ class FoodSearchScoring {
       )).toList();
     }
 
-    // Preparar documentos para BM25
-    final documents = products.map((p) => '${p.name} ${p.brand ?? ''}').toList();
-    final avgDocLength = documents.map((d) => _tokenize(d).length)
-                                   .fold<int>(0, (a, b) => a + b) / 
-                        documents.length.toDouble();
-    
-    // Calcular IDF
-    final idfScores = _calculateIdfScores(queryTerms, documents);
-
     // Calcular scores para cada producto
     final scoredProducts = <ScoredResult>[];
 
-    for (int i = 0; i < products.length; i++) {
-      final product = products[i];
-      final document = documents[i];
+    for (final product in products) {
+      final document = '${product.name} ${product.brand ?? ''}';
 
-      // BM25 Score
-      final textScore = _bm25Score(queryTerms, document, idfScores, avgDocLength);
+      // Score de coincidencia de texto (con prioridad a coincidencias exactas)
+      final textScore = _textMatchScore(queryTerms, document, query);
 
       // Otros scores
       final categoryScore = _calculateCategoryScore(product);
