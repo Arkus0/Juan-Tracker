@@ -220,15 +220,45 @@ class OpenFoodFactsSearchResponse {
   });
 
   factory OpenFoodFactsSearchResponse.fromApiJson(Map<String, dynamic> json) {
-    final products = (json['products'] as List<dynamic>? ?? [])
-        .map((p) => Map<String, dynamic>.from(p as Map))
-        .map((p) => OpenFoodFactsResult.fromApiJson({'product': p, 'code': p['code'] ?? ''}))
-        .where((p) => p.hasValidNutrition) // Solo productos con datos válidos
-        .toList();
+    final rawProducts = json['products'] as List<dynamic>? ?? [];
+
+    final products = <OpenFoodFactsResult>[];
+
+    for (final p in rawProducts) {
+      if (p is! Map) continue;
+
+      final productMap = Map<String, dynamic>.from(p);
+
+      // Filtrar productos sin nombre
+      final productName = productMap['product_name'] as String?;
+      final genericName = productMap['generic_name'] as String?;
+      final hasValidName = (productName != null && productName.trim().isNotEmpty) ||
+          (genericName != null && genericName.trim().isNotEmpty);
+
+      if (!hasValidName) continue;
+
+      // Filtrar productos sin nutriments
+      final nutriments = productMap['nutriments'] as Map?;
+      if (nutriments == null || nutriments.isEmpty) continue;
+
+      // Parse el producto
+      final result = OpenFoodFactsResult.fromApiJson({
+        'product': productMap,
+        'code': productMap['code'] ?? '',
+      });
+
+      // Filtrar productos sin datos nutricionales válidos
+      if (!result.hasValidNutrition) continue;
+
+      // Filtrar productos con nombre genérico "Producto sin nombre"
+      if (result.name == 'Producto sin nombre') continue;
+
+      products.add(result);
+    }
 
     final count = json['count'] as int? ?? 0;
     final page = json['page'] as int? ?? 1;
-    final pageSize = json['page_size'] as int? ?? 24;
+    final pageSize = json['page_size'] as int? ?? 20;
 
     return OpenFoodFactsSearchResponse(
       products: products,
