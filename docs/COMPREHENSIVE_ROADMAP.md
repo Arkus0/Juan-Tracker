@@ -2,7 +2,7 @@
 
 > **Fecha de creación**: 30 Enero 2026  
 > **Última actualización**: 30 Enero 2026  
-> **Estado**: Fases 1-5 completadas ✅  
+> **Estado**: Fases 1-6 completadas ✅  
 > **Tiempo estimado total**: ~21 días de trabajo efectivo
 
 ---
@@ -103,6 +103,20 @@ Implementación incremental en 10 fases, priorizando **quick wins** primero para
 
 ---
 
+### ✅ FASE 6: Today View Completa (~3 días)
+**Fecha**: 30 Enero 2026  
+**Estado**: COMPLETADA
+
+| Tarea | Descripción | Archivos | Estado |
+|-------|-------------|----------|--------|
+| today_screen.dart | Pantalla HOY unificada | `today_screen.dart` (nuevo) | ✅ |
+| Lógica contextual | Mensajes según hora del día | `today_screen.dart` | ✅ |
+| TrainingTodayCard | Card de entrenamiento con estado visual | `today_screen.dart` | ✅ |
+| NutritionTodayCard | Card de nutrición con macros y progreso | `today_screen.dart` | ✅ |
+| QuickActionsSection | Accesos rápidos contextuales por hora | `today_screen.dart` | ✅ |
+
+---
+
 ## CALENDARIO DE IMPLEMENTACIÓN
 
 ```
@@ -136,7 +150,7 @@ FASE                          DURACIÓN    DÍAS        DEPENDENCIA
    ├─ Detectar descanso (<20h)
    └─ Missed Day Recovery UI
 ───────────────────────────────────────────────────────────────────────────────
-⏳ FASE 6: Today View Completa  ~3d        Día 8-10    Fase 4, 5
+✅ FASE 6: Today View Completa  ~3d        Día 8-10    Fase 4, 5
    ├─ today_screen.dart
    ├─ Lógica contextual por hora
    └─ Integración scheduling
