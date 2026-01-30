@@ -245,48 +245,79 @@ final currentMealTypeProvider = Provider<diet.MealType>((ref) {
 
 /// Provider de sugerencias inteligentes de comida basadas en:
 /// 1. Hora del día (desayuno, almuerzo, cena, snack)
-/// 2. Historial del usuario para esa comida
-/// 3. Frecuencia de consumo
+/// 2. Historial del usuario para esa comida (últimos 30 días)
+/// 3. Frecuencia de consumo (>40% de días = "habitual")
+/// 🎯 HIGH-003: Comida Habitual - Detección de patrones temporales
 final smartFoodSuggestionsProvider = FutureProvider<List<SmartFoodSuggestion>>((ref) async {
   final repo = ref.read(diaryRepositoryProvider);
   final suggestedMeal = ref.watch(currentMealTypeProvider);
 
-  // Obtener historial para este tipo de comida (últimas 50 entradas)
-  final history = await repo.getHistoryByMealType(suggestedMeal, limit: 50);
+  // 🎯 HIGH-003: Usar rango de 30 días para detección de patrones
+  final now = DateTime.now();
+  final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+  final recentEntries = await repo.getByDateRange(thirtyDaysAgo, now);
 
-  if (history.isEmpty) {
-    // Sin historial: retornar lista vacía (el UI mostrará un mensaje educativo)
+  // Filtrar solo entradas del tipo de comida actual
+  final mealEntries = recentEntries.where((e) => e.mealType == suggestedMeal).toList();
+
+  if (mealEntries.isEmpty) {
+    // Sin historial para este tipo de comida
     return [];
   }
 
-  // Contar frecuencia de cada alimento
+  // Contar días únicos con este tipo de comida
+  final uniqueDays = mealEntries
+      .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
+      .toSet();
+  final totalDaysWithMealType = uniqueDays.length;
+
+  // Agrupar por alimento y contar frecuencia
   final frequencyMap = <String, _FoodFrequency>{};
 
-  for (final entry in history) {
-    final key = entry.foodId ?? entry.foodName;
+  for (final entry in mealEntries) {
+    final key = entry.foodId ?? entry.foodName.toLowerCase().trim();
     if (frequencyMap.containsKey(key)) {
-      frequencyMap[key]!.count++;
+      frequencyMap[key]!.addEntry(entry);
     } else {
-      frequencyMap[key] = _FoodFrequency(entry: entry, count: 1);
+      frequencyMap[key] = _FoodFrequency(entry: entry)..addEntry(entry);
     }
   }
 
-  // Ordenar por frecuencia y tomar los top 5
-  final sorted = frequencyMap.values.toList()
-    ..sort((a, b) => b.count.compareTo(a.count));
+  // Calcular ratio de frecuencia y filtrar habituales (>40%)
+  final habitualFoods = frequencyMap.values.where((freq) {
+    final ratio = freq.uniqueDays.length / totalDaysWithMealType;
+    return ratio >= 0.4; // 40% threshold = "habitual"
+  }).toList();
 
-  final topFoods = sorted.take(5).toList();
+  if (habitualFoods.isEmpty) {
+    // Sin habituales claros, mostrar los más frecuentes (top 3)
+    final sorted = frequencyMap.values.toList()
+      ..sort((a, b) => b.uniqueDays.length.compareTo(a.uniqueDays.length));
+    habitualFoods.addAll(sorted.take(3));
+  }
 
-  // Convertir a SmartFoodSuggestion
-  return topFoods.map((freq) {
-    final entry = freq.entry;
+  // Ordenar por frecuencia (descendente) y último uso
+  habitualFoods.sort((a, b) {
+    final countCompare = b.uniqueDays.length.compareTo(a.uniqueDays.length);
+    if (countCompare != 0) return countCompare;
+    return b.lastUsed.compareTo(a.lastUsed);
+  });
+
+  // Tomar top 3 y convertir a SmartFoodSuggestion
+  return habitualFoods.take(3).map((freq) {
+    final entry = freq.mostRecentEntry;
+    final count = freq.uniqueDays.length;
+    final ratio = count / totalDaysWithMealType;
+
     String reason;
-    if (freq.count >= 5) {
-      reason = 'Tu favorito (${freq.count}x)';
-    } else if (freq.count >= 3) {
-      reason = 'Comes seguido (${freq.count}x)';
+    if (ratio >= 0.7) {
+      reason = 'Casi siempre (${count}x)';
+    } else if (ratio >= 0.5) {
+      reason = 'Muy habitual (${count}x)';
+    } else if (ratio >= 0.4) {
+      reason = 'Frecuente (${count}x)';
     } else {
-      reason = 'Reciente';
+      reason = 'Reciente (${count}x)';
     }
 
     return SmartFoodSuggestion(
@@ -297,21 +328,39 @@ final smartFoodSuggestionsProvider = FutureProvider<List<SmartFoodSuggestion>>((
       protein: entry.protein,
       carbs: entry.carbs,
       fat: entry.fat,
-      amount: entry.amount,
+      amount: freq.avgQuantity,
       unit: entry.unit,
-      timesEaten: freq.count,
+      timesEaten: count,
       suggestedMealType: suggestedMeal,
       reason: reason,
     );
   }).toList();
 });
 
-/// Helper class para contar frecuencia
+/// Helper class para contar frecuencia y calcular estadísticas
+/// 🎯 HIGH-003: Mejorado para detección de patrones habituales
 class _FoodFrequency {
   final diet.DiaryEntryModel entry;
-  int count;
+  final Set<DateTime> uniqueDays = {};
+  DateTime lastUsed;
+  double totalQuantity = 0;
+  int entryCount = 0;
 
-  _FoodFrequency({required this.entry, required this.count});
+  _FoodFrequency({required this.entry}) : lastUsed = entry.date;
+
+  void addEntry(diet.DiaryEntryModel e) {
+    final day = DateTime(e.date.year, e.date.month, e.date.day);
+    uniqueDays.add(day);
+    totalQuantity += e.amount;
+    entryCount++;
+    if (e.date.isAfter(lastUsed)) {
+      lastUsed = e.date;
+    }
+  }
+
+  diet.DiaryEntryModel get mostRecentEntry => entry;
+
+  double get avgQuantity => entryCount > 0 ? totalQuantity / entryCount : entry.amount;
 }
 
 /// Provider de mensaje contextual para el tipo de comida actual
