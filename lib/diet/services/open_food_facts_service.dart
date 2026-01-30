@@ -239,8 +239,8 @@ class OpenFoodFactsService {
         'languages_tags': 'es',
         'stores_tags': '', // Dejar vacío para no restringir demasiado
         
-        // FILTROS DE CALIDAD (solo productos con datos completos)
-        'states_tags': 'en:complete', // Solo productos completos
+        // FILTROS DE CALIDAD (productos con datos nutricionales)
+        // Nota: 'en:complete' es muy restrictivo, lo quitamos para más resultados
         
         // CAMPOS A RETORNAR (optimizado para nuestra app)
         'fields': 
