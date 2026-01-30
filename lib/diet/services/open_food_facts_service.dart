@@ -202,11 +202,13 @@ class OpenFoodFactsService {
   /// - [page]: Página de resultados (1-based)
   /// - [pageSize]: Cantidad de resultados por página (max 100)
   /// - [country]: Código de país para preferencia de resultados (default: 'es')
+  /// - [withFallback]: Si es true y hay pocos resultados, busca sin restricciones
   Future<OpenFoodFactsSearchResponse> searchProducts(
     String query, {
     int page = 1,
-    int pageSize = 20,
+    int pageSize = 50,
     String country = 'es',
+    bool withFallback = true,
   }) async {
     if (query.trim().isEmpty) {
       return const OpenFoodFactsSearchResponse.empty();
@@ -223,55 +225,131 @@ class OpenFoodFactsService {
 
     await _waitForRateLimit();
 
-    // Construir URL con parámetros optimizados según la documentación de OFF v2
-    // Documentación: https://openfoodfacts.github.io/openfoodfacts-server/reference/api-v3.html
-    final uri = Uri.parse('$apiUrl/search').replace(
-      queryParameters: {
-        // Términos de búsqueda (obligatorio)
-        'search_terms': trimmedQuery,
-        
-        // Paginación
-        'page': page.toString(),
-        'page_size': pageSize.toString(),
-        
-        // FILTROS GEOGRÁFICOS (priorizar España fuertemente)
-        'countries_tags_en': 'spain',
-        'languages_tags': 'es',
-        'stores_tags': '', // Dejar vacío para no restringir demasiado
-        
-        // FILTROS DE CALIDAD (productos con datos nutricionales)
-        // Nota: 'en:complete' es muy restrictivo, lo quitamos para más resultados
-        
-        // CAMPOS A RETORNAR (optimizado para nuestra app)
-        'fields': 
-            'code,'
-            'product_name,'
-            'generic_name,'
-            'brands,'
-            'image_url,'
-            'image_small_url,'
-            'ingredients_text,'
-            'serving_size,'
-            'product_quantity,'
-            'nutriments,'
-            'nutriscore_grade,'
-            'nutriscore_score,'
-            'nova_group,'
-            'categories_tags,'
-            'labels_tags,'
-            'origins_tags,'
-            'states_tags',
-        
-        // ORDENAMIENTO
-        // Opciones: popularity_key, product_name, created_t, last_modified_t
-        'sort_by': 'popularity_key',
-        
-        // Dirección del ordenamiento
-        'sort_direction': 'desc',
-      },
+    // FASE 1: Búsqueda abierta (sin filtros restrictivos de país/idioma)
+    // Usamos cc= para indicar preferencia de país, pero no filtramos
+    // Esto permite que OFF priorice productos españoles sin excluir otros
+    final result = await _executeSearch(
+      trimmedQuery,
+      page: page,
+      pageSize: pageSize,
+      countryCode: country,
     );
 
-    _debugLog('Search query: "$trimmedQuery" (page $page, size $pageSize)');
+    // FASE 2: Fallback si hay muy pocos resultados
+    // Si obtuvimos menos de 5 productos y es primera página, intentar búsqueda global
+    if (withFallback && page == 1 && result.products.length < 5) {
+      _debugLog('Pocos resultados (${result.products.length}), buscando sin restricciones...');
+
+      await _waitForRateLimit();
+      final globalResult = await _executeSearch(
+        trimmedQuery,
+        page: page,
+        pageSize: pageSize,
+        countryCode: null, // Sin preferencia de país
+      );
+
+      // Combinar resultados (primero locales, luego globales)
+      final combined = _combineResults(result.products, globalResult.products);
+
+      final combinedResponse = OpenFoodFactsSearchResponse(
+        products: combined,
+        count: result.count + globalResult.count,
+        page: page,
+        pageSize: pageSize,
+        hasMore: result.hasMore || globalResult.hasMore,
+      );
+
+      _saveToMemoryCache(cacheKey, combinedResponse);
+      return combinedResponse;
+    }
+
+    // Guardar en cache en memoria
+    _saveToMemoryCache(cacheKey, result);
+    return result;
+  }
+
+  /// Combina resultados de dos búsquedas eliminando duplicados
+  List<OpenFoodFactsResult> _combineResults(
+    List<OpenFoodFactsResult> primary,
+    List<OpenFoodFactsResult> secondary,
+  ) {
+    final seenCodes = <String>{};
+    final combined = <OpenFoodFactsResult>[];
+
+    // Primero los resultados primarios (locales/preferidos)
+    for (final p in primary) {
+      if (!seenCodes.contains(p.code)) {
+        seenCodes.add(p.code);
+        combined.add(p);
+      }
+    }
+
+    // Luego los secundarios (globales)
+    for (final p in secondary) {
+      if (!seenCodes.contains(p.code)) {
+        seenCodes.add(p.code);
+        combined.add(p);
+      }
+    }
+
+    return combined;
+  }
+
+  /// Ejecuta una búsqueda individual contra la API
+  Future<OpenFoodFactsSearchResponse> _executeSearch(
+    String query, {
+    required int page,
+    required int pageSize,
+    String? countryCode,
+  }) async {
+    // Construir parámetros de búsqueda optimizados
+    // Documentación: https://openfoodfacts.github.io/openfoodfacts-server/reference/api-v3.html
+    final queryParams = <String, String>{
+      // Términos de búsqueda (obligatorio)
+      'search_terms': query,
+
+      // Paginación - pageSize aumentado de 20 a 50 para más candidatos
+      'page': page.toString(),
+      'page_size': pageSize.toString(),
+
+      // CAMPOS A RETORNAR (optimizado para nuestra app)
+      'fields':
+          'code,'
+          'product_name,'
+          'generic_name,'
+          'brands,'
+          'image_url,'
+          'image_small_url,'
+          'ingredients_text,'
+          'serving_size,'
+          'product_quantity,'
+          'nutriments,'
+          'nutriscore_grade,'
+          'nutriscore_score,'
+          'nova_group,'
+          'categories_tags,'
+          'labels_tags,'
+          'origins_tags,'
+          'countries_tags,'
+          'states_tags',
+
+      // ORDENAMIENTO: unique_scans_n (escaneos) es más relevante que popularity_key
+      // popularity_key prioriza productos globales muy conocidos
+      // unique_scans_n prioriza productos realmente usados
+      'sort_by': 'unique_scans_n',
+      'sort_direction': 'desc',
+    };
+
+    // Si hay preferencia de país, usar cc= (country code)
+    // Esto influye en el ranking sin filtrar estrictamente
+    if (countryCode != null) {
+      queryParams['cc'] = countryCode;
+      queryParams['lc'] = countryCode; // Idioma preferido para nombres
+    }
+
+    final uri = Uri.parse('$apiUrl/search').replace(queryParameters: queryParams);
+
+    _debugLog('Search query: "$query" (page $page, size $pageSize, cc=$countryCode)');
     _debugLog('Full URL: $uri');
 
     try {
@@ -287,9 +365,6 @@ class OpenFoodFactsService {
 
         _debugLog(
             'Found ${result.products.length} valid products (total: ${result.count})');
-
-        // Guardar en cache en memoria
-        _saveToMemoryCache(cacheKey, result);
 
         return result;
       }
