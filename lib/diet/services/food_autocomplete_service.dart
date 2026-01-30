@@ -3,9 +3,13 @@
 // Implementa:
 // - Trie (árbol prefijo) para búsqueda eficiente de prefijos
 // - Sugerencias basadas en popularidad/frecuencia
-// - Aprendizaje de búsquedas del usuario
+// - Aprendizaje de búsquedas del usuario (persistido en SharedPreferences)
 // - Corrección ortográfica ligera
 
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Nodo del Trie
 class _TrieNode {
@@ -41,13 +45,32 @@ enum SuggestionType {
   recent,     // Búsquedas recientes
 }
 
-/// Servicio de autocompletar con Trie
+/// Servicio de autocompletar con Trie y persistencia
 class FoodAutocompleteService {
   final _TrieNode _root = _TrieNode();
   final Map<String, int> _userSearchFrequency = {};
   final List<String> _recentSearches = [];
-  
+
   static const int _maxRecentSearches = 20;
+  static const String _frequencyKey = 'autocomplete_frequency_v1';
+  static const String _recentKey = 'autocomplete_recent_v1';
+
+  SharedPreferences? _prefs;
+  bool _isInitialized = false;
+
+  // Singleton pattern
+  static FoodAutocompleteService? _instance;
+  factory FoodAutocompleteService() {
+    _instance ??= FoodAutocompleteService._internal();
+    return _instance!;
+  }
+  FoodAutocompleteService._internal();
+
+  /// Solo para tests: resetea la instancia singleton
+  @visibleForTesting
+  static void resetForTesting() {
+    _instance = null;
+  }
 
   // Términos populares predefinidos (alimentos comunes en español)
   static const List<String> _popularTerms = [
@@ -88,10 +111,65 @@ class FoodAutocompleteService {
     'chocolate', 'chocolate negro', 'galletas', 'cacao',
   ];
 
-  /// Inicializa el servicio con términos populares
-  void initialize() {
+  /// Inicializa el servicio con términos populares y carga historial persistido
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+
+    // Insertar términos populares
     for (final term in _popularTerms) {
       _insert(term.toLowerCase(), frequency: 5);
+    }
+
+    // Cargar historial persistido
+    await _loadPersistedHistory();
+    _isInitialized = true;
+  }
+
+  /// Carga el historial persistido de SharedPreferences
+  Future<void> _loadPersistedHistory() async {
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+
+      // Cargar frecuencias de usuario
+      final frequencyJson = _prefs!.getString(_frequencyKey);
+      if (frequencyJson != null) {
+        final frequencyMap = jsonDecode(frequencyJson) as Map<String, dynamic>;
+        for (final entry in frequencyMap.entries) {
+          final term = entry.key;
+          final frequency = entry.value as int;
+          _userSearchFrequency[term] = frequency;
+          // Insertar en el Trie
+          _insert(term, frequency: frequency);
+        }
+      }
+
+      // Cargar búsquedas recientes
+      final recentJson = _prefs!.getString(_recentKey);
+      if (recentJson != null) {
+        final recentList = (jsonDecode(recentJson) as List<dynamic>).cast<String>();
+        _recentSearches.addAll(recentList);
+      }
+    } catch (e) {
+      // Ignorar errores de carga, empezar con datos vacíos
+      debugPrint('Error loading autocomplete history: $e');
+    }
+  }
+
+  /// Persiste el historial actual en SharedPreferences
+  Future<void> _persistHistory() async {
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+
+      // Guardar frecuencias (limitar a 100 entradas más frecuentes)
+      final sortedEntries = _userSearchFrequency.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      final limitedFrequency = Map.fromEntries(sortedEntries.take(100));
+      await _prefs!.setString(_frequencyKey, jsonEncode(limitedFrequency));
+
+      // Guardar recientes
+      await _prefs!.setString(_recentKey, jsonEncode(_recentSearches));
+    } catch (e) {
+      debugPrint('Error persisting autocomplete history: $e');
     }
   }
 
@@ -109,7 +187,8 @@ class FoodAutocompleteService {
   }
 
   /// Registra una búsqueda del usuario (para aprendizaje)
-  void recordSearch(String query) {
+  /// Persiste automáticamente el historial
+  Future<void> recordSearch(String query) async {
     final normalized = query.toLowerCase().trim();
     if (normalized.isEmpty || normalized.length < 2) return;
 
@@ -125,6 +204,9 @@ class FoodAutocompleteService {
 
     // Insertar/actualizar en el Trie
     _insert(normalized, frequency: _userSearchFrequency[normalized]!);
+
+    // Persistir cambios (fire-and-forget para no bloquear UI)
+    _persistHistory();
   }
 
   /// Obtiene sugerencias de autocompletar
@@ -212,9 +294,18 @@ class FoodAutocompleteService {
   }
 
   /// Limpia el historial de búsquedas del usuario
-  void clearUserHistory() {
+  Future<void> clearUserHistory() async {
     _userSearchFrequency.clear();
     _recentSearches.clear();
+
+    // Eliminar datos persistidos
+    try {
+      _prefs ??= await SharedPreferences.getInstance();
+      await _prefs!.remove(_frequencyKey);
+      await _prefs!.remove(_recentKey);
+    } catch (e) {
+      debugPrint('Error clearing autocomplete history: $e');
+    }
   }
 
   /// Obtiene estadísticas

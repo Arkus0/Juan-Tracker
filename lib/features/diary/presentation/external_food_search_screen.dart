@@ -15,7 +15,7 @@ import 'add_entry_dialog.dart';
 import 'barcode_scanner_screen.dart';
 
 /// Pantalla de búsqueda de alimentos externos (Open Food Facts)
-/// 
+///
 /// Funcionalidades:
 /// - Búsqueda por texto con debounce
 /// - Escaneo de código de barras (cámara primero)
@@ -25,10 +25,12 @@ import 'barcode_scanner_screen.dart';
 /// - Guardar alimentos a biblioteca local
 class ExternalFoodSearchScreen extends ConsumerStatefulWidget {
   final bool returnFoodOnSelect; // Si true, retorna el FoodModel en vez de ir al diario
+  final String? initialBarcode; // Código de barras a buscar automáticamente al abrir
 
   const ExternalFoodSearchScreen({
     super.key,
     this.returnFoodOnSelect = false,
+    this.initialBarcode,
   });
 
   @override
@@ -46,6 +48,13 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
     super.initState();
     _searchController = TextEditingController();
     _initSpeech();
+
+    // Si se proporciona un código de barras inicial, buscarlo automáticamente
+    if (widget.initialBarcode != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _processBarcode(widget.initialBarcode!);
+      });
+    }
   }
 
   Future<void> _initSpeech() async {
