@@ -11,7 +11,6 @@ import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/services/day_summary_calculator.dart';
 import 'package:juan_tracker/features/targets/presentation/targets_screen.dart';
-import 'food_search_screen.dart';
 
 enum DiaryViewMode { list, calendar }
 
@@ -33,7 +32,32 @@ final diaryViewModeProvider = NotifierProvider<DiaryViewModeNotifier, DiaryViewM
   DiaryViewModeNotifier.new,
 );
 
-/// Pantalla principal del Diario con diseño mejorado y vista de calendario
+/// Notifier para controlar qué secciones de comida están expandidas
+class ExpandedMealsNotifier extends Notifier<Set<MealType>> {
+  @override
+  Set<MealType> build() => {
+        MealType.breakfast,
+        MealType.lunch,
+        MealType.dinner,
+        MealType.snack,
+      };
+
+  void toggle(MealType mealType) {
+    final current = Set<MealType>.from(state);
+    if (current.contains(mealType)) {
+      current.remove(mealType);
+    } else {
+      current.add(mealType);
+    }
+    state = current;
+  }
+}
+
+final expandedMealsProvider = NotifierProvider<ExpandedMealsNotifier, Set<MealType>>(
+  ExpandedMealsNotifier.new,
+);
+
+/// Pantalla principal del Diario con diseño estilo FatSecret
 class DiaryScreen extends ConsumerWidget {
   const DiaryScreen({super.key});
 
@@ -45,19 +69,17 @@ class DiaryScreen extends ConsumerWidget {
     final viewMode = ref.watch(diaryViewModeProvider);
 
     return Scaffold(
-      // UX-005: Edge-to-edge support
       extendBodyBehindAppBar: true,
       extendBody: true,
       body: CustomScrollView(
         slivers: [
-          // App Bar con fecha y acciones
+          // App Bar
           SliverAppBar(
             floating: true,
             snap: true,
             title: const Text('Diario'),
             centerTitle: true,
             actions: [
-              // Toggle vista
               Semantics(
                 button: true,
                 label: viewMode == DiaryViewMode.list 
@@ -69,9 +91,6 @@ class DiaryScreen extends ConsumerWidget {
                         ? Icons.calendar_month 
                         : Icons.list,
                   ),
-                  tooltip: viewMode == DiaryViewMode.list 
-                      ? 'Vista calendario' 
-                      : 'Vista lista',
                   onPressed: () {
                     ref.read(diaryViewModeProvider.notifier).toggle();
                   },
@@ -88,7 +107,7 @@ class DiaryScreen extends ConsumerWidget {
             ],
           ),
 
-          // Selector de fecha horizontal (calendario semanal) - solo en vista lista
+          // Selector de fecha horizontal - solo en vista lista
           if (viewMode == DiaryViewMode.list)
             SliverToBoxAdapter(
               child: _WeekCalendar(
@@ -106,13 +125,12 @@ class DiaryScreen extends ConsumerWidget {
                 selectedDate: selectedDate,
                 onDateSelected: (date) {
                   ref.read(selectedDateProvider.notifier).setDate(date);
-                  // Volver a vista lista al seleccionar
                   ref.read(diaryViewModeProvider.notifier).setMode(DiaryViewMode.list);
                 },
               ),
             ),
 
-          // Resumen del día con progreso - solo en vista lista
+          // Resumen del día - solo en vista lista
           if (viewMode == DiaryViewMode.list)
             SliverToBoxAdapter(
               child: Padding(
@@ -128,58 +146,51 @@ class DiaryScreen extends ConsumerWidget {
               ),
             ),
 
-          // 🎯 HIGH-003: Smart Suggestions - Sugerencias basadas en hora/historial
-          if (viewMode == DiaryViewMode.list)
-            SliverToBoxAdapter(
-              child: _SmartSuggestionsSection(
-                onSuggestionTap: (suggestion) => _quickAddFromSuggestion(context, ref, suggestion),
-              ),
-            ),
-
-          // Quick Add - Comidas recientes (UX-003)
-          if (viewMode == DiaryViewMode.list)
-            SliverToBoxAdapter(
-              child: _QuickAddSection(
-                onQuickAdd: (entry) => _quickAddEntry(context, ref, entry),
-              ),
-            ),
-
-          // Lista de comidas - solo en vista lista
+          // Secciones de comidas - estilo FatSecret
           if (viewMode == DiaryViewMode.list)
             entriesAsync.when(
-              // 🎯 MED-006: Empty state educativo con contexto temporal
               data: (entries) {
-                if (entries.isEmpty) {
-                  final hour = DateTime.now().hour;
-                  final mealSuggestion = hour < 11
-                      ? 'desayuno'
-                      : hour < 15
-                          ? 'almuerzo'
-                          : hour < 19
-                              ? 'merienda'
-                              : 'cena';
-                  final suggestedMealType = hour < 11
-                      ? MealType.breakfast
-                      : hour < 15
-                          ? MealType.lunch
-                          : hour < 19
-                              ? MealType.snack
-                              : MealType.dinner;
-
-                  return SliverFillRemaining(
-                    child: AppEmpty(
-                      icon: Icons.restaurant_menu_outlined,
-                      title: '¡Empieza a registrar tu día!',
-                      subtitle:
-                          'Registrar lo que comes te ayuda a entender tus patrones '
-                          'y alcanzar tus objetivos. Tus comidas frecuentes se guardarán '
-                          'para añadirlas más rápido la próxima vez.',
-                      actionLabel: 'AÑADIR $mealSuggestion'.toUpperCase(),
-                      onAction: () => _showAddEntry(context, ref, suggestedMealType),
-                    ),
-                  );
+                // Agrupar entradas por tipo de comida
+                final entriesByMeal = <MealType, List<DiaryEntryModel>>{};
+                for (final entry in entries) {
+                  entriesByMeal.putIfAbsent(entry.mealType, () => []).add(entry);
                 }
-                return _MealsListSliver(entries: entries);
+
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Desayuno
+                      _MealSection(
+                        mealType: MealType.breakfast,
+                        entries: entriesByMeal[MealType.breakfast] ?? [],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      
+                      // Almuerzo
+                      _MealSection(
+                        mealType: MealType.lunch,
+                        entries: entriesByMeal[MealType.lunch] ?? [],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      
+                      // Cena
+                      _MealSection(
+                        mealType: MealType.dinner,
+                        entries: entriesByMeal[MealType.dinner] ?? [],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      
+                      // Snacks
+                      _MealSection(
+                        mealType: MealType.snack,
+                        entries: entriesByMeal[MealType.snack] ?? [],
+                      ),
+                      
+                      const SizedBox(height: 100),
+                    ]),
+                  ),
+                );
               },
               loading: () => const SliverFillRemaining(
                 child: DiarySkeleton(),
@@ -197,223 +208,308 @@ class DiaryScreen extends ConsumerWidget {
             const SliverToBoxAdapter(
               child: SizedBox(height: 100),
             ),
-
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 100),
-          ),
         ],
       ),
-      floatingActionButton: AppFAB(
-        onPressed: () => _showAddEntry(context, ref, MealType.snack),
-        icon: Icons.add_rounded,
-        label: 'Añadir',
+    );
+  }
+}
+
+/// Sección de comida expandible (estilo FatSecret)
+class _MealSection extends ConsumerWidget {
+  final MealType mealType;
+  final List<DiaryEntryModel> entries;
+
+  const _MealSection({
+    required this.mealType,
+    required this.entries,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final expandedMeals = ref.watch(expandedMealsProvider);
+    final isExpanded = expandedMeals.contains(mealType);
+    
+    // Calcular totales
+    final totals = _calculateTotals(entries);
+
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header expandible
+          InkWell(
+            onTap: () {
+              ref.read(expandedMealsProvider.notifier).toggle(mealType);
+            },
+            borderRadius: BorderRadius.vertical(
+              top: const Radius.circular(AppRadius.lg),
+              bottom: isExpanded ? Radius.zero : const Radius.circular(AppRadius.lg),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Row(
+                children: [
+                  // Icono de comida
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: _getMealColor(mealType).withAlpha((0.2 * 255).round()),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Icon(
+                      _getMealIcon(mealType),
+                      color: _getMealColor(mealType),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  
+                  // Nombre y totales
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          mealType.displayName,
+                          style: AppTypography.titleMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (entries.isNotEmpty)
+                          Text(
+                            '${totals.kcal} kcal · P:${totals.protein.toStringAsFixed(0)}g · C:${totals.carbs.toStringAsFixed(0)}g · G:${totals.fat.toStringAsFixed(0)}g',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          )
+                        else
+                          Text(
+                            'Sin alimentos',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: colors.onSurfaceVariant.withAlpha((0.7 * 255).round()),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Botón añadir
+                  IconButton(
+                    onPressed: () => _showAddEntry(context, ref, mealType),
+                    icon: const Icon(Icons.add_circle),
+                    color: colors.primary,
+                    tooltip: 'Añadir a ${mealType.displayName}',
+                  ),
+                  
+                  // Icono expandir/colapsar
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Contenido expandible
+          if (isExpanded) ...[
+            const Divider(height: 1),
+            
+            if (entries.isEmpty)
+              ListTile(
+                leading: Icon(
+                  Icons.add_circle_outline,
+                  color: colors.onSurfaceVariant.withAlpha((0.5 * 255).round()),
+                ),
+                title: Text(
+                  'Añadir ${mealType.displayName.toLowerCase()}',
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant.withAlpha((0.7 * 255).round()),
+                  ),
+                ),
+                onTap: () => _showAddEntry(context, ref, mealType),
+              )
+            else
+              ...entries.map((entry) => _EntryTile(
+                entry: entry,
+                onTap: () => _editEntry(context, ref, entry),
+                onDelete: () => _deleteEntry(context, ref, entry),
+              )),
+            
+            // Botón añadir más
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: TextButton.icon(
+                onPressed: () => _showAddEntry(context, ref, mealType),
+                icon: const Icon(Icons.add),
+                label: Text('Añadir a ${mealType.displayName.toLowerCase()}'),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 
   void _showAddEntry(BuildContext context, WidgetRef ref, MealType mealType) {
     ref.read(selectedMealTypeProvider.notifier).meal = mealType;
-    context.pushTo(AppRouter.nutritionFoods);
+    context.pushTo(AppRouter.nutritionFoodSearch);
   }
 
-  /// 🎯 HIGH-003: Quick add desde sugerencia inteligente
-  Future<void> _quickAddFromSuggestion(BuildContext context, WidgetRef ref, SmartFoodSuggestion suggestion) async {
-    HapticFeedback.mediumImpact();
+  void _editEntry(BuildContext context, WidgetRef ref, DiaryEntryModel entry) {
+    // TODO: Implementar edición
+  }
 
-    final selectedDate = ref.read(selectedDateProvider);
-    final repo = ref.read(diaryRepositoryProvider);
-    final currentMealType = ref.read(currentMealTypeProvider);
-
-    // Crear nueva entrada basada en la sugerencia
-    final newEntry = suggestion.toEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      date: selectedDate,
-      mealType: currentMealType,
+  void _deleteEntry(BuildContext context, WidgetRef ref, DiaryEntryModel entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar entrada'),
+        content: Text('¿Eliminar "${entry.foodName}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
     );
 
-    await repo.insert(newEntry);
-
-    if (context.mounted) {
-      AppSnackbar.showWithUndo(
-        context,
-        message: '${suggestion.foodName} añadido a ${currentMealType.displayName}',
-        onUndo: () async {
-          await repo.delete(newEntry.id);
-        },
-      );
+    if (confirmed == true) {
+      await ref.read(diaryRepositoryProvider).delete(entry.id);
+      if (context.mounted) {
+        AppSnackbar.show(context, message: 'Entrada eliminada');
+      }
     }
   }
 
-  /// Quick add: copia una entrada existente al día seleccionado
-  Future<void> _quickAddEntry(BuildContext context, WidgetRef ref, DiaryEntryModel template) async {
-    HapticFeedback.mediumImpact();
+  IconData _getMealIcon(MealType type) {
+    return switch (type) {
+      MealType.breakfast => Icons.wb_sunny_outlined,
+      MealType.lunch => Icons.wb_cloudy_outlined,
+      MealType.dinner => Icons.nights_stay_outlined,
+      MealType.snack => Icons.cookie_outlined,
+    };
+  }
 
-    final selectedDate = ref.read(selectedDateProvider);
-    final repo = ref.read(diaryRepositoryProvider);
+  Color _getMealColor(MealType type) {
+    return switch (type) {
+      MealType.breakfast => Colors.orange,
+      MealType.lunch => Colors.blue,
+      MealType.dinner => Colors.indigo,
+      MealType.snack => Colors.green,
+    };
+  }
 
-    // Crear nueva entrada basada en la plantilla
-    final newEntry = DiaryEntryModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      date: selectedDate,
-      mealType: MealType.snack, // Default a snack para quick add
-      foodId: template.foodId,
-      foodName: template.foodName,
-      foodBrand: template.foodBrand,
-      amount: template.amount,
-      unit: template.unit,
-      kcal: template.kcal,
-      protein: template.protein,
-      carbs: template.carbs,
-      fat: template.fat,
-      isQuickAdd: template.isQuickAdd,
-      notes: null,
-      createdAt: DateTime.now(),
-    );
+  _MealTotals _calculateTotals(List<DiaryEntryModel> entries) {
+    int kcal = 0;
+    double protein = 0;
+    double carbs = 0;
+    double fat = 0;
 
-    await repo.insert(newEntry);
-
-    if (context.mounted) {
-      AppSnackbar.showWithUndo(
-        context,
-        message: '${template.foodName} añadido',
-        onUndo: () async {
-          await repo.delete(newEntry.id);
-        },
-      );
+    for (final entry in entries) {
+      kcal += entry.kcal;
+      protein += entry.protein ?? 0;
+      carbs += entry.carbs ?? 0;
+      fat += entry.fat ?? 0;
     }
+
+    return _MealTotals(kcal: kcal, protein: protein, carbs: carbs, fat: fat);
   }
 }
 
-/// Vista de calendario mensual
-/// 🎯 MED-002: Añade indicadores de cumplimiento
-class _MonthCalendar extends ConsumerWidget {
-  final DateTime selectedDate;
-  final ValueChanged<DateTime> onDateSelected;
+class _MealTotals {
+  final int kcal;
+  final double protein;
+  final double carbs;
+  final double fat;
 
-  const _MonthCalendar({
-    required this.selectedDate,
-    required this.onDateSelected,
+  _MealTotals({
+    required this.kcal,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+  });
+}
+
+/// Tile de entrada individual
+class _EntryTile extends StatelessWidget {
+  final DiaryEntryModel entry;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _EntryTile({
+    required this.entry,
+    required this.onTap,
+    required this.onDelete,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final entryDaysAsync = ref.watch(calendarEntryDaysProvider);
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
 
-    // 🎯 MED-002: Cargar días con entradas para marcadores
-    final entryDays = entryDaysAsync.when(
-      data: (days) => days,
-      loading: () => <DateTime>{},
-      error: (_, __) => <DateTime>{},
-    );
-
-    return Card(
-      margin: const EdgeInsets.all(AppSpacing.lg),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Dismissible(
+      key: Key(entry.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        color: colors.error,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        child: Icon(Icons.delete, color: colors.onError),
+      ),
+      onDismissed: (_) => onDelete(),
+      child: ListTile(
+        title: Text(
+          entry.foodName,
+          style: AppTypography.bodyMedium.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          '${entry.amount.toStringAsFixed(0)} ${entry.unit.name} · ${entry.kcal} kcal',
+          style: AppTypography.bodySmall.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            TableCalendar(
-              firstDay: DateTime.now().subtract(const Duration(days: 365)),
-              lastDay: DateTime.now().add(const Duration(days: 365)),
-              focusedDay: selectedDate,
-              selectedDayPredicate: (day) => isSameDay(day, selectedDate),
-              onDaySelected: (selectedDay, focusedDay) {
-                onDateSelected(selectedDay);
-              },
-              // 🎯 MED-002: Cargar eventos para marcadores
-              eventLoader: (day) {
-                final normalizedDay = DateTime(day.year, day.month, day.day);
-                return entryDays.contains(normalizedDay) ? [true] : [];
-              },
-              calendarFormat: CalendarFormat.month,
-              startingDayOfWeek: StartingDayOfWeek.monday,
-              locale: 'es_ES',
-              headerStyle: HeaderStyle(
-                titleCentered: true,
-                formatButtonVisible: false,
-                leftChevronIcon: Icon(
-                  Icons.chevron_left,
-                  color: colorScheme.onSurface,
-                ),
-                rightChevronIcon: Icon(
-                  Icons.chevron_right,
-                  color: colorScheme.onSurface,
-                ),
-                titleTextStyle: AppTypography.titleMedium.copyWith(
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              calendarStyle: CalendarStyle(
-                outsideDaysVisible: false,
-                weekendTextStyle: TextStyle(color: colorScheme.onSurface),
-                holidayTextStyle: TextStyle(color: colorScheme.onSurface),
-                defaultTextStyle: TextStyle(color: colorScheme.onSurface),
-                selectedDecoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                todayDecoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                todayTextStyle: TextStyle(
-                  color: colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
-                ),
-                selectedTextStyle: TextStyle(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-                markersMaxCount: 1,
-                markerSize: 6,
-                markerDecoration: BoxDecoration(
-                  color: colorScheme.tertiary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              daysOfWeekStyle: DaysOfWeekStyle(
-                weekdayStyle: AppTypography.labelSmall.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                weekendStyle: AppTypography.labelSmall.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+            Text(
+              '${entry.kcal}',
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colors.primary,
               ),
             ),
-            // 🎯 MED-002: Leyenda de marcadores
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: colorScheme.tertiary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Día con registros',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+            if (entry.protein != null && entry.protein! > 0)
+              Text(
+                'P:${entry.protein!.toStringAsFixed(0)}g',
+                style: AppTypography.labelSmall.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
               ),
-            ),
           ],
         ),
+        onTap: onTap,
       ),
     );
   }
 }
 
-/// Calendario semanal horizontal
+// ============================================================================
+// WIDGETS EXISTENTES (Mantenidos del archivo original)
+// ============================================================================
+
 class _WeekCalendar extends StatelessWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateSelected;
@@ -436,7 +532,6 @@ class _WeekCalendar extends StatelessWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        // Performance: itemExtent fijo evita cálculos de layout por item
         itemExtent: 52,
         itemCount: dates.length,
         itemBuilder: (context, index) {
@@ -514,7 +609,130 @@ class _WeekCalendar extends StatelessWidget {
   }
 }
 
-/// Card de resumen diario con macros - CRIT-04: Muestra RESTANTE prominentemente
+class _MonthCalendar extends ConsumerWidget {
+  final DateTime selectedDate;
+  final ValueChanged<DateTime> onDateSelected;
+
+  const _MonthCalendar({
+    required this.selectedDate,
+    required this.onDateSelected,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final entryDaysAsync = ref.watch(calendarEntryDaysProvider);
+
+    final entryDays = entryDaysAsync.when(
+      data: (days) => days,
+      loading: () => <DateTime>{},
+      error: (_, __) => <DateTime>{},
+    );
+
+    return Card(
+      margin: const EdgeInsets.all(AppSpacing.lg),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TableCalendar(
+              firstDay: DateTime.now().subtract(const Duration(days: 365)),
+              lastDay: DateTime.now().add(const Duration(days: 365)),
+              focusedDay: selectedDate,
+              selectedDayPredicate: (day) => isSameDay(day, selectedDate),
+              onDaySelected: (selectedDay, focusedDay) {
+                onDateSelected(selectedDay);
+              },
+              eventLoader: (day) {
+                final normalizedDay = DateTime(day.year, day.month, day.day);
+                return entryDays.contains(normalizedDay) ? [true] : [];
+              },
+              calendarFormat: CalendarFormat.month,
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              locale: 'es_ES',
+              headerStyle: HeaderStyle(
+                titleCentered: true,
+                formatButtonVisible: false,
+                leftChevronIcon: Icon(
+                  Icons.chevron_left,
+                  color: colorScheme.onSurface,
+                ),
+                rightChevronIcon: Icon(
+                  Icons.chevron_right,
+                  color: colorScheme.onSurface,
+                ),
+                titleTextStyle: AppTypography.titleMedium.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              calendarStyle: CalendarStyle(
+                outsideDaysVisible: false,
+                weekendTextStyle: TextStyle(color: colorScheme.onSurface),
+                holidayTextStyle: TextStyle(color: colorScheme.onSurface),
+                defaultTextStyle: TextStyle(color: colorScheme.onSurface),
+                selectedDecoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                todayTextStyle: TextStyle(
+                  color: colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+                selectedTextStyle: TextStyle(
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+                markersMaxCount: 1,
+                markerSize: 6,
+                markerDecoration: BoxDecoration(
+                  color: colorScheme.tertiary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              daysOfWeekStyle: DaysOfWeekStyle(
+                weekdayStyle: AppTypography.labelSmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                weekendStyle: AppTypography.labelSmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Día con registros',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DailySummaryCard extends StatelessWidget {
   final DaySummary summary;
 
@@ -531,7 +749,6 @@ class _DailySummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header con calorías - CRIT-04: Mostrar RESTANTE como dato principal
           Row(
             children: [
               Expanded(
@@ -563,7 +780,6 @@ class _DailySummaryCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // Mostrar consumido como secundario cuando hay targets
                     if (hasTargets) ...[
                       const SizedBox(height: 2),
                       Text(
@@ -634,7 +850,6 @@ class _DailySummaryCard extends StatelessWidget {
           const Divider(height: 1),
           const SizedBox(height: AppSpacing.lg),
 
-          // Macros - QW-02: Mostrar RESTANTES en lugar de CONSUMIDOS
           Row(
             children: [
               Expanded(
@@ -683,15 +898,13 @@ class _DailySummaryCard extends StatelessWidget {
     );
   }
 
-  /// Color del texto de kcal basado en estado
   Color _getKcalColor(int remaining, bool hasTargets, ColorScheme colors) {
     if (!hasTargets) return colors.primary;
-    if (remaining <= 0) return AppColors.error;  // Pasó el objetivo
-    if (remaining < 200) return AppColors.warning;  // Poco margen
-    return colors.primary;  // OK
+    if (remaining <= 0) return AppColors.error;
+    if (remaining < 200) return AppColors.warning;
+    return colors.primary;
   }
 
-  /// Calcula el valor restante de un macro
   String _calculateRemaining(double? target, double consumed) {
     if (target == null) return consumed.toStringAsFixed(0);
     final remaining = (target - consumed).clamp(0, double.infinity);
@@ -699,7 +912,6 @@ class _DailySummaryCard extends StatelessWidget {
   }
 }
 
-/// Donut de progreso calórico
 class _MacroDonut extends StatelessWidget {
   final double progress;
   final int? remaining;
@@ -759,7 +971,6 @@ class _MacroDonut extends StatelessWidget {
   }
 }
 
-/// Item de macro individual - QW-02: Soporta mostrar RESTANTE
 class _MacroItem extends StatelessWidget {
   final String label;
   final String value;
@@ -830,7 +1041,6 @@ class _MacroItem extends StatelessWidget {
           child: LinearProgressIndicator(
             value: (progress ?? 0).clamp(0.0, 1.0),
             minHeight: 4,
-            // QW-10: Mejor contraste en light mode
             backgroundColor: Theme.of(context).brightness == Brightness.light
                 ? color.withAlpha((0.3 * 255).round())
                 : color.withAlpha((0.2 * 255).round()),
@@ -839,586 +1049,5 @@ class _MacroItem extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-/// 🎯 HIGH-003: Sección de sugerencias inteligentes basadas en hora e historial
-class _SmartSuggestionsSection extends ConsumerWidget {
-  final void Function(SmartFoodSuggestion) onSuggestionTap;
-
-  const _SmartSuggestionsSection({required this.onSuggestionTap});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final suggestionsAsync = ref.watch(smartFoodSuggestionsProvider);
-    final contextMessage = ref.watch(mealContextMessageProvider);
-    final currentMealType = ref.watch(currentMealTypeProvider);
-    final colors = Theme.of(context).colorScheme;
-
-    return suggestionsAsync.when(
-      data: (suggestions) {
-        if (suggestions.isEmpty) {
-          // Sin historial para este tipo de comida - no mostrar nada
-          return const SizedBox.shrink();
-        }
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header con contexto temporal
-              Row(
-                children: [
-                  Icon(
-                    _getMealIcon(currentMealType),
-                    size: 16,
-                    color: AppColors.goldAccent,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      contextMessage.toUpperCase(),
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.goldAccent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    currentMealType.displayName,
-                    style: AppTypography.labelSmall.copyWith(
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-
-              // Grid de sugerencias
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: suggestions.take(3).map((suggestion) {
-                  return _SmartSuggestionChip(
-                    suggestion: suggestion,
-                    onTap: () => onSuggestionTap(suggestion),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-            ],
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
-    );
-  }
-
-  IconData _getMealIcon(MealType mealType) {
-    switch (mealType) {
-      case MealType.breakfast:
-        return Icons.wb_sunny_outlined;
-      case MealType.lunch:
-        return Icons.wb_cloudy_outlined;
-      case MealType.dinner:
-        return Icons.nights_stay_outlined;
-      case MealType.snack:
-        return Icons.cookie_outlined;
-    }
-  }
-}
-
-/// Chip de sugerencia inteligente con contexto
-class _SmartSuggestionChip extends StatelessWidget {
-  final SmartFoodSuggestion suggestion;
-  final VoidCallback onTap;
-
-  const _SmartSuggestionChip({
-    required this.suggestion,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Material(
-      color: AppColors.goldAccent.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: AppColors.goldAccent.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.add_circle_outline,
-                size: 16,
-                color: AppColors.goldAccent,
-              ),
-              const SizedBox(width: 6),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    suggestion.foodName.length > 18
-                        ? '${suggestion.foodName.substring(0, 18)}...'
-                        : suggestion.foodName,
-                    style: AppTypography.labelMedium.copyWith(
-                      color: colors.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Text(
-                        '${suggestion.kcal} kcal',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.goldAccent.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          suggestion.reason,
-                          style: AppTypography.labelSmall.copyWith(
-                            color: AppColors.goldAccent,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Sección de Quick Add - Comidas recientes para añadir con 1 tap (UX-003)
-class _QuickAddSection extends ConsumerWidget {
-  final void Function(DiaryEntryModel) onQuickAdd;
-
-  const _QuickAddSection({required this.onQuickAdd});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final recentFoodsAsync = ref.watch(recentFoodsProvider);
-    final colors = Theme.of(context).colorScheme;
-
-    return recentFoodsAsync.when(
-      data: (recentFoods) {
-        if (recentFoods.isEmpty) return const SizedBox.shrink();
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.bolt, size: 16, color: colors.primary),
-                  const SizedBox(width: 4),
-                  Text(
-                    'AÑADIR RÁPIDO',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: colors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              SizedBox(
-                height: 44,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: recentFoods.length,
-                  // Performance: prototypeItem calcula tamaño una sola vez
-                  prototypeItem: recentFoods.isNotEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.only(right: AppSpacing.sm),
-                          child: _QuickAddChip(
-                            food: recentFoods.first,
-                            onTap: () {},
-                          ),
-                        )
-                      : null,
-                  itemBuilder: (context, index) {
-                    final food = recentFoods[index];
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        right: index < recentFoods.length - 1 ? AppSpacing.sm : 0,
-                      ),
-                      child: _QuickAddChip(
-                        food: food,
-                        onTap: () => onQuickAdd(food),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-            ],
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
-    );
-  }
-}
-
-/// Chip individual para quick add
-class _QuickAddChip extends StatelessWidget {
-  final DiaryEntryModel food;
-  final VoidCallback onTap;
-
-  const _QuickAddChip({
-    required this.food,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Material(
-      color: colors.primaryContainer,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.add_circle_outline,
-                size: 18,
-                color: colors.primary,
-              ),
-              const SizedBox(width: 6),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    food.foodName.length > 15
-                        ? '${food.foodName.substring(0, 15)}...'
-                        : food.foodName,
-                    style: AppTypography.labelMedium.copyWith(
-                      color: colors.onPrimaryContainer,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    '${food.kcal} kcal',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: colors.onPrimaryContainer.withAlpha(180),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Lista de comidas tipo Sliver
-class _MealsListSliver extends StatelessWidget {
-  final List<DiaryEntryModel> entries;
-
-  const _MealsListSliver({required this.entries});
-
-  @override
-  Widget build(BuildContext context) {
-    final meals = [
-      MealType.breakfast,
-      MealType.lunch,
-      MealType.dinner,
-      MealType.snack,
-    ];
-
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index >= meals.length) return null;
-          final mealType = meals[index];
-          final mealEntries = entries
-              .where((e) => e.mealType == mealType)
-              .toList();
-
-          return _MealSection(
-            mealType: mealType,
-            entries: mealEntries,
-          );
-        },
-        childCount: meals.length,
-      ),
-    );
-  }
-}
-
-/// Sección de tipo de comida
-/// MD-002: Usa provider memoizado para totales, evita cálculos en build
-class _MealSection extends ConsumerWidget {
-  final MealType mealType;
-  final List<DiaryEntryModel> entries;
-
-  const _MealSection({
-    required this.mealType,
-    required this.entries,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = Theme.of(context).colorScheme;
-    // MD-002: Usar provider memoizado en lugar de calcular en cada build
-    final totals = ref.watch(mealTotalsProvider(mealType));
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.sm,
-      ),
-      child: AppCard(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colors.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Icon(
-                    _getMealIcon(),
-                    size: 18,
-                    color: colors.primary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    mealType.displayName.toUpperCase(),
-                    style: AppTypography.labelLarge.copyWith(
-                      color: colors.primary,
-                    ),
-                  ),
-                ),
-                if (entries.isNotEmpty)
-                  Text(
-                    '${totals.kcal} kcal',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ),
-                const SizedBox(width: 8),
-                AppIconButton(
-                  icon: Icons.add_rounded,
-                  onPressed: () => _addEntry(context, ref),
-                  variant: AppButtonVariant.secondary,
-                  size: AppButtonSize.small,
-                ),
-              ],
-            ),
-
-            // Entradas
-            if (entries.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Text(
-                  'Sin entradas',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-              )
-            else
-              ...entries.map((entry) => _EntryTile(entry: entry)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // MD-002: Eliminado _calculateTotals(), ahora usa provider memoizado
-  // Los totales se calculan una sola vez por cambio de datos, no en cada build
-
-  IconData _getMealIcon() {
-    switch (mealType) {
-      case MealType.breakfast:
-        return Icons.wb_sunny_outlined;
-      case MealType.lunch:
-        return Icons.wb_cloudy_outlined;
-      case MealType.dinner:
-        return Icons.nights_stay_outlined;
-      case MealType.snack:
-        return Icons.cookie_outlined;
-    }
-  }
-
-  void _addEntry(BuildContext context, WidgetRef ref) {
-    HapticFeedback.mediumImpact();
-    ref.read(selectedMealTypeProvider.notifier).meal = mealType;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const FoodSearchScreen()),
-    );
-  }
-}
-
-/// Tile de entrada individual
-class _EntryTile extends ConsumerWidget {
-  final DiaryEntryModel entry;
-
-  const _EntryTile({required this.entry});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Dismissible(
-      key: Key(entry.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.only(right: 16),
-        decoration: BoxDecoration(
-          color: colors.errorContainer,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        alignment: Alignment.centerRight,
-        child: Icon(Icons.delete_outline, color: colors.error),
-      ),
-      onDismissed: (_) => _deleteEntry(ref),
-      child: ListTile(
-        dense: true,
-        contentPadding: EdgeInsets.zero,
-        title: Text(
-          entry.foodName,
-          style: AppTypography.bodyMedium.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Text(
-          _getSubtitle(),
-          style: AppTypography.bodySmall.copyWith(
-            color: colors.onSurfaceVariant,
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${entry.kcal}',
-              style: AppTypography.labelLarge.copyWith(
-                color: colors.primary,
-              ),
-            ),
-            Text(
-              ' kcal',
-              style: AppTypography.labelSmall.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              Icons.chevron_right,
-              size: 16,
-              color: colors.onSurfaceVariant,
-            ),
-          ],
-        ),
-        onTap: () => _editEntry(context, ref),
-      ),
-    );
-  }
-
-  String _getSubtitle() {
-    final amount = entry.amount == entry.amount.roundToDouble()
-        ? entry.amount.toInt().toString()
-        : entry.amount.toString();
-
-    String unitText;
-    switch (entry.unit) {
-      case ServingUnit.grams:
-        unitText = 'g';
-        break;
-      case ServingUnit.portion:
-        unitText = entry.amount > 1 ? 'porciones' : 'porción';
-        break;
-      case ServingUnit.milliliter:
-        unitText = 'ml';
-        break;
-    }
-
-    final parts = <String>['$amount $unitText'];
-
-    if (entry.protein != null && entry.protein! > 0) {
-      parts.add('P: ${entry.protein!.toStringAsFixed(0)}g');
-    }
-    if (entry.carbs != null && entry.carbs! > 0) {
-      parts.add('C: ${entry.carbs!.toStringAsFixed(0)}g');
-    }
-    if (entry.fat != null && entry.fat! > 0) {
-      parts.add('G: ${entry.fat!.toStringAsFixed(0)}g');
-    }
-
-    return parts.join(' • ');
-  }
-
-  void _editEntry(BuildContext context, WidgetRef ref) {
-    ref.read(editingEntryProvider.notifier).editing = entry;
-    ref.read(selectedMealTypeProvider.notifier).meal = entry.mealType;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const FoodSearchScreen(isEditing: true),
-      ),
-    );
-    ref.read(editingEntryProvider.notifier).editing = null;
-  }
-
-  Future<void> _deleteEntry(WidgetRef ref) async {
-    final repo = ref.read(diaryRepositoryProvider);
-    await repo.delete(entry.id);
   }
 }

@@ -33,6 +33,7 @@ void main() {
       expect(AppRouter.nutrition, equals('/nutrition'));
       expect(AppRouter.nutritionDiary, equals('/nutrition/diary'));
       expect(AppRouter.nutritionFoods, equals('/nutrition/foods'));
+      expect(AppRouter.nutritionFoodSearch, equals('/nutrition/food-search'));
       expect(AppRouter.nutritionWeight, equals('/nutrition/weight'));
       expect(AppRouter.nutritionSummary, equals('/nutrition/summary'));
       expect(AppRouter.nutritionTargets, equals('/nutrition/targets'));
@@ -98,6 +99,7 @@ void main() {
         AppRouter.nutrition,
         AppRouter.nutritionDiary,
         AppRouter.nutritionFoods,
+        AppRouter.nutritionFoodSearch,
         AppRouter.nutritionWeight,
         AppRouter.nutritionSummary,
         AppRouter.nutritionTargets,

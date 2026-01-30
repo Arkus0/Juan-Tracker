@@ -1,6 +1,8 @@
-// Weight Screen - Simplified version
+// Weight Screen - Enhanced version with chart and tooltips
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
@@ -28,6 +30,22 @@ class WeightScreen extends ConsumerWidget {
               child: _MainStatsSection(),
             ),
           ),
+          // Gráfica de evolución
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _WeightChartCard(),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+          // Contexto de progreso
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _ProgressContextCard(),
+          ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
           _WeighInsListSliver(),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -36,7 +54,7 @@ class WeightScreen extends ConsumerWidget {
         onPressed: () async {
           final messenger = ScaffoldMessenger.of(context);
 
-          final result = await showDialog<bool> (
+          final result = await showDialog<bool>(
             context: context,
             builder: (context) => const AddWeightDialog(),
           );
@@ -140,6 +158,7 @@ class _AddWeightDialogState extends ConsumerState<AddWeightDialog> {
   }
 }
 
+/// Card de estadísticas principales con tooltips
 class _MainStatsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -157,32 +176,35 @@ class _MainStatsSection extends ConsumerWidget {
         return Row(
           children: [
             Expanded(
-              child: AppStatCard(
+              child: _StatCardWithTooltip(
                 label: 'Ultimo',
                 value: result.latestWeight.toStringAsFixed(1),
                 unit: 'kg',
                 icon: Icons.scale_outlined,
                 color: Theme.of(context).colorScheme.primary,
+                tooltip: 'Tu último peso registrado',
               ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: AppStatCard(
+              child: _StatCardWithTooltip(
                 label: 'Tendencia',
                 value: result.trendWeight.toStringAsFixed(1),
                 unit: 'kg',
                 icon: Icons.trending_flat,
                 color: Theme.of(context).colorScheme.secondary,
+                tooltip: 'Media móvil de 7 días que suaviza fluctuaciones diarias',
               ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: AppStatCard(
+              child: _StatCardWithTooltip(
                 label: 'Semana',
                 value: result.weeklyRate.toStringAsFixed(1),
                 unit: 'kg',
                 icon: Icons.trending_up,
                 color: AppColors.success,
+                tooltip: 'Ritmo de cambio estimado en kg por semana',
               ),
             ),
           ],
@@ -193,6 +215,346 @@ class _MainStatsSection extends ConsumerWidget {
         message: 'Error al cargar',
         onRetry: () => ref.invalidate(weightTrendProvider),
       ),
+    );
+  }
+}
+
+/// Card de estadística con tooltip informativo
+class _StatCardWithTooltip extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+
+  const _StatCardWithTooltip({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      preferBelow: true,
+      child: AppStatCard(
+        label: label,
+        value: value,
+        unit: unit,
+        icon: icon,
+        color: color,
+      ),
+    );
+  }
+}
+
+/// Card con gráfica de evolución de peso
+class _WeightChartCard extends ConsumerWidget {
+  const _WeightChartCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final weighInsAsync = ref.watch(recentWeighInsProvider);
+
+    return weighInsAsync.when(
+      data: (weighIns) {
+        if (weighIns.length < 2) {
+          return const SizedBox.shrink();
+        }
+
+        return Card(
+          elevation: 0,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.show_chart,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Evolución (30 días)',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(
+                  height: 200,
+                  child: _WeightLineChart(weighIns: weighIns),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// Gráfica de línea para evolución de peso
+class _WeightLineChart extends StatelessWidget {
+  final List<WeighInModel> weighIns;
+
+  const _WeightLineChart({required this.weighIns});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    // Tomar últimos 30 días máximo
+    final cutoffDate = DateTime.now().subtract(const Duration(days: 30));
+    final filteredWeighIns = weighIns
+        .where((w) => w.dateTime.isAfter(cutoffDate))
+        .toList()
+        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    if (filteredWeighIns.length < 2) {
+      return const Center(child: Text('Se necesitan más datos'));
+    }
+
+    final minWeight = filteredWeighIns.map((w) => w.weightKg).reduce((a, b) => a < b ? a : b);
+    final maxWeight = filteredWeighIns.map((w) => w.weightKg).reduce((a, b) => a > b ? a : b);
+    final weightRange = maxWeight - minWeight;
+    final padding = weightRange > 0 ? weightRange * 0.1 : 1.0;
+
+    final spots = filteredWeighIns.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.weightKg);
+    }).toList();
+
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: weightRange > 0 ? weightRange / 4 : 1,
+        ),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toStringAsFixed(1),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                );
+              },
+            ),
+          ),
+          bottomTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        minX: 0,
+        maxX: (filteredWeighIns.length - 1).toDouble(),
+        minY: minWeight - padding,
+        maxY: maxWeight + padding,
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: theme.colorScheme.primary,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 4,
+                  color: theme.colorScheme.primary,
+                  strokeWidth: 2,
+                  strokeColor: theme.colorScheme.surface,
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              color: theme.colorScheme.primary.withAlpha((0.1 * 255).round()),
+            ),
+          ),
+        ],
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (touchedSpot) => theme.colorScheme.surfaceContainerHighest,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                final weighIn = filteredWeighIns[spot.x.toInt()];
+                return LineTooltipItem(
+                  '${weighIn.weightKg.toStringAsFixed(1)} kg\n',
+                  TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: DateFormat('d MMM', 'es').format(weighIn.dateTime),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Card con contexto de progreso
+class _ProgressContextCard extends ConsumerWidget {
+  const _ProgressContextCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final weighInsAsync = ref.watch(recentWeighInsProvider);
+    final theme = Theme.of(context);
+
+    return weighInsAsync.when(
+      data: (weighIns) {
+        if (weighIns.isEmpty) return const SizedBox.shrink();
+
+        final firstWeight = weighIns.last.weightKg;
+        final latestWeight = weighIns.first.weightKg;
+        final totalChange = latestWeight - firstWeight;
+        final daysCount = DateTime.now().difference(weighIns.last.dateTime).inDays + 1;
+        
+        // Calcular promedio semanal
+        final weeklyAvg = weighIns.length >= 7 
+            ? weighIns.take(7).map((w) => w.weightKg).reduce((a, b) => a + b) / 7
+            : null;
+
+        return Card(
+          elevation: 0,
+          color: theme.colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.insights,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Tu progreso',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _ProgressItem(
+                  icon: Icons.calendar_today,
+                  label: 'Llevas registrando',
+                  value: '$daysCount días',
+                ),
+                const SizedBox(height: 8),
+                _ProgressItem(
+                  icon: totalChange <= 0 ? Icons.trending_down : Icons.trending_up,
+                  label: 'Variación total',
+                  value: '${totalChange >= 0 ? '+' : ''}${totalChange.toStringAsFixed(1)} kg',
+                  valueColor: totalChange < 0 
+                      ? Colors.green 
+                      : totalChange > 0 
+                          ? Colors.orange 
+                          : theme.colorScheme.onSurface,
+                ),
+                if (weeklyAvg != null) ...[
+                  const SizedBox(height: 8),
+                  _ProgressItem(
+                    icon: Icons.date_range,
+                    label: 'Promedio semanal',
+                    value: '${weeklyAvg.toStringAsFixed(1)} kg',
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// Item individual de progreso
+class _ProgressItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  const _ProgressItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: valueColor ?? theme.colorScheme.onSurface,
+          ),
+        ),
+      ],
     );
   }
 }
