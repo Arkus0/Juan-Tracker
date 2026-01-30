@@ -345,34 +345,35 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   }
 
   /// Filtra resultados irrelevantes basado en la query
+  /// Ahora más permisivo - solo elimina resultados claramente irrelevantes
   List<OpenFoodFactsResult> _filterRelevantResults(
     List<OpenFoodFactsResult> results,
     String query,
   ) {
     final queryLower = query.toLowerCase();
-    final queryWords = queryLower.split(RegExp(r'\s+'));
+    final queryWords = queryLower.split(RegExp(r'\s+')).where((w) => w.length >= 2).toList();
+    
+    // Si no hay palabras significativas, devolver todo
+    if (queryWords.isEmpty) return results;
     
     return results.where((product) {
       final nameLower = product.name.toLowerCase();
       final brandLower = (product.brand ?? '').toLowerCase();
+      final fullText = '$nameLower $brandLower';
       
-      // Debe contener al menos una palabra de la query en el nombre o marca
-      bool hasMatch = false;
+      // Debe contener al menos una palabra de la query
       for (final word in queryWords) {
-        if (word.length < 3) continue; // Ignorar palabras muy cortas
-        
-        if (nameLower.contains(word) || brandLower.contains(word)) {
-          hasMatch = true;
-          break;
+        if (fullText.contains(word)) {
+          return true;
         }
       }
       
-      // Si la query es corta, ser más permisivo
-      if (query.length < 4) {
-        return nameLower.startsWith(queryLower) || hasMatch;
+      // Si la query es corta (1-3 chars), aceptar si empieza igual
+      if (query.length <= 3) {
+        return nameLower.startsWith(queryLower);
       }
       
-      return hasMatch;
+      return false;
     }).toList();
   }
 

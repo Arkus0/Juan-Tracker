@@ -274,7 +274,8 @@ class _QuickActionsRow extends ConsumerWidget {
 
   void _showAddFoodDialog(BuildContext context, WidgetRef ref) {
     AppHaptics.buttonPressed();
-    context.pushTo(AppRouter.nutritionFoods);
+    // Navegar al diario con selección de comida rápida
+    context.pushTo(AppRouter.nutritionFoodSearch);
   }
 }
 

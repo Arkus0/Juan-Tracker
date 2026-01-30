@@ -17,7 +17,7 @@ import '../../features/diary/presentation/food_search_screen.dart';
 import '../../features/foods/presentation/foods_screen.dart';
 import '../../features/weight/presentation/weight_screen.dart';
 import '../../features/summary/presentation/summary_screen.dart';
-import '../../features/targets/presentation/targets_screen.dart';
+
 import '../../features/training/presentation/history_screen.dart';
 import '../../features/training/presentation/training_routines_screen.dart';
 import '../../features/training/presentation/training_library_screen.dart';
@@ -46,7 +46,7 @@ class AppRouter {
   static const String nutritionFoodSearch = '/nutrition/food-search';
   static const String nutritionWeight = '/nutrition/weight';
   static const String nutritionSummary = '/nutrition/summary';
-  static const String nutritionTargets = '/nutrition/targets';
+
   static const String nutritionCoach = '/nutrition/coach';
   static const String nutritionCoachSetup = '/nutrition/coach/setup';
   static const String nutritionCoachCheckin = '/nutrition/coach/checkin';
@@ -139,11 +139,6 @@ class AppRouter {
       GoRoute(
         path: nutritionSummary,
         builder: (context, state) => const SummaryScreen(),
-      ),
-
-      GoRoute(
-        path: nutritionTargets,
-        builder: (context, state) => const TargetsScreen(),
       ),
 
       // Coach Adaptativo
@@ -284,9 +279,6 @@ extension GoRouterExtension on BuildContext {
 
   /// Navega a la pantalla de resumen
   void goToSummary() => go(AppRouter.nutritionSummary);
-
-  /// Navega a la pantalla de targets/objetivos
-  void goToTargets() => go(AppRouter.nutritionTargets);
 
   /// Navega a la pantalla de peso
   void goToWeight() => go(AppRouter.nutritionWeight);

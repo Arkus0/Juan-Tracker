@@ -154,11 +154,11 @@ class AppSnackbar {
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: colors.inverseSurface,
+        backgroundColor: colors.primaryContainer,
         action: actionLabel != null
             ? SnackBarAction(
                 label: actionLabel,
-                textColor: colors.inversePrimary,
+                textColor: colors.primary,
                 onPressed: onAction ?? () {},
               )
             : null,

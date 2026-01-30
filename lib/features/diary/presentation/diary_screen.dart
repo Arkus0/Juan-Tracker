@@ -10,8 +10,8 @@ import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/services/day_summary_calculator.dart';
+import 'package:juan_tracker/core/widgets/home_button.dart';
 import 'package:juan_tracker/features/diary/presentation/edit_entry_dialog.dart';
-import 'package:juan_tracker/features/targets/presentation/targets_screen.dart';
 
 enum DiaryViewMode { list, calendar }
 
@@ -80,6 +80,10 @@ class DiaryScreen extends ConsumerWidget {
             snap: true,
             title: const Text('Diario'),
             centerTitle: true,
+            leading: const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: HomeButton(),
+            ),
             actions: [
               Semantics(
                 button: true,
@@ -119,37 +123,34 @@ class DiaryScreen extends ConsumerWidget {
               ),
             ),
 
-          // Vista de calendario mensual
+          // Vista de calendario mensual (arriba)
           if (viewMode == DiaryViewMode.calendar)
             SliverToBoxAdapter(
               child: _MonthCalendar(
                 selectedDate: selectedDate,
                 onDateSelected: (date) {
                   ref.read(selectedDateProvider.notifier).setDate(date);
-                  ref.read(diaryViewModeProvider.notifier).setMode(DiaryViewMode.list);
                 },
               ),
             ),
 
-          // Resumen del día - solo en vista lista
-          if (viewMode == DiaryViewMode.list)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: summaryAsync.when(
-                  data: (summary) => _DailySummaryCard(summary: summary),
-                  loading: () => const DiarySkeleton(),
-                  error: (_, _) => AppError(
-                    message: 'Error al cargar resumen',
-                    onRetry: () => ref.invalidate(daySummaryProvider),
-                  ),
+          // Resumen del día
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: summaryAsync.when(
+                data: (summary) => _DailySummaryCard(summary: summary),
+                loading: () => const DiarySkeleton(),
+                error: (_, _) => AppError(
+                  message: 'Error al cargar resumen',
+                  onRetry: () => ref.invalidate(daySummaryProvider),
                 ),
               ),
             ),
+          ),
 
-          // Secciones de comidas - estilo FatSecret
-          if (viewMode == DiaryViewMode.list)
-            entriesAsync.when(
+          // Secciones de comidas - siempre visibles
+          entriesAsync.when(
               data: (entries) {
                 // Agrupar entradas por tipo de comida
                 final entriesByMeal = <MealType, List<DiaryEntryModel>>{};
@@ -812,9 +813,7 @@ class _DailySummaryCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             InkWell(
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const TargetsScreen()),
-                );
+                context.pushTo(AppRouter.nutritionCoach);
               },
               borderRadius: BorderRadius.circular(AppRadius.md),
               child: Container(
@@ -832,7 +831,7 @@ class _DailySummaryCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Configura tus objetivos',
+                            'Configura tu plan en Coach',
                             style: AppTypography.labelLarge.copyWith(
                               color: colors.onPrimaryContainer,
                             ),

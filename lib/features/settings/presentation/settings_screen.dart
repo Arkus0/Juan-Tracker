@@ -5,6 +5,7 @@ import '../../../core/models/user_profile_model.dart';
 import '../../../core/providers/database_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/tdee_calculator.dart';
+import '../../../core/widgets/home_button.dart';
 import '../../../core/widgets/widgets.dart';
 
 /// Pantalla de Perfil y Ajustes
@@ -24,11 +25,15 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const SliverAppBar(
+          SliverAppBar(
             floating: true,
             snap: true,
-            title: Text('Perfil'),
+            title: const Text('Perfil'),
             centerTitle: true,
+            leading: const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: HomeButton(),
+            ),
           ),
           SliverToBoxAdapter(
             child: profileAsync.when(
@@ -64,18 +69,8 @@ class _SettingsContent extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.lg),
 
-        // Sección Objetivos
-        _ObjectivesSection(profile: profile),
-
-        const SizedBox(height: AppSpacing.lg),
-
         // Sección Biblioteca
         _LibrarySection(),
-
-        const SizedBox(height: AppSpacing.lg),
-
-        // Sección Coach
-        _CoachSection(),
       ],
     );
   }
@@ -227,47 +222,6 @@ class _ProfileInfoRow extends StatelessWidget {
   }
 }
 
-class _ObjectivesSection extends StatelessWidget {
-  final UserProfileModel? profile;
-
-  const _ObjectivesSection({this.profile});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Objetivos Nutricionales',
-              style: AppTypography.titleMedium,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Configura tus targets de calorías y macros',
-              style: AppTypography.bodySmall.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppButton(
-              variant: AppButtonVariant.secondary,
-              onPressed: () => context.pushTo(AppRouter.nutritionTargets),
-              icon: Icons.track_changes,
-              label: 'Gestionar Objetivos',
-              isFullWidth: true,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _LibrarySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -296,43 +250,6 @@ class _LibrarySection extends StatelessWidget {
               onPressed: () => context.pushTo(AppRouter.nutritionFoods),
               icon: Icons.restaurant_menu,
               label: 'Ver Biblioteca',
-              isFullWidth: true,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CoachSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Coach Adaptativo',
-              style: AppTypography.titleMedium,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Ajuste automático de objetivos basado en tu progreso',
-              style: AppTypography.bodySmall.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppButton(
-              variant: AppButtonVariant.secondary,
-              onPressed: () => context.pushTo(AppRouter.nutritionCoach),
-              icon: Icons.auto_graph,
-              label: 'Ir al Coach',
               isFullWidth: true,
             ),
           ],
