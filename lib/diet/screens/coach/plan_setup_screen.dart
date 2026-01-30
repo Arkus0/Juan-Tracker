@@ -830,7 +830,7 @@ class _CompleteProfileDialogState extends ConsumerState<_CompleteProfileDialog> 
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<ActivityLevel>(
-              value: _activityLevel,
+              initialValue: _activityLevel,
               decoration: const InputDecoration(
                 labelText: 'Nivel de actividad',
                 border: OutlineInputBorder(),

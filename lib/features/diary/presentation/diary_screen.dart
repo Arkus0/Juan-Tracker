@@ -10,6 +10,7 @@ import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/services/day_summary_calculator.dart';
+import 'package:juan_tracker/features/diary/presentation/edit_entry_dialog.dart';
 import 'package:juan_tracker/features/targets/presentation/targets_screen.dart';
 
 enum DiaryViewMode { list, calendar }
@@ -358,8 +359,15 @@ class _MealSection extends ConsumerWidget {
     context.pushTo(AppRouter.nutritionFoodSearch);
   }
 
-  void _editEntry(BuildContext context, WidgetRef ref, DiaryEntryModel entry) {
-    // TODO: Implementar edición
+  void _editEntry(BuildContext context, WidgetRef ref, DiaryEntryModel entry) async {
+    final result = await showDialog<DiaryEntryModel>(
+      context: context,
+      builder: (ctx) => EditEntryDialog(entry: entry),
+    );
+
+    if (result != null) {
+      await ref.read(diaryRepositoryProvider).update(result);
+    }
   }
 
   void _deleteEntry(BuildContext context, WidgetRef ref, DiaryEntryModel entry) async {
@@ -626,7 +634,7 @@ class _MonthCalendar extends ConsumerWidget {
     final entryDays = entryDaysAsync.when(
       data: (days) => days,
       loading: () => <DateTime>{},
-      error: (_, __) => <DateTime>{},
+      error: (_, _) => <DateTime>{},
     );
 
     return Card(
