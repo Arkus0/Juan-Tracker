@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/library_exercise.dart';
 import '../providers/exercise_search_providers.dart';
+import '../providers/training_provider.dart';
 import '../widgets/common/create_exercise_dialog.dart';
 
 class SearchExerciseScreen extends ConsumerStatefulWidget {
@@ -263,15 +264,18 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
     }
   }
 
-  void _showSmartImportDialog() {
+  void _showSmartImportDialog() async {
     setState(() => _isFabMenuOpen = false);
-    // TODO: Implementar smart import desde rutinas/plantillas
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Smart Import: selecciona una rutina para importar ejercicios'),
-        duration: Duration(seconds: 2),
-      ),
+    
+    final result = await showDialog<List<Map<String, dynamic>>>(
+      context: context,
+      builder: (context) => const _SmartImportDialog(),
     );
+    
+    if (result != null && result.isNotEmpty && mounted) {
+      // Devolver los ejercicios importados
+      Navigator.of(context).pop(result);
+    }
   }
 
   void _showOcrImportDialog() {
@@ -637,6 +641,153 @@ class _HighlightedText extends StatelessWidget {
       text: TextSpan(children: spans),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
+/// 🎯 FASE 8 / TODO-2: Diálogo de Smart Import desde rutinas
+class _SmartImportDialog extends ConsumerStatefulWidget {
+  const _SmartImportDialog();
+
+  @override
+  ConsumerState<_SmartImportDialog> createState() => _SmartImportDialogState();
+}
+
+class _SmartImportDialogState extends ConsumerState<_SmartImportDialog> {
+  String? _selectedRoutineId;
+  List<dynamic> _exercises = [];
+  final Set<String> _selectedExercises = {};
+
+  void _onRoutineSelected(String routineId, List<dynamic> days) {
+    setState(() {
+      _selectedRoutineId = routineId;
+      // Extraer todos los ejercicios de todos los días
+      _exercises = [];
+      for (final day in days) {
+        if (day.ejercicios != null) {
+          for (final ex in day.ejercicios) {
+            _exercises.add({
+              'name': ex.nombre,
+              'series': ex.series,
+              'repsRange': ex.repsRange,
+              'libraryId': ex.libraryId,
+              'dayName': day.nombre,
+            });
+          }
+        }
+      }
+      _selectedExercises.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final routinesAsync = ref.watch(rutinasStreamProvider);
+
+    return AlertDialog(
+      title: const Text('Importar desde rutina'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: routinesAsync.when(
+          data: (routines) {
+            if (routines.isEmpty) {
+              return const Center(
+                child: Text('No tienes rutinas guardadas'),
+              );
+            }
+
+            if (_selectedRoutineId == null) {
+              // Mostrar lista de rutinas
+              return ListView.builder(
+                itemCount: routines.length,
+                itemBuilder: (context, index) {
+                  final routine = routines[index];
+                  return ListTile(
+                    title: Text(routine.nombre),
+                    subtitle: Text('${routine.dias.length} días'),
+                    leading: const Icon(Icons.fitness_center),
+                    onTap: () => _onRoutineSelected(routine.id, routine.dias),
+                  );
+                },
+              );
+            }
+
+            // Mostrar ejercicios de la rutina seleccionada
+            if (_exercises.isEmpty) {
+              return const Center(
+                child: Text('Esta rutina no tiene ejercicios'),
+              );
+            }
+
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() => _selectedRoutineId = null);
+                      },
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Volver'),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${_selectedExercises.length} seleccionados',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _exercises.length,
+                    itemBuilder: (context, index) {
+                      final ex = _exercises[index];
+                      final isSelected = _selectedExercises.contains(ex['name']);
+                      return CheckboxListTile(
+                        title: Text(ex['name']),
+                        subtitle: Text('${ex['dayName']} • ${ex['series']}x${ex['repsRange']}'),
+                        value: isSelected,
+                        onChanged: (checked) {
+                          setState(() {
+                            if (checked == true) {
+                              _selectedExercises.add(ex['name']);
+                            } else {
+                              _selectedExercises.remove(ex['name']);
+                            }
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => const Center(
+            child: Text('Error al cargar rutinas'),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('CANCELAR'),
+        ),
+        if (_selectedRoutineId != null)
+          TextButton(
+            onPressed: _selectedExercises.isEmpty
+                ? null
+                : () {
+                    final selected = _exercises
+                        .where((ex) => _selectedExercises.contains(ex['name']))
+                        .toList();
+                    Navigator.of(context).pop(selected);
+                  },
+            child: const Text('IMPORTAR'),
+          ),
+      ],
     );
   }
 }
