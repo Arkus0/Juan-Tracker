@@ -26,13 +26,6 @@ class SummaryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Resumen'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => context.pushTo(AppRouter.nutritionTargets),
-            tooltip: 'Gestionar objetivos',
-          ),
-        ],
       ),
       body: summaryAsync.when(
         data: (summary) => _SummaryContent(
@@ -95,6 +88,15 @@ class _SummaryContent extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _DayStatusCard(summary: summary),
+          const SizedBox(height: 24),
+
+          // Biblioteca de Alimentos
+          Text(
+            'BIBLIOTECA',
+            style: _sectionStyle(context),
+          ),
+          const SizedBox(height: 12),
+          _LibraryCard(),
         ],
       ),
     );
@@ -627,6 +629,70 @@ class _DayStatusCard extends StatelessWidget {
         message: 'Has superado tu objetivo calórico para hoy.',
       );
     }
+  }
+}
+
+/// Card para acceder a la biblioteca de alimentos
+class _LibraryCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest.withAlpha(128),
+      child: InkWell(
+        onTap: () => context.pushTo(AppRouter.nutritionFoods),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.restaurant_menu,
+                  color: theme.colorScheme.onPrimary,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tus Alimentos',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Gestionar biblioteca de alimentos guardados',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: theme.colorScheme.primary,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

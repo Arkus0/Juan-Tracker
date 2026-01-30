@@ -224,6 +224,21 @@ class ExerciseNotes extends Table {
   Set<Column> get primaryKey => {exerciseName};
 }
 
+// 8. User Profile (for TDEE calculation)
+class UserProfiles extends Table {
+  TextColumn get id => text()();
+  IntColumn get age => integer().nullable()();
+  TextColumn get gender => text().nullable()(); // 'male', 'female'
+  RealColumn get heightCm => real().nullable()();
+  RealColumn get currentWeightKg => real().nullable()();
+  TextColumn get activityLevel => text().withDefault(const Constant('moderatelyActive'))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // ============================================================================
 // DIET TABLES (Schema v5)
 // ============================================================================
@@ -392,6 +407,8 @@ class RecipeItems extends Table {
     SessionExercises,
     WorkoutSets,
     ExerciseNotes,
+    // User Profile
+    UserProfiles,
     // Diet
     Foods,
     DiaryEntries,
@@ -455,9 +472,17 @@ class AppDatabase extends _$AppDatabase {
           // Tables might already exist
         }
       }
+      // Migration path to version 6: add UserProfiles table
+      if (from < 6) {
+        try {
+          await m.createTable(userProfiles);
+        } catch (e) {
+          // Table might already exist
+        }
+      }
     },
   );
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 }
