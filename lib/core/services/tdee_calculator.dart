@@ -83,34 +83,6 @@ class TdeeCalculator {
     return (tdee + adjustment).round();
   }
 
-  /// Genera una recomendación de macros basada en el objetivo
-  /// 
-  /// Retorna porcentajes: {protein, carbs, fat}
-  static Map<String, double> suggestMacros({
-    required double targetKcal,
-    required double weightKg,
-    required WeightGoal goal,
-  }) {
-    // Proteína: 2g por kg de peso corporal (estándar para fitness)
-    final proteinGrams = weightKg * 2.0;
-    final proteinKcal = proteinGrams * 4;
-    final proteinPercent = proteinKcal / targetKcal;
-
-    // Grasas: mínimo 0.8g por kg, ideal 1g por kg
-    final fatGrams = weightKg * 1.0;
-    final fatKcal = fatGrams * 9;
-    final fatPercent = fatKcal / targetKcal;
-
-    // Carbs: el resto de las calorías
-    final carbsPercent = 1.0 - proteinPercent - fatPercent;
-
-    return {
-      'protein': proteinPercent.clamp(0.15, 0.45),
-      'carbs': carbsPercent.clamp(0.20, 0.60),
-      'fat': fatPercent.clamp(0.20, 0.40),
-    };
-  }
-
   /// Valida si los datos del perfil son razonables
   /// 
   /// Retorna mensaje de error o null si es válido
@@ -141,22 +113,4 @@ class TdeeCalculator {
   }
 }
 
-enum WeightGoal { lose, maintain, gain }
-
-extension WeightGoalExtension on WeightGoal {
-  String get displayName {
-    return switch (this) {
-      WeightGoal.lose => 'Perder peso',
-      WeightGoal.maintain => 'Mantener peso',
-      WeightGoal.gain => 'Ganar peso',
-    };
-  }
-
-  String get description {
-    return switch (this) {
-      WeightGoal.lose => 'Déficit calórico para pérdida de grasa',
-      WeightGoal.maintain => 'Balance calórico para mantenimiento',
-      WeightGoal.gain => 'Superávit calórico para ganancia muscular',
-    };
-  }
-}
+// WeightGoal se importa desde adaptive_coach_service.dart

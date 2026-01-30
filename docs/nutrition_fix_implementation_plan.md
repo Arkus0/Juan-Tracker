@@ -568,42 +568,46 @@ lib/
 
 ## Orden de Implementación Recomendado
 
-| Fase | Descripción | Tiempo Est. | Bloquea |
-|------|-------------|-------------|---------|
-| 1 | Perfil + Tabla DB + Navegación | 2-3h | Todo |
-| 2 | Settings Screen + TDEE Calc | 3-4h | Fase 3 |
-| 3 | Fix Coach Slider + Overflow | 1-2h | - |
-| 4 | Reorganizar Diario (FatSecret) | 4-5h | Fase 5 |
-| 5 | Smart Import + Búsqueda Unificada | 4-5h | - |
-| 6 | Alimentos en Resumen | 30min | - |
-| 7 | Gráfica Peso | 2-3h | - |
-| 8 | Fixes menores | 30min | - |
+| Fase | Descripción | Estado | Tiempo Est. |
+|------|-------------|--------|-------------|
+| 1 | Perfil + Tabla DB + Navegación | ✅ Completada | 2-3h |
+| 2 | Settings Screen + TDEE Calc + Fix Coach Slider | ✅ Completada | 2-3h |
+| 3 | Reorganizar Diario (FatSecret) | 🔄 Pendiente | 4-5h |
+| 4 | Smart Import + Búsqueda Unificada | 🔄 Pendiente | 4-5h |
+| 5 | Gráfica Peso + Tooltips | 🔄 Pendiente | 2-3h |
+| 6 | Fixes menores | 🔄 Pendiente | 30min |
 
-**Total estimado**: 17-23 horas de trabajo
+**Total estimado**: 17-23 horas de trabajo | **Completado**: ~5-6h | **Restante**: ~11-16h
 
 ---
 
-## Próximos Pasos
+## Resumen de Fases Completadas
 
-Por favor indícame:
+### ✅ Fase 1: Estructura Base
+- Modelo UserProfileModel con Gender y ActivityLevel
+- Tabla UserProfiles en Drift (schema v6)
+- Repositorio DriftUserProfileRepository
+- SettingsScreen con edición de perfil
+- Navegación reorganizada: Diario | Peso | Resumen | Coach | Perfil
 
-1. **¿El orden es correcto o prefieres priorizar algo específico?**
-   - Ej: "Primero el fix del coach, luego lo demás"
-
-2. **¿Empezamos con la Fase 1 (Estructura Base)?**
-   - Crear modelo de perfil + tabla DB + navegación
-
-3. **Sobre la gráfica de peso:**
-   - ¿Línea simple o quieres línea de tendencia + barras?
-   - ¿Período por defecto: 30 días o configurable?
-
-4. **Sobre el nombre del nuevo tab:**
-   - ¿"Perfil", "Ajustes", "Yo", "Configuración"?
-
-5. **¿Algún detalle específico del estilo FatSecret?**
-   - ¿Las secciones son siempre expandibles o se quedan fijas?
-   - ¿Mostrar macros de cada comida en el header de sección?
+### ✅ Fase 2: Coach Fixes + TDEE Integration
+- **FIX CRÍTICO**: Slider de velocidad corregido (0.1% a 2.5% positivo)
+- TDEE calculado automáticamente desde perfil (Mifflin-St Jeor)
+- Peso pre-llenado desde último registro
+- Diálogo para completar perfil si faltan datos
 
 ---
 
-*Plan generado: 30/01/2026 - Listo para implementación*
+## Siguiente Paso: Fase 3
+
+**Reorganizar Diario (Estilo FatSecret)**:
+- 4 secciones expandibles (Desayuno, Almuerzo, Cena, Snack)
+- Cada sección con su botón "+ Añadir"
+- Eliminar FAB redundante
+- Mostrar macros en header de cada sección
+
+**¿Continuamos con la Fase 3?**
+
+---
+
+*Plan actualizado: 30/01/2026 - Fases 1-2 completadas*

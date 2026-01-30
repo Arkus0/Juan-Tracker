@@ -3,6 +3,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/models/user_profile_model.dart';
+import '../../../core/providers/database_provider.dart';
+import '../../../core/services/tdee_calculator.dart';
 import '../../providers/coach_providers.dart';
 import '../../services/adaptive_coach_service.dart';
 
@@ -101,6 +104,23 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
     _weightController = TextEditingController(
       text: plan?.startingWeight.toString() ?? '',
     );
+    
+    // Cargar último peso si no hay plan existente
+    if (plan == null) {
+      _loadLatestWeight();
+    }
+  }
+  
+  Future<void> _loadLatestWeight() async {
+    final container = ProviderScope.containerOf(context);
+    final repo = container.read(weighInRepositoryProvider);
+    final latest = await repo.getLatest();
+    
+    if (latest != null && mounted) {
+      setState(() {
+        _weightController.text = latest.weightKg.toStringAsFixed(1);
+      });
+    }
   }
 
   @override
@@ -266,10 +286,25 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
             TextField(
               controller: _tdeeController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'TDEE estimado (kcal)',
                 suffixText: 'kcal',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                helperText: _tdeeController.text.isNotEmpty 
+                    ? 'Según tu perfil: ${_tdeeController.text} kcal'
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.tonal(
+              onPressed: _calculateTDEE,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.calculate),
+                  SizedBox(width: 8),
+                  Text('Calcular automáticamente'),
+                ],
               ),
             ),
 
@@ -368,21 +403,29 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
       );
     }
 
-    final displayValue = (_weeklyRatePercent * 100); // -2.5 a 2.5
-    final kgPerWeek = _weeklyRateKg.abs();
+    // FIX: El slider siempre muestra valores positivos (0.1% a 2.5%)
+    // El signo se aplica según el objetivo
+    final isLosing = _goal == WeightGoal.lose;
+    final minRate = 0.001; // 0.1%
+    final maxRate = 0.025; // 2.5%
+    
+    // Valor absoluto para mostrar en el slider
+    final displayPercent = _weeklyRatePercent.abs().clamp(minRate, maxRate);
+    final kgPerWeek = _weight * displayPercent;
     final kcalAdjustment = (kgPerWeek * 7700 / 7).round();
 
     return Column(
       children: [
         Slider(
-          value: _weeklyRatePercent.clamp(-0.025, 0.025),
-          min: -0.025,
-          max: 0.025,
-          divisions: 20,
-          label: '${displayValue.toStringAsFixed(1)}%',
+          value: displayPercent,
+          min: minRate,
+          max: maxRate,
+          divisions: 24, // Steps de 0.1%
+          label: '${(displayPercent * 100).toStringAsFixed(1)}%',
           onChanged: (value) {
             setState(() {
-              _weeklyRatePercent = value;
+              // Aplicar signo según objetivo
+              _weeklyRatePercent = isLosing ? -value : value;
             });
           },
         ),
@@ -390,7 +433,7 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              _goal == WeightGoal.lose ? 'Lento' : 'Conservador',
+              'Conservador (0.1%)',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             Column(
@@ -402,19 +445,15 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
                       ),
                 ),
                 Text(
-                  '${_weeklyRatePercent >= 0 ? "+" : ""}$kcalAdjustment kcal/día',
+                  '${isLosing ? "-" : "+"}$kcalAdjustment kcal/día',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: _weeklyRatePercent < 0 
-                        ? Colors.green 
-                        : _weeklyRatePercent > 0 
-                            ? Colors.orange 
-                            : null,
+                    color: isLosing ? Colors.green : Colors.orange,
                   ),
                 ),
               ],
             ),
             Text(
-              _goal == WeightGoal.lose ? 'Agresivo' : 'Rápido',
+              'Agresivo (2.5%)',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -527,14 +566,11 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
   }
 
   String _getGoalDescription() {
-    switch (_goal) {
-      case WeightGoal.lose:
-        return 'Perder peso';
-      case WeightGoal.maintain:
-        return 'Mantener peso';
-      case WeightGoal.gain:
-        return 'Ganar peso';
-    }
+    return switch (_goal) {
+      WeightGoal.lose => 'Perder peso',
+      WeightGoal.maintain => 'Mantener peso',
+      WeightGoal.gain => 'Ganar peso',
+    };
   }
 
   String _getRateDescription() {
@@ -568,6 +604,51 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _calculateTDEE() async {
+    // Obtener perfil del usuario
+    final profile = await ref.read(userProfileRepositoryProvider).get();
+    
+    if (profile == null || !profile.isComplete) {
+      // Mostrar diálogo para completar perfil
+      if (!mounted) return;
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => _CompleteProfileDialog(
+          existingProfile: profile,
+        ),
+      );
+      
+      if (result == true) {
+        // Recargar perfil y calcular
+        final updatedProfile = await ref.read(userProfileRepositoryProvider).get();
+        if (updatedProfile != null && updatedProfile.isComplete) {
+          final tdee = TdeeCalculator.calculateTDEEFromProfile(updatedProfile);
+          if (tdee != null && mounted) {
+            setState(() {
+              _tdeeController.text = tdee.round().toString();
+            });
+          }
+        }
+      }
+      return;
+    }
+    
+    // Calcular TDEE directamente
+    final tdee = TdeeCalculator.calculateTDEEFromProfile(profile);
+    if (tdee != null && mounted) {
+      setState(() {
+        _tdeeController.text = tdee.round().toString();
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('TDEE calculado: ${tdee.round()} kcal'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   Future<void> _savePlan() async {
@@ -645,6 +726,180 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
         backgroundColor: Colors.red,
       ),
     );
+  }
+}
+
+/// Diálogo para completar el perfil desde el Coach
+class _CompleteProfileDialog extends ConsumerStatefulWidget {
+  final UserProfileModel? existingProfile;
+
+  const _CompleteProfileDialog({this.existingProfile});
+
+  @override
+  ConsumerState<_CompleteProfileDialog> createState() => _CompleteProfileDialogState();
+}
+
+class _CompleteProfileDialogState extends ConsumerState<_CompleteProfileDialog> {
+  late final TextEditingController _ageController;
+  late final TextEditingController _heightController;
+  late final TextEditingController _weightController;
+  Gender? _gender;
+  ActivityLevel _activityLevel = ActivityLevel.moderatelyActive;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.existingProfile;
+    _ageController = TextEditingController(text: p?.age?.toString() ?? '');
+    _heightController = TextEditingController(
+      text: p?.heightCm?.toStringAsFixed(0) ?? '',
+    );
+    _weightController = TextEditingController(
+      text: p?.currentWeightKg?.toStringAsFixed(1) ?? '',
+    );
+    _gender = p?.gender;
+    _activityLevel = p?.activityLevel ?? ActivityLevel.moderatelyActive;
+  }
+
+  @override
+  void dispose() {
+    _ageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Completa tu Perfil'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Necesitamos algunos datos para calcular tu TDEE con precisión.',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _ageController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Edad *',
+                suffixText: 'años',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<Gender?>(
+              selected: {_gender},
+              onSelectionChanged: (set) => setState(() => _gender = set.first),
+              segments: const [
+                ButtonSegment(
+                  value: Gender.male,
+                  label: Text('Hombre'),
+                  icon: Icon(Icons.male),
+                ),
+                ButtonSegment(
+                  value: Gender.female,
+                  label: Text('Mujer'),
+                  icon: Icon(Icons.female),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _heightController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Altura *',
+                suffixText: 'cm',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _weightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Peso actual *',
+                suffixText: 'kg',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<ActivityLevel>(
+              value: _activityLevel,
+              decoration: const InputDecoration(
+                labelText: 'Nivel de actividad',
+                border: OutlineInputBorder(),
+              ),
+              items: ActivityLevel.values.map((level) {
+                return DropdownMenuItem(
+                  value: level,
+                  child: Text(level.displayName),
+                );
+              }).toList(),
+              onChanged: (v) => setState(() => _activityLevel = v!),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: const Text('Guardar y Calcular'),
+        ),
+      ],
+    );
+  }
+
+  void _save() async {
+    final age = int.tryParse(_ageController.text);
+    final height = double.tryParse(_heightController.text);
+    final weight = double.tryParse(_weightController.text);
+
+    if (age == null || height == null || weight == null || _gender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Completa todos los campos')),
+      );
+      return;
+    }
+
+    final error = TdeeCalculator.validateProfile(
+      age: age,
+      heightCm: height,
+      weightKg: weight,
+    );
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+      return;
+    }
+
+    final profile = UserProfileModel(
+      id: 'user_profile',
+      age: age,
+      gender: _gender,
+      heightCm: height,
+      currentWeightKg: weight,
+      activityLevel: _activityLevel,
+      createdAt: widget.existingProfile?.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await ref.read(userProfileRepositoryProvider).save(profile);
+
+    if (mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 }
 
