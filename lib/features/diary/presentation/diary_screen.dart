@@ -298,6 +298,14 @@ class _MonthCalendar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final entryDaysAsync = ref.watch(calendarEntryDaysProvider);
+
+    // 🎯 MED-002: Cargar días con entradas para marcadores
+    final entryDays = entryDaysAsync.when(
+      data: (days) => days,
+      loading: () => <DateTime>{},
+      error: (_, __) => <DateTime>{},
+    );
 
     return Card(
       margin: const EdgeInsets.all(AppSpacing.lg),
@@ -313,6 +321,11 @@ class _MonthCalendar extends ConsumerWidget {
               selectedDayPredicate: (day) => isSameDay(day, selectedDate),
               onDaySelected: (selectedDay, focusedDay) {
                 onDateSelected(selectedDay);
+              },
+              // 🎯 MED-002: Cargar eventos para marcadores
+              eventLoader: (day) {
+                final normalizedDay = DateTime(day.year, day.month, day.day);
+                return entryDays.contains(normalizedDay) ? [true] : [];
               },
               calendarFormat: CalendarFormat.month,
               startingDayOfWeek: StartingDayOfWeek.monday,
