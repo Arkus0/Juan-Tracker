@@ -17,6 +17,7 @@ import '../widgets/analysis/session_list_view.dart';
 import '../widgets/analysis/streak_counter.dart';
 import '../widgets/analysis/strength_trend.dart';
 import '../widgets/analysis/symmetry_radar.dart';
+import '../widgets/deload_alerts_widget.dart';
 
 /// Centro de Comando Anabólico - Analysis Screen
 /// Replaces HistoryScreen with advanced analytics
@@ -291,6 +292,11 @@ class _LaboratorioTab extends ConsumerWidget {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: const [
+        // 🎯 MED-005: Alertas de deload/sobreentrenamiento
+        DeloadAlertsWidget(),
+
+        SizedBox(height: 20),
+
         // Recovery Monitor
         RecoveryMonitor(),
 

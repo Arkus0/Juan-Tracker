@@ -815,7 +815,7 @@ Si acepta: Reduce series automáticamente de 4x10 a 3x8
 | Prioridad | Funcionalidad | Impacto | Esfuerzo | Razón |
 |-----------|--------------|---------|----------|-------|
 | **1** | **Comida Habitual** | 🔥🔥🔥 | Medio | Mayor reducción de fricción diaria |
-| **2** | **Deload Alerts UI** | 🔥🔥 | **Bajo** | Esfuerzo mínimo, valor inmediato |
+| **2** | **Deload Alerts UI** | 🔥🔥 | **Bajo** | ✅ **COMPLETADO** - Alertas visuales en pantalla de análisis |
 | **3** | **OCR Import** | 🔥🔥 | Alto | Diferenciador competitivo |
 | **4** | **Calendario indicadores** | 🔥 | Medio | Nice-to-have, motivación visual |
 
