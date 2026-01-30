@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/providers/information_density_provider.dart';
 import '../../models/serie_log.dart';
 import '../../screens/plate_calculator_dialog.dart';
 import '../../utils/design_system.dart';
@@ -84,53 +86,54 @@ class _SetRowStyles {
 
 // ⚡ OPTIMIZACIÓN: RowStyle constantes - JERARQUÍA VISUAL CLARA
 // 🆕 Padding aumentado para mejor usabilidad con dedos sudados/fatiga
+/// Genera estilos de fila según densidad y estado
 class _RowStyles {
   // COMPLETADA: Verde apagado, sutil pero satisfactoria
-  static const completed = RowStyle(
+  static RowStyle completed(DensityValues values) => RowStyle(
     bgColor: TrainingColors.completedBg,
-    borderColor: Color(0x402E8B57), // Verde @ 0.25 alpha
+    borderColor: Color(0x402E8B57),
     textColor: TrainingColors.textSecondary,
-    opacity: 0.6, // Desaturada
+    opacity: 0.6,
     padding: EdgeInsets.symmetric(
-      vertical: 10,
-      horizontal: 12,
-    ), // 🆕 Más padding
+      vertical: values.dense ? 8 : 10,
+      horizontal: values.horizontalPadding,
+    ),
   );
 
   // ACTIVA: Rojo prominente, LA ÚNICA que destaca
-  static const active = RowStyle(
+  static RowStyle active(DensityValues values) => RowStyle(
     bgColor: TrainingColors.activeBg,
     borderColor: TrainingColors.activeSet,
     textColor: TrainingColors.textPrimary,
     opacity: 1.0,
     padding: EdgeInsets.symmetric(
-      vertical: 14,
-      horizontal: 14,
-    ), // 🆕 Más padding
+      vertical: values.dense ? 10 : 14,
+      horizontal: values.horizontalPadding,
+    ),
   );
 
   // FUTURA: Casi invisible
-  static const future = RowStyle(
+  static RowStyle future(DensityValues values) => RowStyle(
     bgColor: Colors.transparent,
     borderColor: Colors.transparent,
     textColor: TrainingColors.textDisabled,
-    opacity: 0.3, // Muy sutil
+    opacity: 0.3,
     padding: EdgeInsets.symmetric(
-      vertical: 6,
-      horizontal: 12,
-    ), // 🆕 Más padding
+      vertical: values.dense ? 4 : 6,
+      horizontal: values.horizontalPadding,
+    ),
   );
 
   // PASADA (sin completar): Sutil
-  static const past = RowStyle(
+  static RowStyle past(DensityValues values) => RowStyle(
     bgColor: Colors.transparent,
     borderColor: Colors.transparent,
     textColor: TrainingColors.textSecondary,
     opacity: 0.5,
     padding: EdgeInsets.symmetric(
-      vertical: 8,
-      horizontal: 12,
-    ), // 🆕 Más padding
+      vertical: values.dense ? 6 : 8,
+      horizontal: values.horizontalPadding,
+    ),
   );
 }
 
@@ -175,7 +178,7 @@ double? _detectSuspiciousWeight(double enteredWeight, double? previousWeight) {
   return null; // El peso parece válido
 }
 
-class FocusedSetRow extends StatefulWidget {
+class FocusedSetRow extends ConsumerStatefulWidget {
   final int index;
   final SerieLog log;
   final SerieLog? prevLog;
@@ -208,10 +211,10 @@ class FocusedSetRow extends StatefulWidget {
   });
 
   @override
-  State<FocusedSetRow> createState() => _FocusedSetRowState();
+  ConsumerState<FocusedSetRow> createState() => _FocusedSetRowState();
 }
 
-class _FocusedSetRowState extends State<FocusedSetRow>
+class _FocusedSetRowState extends ConsumerState<FocusedSetRow>
     with SingleTickerProviderStateMixin {
   /// Animación de flash verde al completar
   late AnimationController _flashController;
@@ -252,12 +255,14 @@ class _FocusedSetRowState extends State<FocusedSetRow>
 
   @override
   Widget build(BuildContext context) {
+    final density = ref.watch(informationDensityProvider);
+    final densityValues = DensityValues.forMode(density);
     final isCompleted = widget.log.completed;
 
     // Colores y estilos según estado
-    final style = _getRowStyle(isCompleted, widget.isActive, widget.isFuture);
+    final style = _getRowStyle(isCompleted, widget.isActive, widget.isFuture, densityValues);
 
-    // 🆕 Contenido base de la fila
+    // Contenido base de la fila
     final Widget rowContent = GestureDetector(
       onLongPress: widget.onLongPress,
       child: AnimatedBuilder(
@@ -266,7 +271,7 @@ class _FocusedSetRowState extends State<FocusedSetRow>
           return Stack(
             children: [
               child!,
-              // 🆕 Flash verde overlay cuando se completa
+              // Flash verde overlay cuando se completa
               if (_flashAnimation.value > 0)
                 Positioned.fill(
                   child: Container(
@@ -286,9 +291,9 @@ class _FocusedSetRowState extends State<FocusedSetRow>
           opacity: style.opacity,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.symmetric(
-              vertical: 4,
-            ), // 🆕 Más separación entre series
+            margin: EdgeInsets.symmetric(
+              vertical: densityValues.dense ? 2 : 4,
+            ), // Ajustado según densidad
             padding: style.padding,
             decoration: BoxDecoration(
               color: style.bgColor,
@@ -418,11 +423,11 @@ class _FocusedSetRowState extends State<FocusedSetRow>
   }
 
   // ⚡ OPTIMIZACIÓN: Usar constantes pre-definidas en lugar de crear nuevos objetos
-  RowStyle _getRowStyle(bool isCompleted, bool isActive, bool isFuture) {
-    if (isCompleted) return _RowStyles.completed;
-    if (isActive) return _RowStyles.active;
-    if (isFuture) return _RowStyles.future;
-    return _RowStyles.past;
+  RowStyle _getRowStyle(bool isCompleted, bool isActive, bool isFuture, DensityValues values) {
+    if (isCompleted) return _RowStyles.completed(values);
+    if (isActive) return _RowStyles.active(values);
+    if (isFuture) return _RowStyles.future(values);
+    return _RowStyles.past(values);
   }
 
   void _openWeightInput(BuildContext context) async {

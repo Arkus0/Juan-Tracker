@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/providers/information_density_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/media_control_service.dart';
 import '../services/timer_notification_service.dart';
 import '../utils/design_system.dart';
+import 'export_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -158,6 +160,25 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
+          // Sección Visualización
+          const _SectionHeader(title: 'VISUALIZACIÓN'),
+          const SizedBox(height: 8),
+
+          const _DensityModeTile(),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'Modo compacto: más ejercicios visibles en pantalla. Ideal para gimnasio con poca luz.',
+              style: GoogleFonts.montserrat(
+                color: AppColors.textTertiary,
+                fontSize: 11,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
           // Sección Superseries
           const _SectionHeader(title: 'SUPERSERIES'),
           const SizedBox(height: 8),
@@ -248,6 +269,26 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
 
           _StorageTile(),
+
+          const SizedBox(height: 24),
+
+          // Sección Datos
+          const _SectionHeader(title: 'DATOS'),
+          const SizedBox(height: 8),
+
+          _SettingsTile(
+            icon: Icons.download_rounded,
+            title: 'Exportar datos',
+            subtitle: 'Exporta tu historial a CSV',
+            trailing: IconButton(
+              icon: const Icon(Icons.arrow_forward_ios, size: 18),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ExportScreen()),
+                );
+              },
+            ),
+          ),
 
           const SizedBox(height: 24),
 
@@ -1007,6 +1048,116 @@ class _GuideTile extends StatelessWidget {
         trailing: Icon(Icons.chevron_right, color: Colors.grey[600]),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         onTap: onTap,
+      ),
+    );
+  }
+}
+
+/// Tile para seleccionar modo de densidad de información
+class _DensityModeTile extends ConsumerWidget {
+  const _DensityModeTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final density = ref.watch(informationDensityProvider);
+    final notifier = ref.read(informationDensityProvider.notifier);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.view_compact,
+                  color: Colors.white70,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Densidad de información',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '${DensityValues.modeName(density)}: ${DensityValues.modeDescription(density)}',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 12,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SegmentedButton<DensityMode>(
+              segments: [
+                ButtonSegment<DensityMode>(
+                  value: DensityMode.compact,
+                  label: Text(
+                    'Compacta',
+                    style: GoogleFonts.montserrat(fontSize: 11),
+                  ),
+                  icon: Icon(Icons.view_compact, size: 18),
+                ),
+                ButtonSegment<DensityMode>(
+                  value: DensityMode.comfortable,
+                  label: Text(
+                    'Cómoda',
+                    style: GoogleFonts.montserrat(fontSize: 11),
+                  ),
+                  icon: Icon(Icons.view_comfy, size: 18),
+                ),
+                ButtonSegment<DensityMode>(
+                  value: DensityMode.detailed,
+                  label: Text(
+                    'Detallada',
+                    style: GoogleFonts.montserrat(fontSize: 11),
+                  ),
+                  icon: Icon(Icons.view_agenda, size: 18),
+                ),
+              ],
+              selected: {density},
+              onSelectionChanged: (Set<DensityMode> newSelection) {
+                notifier.setMode(newSelection.first);
+              },
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                  (states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppColors.bloodRed;
+                    }
+                    return Colors.transparent;
+                  },
+                ),
+                foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                  (states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return Colors.white;
+                    }
+                    return Colors.grey[400]!;
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

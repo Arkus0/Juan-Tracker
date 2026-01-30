@@ -229,10 +229,12 @@ class OpenFoodFactsService {
         'search_terms': trimmedQuery, // Parámetro correcto de la API v2
         'page': page.toString(),
         'page_size': pageSize.toString(),
-        'countries_tags_en': country, // Preferir resultados del país
+        'countries_tags_en': 'spain', // Priorizar productos españoles
+        'languages_tags': 'es', // Productos con etiquetas en español
         'fields':
             'code,product_name,generic_name,brands,image_url,image_small_url,'
-                'ingredients_text,serving_size,nutriments,product_quantity',
+                'ingredients_text,serving_size,nutriments,product_quantity,'
+                'categories_tags,labels_tags,origins_tags',
         'sort_by': 'popularity_key', // Ordenar por popularidad
       },
     );

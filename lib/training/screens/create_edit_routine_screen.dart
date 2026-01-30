@@ -4,8 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
 import 'package:juan_tracker/training/models/rutina.dart';
 import 'package:juan_tracker/training/models/sesion.dart';
+import 'package:juan_tracker/training/models/training_block.dart';
 import 'package:juan_tracker/training/providers/create_routine_provider.dart';
 import 'package:juan_tracker/training/providers/training_provider.dart';
+import 'package:juan_tracker/training/screens/block_edit_screen.dart';
 import 'package:juan_tracker/training/screens/create_routine/widgets/biblioteca_bottom_sheet.dart';
 import 'package:juan_tracker/training/screens/create_routine/widgets/dia_expansion_tile.dart';
 import 'package:juan_tracker/training/services/haptics_controller.dart';
@@ -13,6 +15,7 @@ import 'package:juan_tracker/training/services/routine_ocr_service.dart';
 import 'package:juan_tracker/training/services/routine_sharing_service.dart';
 import 'package:juan_tracker/training/services/voice_input_service.dart';
 import 'package:juan_tracker/training/utils/design_system.dart';
+import 'package:juan_tracker/training/widgets/routine/block_timeline_widget.dart';
 import 'package:juan_tracker/training/widgets/routine_import_dialog.dart';
 import 'package:juan_tracker/training/widgets/smart_import_sheet.dart';
 import 'package:juan_tracker/training/widgets/voice/voice_input_sheet.dart';
@@ -35,6 +38,9 @@ class _CreateEditRoutineScreenState
   /// Flag para saber si ya se guardó la rutina (evitar diálogo al salir después de guardar)
   bool _savedSuccessfully = false;
 
+  /// Estado local del modo Pro para UI (se sincroniza con el provider)
+  late bool _isProMode;
+
   // Stored references for safe disposal without accessing `ref` in dispose
   late final providerContainer = ref.container;
   late final _createRoutineProvider = createRoutineProvider(widget.rutina);
@@ -45,6 +51,8 @@ class _CreateEditRoutineScreenState
     // 🎯 P2: Nombre por defecto para nuevas rutinas
     final defaultName = widget.rutina?.nombre ?? _generateDefaultName();
     _nameController = TextEditingController(text: defaultName);
+    // Inicializar modo Pro desde la rutina existente o false por defecto
+    _isProMode = widget.rutina?.isProMode ?? false;
   }
 
   /// Verifica si hay cambios sin guardar

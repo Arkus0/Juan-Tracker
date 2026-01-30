@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/external_session.dart';
-import '../models/sesion.dart';
+
 import '../providers/analysis_provider.dart';
 import '../providers/training_provider.dart';
 import '../utils/design_system.dart';
@@ -18,6 +18,7 @@ import '../widgets/analysis/streak_counter.dart';
 import '../widgets/analysis/strength_trend.dart';
 import '../widgets/analysis/symmetry_radar.dart';
 import '../widgets/deload_alerts_widget.dart';
+import 'export_screen.dart';
 
 /// Centro de Comando Anabólico - Analysis Screen
 /// Replaces HistoryScreen with advanced analytics
@@ -53,7 +54,6 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
 
   @override
   Widget build(BuildContext context) {
-    final sessionsAsync = ref.watch(sesionesHistoryStreamProvider);
     final tabIndex = ref.watch(analysisTabIndexProvider);
     final scheme = Theme.of(context).colorScheme;
 
@@ -67,29 +67,30 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
           ),
         ),
         actions: [
-          // Export menu (preserved from HistoryScreen)
+          // Export menu
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             color: scheme.surface,
             onSelected: (value) {
-              if (value == 'export_all') {
-                final sessions = sessionsAsync.asData?.value ?? [];
-                _exportAllSessions(context, sessions);
+              if (value == 'export_csv') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ExportScreen()),
+                );
               }
             },
             itemBuilder: (ctx) => [
               PopupMenuItem(
-                value: 'export_all',
+                value: 'export_csv',
                 child: Row(
                   children: [
                     Icon(
-                      Icons.file_download,
+                      Icons.download_rounded,
                       size: 20,
-                      color: scheme.onSurface,
+                      color: scheme.primary,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Exportar Todo',
+                      'Exportar datos (CSV)',
                       style: GoogleFonts.montserrat(color: scheme.onSurface),
                     ),
                   ],
@@ -131,24 +132,6 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
             )
           : null,
     );
-  }
-
-  void _exportAllSessions(BuildContext context, List<Sesion> sessions) {
-    if (sessions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'No hay sesiones para exportar',
-            style: GoogleFonts.montserrat(),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.surface,
-        ),
-      );
-      return;
-    }
-
-    HapticFeedback.mediumImpact();
-    exportAllSessions(context, sessions);
   }
 
   Future<void> _addExternalSession(BuildContext context) async {

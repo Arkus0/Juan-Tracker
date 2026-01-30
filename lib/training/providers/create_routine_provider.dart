@@ -6,6 +6,7 @@ import 'package:juan_tracker/training/models/dia.dart';
 import 'package:juan_tracker/training/models/ejercicio_en_rutina.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
 import 'package:juan_tracker/training/models/rutina.dart';
+import 'package:juan_tracker/training/models/training_block.dart';
 import 'package:juan_tracker/training/services/exercise_library_service.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
@@ -783,6 +784,116 @@ class CreateRoutineNotifier extends Notifier<Rutina> {
     newDias[dayIndex] = updatedDay;
     state = state.copyWith(dias: newDias);
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MÉTODOS MODO PRO (BLOQUES DE ENTRENAMIENTO)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Activa o desactiva el modo Pro (periodización por bloques)
+  void toggleProMode() {
+    final newProMode = !state.isProMode;
+    state = state.copyWith(
+      isProMode: newProMode,
+      // Si desactivamos modo Pro, limpiamos los bloques
+      blocks: newProMode ? state.blocks : [],
+    );
+  }
+
+  /// Establece explícitamente el modo Pro
+  void setProMode(bool enabled) {
+    if (state.isProMode == enabled) return;
+    state = state.copyWith(
+      isProMode: enabled,
+      blocks: enabled ? state.blocks : [],
+    );
+  }
+
+  /// Añade un nuevo bloque a la rutina
+  void addBlock(TrainingBlock block) {
+    // Verificar que no haya solapamiento
+    final hasOverlap = state.blocks.any((b) {
+      if (b.id == block.id) return false;
+      final newStartInExisting = block.startDate.isAfter(b.startDate.subtract(const Duration(days: 1))) &&
+          block.startDate.isBefore(b.endDate.add(const Duration(days: 1)));
+      final newEndInExisting = block.endDate.isAfter(b.startDate.subtract(const Duration(days: 1))) &&
+          block.endDate.isBefore(b.endDate.add(const Duration(days: 1)));
+      final newEncompassesExisting = block.startDate.isBefore(b.startDate) &&
+          block.endDate.isAfter(b.endDate);
+      return newStartInExisting || newEndInExisting || newEncompassesExisting;
+    });
+
+    if (hasOverlap) {
+      throw ArgumentError('El bloque se solapa con otro bloque existente');
+    }
+
+    // Buscar si ya existe un bloque con el mismo ID (edición)
+    final existingIndex = state.blocks.indexWhere((b) => b.id == block.id);
+    
+    if (existingIndex >= 0) {
+      // Actualizar bloque existente
+      final newBlocks = [...state.blocks];
+      newBlocks[existingIndex] = block;
+      state = state.copyWith(blocks: newBlocks);
+    } else {
+      // Añadir nuevo bloque
+      state = state.copyWith(blocks: [...state.blocks, block]);
+    }
+  }
+
+  /// Actualiza un bloque existente
+  void updateBlock(TrainingBlock updatedBlock) {
+    final index = state.blocks.indexWhere((b) => b.id == updatedBlock.id);
+    if (index < 0) {
+      throw ArgumentError('Bloque no encontrado');
+    }
+
+    // Verificar que no haya solapamiento con otros bloques (excluyendo el actual)
+    final hasOverlap = state.blocks.any((b) {
+      if (b.id == updatedBlock.id) return false;
+      final newStartInExisting = updatedBlock.startDate.isAfter(b.startDate.subtract(const Duration(days: 1))) &&
+          updatedBlock.startDate.isBefore(b.endDate.add(const Duration(days: 1)));
+      final newEndInExisting = updatedBlock.endDate.isAfter(b.startDate.subtract(const Duration(days: 1))) &&
+          updatedBlock.endDate.isBefore(b.endDate.add(const Duration(days: 1)));
+      final newEncompassesExisting = updatedBlock.startDate.isBefore(b.startDate) &&
+          updatedBlock.endDate.isAfter(b.endDate);
+      return newStartInExisting || newEndInExisting || newEncompassesExisting;
+    });
+
+    if (hasOverlap) {
+      throw ArgumentError('El bloque se solapa con otro bloque existente');
+    }
+
+    final newBlocks = [...state.blocks];
+    newBlocks[index] = updatedBlock;
+    state = state.copyWith(blocks: newBlocks);
+  }
+
+  /// Elimina un bloque de la rutina
+  void removeBlock(String blockId) {
+    state = state.copyWith(
+      blocks: state.blocks.where((b) => b.id != blockId).toList(),
+    );
+  }
+
+  /// Reordena los bloques (aunque normalmente se ordenan por fecha)
+  void reorderBlocks(int oldIndex, int newIndex) {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final newBlocks = [...state.blocks];
+    final item = newBlocks.removeAt(oldIndex);
+    newBlocks.insert(newIndex, item);
+    state = state.copyWith(blocks: newBlocks);
+  }
+
+  /// Obtiene el bloque activo actualmente
+  TrainingBlock? get activeBlock => state.activeBlock;
+
+  /// Verifica si hay bloques solapados
+  bool get hasOverlappingBlocks => state.blocks.hasOverlappingBlocks;
+
+  /// Obtiene los bloques ordenados por fecha de inicio
+  List<TrainingBlock> get sortedBlocks => state.blocks.sortedByStartDate();
 
   final _logger = Logger();
 
