@@ -113,8 +113,21 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
   
   Future<void> _loadLatestWeight() async {
     final container = ProviderScope.containerOf(context);
-    final repo = container.read(weighInRepositoryProvider);
-    final latest = await repo.getLatest();
+    
+    // Primero intentar obtener peso del perfil
+    final profileRepo = container.read(userProfileRepositoryProvider);
+    final profile = await profileRepo.get();
+    
+    if (profile?.currentWeightKg != null && mounted) {
+      setState(() {
+        _weightController.text = profile!.currentWeightKg!.toStringAsFixed(1);
+      });
+      return;
+    }
+    
+    // Si no hay peso en perfil, usar último weigh-in
+    final weighRepo = container.read(weighInRepositoryProvider);
+    final latest = await weighRepo.getLatest();
     
     if (latest != null && mounted) {
       setState(() {
@@ -391,6 +404,30 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
     );
   }
 
+  // Transformación no lineal del slider:
+  // 0.0 -> 0.001 (0.1%)
+  // 0.75 -> 0.01 (1.0%)
+  // 1.0 -> 0.025 (2.5%)
+  double _sliderToPercent(double sliderValue) {
+    if (sliderValue <= 0.75) {
+      // 0-75% del slider = 0.1% - 1.0%
+      return 0.001 + (sliderValue / 0.75) * (0.01 - 0.001);
+    } else {
+      // 75-100% del slider = 1.0% - 2.5%
+      final t = (sliderValue - 0.75) / 0.25;
+      return 0.01 + t * (0.025 - 0.01);
+    }
+  }
+
+  double _percentToSlider(double percent) {
+    final absPercent = percent.abs();
+    if (absPercent <= 0.01) {
+      return (absPercent - 0.001) / (0.01 - 0.001) * 0.75;
+    } else {
+      return 0.75 + (absPercent - 0.01) / (0.025 - 0.01) * 0.25;
+    }
+  }
+
   Widget _buildRateSlider() {
     if (_goal == WeightGoal.maintain) {
       return const Card(
@@ -403,29 +440,22 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
       );
     }
 
-    // FIX: El slider siempre muestra valores positivos (0.1% a 2.5%)
-    // El signo se aplica según el objetivo
     final isLosing = _goal == WeightGoal.lose;
-    final minRate = 0.001; // 0.1%
-    final maxRate = 0.025; // 2.5%
-    
-    // Valor absoluto para mostrar en el slider
-    final displayPercent = _weeklyRatePercent.abs().clamp(minRate, maxRate);
+    final displayPercent = _weeklyRatePercent.abs().clamp(0.001, 0.025);
+    final sliderValue = _percentToSlider(displayPercent);
     final kgPerWeek = _weight * displayPercent;
     final kcalAdjustment = (kgPerWeek * 7700 / 7).round();
 
     return Column(
       children: [
         Slider(
-          value: displayPercent,
-          min: minRate,
-          max: maxRate,
-          divisions: 24, // Steps de 0.1%
-          label: '${(displayPercent * 100).toStringAsFixed(1)}%',
+          value: sliderValue.clamp(0.0, 1.0),
+          min: 0.0,
+          max: 1.0,
           onChanged: (value) {
             setState(() {
-              // Aplicar signo según objetivo
-              _weeklyRatePercent = isLosing ? -value : value;
+              final percent = _sliderToPercent(value);
+              _weeklyRatePercent = isLosing ? -percent : percent;
             });
           },
         ),
@@ -433,17 +463,30 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Conservador (0.1%)',
+              'Conservador',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             Column(
               children: [
-                Text(
-                  '${kgPerWeek.toStringAsFixed(2)} kg/semana',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                // Input editable para kg/semana
+                GestureDetector(
+                  onTap: () => _showKgPerWeekEditor(context, kgPerWeek, isLosing),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${isLosing ? "-" : "+"}${kgPerWeek.toStringAsFixed(2)} kg/semana',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   '${isLosing ? "-" : "+"}$kcalAdjustment kcal/día',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -453,7 +496,7 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
               ],
             ),
             Text(
-              'Agresivo (2.5%)',
+              'Agresivo',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -468,6 +511,44 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+
+  void _showKgPerWeekEditor(BuildContext context, double currentKg, bool isLosing) {
+    final controller = TextEditingController(text: currentKg.toStringAsFixed(2));
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ajustar velocidad'),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'kg por semana',
+            suffixText: 'kg',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = double.tryParse(controller.text.replaceAll(',', '.'));
+              if (value != null && value > 0 && value <= (_weight * 0.025)) {
+                setState(() {
+                  final percent = (value / _weight).clamp(0.001, 0.025);
+                  _weeklyRatePercent = isLosing ? -percent : percent;
+                });
+              }
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Aplicar'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -589,17 +670,25 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(179),
-                ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(179),
+                  ),
+            ),
           ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
           ),
         ],
       ),
@@ -697,6 +786,11 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
             macroPreset: finalPreset,
           );
 
+      // Sincronizar con perfil si es necesario
+      if (mounted) {
+        await _syncWithProfile(weight);
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -715,6 +809,48 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
         setState(() {
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  Future<void> _syncWithProfile(double planWeight) async {
+    final profileRepo = ref.read(userProfileRepositoryProvider);
+    final profile = await profileRepo.get();
+    
+    if (profile == null) return;
+    
+    // Verificar si el peso del plan difiere del perfil
+    final profileWeight = profile.currentWeightKg;
+    final weightDiffers = profileWeight == null || (planWeight - profileWeight).abs() > 0.1;
+    
+    if (weightDiffers && mounted) {
+      final shouldSync = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Sincronizar perfil'),
+          content: Text(
+            'El peso de tu plan ($planWeight kg) no coincide con el de tu perfil (${profileWeight ?? "no definido"}).\n\n'
+            '¿Deseas actualizar tu perfil con este peso?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('No'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Sí, actualizar'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldSync == true) {
+        final updatedProfile = profile.copyWith(
+          currentWeightKg: planWeight,
+          updatedAt: DateTime.now(),
+        );
+        await profileRepo.save(updatedProfile);
       }
     }
   }
@@ -773,77 +909,106 @@ class _CompleteProfileDialogState extends ConsumerState<_CompleteProfileDialog> 
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Completa tu Perfil'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Necesitamos algunos datos para calcular tu TDEE con precisión.',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _ageController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Edad *',
-                suffixText: 'años',
-                border: OutlineInputBorder(),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Datos para calcular tu TDEE:',
+                style: TextStyle(fontSize: 14),
               ),
-            ),
-            const SizedBox(height: 12),
-            SegmentedButton<Gender?>(
-              selected: {_gender},
-              onSelectionChanged: (set) => setState(() => _gender = set.first),
-              segments: const [
-                ButtonSegment(
-                  value: Gender.male,
-                  label: Text('Hombre'),
-                  icon: Icon(Icons.male),
+              const SizedBox(height: 12),
+              // Fila 1: Edad y Género
+              Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: TextField(
+                      controller: _ageController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Edad',
+                        suffixText: 'años',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: SegmentedButton<Gender?>(
+                      selected: {_gender},
+                      onSelectionChanged: (set) => setState(() => _gender = set.first),
+                      segments: const [
+                        ButtonSegment(
+                          value: Gender.male,
+                          label: Text('Hombre'),
+                          icon: Icon(Icons.male, size: 18),
+                        ),
+                        ButtonSegment(
+                          value: Gender.female,
+                          label: Text('Mujer'),
+                          icon: Icon(Icons.female, size: 18),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Fila 2: Altura y Peso
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _heightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Altura',
+                        suffixText: 'cm',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _weightController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Peso',
+                        suffixText: 'kg',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<ActivityLevel>(
+                initialValue: _activityLevel,
+                isDense: true,
+                decoration: const InputDecoration(
+                  labelText: 'Actividad',
+                  border: OutlineInputBorder(),
+                  isDense: true,
                 ),
-                ButtonSegment(
-                  value: Gender.female,
-                  label: Text('Mujer'),
-                  icon: Icon(Icons.female),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _heightController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Altura *',
-                suffixText: 'cm',
-                border: OutlineInputBorder(),
+                items: ActivityLevel.values.map((level) {
+                  return DropdownMenuItem(
+                    value: level,
+                    child: Text(level.displayName, style: const TextStyle(fontSize: 14)),
+                  );
+                }).toList(),
+                onChanged: (v) => setState(() => _activityLevel = v!),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _weightController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Peso actual *',
-                suffixText: 'kg',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<ActivityLevel>(
-              initialValue: _activityLevel,
-              decoration: const InputDecoration(
-                labelText: 'Nivel de actividad',
-                border: OutlineInputBorder(),
-              ),
-              items: ActivityLevel.values.map((level) {
-                return DropdownMenuItem(
-                  value: level,
-                  child: Text(level.displayName),
-                );
-              }).toList(),
-              onChanged: (v) => setState(() => _activityLevel = v!),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       actions: [
@@ -853,7 +1018,7 @@ class _CompleteProfileDialogState extends ConsumerState<_CompleteProfileDialog> 
         ),
         FilledButton(
           onPressed: _save,
-          child: const Text('Guardar y Calcular'),
+          child: const Text('Calcular TDEE'),
         ),
       ],
     );

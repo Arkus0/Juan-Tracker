@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
+import 'package:juan_tracker/core/widgets/home_button.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/models/weighin_model.dart';
@@ -23,6 +24,10 @@ class WeightScreen extends ConsumerWidget {
             snap: true,
             title: const Text('Peso'),
             centerTitle: true,
+            leading: const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: HomeButton(),
+            ),
           ),
           SliverToBoxAdapter(
             child: Padding(

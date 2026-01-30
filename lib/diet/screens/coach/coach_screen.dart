@@ -4,7 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/router/app_router.dart';
-// import '../../../core/app_constants.dart';
+import '../../../core/widgets/home_button.dart';
 import '../../providers/coach_providers.dart';
 import '../../services/adaptive_coach_service.dart';
 
@@ -19,6 +19,10 @@ class CoachScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Coach Adaptativo'),
         centerTitle: true,
+        leading: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: HomeButton(),
+        ),
       ),
       body: plan == null
           ? _EmptyCoachState(onCreatePlan: () => _navigateToSetup(context))

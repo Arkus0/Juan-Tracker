@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/widgets/home_button.dart';
 import '../../../diet/providers/diet_providers.dart';
 import '../../../diet/services/day_summary_calculator.dart';
 
@@ -26,6 +27,10 @@ class SummaryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Resumen'),
         centerTitle: true,
+        leading: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: HomeButton(),
+        ),
       ),
       body: summaryAsync.when(
         data: (summary) => _SummaryContent(
@@ -358,7 +363,7 @@ class _CreateTargetsCTA extends StatelessWidget {
       color: theme.colorScheme.primaryContainer,
       elevation: 0,
       child: InkWell(
-        onTap: () => context.pushTo(AppRouter.nutritionTargets),
+        onTap: () => context.pushTo(AppRouter.nutritionCoach),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(20),
