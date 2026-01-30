@@ -47,6 +47,7 @@ jobs:
 
       - name: Start emulator
         run: |
+          chmod +x wait-for-emulator.sh
           nohup $ANDROID_SDK_ROOT/emulator/emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           ./wait-for-emulator.sh
         env:
