@@ -2,7 +2,7 @@
 
 > **Fecha de creación**: 30 Enero 2026  
 > **Última actualización**: 30 Enero 2026  
-> **Estado**: Fases 1-10 completadas ✅  
+> **Estado**: Fases 1-10 completadas ✅ (AUDITADO - 30 Ene 2026)  
 > **Tiempo estimado total**: ~21 días de trabajo efectivo
 
 ---
@@ -683,21 +683,142 @@ git diff lib/features/home/presentation/entry_screen.dart
 - [x] QW-09: Welcome back toast
 - [x] HIGH-004: Recuperación contexto
 
-### Fase 3 ⏳
-- [ ] QW-05: Progress ring
-- [ ] QW-08: Thumb zone
-- [ ] QW-06: Nombres semánticos
-- [ ] QW-07: Empty states
+### Fase 3 ✅
+- [x] QW-05: Progress ring
+- [x] QW-08: Thumb zone
+- [x] QW-06: Nombres semánticos
+- [x] QW-07: Empty states
 
-### Fases 4-10 ⏳
-- [ ] Fase 4: Today View Base
-- [ ] Fase 5: Scheduling Base
-- [ ] Fase 6: Today View Completa
-- [ ] Fase 7: Scheduling Avanzado
-- [ ] Fase 8: Import Features
-- [ ] Fase 9: Polish Final
-- [ ] Fase 10: Refactor Nav
+### Fases 4-10 ✅
+- [x] Fase 4: Today View Base
+- [x] Fase 5: Scheduling Base
+- [x] Fase 6: Today View Completa
+- [x] Fase 7: Scheduling Avanzado (base)
+- [x] Fase 8: Import Features
+- [x] Fase 9: Polish Final (parcial)
+- [x] Fase 10: Refactor Nav
 
 ---
 
-*Documento generado automáticamente - Actualizar fecha al modificar*
+## 🔍 PENDIENTES POST-AUDITORÍA
+
+> **Fecha auditoría**: 30 Enero 2026  
+> **Estado**: 4 funcionalidades identificadas como no críticas pero valiosas
+
+### 1️⃣ TODO-3: OCR para Importar Rutinas desde Imagen
+
+**¿Qué hace?**
+Permite al usuario tomar una foto de una rutina impresa (papel, pizarra, screenshot de Instagram) y extraer automáticamente los ejercicios usando ML Kit Vision.
+
+**Funcionalidad concreta:**
+```
+Usuario: Toma foto de rutina en papel
+↓
+App detecta: "Press Banca 4x10", "Sentadilla 3x12", "Peso Muerto 3x8"
+↓
+Crea rutina automáticamente sin teclear
+```
+
+**Valor aportado:**
+- **Onboarding rápido**: Migrar rutinas existentes sin esfuerzo
+- **Viralidad**: Facilita compartir rutinas por redes sociales
+- **Accesibilidad**: Usuarios que no quieren teclear en móvil
+
+**Impacto UX**: 🔥🔥🔥 **Alto** | **Esfuerzo**: Alto (ML Kit complejo)
+
+---
+
+### 2️⃣ MED-002: Calendario con Indicadores de Cumplimiento
+
+**¿Qué hace?**
+Añade colores visuales al calendario mensual del diario mostrando calidad de cada día:
+- 🟢 **Verde**: Cumplió todos los objetivos (kcal + macros)
+- 🟡 **Amarillo**: Parcial (ej: kcal OK pero proteína baja)
+- 🔴 **Rojo**: Excedió objetivos significativamente
+- ⚪ **Gris**: Sin datos registrados
+
+**Funcionalidad concreta:**
+```
+Usuario abre calendario mensual
+↓
+Ve de un vistazo: "Este mes tuve 15 días verdes, 8 amarillos, 7 rojos"
+↓
+Identifica patrón: "Los fines de semana siempre son rojos"
+↓
+Toma acción correctiva
+```
+
+**Valor aportado:**
+- **Autoconocimiento**: Visualización de patrones a largo plazo
+- **Motivación**: Gamificación visual (streaks de días verdes)
+- **Accountability**: No poder "ignorar" días malos fácilmente
+
+**Impacto UX**: 🔥🔥 **Medio-Alto** | **Esfuerzo**: Medio
+
+---
+
+### 3️⃣ HIGH-003: Sugerir "Comida Habitual" por Horario
+
+**¿Qué hace?**
+Detecta patrones de consumo y sugiere automáticamente comidas basado en:
+- **Hora del día**: A las 8:00 AM sugiere desayuno habitual
+- **Día de la semana**: Los lunes suele comer ensalada
+- **Contexto**: Si entrenó ayer, sugiere comida alta en proteína
+
+**Funcionalidad concreta:**
+```
+08:00 AM → App muestra chip: "Avena con proteína - tu desayuno 80% de las veces"
+↓
+Un tap → Registra automáticamente (80g avena, 30g proteína, 200ml leche)
+↓
+Sin búsqueda, sin teclear cantidades
+```
+
+**Valor aportado:**
+- **Fricción cero**: Reduce registro de 10 segundos a 1 segundo
+- **Retención**: Habitualidad = menor abandono de tracking
+- **Personalización**: La app "aprende" al usuario
+
+**Impacto UX**: 🔥🔥🔥 **Alto** | **Esfuerzo**: Medio (análisis de patrones)
+
+---
+
+### 4️⃣ Conectar `deloadAlertsProvider` a UI
+
+**¿Qué hace?**
+El servicio `detectOvertrainingRisk` YA detecta estancamiento (>3 semanas sin progreso), pero las alertas no se muestran en pantalla.
+
+**Funcionalidad concreta:**
+```
+Usuario lleva 4 semanas en 80kg en press banca
+↓
+App detecta estancamiento (YA IMPLEMENTADO en backend)
+↓
+Muestra alerta: "⚠️ Press Banca estancado 4 semanas"
+         "Recomendación: Reduce 20% el volumen esta semana"
+         [Aplicar deload] [Ignorar]
+↓
+Si acepta: Reduce series automáticamente de 4x10 a 3x8
+```
+
+**Valor aportado:**
+- **Prevención de frustración**: Evita que usuario se estanque indefinidamente
+- **Salud**: Previene sobreentrenamiento
+- **Progreso**: Rompe plateau con intervención oportuna
+
+**Impacto UX**: 🔥🔥 **Medio-Alto** | **Esfuerzo**: **BAJO** (lógica lista, solo falta UI)
+
+---
+
+## 🎯 PRIORIZACIÓN RECOMENDADA
+
+| Prioridad | Funcionalidad | Impacto | Esfuerzo | Razón |
+|-----------|--------------|---------|----------|-------|
+| **1** | **Comida Habitual** | 🔥🔥🔥 | Medio | Mayor reducción de fricción diaria |
+| **2** | **Deload Alerts UI** | 🔥🔥 | **Bajo** | Esfuerzo mínimo, valor inmediato |
+| **3** | **OCR Import** | 🔥🔥 | Alto | Diferenciador competitivo |
+| **4** | **Calendario indicadores** | 🔥 | Medio | Nice-to-have, motivación visual |
+
+---
+
+*Documento generado automáticamente - Última auditoría: 30 Enero 2026*
