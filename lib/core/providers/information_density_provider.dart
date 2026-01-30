@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_providers.dart';
+
 /// Modos de densidad de información para la UI
 enum DensityMode { compact, comfortable, detailed }
 
@@ -14,26 +16,23 @@ class InformationDensityNotifier extends Notifier<DensityMode> {
   static const _key = 'information_density_mode';
 
   @override
-   DensityMode build() {
-    _loadPreference();
-    return DensityMode.comfortable;
-  }
-
-  Future<void> _loadPreference() async {
-    final prefs = await SharedPreferences.getInstance();
+  DensityMode build() {
+    // Usar SharedPreferences pre-cargado para evitar async gap
+    final prefs = ref.read(sharedPreferencesProvider);
     final value = prefs.getString(_key);
     if (value != null) {
       try {
-        state = DensityMode.values.byName(value);
+        return DensityMode.values.byName(value);
       } catch (_) {
-        state = DensityMode.comfortable;
+        return DensityMode.comfortable;
       }
     }
+    return DensityMode.comfortable;
   }
 
   Future<void> setMode(DensityMode mode) async {
     state = mode;
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setString(_key, mode.name);
   }
 
