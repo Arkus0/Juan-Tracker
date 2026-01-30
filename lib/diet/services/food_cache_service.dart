@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/food_model.dart';
 import '../models/open_food_facts_model.dart';
+import 'food_search_index.dart';
 
 /// Entrada de cache para un término de búsqueda
 class CachedSearchResult {
@@ -302,6 +303,9 @@ class FoodCacheService {
     final savedFoods = await _getSavedFoodsRaw();
     savedFoods[result.code] = food.toDebugMap(); // Usar barcode como key
     await _saveFoodsRaw(savedFoods);
+
+    // Indexar para búsqueda local
+    FoodSearchIndex().addLocalFood(food);
 
     return food;
   }

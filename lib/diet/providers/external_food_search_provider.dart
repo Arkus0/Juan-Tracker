@@ -7,6 +7,7 @@ import '../models/food_model.dart';
 import '../models/open_food_facts_model.dart';
 import '../services/food_cache_service.dart';
 import '../services/food_search_expander.dart';
+import '../services/food_search_index.dart';
 import '../services/open_food_facts_service.dart';
 
 /// Clase auxiliar para resultados con scoring
@@ -96,6 +97,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   late final FoodCacheService _cacheService;
   late final Connectivity _connectivity;
   late final FoodSearchExpander _searchExpander;
+  late final FoodSearchIndex _searchIndex;
 
   @override
   ExternalSearchState build() {
@@ -103,6 +105,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     _cacheService = ref.read(foodCacheServiceProvider);
     _connectivity = Connectivity();
     _searchExpander = FoodSearchExpander();
+    _searchIndex = FoodSearchIndex();
 
     // Inicializar en background
     _init();
@@ -114,6 +117,25 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     await _cacheService.initialize();
     await _loadRecentSearches();
     await _checkConnectivity();
+    await _rebuildSearchIndex();
+  }
+
+  /// Reconstruye el índice de búsqueda local
+  Future<void> _rebuildSearchIndex() async {
+    // Indexar alimentos guardados
+    final savedFoods = await _cacheService.getSavedExternalFoods();
+    _searchIndex.indexLocalFoods(savedFoods);
+
+    // Indexar cache de búsquedas
+    final recentSearches = await _cacheService.getRecentSearches();
+    final allCached = <OpenFoodFactsResult>[];
+    for (final query in recentSearches.take(10)) {
+      final results = await _cacheService.getCachedSearchResults(query);
+      if (results != null) {
+        allCached.addAll(results);
+      }
+    }
+    _searchIndex.indexCachedExternalFoods(allCached);
   }
 
   /// Verifica el estado de conectividad
@@ -186,31 +208,65 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     }
   }
 
-  /// Búsqueda online (API)
+  /// Búsqueda híbrida: local primero, API después
   Future<void> _searchOnline(String query) async {
-    // Intentar obtener de cache primero para mostrar rápido
+    // PASO 1: Búsqueda INSTANTÁNEA en índice local
+    final localResults = _searchIndex.search(query, maxResults: 10);
+    
+    if (localResults.isNotEmpty) {
+      // Convertir a OpenFoodFactsResult para mostrar inmediatamente
+      final instantResults = localResults
+          .where((r) => r.externalFood != null)
+          .map((r) => r.externalFood!)
+          .toList();
+      
+      if (instantResults.isNotEmpty) {
+        state = state.copyWith(
+          status: ExternalSearchStatus.loading,
+          results: instantResults,
+        );
+      }
+    }
+
+    // PASO 2: Verificar cache persistente
     final cachedResults = await _cacheService.getCachedSearchResults(query);
     if (cachedResults != null && cachedResults.isNotEmpty) {
-      // Mostrar cache mientras se actualiza
+      // Merge con resultados locales y mostrar
+      final mergedResults = _mergeResults(
+        state.results,
+        cachedResults,
+        query,
+      );
+      
       state = state.copyWith(
         status: ExternalSearchStatus.loading,
-        results: cachedResults,
+        results: mergedResults,
       );
     }
 
-    // Hacer petición a API
+    // PASO 3: Llamar a API Open Food Facts
     final response = await _apiService.searchProducts(query, page: 1);
 
-    // Filtrar resultados irrelevantes
+    // PASO 4: Filtrar y ordenar resultados
     final filteredProducts = _filterRelevantResults(response.products, query);
 
-    // Guardar en cache solo resultados filtrados
+    // PASO 5: Merge final (API + local + cache)
+    final finalResults = _mergeResults(
+      state.results,
+      filteredProducts,
+      query,
+    );
+
+    // PASO 6: Guardar en cache y actualizar índice
     if (filteredProducts.isNotEmpty) {
       await _cacheService.cacheSearchResults(query, filteredProducts);
+      for (final product in filteredProducts.take(10)) {
+        _searchIndex.addExternalFood(product);
+      }
     }
 
-    // Actualizar estado
-    if (filteredProducts.isEmpty) {
+    // PASO 7: Actualizar estado final
+    if (finalResults.isEmpty) {
       state = state.copyWith(
         status: ExternalSearchStatus.empty,
         results: const [],
@@ -219,14 +275,42 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     } else {
       state = state.copyWith(
         status: ExternalSearchStatus.success,
-        results: filteredProducts,
+        results: finalResults,
         hasMore: response.hasMore,
         page: 1,
       );
     }
 
-    // Actualizar recientes
     await _loadRecentSearches();
+  }
+
+  /// Combina resultados de múltiples fuentes sin duplicados
+  List<OpenFoodFactsResult> _mergeResults(
+    List<OpenFoodFactsResult> existing,
+    List<OpenFoodFactsResult> newResults,
+    String query,
+  ) {
+    final seenCodes = <String>{};
+    final merged = <OpenFoodFactsResult>[];
+    
+    // Primero añadir existentes
+    for (final r in existing) {
+      if (!seenCodes.contains(r.code)) {
+        seenCodes.add(r.code);
+        merged.add(r);
+      }
+    }
+    
+    // Luego nuevos resultados
+    for (final r in newResults) {
+      if (!seenCodes.contains(r.code)) {
+        seenCodes.add(r.code);
+        merged.add(r);
+      }
+    }
+    
+    // Reordenar por relevancia
+    return _filterRelevantResults(merged, query);
   }
 
   /// Búsqueda offline (cache local)

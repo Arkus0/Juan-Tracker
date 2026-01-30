@@ -1082,6 +1082,105 @@ class _CreateEditRoutineScreenState
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MÉTODOS MODO PRO (BLOQUES)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Activa/desactiva el modo Pro
+  void _toggleProMode() {
+    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
+    notifier.toggleProMode();
+    setState(() {
+      _isProMode = !_isProMode;
+    });
+    HapticsController.instance.trigger(HapticEvent.buttonTap);
+  }
+
+  /// Navega a la pantalla de creación de bloque
+  Future<void> _addBlock() async {
+    final routineState = ref.read(createRoutineProvider(widget.rutina));
+    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
+
+    // Calcular fecha de inicio por defecto (después del último bloque o hoy)
+    final defaultStartDate = routineState.blocks.isEmpty
+        ? DateTime.now()
+        : routineState.blocks
+            .map((b) => b.endDate)
+            .reduce((a, b) => a.isAfter(b) ? a : b)
+            .add(const Duration(days: 1));
+
+    final result = await Navigator.push<TrainingBlock>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlockEditScreen(
+          defaultStartDate: defaultStartDate,
+          existingBlocks: routineState.blocks,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      try {
+        notifier.addBlock(result);
+        HapticsController.instance.trigger(HapticEvent.inputSubmit);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Error: ${e.toString()}',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: AppColors.neonPrimary,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Navega a la pantalla de edición de bloque
+  Future<void> _editBlock(TrainingBlock block) async {
+    final routineState = ref.read(createRoutineProvider(widget.rutina));
+    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
+
+    final result = await Navigator.push<TrainingBlock>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlockEditScreen(
+          block: block,
+          existingBlocks: routineState.blocks,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      try {
+        notifier.updateBlock(result);
+        HapticsController.instance.trigger(HapticEvent.inputSubmit);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Error: ${e.toString()}',
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: AppColors.neonPrimary,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Elimina un bloque
+  void _deleteBlock(TrainingBlock block) {
+    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
+    notifier.removeBlock(block.id);
+    HapticsController.instance.trigger(HapticEvent.buttonTap);
+  }
+
   @override
   Widget build(BuildContext context) {
     final routineState = ref.watch(createRoutineProvider(widget.rutina));
@@ -1119,15 +1218,40 @@ class _CreateEditRoutineScreenState
               onPressed: _showUnifiedImportSheet,
             ),
             // Export button - only show when editing an existing routine with content
-            if (widget.rutina != null || routineState.dias.isNotEmpty)
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                onSelected: (value) {
-                  if (value == 'export') {
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                switch (value) {
+                  case 'export':
                     _exportRoutine(routineState);
-                  }
-                },
-                itemBuilder: (ctx) => [
+                  case 'toggle_pro_mode':
+                    _toggleProMode();
+                }
+              },
+              itemBuilder: (ctx) => [
+                // Modo Pro toggle
+                PopupMenuItem(
+                  value: 'toggle_pro_mode',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isProMode ? Icons.science : Icons.science_outlined,
+                        size: 20,
+                        color: _isProMode ? AppColors.neonPrimary : null,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _isProMode ? 'Desactivar Modo Pro' : 'Activar Modo Pro',
+                        style: TextStyle(
+                          color: _isProMode ? AppColors.neonPrimary : null,
+                          fontWeight: _isProMode ? FontWeight.bold : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Exportar rutina (solo si hay contenido)
+                if (widget.rutina != null || routineState.dias.isNotEmpty)
                   const PopupMenuItem(
                     value: 'export',
                     child: Row(
@@ -1138,8 +1262,8 @@ class _CreateEditRoutineScreenState
                       ],
                     ),
                   ),
-                ],
-              ),
+              ],
+            ),
           ],
         ),
         body: SingleChildScrollView(
@@ -1178,6 +1302,19 @@ class _CreateEditRoutineScreenState
                   onChanged: (val) => notifier.updateName(val),
                 ),
               ),
+
+              // ═════════════════════════════════════════════════════════════════
+              // MODO PRO: TIMELINE DE BLOQUES
+              // ═════════════════════════════════════════════════════════════════
+              if (_isProMode)
+                BlockTimelineWidget(
+                  blocks: routineState.blocks,
+                  activeBlock: routineState.activeBlock,
+                  onAddBlock: _addBlock,
+                  onEditBlock: _editBlock,
+                  onDeleteBlock: _deleteBlock,
+                  isEditing: true,
+                ),
 
               // Days List (Reorderable)
               // Using ReorderableColumn to handle list of Days
