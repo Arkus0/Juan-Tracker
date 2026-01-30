@@ -85,22 +85,14 @@ class DiaryScreen extends ConsumerWidget {
               child: HomeButton(),
             ),
             actions: [
-              Semantics(
-                button: true,
-                label: viewMode == DiaryViewMode.list 
-                    ? 'Cambiar a vista calendario' 
-                    : 'Cambiar a vista lista',
-                child: IconButton(
-                  icon: Icon(
-                    viewMode == DiaryViewMode.list 
-                        ? Icons.calendar_month 
-                        : Icons.list,
-                  ),
-                  onPressed: () {
-                    ref.read(diaryViewModeProvider.notifier).toggle();
-                  },
-                ),
+              // Toggle de vista con indicadores visuales claros
+              _ViewModeToggle(
+                viewMode: viewMode,
+                onModeChanged: (mode) {
+                  ref.read(diaryViewModeProvider.notifier).setMode(mode);
+                },
               ),
+              const SizedBox(width: 4),
               Semantics(
                 button: true,
                 label: 'Ir al día de hoy',
@@ -1047,6 +1039,88 @@ class _MacroItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Toggle de modo de vista con indicadores visuales claros
+class _ViewModeToggle extends StatelessWidget {
+  final DiaryViewMode viewMode;
+  final ValueChanged<DiaryViewMode> onModeChanged;
+
+  const _ViewModeToggle({
+    required this.viewMode,
+    required this.onModeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      padding: const EdgeInsets.all(2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ToggleButton(
+            icon: Icons.view_list,
+            label: 'Lista',
+            isSelected: viewMode == DiaryViewMode.list,
+            onTap: () => onModeChanged(DiaryViewMode.list),
+          ),
+          _ToggleButton(
+            icon: Icons.calendar_month,
+            label: 'Calendario',
+            isSelected: viewMode == DiaryViewMode.calendar,
+            onTap: () => onModeChanged(DiaryViewMode.calendar),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Botón individual del toggle
+class _ToggleButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ToggleButton({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Semantics(
+      button: true,
+      label: 'Vista $label${isSelected ? " (activa)" : ""}',
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AppDurations.fast,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? colors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
+          ),
+        ),
+      ),
     );
   }
 }

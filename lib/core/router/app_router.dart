@@ -14,6 +14,7 @@ import '../../features/home/presentation/home_screen.dart';
 import '../../features/home/presentation/today_screen.dart';
 import '../../features/diary/presentation/diary_screen.dart';
 import '../../features/diary/presentation/food_search_screen.dart';
+import '../../features/diary/presentation/external_food_search_screen.dart';
 import '../../features/foods/presentation/foods_screen.dart';
 import '../../features/weight/presentation/weight_screen.dart';
 import '../../features/summary/presentation/summary_screen.dart';
@@ -44,6 +45,7 @@ class AppRouter {
   static const String nutritionDiary = '/nutrition/diary';
   static const String nutritionFoods = '/nutrition/foods';
   static const String nutritionFoodSearch = '/nutrition/food-search';
+  static const String nutritionExternalSearch = '/nutrition/external-search';
   static const String nutritionWeight = '/nutrition/weight';
   static const String nutritionSummary = '/nutrition/summary';
 
@@ -129,6 +131,15 @@ class AppRouter {
       GoRoute(
         path: nutritionFoodSearch,
         builder: (context, state) => const FoodSearchScreen(),
+      ),
+
+      // Búsqueda externa en Open Food Facts (soporta barcode opcional)
+      GoRoute(
+        path: nutritionExternalSearch,
+        builder: (context, state) {
+          final barcode = state.uri.queryParameters['barcode'];
+          return ExternalFoodSearchScreen(initialBarcode: barcode);
+        },
       ),
 
       GoRoute(
@@ -252,6 +263,14 @@ extension GoRouterExtension on BuildContext {
 
   /// Navega a búsqueda de alimentos
   void goToFoodSearch() => push(AppRouter.nutritionFoodSearch);
+
+  /// Navega a búsqueda externa (Open Food Facts)
+  void goToExternalSearch({String? barcode}) {
+    final uri = barcode != null
+        ? '${AppRouter.nutritionExternalSearch}?barcode=$barcode'
+        : AppRouter.nutritionExternalSearch;
+    push(uri);
+  }
 
   /// Navega a entrenamiento
   void goToTraining() => go(AppRouter.training);
