@@ -806,6 +806,20 @@ class SessionSaveResult {
   bool get isComplete => completedSets == totalSets;
 }
 
+/// 🎯 HIGH-001: Niveles de urgencia para el scheduling
+enum WorkoutUrgency {
+  /// Descanso sugerido (entrenó hace <20h)
+  rest,
+  /// Listo para entrenar (20h-48h desde última sesión)
+  ready,
+  /// Deberías entrenar (48h-72h)
+  shouldTrain,
+  /// Urgente, perdiendo momentum (>72h)
+  urgent,
+  /// Nuevo usuario o reinicio (sin historial)
+  fresh,
+}
+
 /// Modelo de sugerencia inteligente de próximo día a entrenar.
 class SmartWorkoutSuggestion {
   final Rutina rutina;
@@ -822,6 +836,12 @@ class SmartWorkoutSuggestion {
   /// Indica si es día de descanso (sugerido no entrenar)
   final bool isRestDay;
 
+  /// 🎯 HIGH-001: Nivel de urgencia para priorización visual
+  final WorkoutUrgency urgency;
+
+  /// 🎯 HIGH-001: Subtítulo contextual adicional
+  final String? contextualSubtitle;
+
   const SmartWorkoutSuggestion({
     required this.rutina,
     required this.dayIndex,
@@ -830,20 +850,29 @@ class SmartWorkoutSuggestion {
     this.timeSinceLastSession,
     this.lastSessionDate,
     this.isRestDay = false,
+    this.urgency = WorkoutUrgency.ready,
+    this.contextualSubtitle,
   });
 
   /// Formato legible del tiempo desde última sesión
   String get timeSinceFormatted {
     if (timeSinceLastSession == null) return 'nuevo';
+    final hours = timeSinceLastSession!.inHours;
+    if (hours < 24) return 'hace ${hours}h';
     final days = timeSinceLastSession!.inDays;
-    if (days == 0) return 'hoy';
     if (days == 1) return 'ayer';
     return 'hace $days días';
   }
 }
 
-/// Provider que calcula el próximo día sugerido basado en el historial.
-/// Lógica: Mira la última sesión de la rutina activa y sugiere el siguiente día.
+/// 🎯 HIGH-001: Provider que calcula el próximo día sugerido con scheduling inteligente.
+///
+/// Lógica mejorada:
+/// 1. Si entrenó hace <20h → Sugerir DESCANSO (recuperación activa)
+/// 2. Si entrenó hace 20-48h → LISTO para entrenar
+/// 3. Si entrenó hace 48-72h → DEBERÍA entrenar
+/// 4. Si entrenó hace >72h → URGENTE, perdiendo momentum
+/// 5. Sin historial → FRESH start
 final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((
   ref,
 ) async {
@@ -883,9 +912,11 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((
       rutina: firstRutina,
       dayIndex: firstValidDayIndex,
       dayName: firstRutina.dias[firstValidDayIndex].nombre,
-      reason: 'Comienza tu rutina',
+      reason: 'Tu primer entreno',
       timeSinceLastSession: null,
       lastSessionDate: null,
+      urgency: WorkoutUrgency.fresh,
+      contextualSubtitle: 'El viaje de mil reps empieza con una serie',
     );
   }
 
@@ -910,29 +941,67 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((
 
     // Calcular tiempo desde última sesión
     final timeSince = DateTime.now().difference(lastSession.fecha);
+    final hoursSince = timeSince.inHours;
     final daysSince = timeSince.inDays;
 
-    // Determinar razón con contexto temporal
+    // 🎯 HIGH-001: Determinar urgencia y razón basada en tiempo transcurrido
+    WorkoutUrgency urgency;
     String reason;
-    if (daysSince == 0) {
-      reason = 'Continúa tu rutina';
-    } else if (daysSince == 1) {
-      reason = 'Última sesión: ayer';
-    } else if (daysSince <= 3) {
-      reason = 'Última sesión: hace $daysSince días';
-    } else if (daysSince <= 7) {
-      reason = 'Retoma tu rutina ($daysSince días)';
+    String? contextualSubtitle;
+    bool isRestDay = false;
+
+    if (hoursSince < 20) {
+      // ═══════════════════════════════════════════════════════════════════════
+      // DESCANSO SUGERIDO: Entrenó hace menos de 20 horas
+      // La recuperación es donde ocurre la ganancia real
+      // ═══════════════════════════════════════════════════════════════════════
+      urgency = WorkoutUrgency.rest;
+      reason = 'Día de recuperación';
+      contextualSubtitle = 'Entrenaste hace ${hoursSince}h. Los músculos crecen descansando.';
+      isRestDay = true;
+    } else if (hoursSince < 48) {
+      // ═══════════════════════════════════════════════════════════════════════
+      // LISTO: Ventana óptima para entrenar (20-48h)
+      // ═══════════════════════════════════════════════════════════════════════
+      urgency = WorkoutUrgency.ready;
+      if (daysSince == 0) {
+        reason = 'Recuperado y listo';
+        contextualSubtitle = 'Entrenaste hoy temprano, pero ya pasaron ${hoursSince}h';
+      } else {
+        reason = 'Toca ${nextDay.nombre}';
+        contextualSubtitle = 'Última sesión: ayer';
+      }
+    } else if (hoursSince < 72) {
+      // ═══════════════════════════════════════════════════════════════════════
+      // DEBERÍA ENTRENAR: Pasaron 2-3 días
+      // ═══════════════════════════════════════════════════════════════════════
+      urgency = WorkoutUrgency.shouldTrain;
+      reason = 'Sigue la racha';
+      contextualSubtitle = 'Hace $daysSince días desde tu última sesión';
     } else {
-      reason = '¡Vuelve al gym! ($daysSince días sin entrenar)';
+      // ═══════════════════════════════════════════════════════════════════════
+      // URGENTE: Más de 3 días sin entrenar
+      // ═══════════════════════════════════════════════════════════════════════
+      urgency = WorkoutUrgency.urgent;
+      if (daysSince <= 7) {
+        reason = 'Retoma el ritmo';
+        contextualSubtitle = '$daysSince días sin entrenar. ¡Hoy es el día!';
+      } else {
+        reason = '¡Vuelve al gym!';
+        contextualSubtitle = '$daysSince días. El hierro te extraña.';
+      }
     }
 
     return SmartWorkoutSuggestion(
       rutina: lastUsedRutina,
       dayIndex: nextDayIndex,
-      dayName: nextDay.nombre,
+      dayName: isRestDay ? 'DESCANSO' : nextDay.nombre,
       reason: reason,
       timeSinceLastSession: timeSince,
       lastSessionDate: lastSession.fecha,
+      isRestDay: isRestDay,
+      urgency: urgency,
+      contextualSubtitle: contextualSubtitle,
     );
   }
 
