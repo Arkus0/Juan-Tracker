@@ -450,7 +450,7 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
 
             // Nivel de actividad
             DropdownButtonFormField<ActivityLevel>(
-              value: _activityLevel,
+              initialValue: _activityLevel,
               decoration: const InputDecoration(
                 labelText: 'Nivel de actividad',
                 border: OutlineInputBorder(),

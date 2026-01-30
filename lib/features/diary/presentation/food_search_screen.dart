@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../../core/providers/database_provider.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -11,6 +12,7 @@ import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
 import '../../../diet/providers/external_food_search_provider.dart';
 import '../../../diet/services/food_label_ocr_service.dart';
+import '../../../diet/services/food_label_parser_service.dart';
 import 'add_entry_dialog.dart';
 import 'barcode_scanner_screen.dart';
 import 'external_food_search_screen.dart';
@@ -35,6 +37,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   late final TextEditingController _searchController;
   Timer? _debounceTimer;
   bool _isExpanded = false;
+  final SpeechToText _speech = SpeechToText();
+  bool _isListening = false;
+  bool _speechAvailable = false;
   
   static const _debounceDuration = Duration(milliseconds: 300);
 
@@ -42,15 +47,32 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _initSpeech();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(foodSearchQueryProvider.notifier).query = '';
       ref.read(externalFoodSearchProvider.notifier).clear();
     });
   }
 
+  Future<void> _initSpeech() async {
+    _speechAvailable = await _speech.initialize(
+      onError: (error) {
+        setState(() => _isListening = false);
+        AppSnackbar.show(context, message: 'Error: ${error.errorMsg}');
+      },
+      onStatus: (status) {
+        if (status == 'notListening') {
+          setState(() => _isListening = false);
+        }
+      },
+    );
+    setState(() {});
+  }
+
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _speech.stop();
     _searchController.dispose();
     super.dispose();
   }
@@ -133,6 +155,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
       // FAB Expandible para Smart Import
       floatingActionButton: _ExpandableSmartImportFAB(
         isExpanded: _isExpanded,
+        isListening: _isListening,
         onToggle: () => setState(() => _isExpanded = !_isExpanded),
         onBarcodeScan: () => _scanBarcode(context),
         onOcrScan: () => _scanFoodLabel(context),
@@ -171,8 +194,20 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   }
 
   Future<void> _showCreateNewDialog(BuildContext context, String initialName) async {
-    // TODO: Implementar diálogo de creación rápida
-    AppSnackbar.show(context, message: 'Crear "$initialName" - Próximamente');
+    final food = await showDialog<FoodModel>(
+      context: context,
+      builder: (ctx) => _CreateFoodDialog(initialName: initialName),
+    );
+
+    if (food != null && mounted) {
+      // Guardar en biblioteca
+      await ref.read(foodRepositoryProvider).insert(food);
+      
+      if (!context.mounted) return;
+      
+      // Seleccionar para añadir al diario
+      await _selectFood(context, food);
+    }
   }
 
   Future<void> _saveEntry(DiaryEntryModel entry) async {
@@ -243,51 +278,100 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
       if (!mounted) return;
       
       if (!scanResult.hasText) {
-        AppSnackbar.show(context, message: 'No se pudo leer texto de la imagen');
+        if (context.mounted) {
+          AppSnackbar.show(context, message: 'No se pudo leer texto de la imagen');
+        }
         return;
       }
 
-      if (!mounted) return;
+      // Parsear la etiqueta automáticamente
+      final parser = FoodLabelParserService.instance;
+      final parsed = parser.parse(scanResult.fullText);
       
-      final searchText = await showDialog<String>(
+      // Convertir a por 100g si es necesario
+      final per100g = parsed.isPerServing && parsed.servingSize > 0
+          ? parser.convertToPer100g(parsed)
+          : parsed;
+
+      if (!context.mounted) return;
+
+      // Mostrar diálogo con valores extraídos
+      final result = await showDialog<_OcrResult>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Texto detectado'),
-          content: TextField(
-            controller: TextEditingController(text: scanResult.fullText),
-            maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: 'Edita el texto para buscar',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(scanResult.fullText),
-              child: const Text('Buscar'),
-            ),
-          ],
+        builder: (ctx) => _OcrResultDialog(
+          rawText: scanResult.fullText,
+          parsed: per100g,
         ),
       );
 
-      if (searchText != null && searchText.isNotEmpty && mounted) {
-        _searchController.text = searchText;
-        ref.read(foodSearchQueryProvider.notifier).query = searchText;
-        ref.read(externalFoodSearchProvider.notifier).search(searchText);
+      if (result == null || !mounted) return;
+
+      if (result.useForSearch) {
+        // Usar texto para búsqueda
+        _searchController.text = result.searchText;
+        ref.read(foodSearchQueryProvider.notifier).query = result.searchText;
+        ref.read(externalFoodSearchProvider.notifier).search(result.searchText);
+      } else if (result.createFood && per100g.hasData) {
+        // Crear alimento directamente
+        final food = FoodModel(
+          id: 'food_${DateTime.now().millisecondsSinceEpoch}',
+          name: per100g.name.isNotEmpty ? per100g.name : 'Alimento escaneado',
+          kcalPer100g: per100g.kcal,
+          proteinPer100g: per100g.protein,
+          carbsPer100g: per100g.carbs,
+          fatPer100g: per100g.fat,
+          portionName: per100g.servingSize > 0 ? 'porción' : null,
+          portionGrams: per100g.servingSize > 0 ? per100g.servingSize : null,
+          userCreated: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        await ref.read(foodRepositoryProvider).insert(food);
+        
+        if (!context.mounted) return;
+        
+        await _selectFood(context, food);
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         AppSnackbar.show(context, message: 'Error al escanear: $e');
       }
     }
   }
 
   Future<void> _startVoiceSearch() async {
-    // TODO: Implementar búsqueda por voz
-    AppSnackbar.show(context, message: 'Búsqueda por voz - Próximamente');
+    if (!_speechAvailable) {
+      AppSnackbar.show(context, message: 'Reconocimiento de voz no disponible');
+      return;
+    }
+
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+      return;
+    }
+
+    setState(() => _isListening = true);
+
+    await _speech.listen(
+      onResult: (result) {
+        final text = result.recognizedWords;
+        _searchController.text = text;
+        ref.read(foodSearchQueryProvider.notifier).query = text;
+        
+        if (text.trim().isNotEmpty) {
+          ref.read(externalFoodSearchProvider.notifier).search(text);
+        }
+        
+        if (result.finalResult) {
+          setState(() => _isListening = false);
+        }
+      },
+      listenFor: const Duration(seconds: 10),
+      pauseFor: const Duration(seconds: 3),
+      localeId: 'es_ES',
+    );
   }
 }
 
@@ -488,6 +572,7 @@ class _SectionHeader extends StatelessWidget {
 /// FAB expandible para Smart Import
 class _ExpandableSmartImportFAB extends StatelessWidget {
   final bool isExpanded;
+  final bool isListening;
   final VoidCallback onToggle;
   final VoidCallback onBarcodeScan;
   final VoidCallback onOcrScan;
@@ -496,6 +581,7 @@ class _ExpandableSmartImportFAB extends StatelessWidget {
 
   const _ExpandableSmartImportFAB({
     required this.isExpanded,
+    required this.isListening,
     required this.onToggle,
     required this.onBarcodeScan,
     required this.onOcrScan,
@@ -525,8 +611,9 @@ class _ExpandableSmartImportFAB extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _FabOption(
-            icon: Icons.mic,
-            label: 'Voz',
+            icon: isListening ? Icons.mic_off : Icons.mic,
+            label: isListening ? 'Detener' : 'Voz',
+            color: isListening ? Colors.red : null,
             onTap: onVoiceSearch,
           ),
           const SizedBox(height: 8),
@@ -557,11 +644,13 @@ class _FabOption extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Color? color;
 
   const _FabOption({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.color,
   });
 
   @override
@@ -597,8 +686,8 @@ class _FabOption extends StatelessWidget {
         FloatingActionButton.small(
           onPressed: onTap,
           heroTag: label,
-          backgroundColor: colors.secondaryContainer,
-          foregroundColor: colors.onSecondaryContainer,
+          backgroundColor: color?.withAlpha((0.2 * 255).round()) ?? colors.secondaryContainer,
+          foregroundColor: color ?? colors.onSecondaryContainer,
           child: Icon(icon),
         ),
       ],
@@ -712,7 +801,7 @@ class _OpenFoodResultTile extends StatelessWidget {
                 width: 40,
                 height: 40,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, __) => _buildPlaceholder(theme),
+                errorBuilder: (_, _, _) => _buildPlaceholder(theme),
               ),
             )
           : _buildPlaceholder(theme),
@@ -850,6 +939,396 @@ class _InitialState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Diálogo para crear nuevo alimento en la biblioteca
+class _CreateFoodDialog extends StatefulWidget {
+  final String initialName;
+
+  const _CreateFoodDialog({required this.initialName});
+
+  @override
+  State<_CreateFoodDialog> createState() => _CreateFoodDialogState();
+}
+
+class _CreateFoodDialogState extends State<_CreateFoodDialog> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _brandController;
+  late final TextEditingController _kcalController;
+  late final TextEditingController _proteinController;
+  late final TextEditingController _carbsController;
+  late final TextEditingController _fatController;
+  late final TextEditingController _portionNameController;
+  late final TextEditingController _portionGramsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+    _brandController = TextEditingController();
+    _kcalController = TextEditingController();
+    _proteinController = TextEditingController();
+    _carbsController = TextEditingController();
+    _fatController = TextEditingController();
+    _portionNameController = TextEditingController(text: 'porción');
+    _portionGramsController = TextEditingController(text: '100');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _brandController.dispose();
+    _kcalController.dispose();
+    _proteinController.dispose();
+    _carbsController.dispose();
+    _fatController.dispose();
+    _portionNameController.dispose();
+    _portionGramsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Crear Alimento'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Nombre (obligatorio)
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre *',
+                hintText: 'Ej: Pollo a la plancha',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Marca (opcional)
+            TextField(
+              controller: _brandController,
+              decoration: const InputDecoration(
+                labelText: 'Marca (opcional)',
+                hintText: 'Ej: Hacendado',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Kcal por 100g (obligatorio)
+            TextField(
+              controller: _kcalController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Kcal / 100g *',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Macros
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _proteinController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Proteína (g)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _carbsController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Carbs (g)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _fatController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Grasa (g)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Porción
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _portionNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre porción',
+                      hintText: 'Ej: unidad, taza',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: TextField(
+                    controller: _portionGramsController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Gramos',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _createFood,
+          child: const Text('Crear y Usar'),
+        ),
+      ],
+    );
+  }
+
+  void _createFood() {
+    final name = _nameController.text.trim();
+    final kcal = int.tryParse(_kcalController.text) ?? 0;
+
+    if (name.isEmpty || kcal <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nombre y kcal son obligatorios')),
+      );
+      return;
+    }
+
+    final food = FoodModel(
+      id: 'food_${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      brand: _brandController.text.trim().isEmpty 
+          ? null 
+          : _brandController.text.trim(),
+      kcalPer100g: kcal,
+      proteinPer100g: double.tryParse(_proteinController.text) ?? 0,
+      carbsPer100g: double.tryParse(_carbsController.text) ?? 0,
+      fatPer100g: double.tryParse(_fatController.text) ?? 0,
+      portionName: _portionNameController.text.trim().isEmpty
+          ? 'porción'
+          : _portionNameController.text.trim(),
+      portionGrams: double.tryParse(_portionGramsController.text) ?? 100.0,
+      userCreated: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    Navigator.of(context).pop(food);
+  }
+}
+
+
+/// Resultado del diálogo OCR
+class _OcrResult {
+  final bool useForSearch;
+  final bool createFood;
+  final String searchText;
+
+  const _OcrResult({
+    required this.useForSearch,
+    required this.createFood,
+    required this.searchText,
+  });
+}
+
+/// Diálogo para mostrar resultados del OCR con valores parseados
+class _OcrResultDialog extends StatefulWidget {
+  final String rawText;
+  final ParsedLabelResult parsed;
+
+  const _OcrResultDialog({
+    required this.rawText,
+    required this.parsed,
+  });
+
+  @override
+  State<_OcrResultDialog> createState() => _OcrResultDialogState();
+}
+
+class _OcrResultDialogState extends State<_OcrResultDialog> {
+  late final TextEditingController _searchController;
+  bool _showRawText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: widget.parsed.name);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final parsed = widget.parsed;
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('Valores detectados'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (parsed.hasData) ...[
+              // Valores extraídos
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${parsed.kcal} kcal / 100g',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _MacroItem(label: 'Proteína', value: '${parsed.protein.toStringAsFixed(1)}g'),
+                        _MacroItem(label: 'Carbs', value: '${parsed.carbs.toStringAsFixed(1)}g'),
+                        _MacroItem(label: 'Grasa', value: '${parsed.fat.toStringAsFixed(1)}g'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Botón crear alimento
+              FilledButton.icon(
+                onPressed: () => Navigator.of(context).pop(_OcrResult(
+                  useForSearch: false,
+                  createFood: true,
+                  searchText: '',
+                )),
+                icon: const Icon(Icons.add),
+                label: const Text('Crear alimento con estos valores'),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Búsqueda manual
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: 'Buscar por nombre',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).pop(_OcrResult(
+                useForSearch: true,
+                createFood: false,
+                searchText: _searchController.text,
+              )),
+              icon: const Icon(Icons.search),
+              label: const Text('Buscar en biblioteca'),
+            ),
+
+            // Ver texto raw
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () => setState(() => _showRawText = !_showRawText),
+              icon: Icon(_showRawText ? Icons.visibility_off : Icons.visibility),
+              label: Text(_showRawText ? 'Ocultar texto' : 'Ver texto detectado'),
+            ),
+            if (_showRawText) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withAlpha((0.1 * 255).round()),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  widget.rawText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _MacroItem extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MacroItem({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }
