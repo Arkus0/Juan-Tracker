@@ -854,7 +854,7 @@ class SmartWorkoutSuggestion {
     this.contextualSubtitle,
   });
 
-  /// Formato legible del tiempo desde última sesión
+  /// Formato legible del tiempo desde última sesión - VERSIÓN BÁSICA
   String get timeSinceFormatted {
     if (timeSinceLastSession == null) return 'nuevo';
     final hours = timeSinceLastSession!.inHours;
@@ -862,6 +862,53 @@ class SmartWorkoutSuggestion {
     final days = timeSinceLastSession!.inDays;
     if (days == 1) return 'ayer';
     return 'hace $days días';
+  }
+
+  /// 🎯 QW-04: Formato contextual enriquecido con urgencia implícita
+  String get timeSinceFormattedContextual {
+    if (timeSinceLastSession == null) return 'Primera vez';
+    final days = timeSinceLastSession!.inDays;
+    final hours = timeSinceLastSession!.inHours;
+    
+    if (isRestDay) {
+      return hours < 24 
+          ? 'Hace ${hours}h (recuperando)' 
+          : 'Ayer (lista para otra)';
+    }
+    
+    if (days == 0) return hours < 12 ? 'Esta mañana' : 'Hoy temprano';
+    if (days == 1) return 'Ayer';
+    if (days <= 3) return 'Hace $days días';
+    if (days <= 7) return 'Hace $days días (esta semana)';
+    if (days <= 14) return 'Hace ${(days / 7).floor()} semanas';
+    return '¡Hace $days días!';
+  }
+
+  /// 🎯 QW-04: Versión ultra-compacta para cards pequeñas
+  String get timeSinceCompact {
+    if (timeSinceLastSession == null) return '1ª vez';
+    final days = timeSinceLastSession!.inDays;
+    if (days == 0) return 'hoy';
+    if (days == 1) return '1d';
+    return '${days}d';
+  }
+
+  /// 🎯 QW-04: Mensaje motivacional basado en tiempo transcurrido
+  String get motivationalMessage {
+    if (timeSinceLastSession == null) return '¡Comienza tu viaje!';
+    if (isRestDay) return 'Descansa, mañana más 💪';
+    
+    final days = timeSinceLastSession!.inDays;
+    switch (urgency) {
+      case WorkoutUrgency.ready:
+        return days == 0 ? '¿Doble sesión? 🔥' : 'Recuperado al 100%';
+      case WorkoutUrgency.shouldTrain:
+        return 'No pierdas el ritmo 🎯';
+      case WorkoutUrgency.urgent:
+        return days > 7 ? '¡Te extrañamos! 🏋️' : 'Hoy toca 💪';
+      default:
+        return reason;
+    }
   }
 }
 

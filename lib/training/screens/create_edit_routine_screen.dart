@@ -1298,9 +1298,12 @@ class _CreateEditRoutineScreenState
               Center(
                 child: FloatingActionButton.extended(
                   heroTag: 'add_day_fab',
-                  onPressed: () {
-                    notifier.addDay();
+                  onPressed: () async {
                     HapticsController.instance.trigger(HapticEvent.buttonTap);
+                    final selectedName = await _showDayNameSuggestionsDialog(context);
+                    if (selectedName != null) {
+                      notifier.addDay(suggestedName: selectedName);
+                    }
                   },
                   icon: const Icon(Icons.add, size: 32),
                   label: Text(
@@ -1350,6 +1353,82 @@ class _CreateEditRoutineScreenState
           ),
         ),
       ), // Close PopScope
+    );
+  }
+
+  /// 🎯 QW-06: Muestra diálogo con sugerencias de nombres semánticos para días
+  Future<String?> _showDayNameSuggestionsDialog(BuildContext context) async {
+    final suggestedNames = [
+      'Pecho',
+      'Espalda',
+      'Pierna',
+      'Hombros',
+      'Brazos',
+      'Full Body',
+      'Upper',
+      'Lower',
+      'Push',
+      'Pull',
+      'Pecho & Tríceps',
+      'Espalda & Bíceps',
+      'Cuádriceps & Glúteos',
+      'Isquios & Pantorrillas',
+    ];
+
+    final TextEditingController customController = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nombre del día'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: customController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre personalizado',
+                hintText: 'Ej: Pecho & Tríceps',
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Sugerencias:',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: suggestedNames.map((name) => ActionChip(
+                label: Text(name),
+                onPressed: () {
+                  Navigator.of(context).pop(name);
+                },
+              )).toList(),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('CANCELAR'),
+          ),
+          TextButton(
+            onPressed: () {
+              final custom = customController.text.trim();
+              if (custom.isNotEmpty) {
+                Navigator.of(context).pop(custom);
+              }
+            },
+            child: const Text('AÑADIR'),
+          ),
+        ],
+      ),
     );
   }
 }
