@@ -2,7 +2,7 @@
 
 > **Fecha de creación**: 30 Enero 2026  
 > **Última actualización**: 30 Enero 2026  
-> **Estado**: Fase 1 completada ✅  
+> **Estado**: Fases 1-5 completadas ✅  
 > **Tiempo estimado total**: ~21 días de trabajo efectivo
 
 ---
@@ -56,6 +56,53 @@ Implementación incremental en 10 fases, priorizando **quick wins** primero para
 
 ---
 
+### ✅ FASE 2: Contexto Temporal (~2 horas)
+**Fecha**: 30 Enero 2026  
+**Estado**: COMPLETADA
+
+| Tarea | Descripción | Archivos | Estado |
+|-------|-------------|----------|--------|
+| QW-04 | timeSinceFormattedContextual + motivationalMessage | `training_provider.dart` | ✅ |
+| QW-09 | Welcome back toast para sesiones reanudadas | `training_session_screen.dart` | ✅ |
+| HIGH-004 | Auto-scroll al ejercicio activo | `training_session_screen.dart` | ✅ |
+
+---
+
+### ✅ FASE 3: UI Entry Screen (~3 horas)
+**Fecha**: 30 Enero 2026  
+**Estado**: COMPLETADA
+
+| Tarea | Descripción | Archivos | Estado |
+|-------|-------------|----------|--------|
+| QW-05 | Progress ring en Nutrition Card | `entry_screen.dart` | ✅ |
+| QW-08 | Thumb zone reorganization | `entry_screen.dart` | ✅ |
+| QW-06 | Sugerir nombres semánticos para días | `create_edit_routine_screen.dart` | ✅ |
+| QW-07 | Empty state educativo (ya existía) | `diary_screen.dart` | ✅ |
+
+---
+
+### ✅ FASE 4: Today View Básica (~2 días)
+**Fecha**: 30 Enero 2026  
+**Estado**: COMPLETADA
+
+| Tarea | Descripción | Archivos | Estado |
+|-------|-------------|----------|--------|
+| todaySummaryProvider | Provider combinado training + nutrition | `today_providers.dart` (nuevo) | ✅ |
+
+---
+
+### ✅ FASE 5: Scheduling Mejorado (~3 días)
+**Fecha**: 30 Enero 2026  
+**Estado**: COMPLETADA
+
+| Tarea | Descripción | Archivos | Estado |
+|-------|-------------|----------|--------|
+| SchedulingService | ImprovedSequentialScheduler implementado | `scheduling_service.dart` (nuevo) | ✅ |
+| Detección descanso | <20h sugiere descanso | `scheduling_service.dart` | ✅ |
+| MissedDayRecovery | Opciones de recuperación para gaps | `scheduling_service.dart` | ✅ |
+
+---
+
 ## CALENDARIO DE IMPLEMENTACIÓN
 
 ```
@@ -68,24 +115,24 @@ FASE                          DURACIÓN    DÍAS        DEPENDENCIA
    ├─ QW-03: Snackbar helper
    └─ QW-10: Color contrast
 ───────────────────────────────────────────────────────────────────────────────
-🔄 FASE 2: Contexto Temporal    ~2h        Día 1-2     Fase 1
+✅ FASE 2: Contexto Temporal    ~2h        Día 1-2     Fase 1
    ├─ QW-04: timeSinceLastSession formateado
    ├─ QW-09: Welcome back toast
    └─ HIGH-004: Recuperación contexto sesión
 ───────────────────────────────────────────────────────────────────────────────
-⏳ FASE 3: UI Entry Screen      ~3h        Día 2       Fase 1
+✅ FASE 3: UI Entry Screen      ~3h        Día 2       Fase 1
    ├─ QW-05: Progress ring
    ├─ QW-08: Thumb zone
    ├─ QW-06: Nombres semánticos
    └─ QW-07: Empty states educativos
 ───────────────────────────────────────────────────────────────────────────────
-⏳ FASE 4: Today View Básica    ~2d        Día 3-4     Fase 1, 2
+✅ FASE 4: Today View Básica    ~2d        Día 3-4     Fase 1, 2
    ├─ remainingMacrosProvider
    ├─ Consolidar Entry Screen
    └─ todaySummaryProvider v1
 ───────────────────────────────────────────────────────────────────────────────
-⏳ FASE 5: Scheduling Base      ~3d        Día 5-7     Fase 2, 4
-   ├─ ImprovedSequentialScheduler
+✅ FASE 5: Scheduling Base      ~3d        Día 5-7     Fase 2, 4
+   ├─ ImprovedSequentialScheduler (SchedulingService)
    ├─ Detectar descanso (<20h)
    └─ Missed Day Recovery UI
 ───────────────────────────────────────────────────────────────────────────────

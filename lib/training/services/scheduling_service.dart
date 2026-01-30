@@ -1,0 +1,281 @@
+import 'package:juan_tracker/training/models/rutina.dart';
+import 'package:juan_tracker/training/models/sesion.dart';
+import 'package:juan_tracker/training/models/dia.dart';
+
+// Importar enums y clases del provider
+import 'package:juan_tracker/training/providers/training_provider.dart' show WorkoutUrgency, SmartWorkoutSuggestion;
+
+/// 🎯 FASE 5: Servicio de scheduling mejorado para entrenamientos
+/// 
+/// Implementa la lógica de ImprovedSequentialScheduler del documento
+/// SCHEDULING_LOGIC_FIX.md con soporte para:
+/// - Detección de tiempo transcurrido
+/// - Sugerencia de descanso si <20h
+/// - Detección de gaps (días saltados)
+/// - Mensajes contextuales según urgencia
+class SchedulingService {
+  
+  /// Calcula la sugerencia de entrenamiento mejorada
+  /// 
+  /// Lógica:
+  /// 1. Si no hay historial → Primer día de rutina
+  /// 2. Si entrenó hace <20h → Día de descanso sugerido
+  /// 3. Si entrenó hace 20-48h → LISTO para entrenar
+  /// 4. Si entrenó hace 48-72h → DEBERÍA entrenar
+  /// 5. Si entrenó hace >72h → URGENTE / Missed Day Recovery
+  static SmartWorkoutSuggestion? suggestWorkout({
+    required List<Rutina> rutinas,
+    required List<Sesion> sessions,
+    required DateTime now,
+  }) {
+    if (rutinas.isEmpty) return null;
+
+    // Buscar rutina más reciente usada
+    final lastSessionData = _findLastSession(sessions, rutinas);
+    final lastUsedRutina = lastSessionData.$1;
+    final lastSession = lastSessionData.$2;
+
+    // Sin historial → Primer día
+    if (lastUsedRutina == null || lastSession == null) {
+      return _createFirstTimeSuggestion(rutinas.first);
+    }
+
+    // Calcular siguiente día válido
+    final nextDayInfo = _calculateNextDay(lastUsedRutina, lastSession);
+    if (nextDayInfo == null) return null;
+
+    final nextDayIndex = nextDayInfo.$1;
+    final nextDay = nextDayInfo.$2;
+
+    // Calcular tiempo transcurrido
+    final timeSince = now.difference(lastSession.fecha);
+    final hoursSince = timeSince.inHours;
+    final daysSince = timeSince.inDays;
+
+    // Determinar estado según tiempo transcurrido
+    return _createSuggestionByTime(
+      rutina: lastUsedRutina,
+      dayIndex: nextDayIndex,
+      day: nextDay,
+      hoursSince: hoursSince,
+      daysSince: daysSince,
+      timeSince: timeSince,
+      lastSession: lastSession,
+    );
+  }
+
+  /// Busca la última sesión y su rutina correspondiente
+  static (Rutina?, Sesion?) _findLastSession(
+    List<Sesion> sessions,
+    List<Rutina> rutinas,
+  ) {
+    for (final session in sessions) {
+      try {
+        final matchingRutina = rutinas.firstWhere(
+          (r) => r.id == session.rutinaId,
+        );
+        return (matchingRutina, session);
+      } catch (_) {
+        // Rutina no encontrada, continuar
+        continue;
+      }
+    }
+    return (null, null);
+  }
+
+  /// Crea sugerencia para primera vez
+  static SmartWorkoutSuggestion _createFirstTimeSuggestion(Rutina rutina) {
+    final firstValidDayIndex = rutina.dias.indexWhere(
+      (d) => d.ejercicios.isNotEmpty,
+    );
+    
+    if (firstValidDayIndex == -1) {
+      throw StateError('Rutina sin días con ejercicios');
+    }
+
+    final firstDay = rutina.dias[firstValidDayIndex];
+
+    return SmartWorkoutSuggestion(
+      rutina: rutina,
+      dayIndex: firstValidDayIndex,
+      dayName: firstDay.nombre,
+      reason: '¡Comienza tu rutina!',
+      timeSinceLastSession: null,
+      lastSessionDate: null,
+      isRestDay: false,
+      urgency: WorkoutUrgency.fresh,
+      contextualSubtitle: 'El viaje de mil reps empieza con una serie',
+    );
+  }
+
+  /// Calcula el siguiente día válido (saltando días vacíos)
+  static (int, Dia)? _calculateNextDay(Rutina rutina, Sesion lastSession) {
+    final lastDayIndex = lastSession.dayIndex ?? -1;
+    final totalDays = rutina.dias.length;
+
+    var nextDayIndex = (lastDayIndex + 1) % totalDays;
+    var attempts = 0;
+
+    while (rutina.dias[nextDayIndex].ejercicios.isEmpty && attempts < totalDays) {
+      nextDayIndex = (nextDayIndex + 1) % totalDays;
+      attempts++;
+    }
+
+    if (attempts >= totalDays) return null;
+
+    return (nextDayIndex, rutina.dias[nextDayIndex]);
+  }
+
+  /// Crea sugerencia basada en tiempo transcurrido
+  static SmartWorkoutSuggestion _createSuggestionByTime({
+    required Rutina rutina,
+    required int dayIndex,
+    required Dia day,
+    required int hoursSince,
+    required int daysSince,
+    required Duration timeSince,
+    required Sesion lastSession,
+  }) {
+    // Caso 1: Descanso sugerido (<20h)
+    if (hoursSince < 20) {
+      return SmartWorkoutSuggestion(
+        rutina: rutina,
+        dayIndex: -1,
+        dayName: 'DESCANSO',
+        reason: 'Recuperación activa',
+        timeSinceLastSession: timeSince,
+        lastSessionDate: lastSession.fecha,
+        isRestDay: true,
+        urgency: WorkoutUrgency.rest,
+        contextualSubtitle: 'Entrenaste hace ${hoursSince}h. Los músculos crecen descansando.',
+      );
+    }
+
+    // Caso 2: Listo para entrenar (20-48h)
+    if (hoursSince < 48) {
+      return SmartWorkoutSuggestion(
+        rutina: rutina,
+        dayIndex: dayIndex,
+        dayName: day.nombre,
+        reason: daysSince == 0 ? 'Recuperado y listo' : 'Toca ${day.nombre}',
+        timeSinceLastSession: timeSince,
+        lastSessionDate: lastSession.fecha,
+        isRestDay: false,
+        urgency: WorkoutUrgency.ready,
+        contextualSubtitle: daysSince == 0
+            ? 'Entrenaste hoy temprano, ya pasaron ${hoursSince}h'
+            : 'Última sesión: ayer',
+      );
+    }
+
+    // Caso 3: Debería entrenar (48-72h)
+    if (hoursSince < 72) {
+      return SmartWorkoutSuggestion(
+        rutina: rutina,
+        dayIndex: dayIndex,
+        dayName: day.nombre,
+        reason: 'Sigue la racha',
+        timeSinceLastSession: timeSince,
+        lastSessionDate: lastSession.fecha,
+        isRestDay: false,
+        urgency: WorkoutUrgency.shouldTrain,
+        contextualSubtitle: 'Hace $daysSince días desde tu última sesión',
+      );
+    }
+
+    // Caso 4: Urgente / Missed Day (>72h)
+    return SmartWorkoutSuggestion(
+      rutina: rutina,
+      dayIndex: dayIndex,
+      dayName: day.nombre,
+      reason: daysSince <= 7 ? 'Retoma el ritmo' : '¡Vuelve al gym!',
+      timeSinceLastSession: timeSince,
+      lastSessionDate: lastSession.fecha,
+      isRestDay: false,
+      urgency: WorkoutUrgency.urgent,
+      contextualSubtitle: daysSince <= 7
+          ? '$daysSince días sin entrenar. ¡Hoy es el día!'
+          : '$daysSince días. El hierro te extraña.',
+    );
+  }
+
+  /// Detecta si hay un gap significativo que requiera Missed Day Recovery
+  static bool needsMissedDayRecovery(SmartWorkoutSuggestion suggestion) {
+    if (suggestion.timeSinceLastSession == null) return false;
+    return suggestion.timeSinceLastSession!.inDays > 2 && !suggestion.isRestDay;
+  }
+
+  /// Genera opciones de recuperación para Missed Day Recovery
+  static MissedDayRecoveryOptions generateRecoveryOptions({
+    required Rutina rutina,
+    required Sesion lastSession,
+    required int daysMissed,
+  }) {
+    final nextDayIndex = ((lastSession.dayIndex ?? -1) + 1) % rutina.dias.length;
+    final nextDay = rutina.dias[nextDayIndex];
+
+    if (daysMissed <= 2) {
+      // Gap pequeño: continuar donde estaba
+      return MissedDayRecoveryOptions(
+        primary: RecoveryAction.continueSequence,
+        message: 'Continúa con ${nextDay.nombre}',
+        suggestedDayIndex: nextDayIndex,
+        suggestedDayName: nextDay.nombre,
+      );
+    }
+
+    if (daysMissed <= 7) {
+      // Gap mediano: ofrecer opciones
+      return MissedDayRecoveryOptions(
+        primary: RecoveryAction.continueSequence,
+        alternatives: [RecoveryAction.restartWeek, RecoveryAction.customSelection],
+        message: 'Han pasado $daysMissed días. ¿Cómo quieres continuar?',
+        suggestedDayIndex: nextDayIndex,
+        suggestedDayName: nextDay.nombre,
+      );
+    }
+
+    // Gap grande: reiniciar sugerido
+    return MissedDayRecoveryOptions(
+      primary: RecoveryAction.restartCycle,
+      alternatives: [RecoveryAction.continueSequence, RecoveryAction.customSelection],
+      message: 'Llevas $daysMissed días sin entrenar. Te sugiero reiniciar.',
+      suggestedDayIndex: 0,
+      suggestedDayName: rutina.dias.first.nombre,
+    );
+  }
+}
+
+/// Opciones de recuperación para Missed Day Recovery
+class MissedDayRecoveryOptions {
+  final RecoveryAction primary;
+  final List<RecoveryAction> alternatives;
+  final String message;
+  final int suggestedDayIndex;
+  final String suggestedDayName;
+
+  const MissedDayRecoveryOptions({
+    required this.primary,
+    this.alternatives = const [],
+    required this.message,
+    required this.suggestedDayIndex,
+    required this.suggestedDayName,
+  });
+}
+
+/// Acciones de recuperación disponibles
+enum RecoveryAction {
+  /// Continuar donde estaba (Día 3 si estaba en Día 2)
+  continueSequence,
+
+  /// Reiniciar la semana (volver a Día 1)
+  restartWeek,
+
+  /// Reiniciar todo el ciclo
+  restartCycle,
+
+  /// Elegir manualmente
+  customSelection,
+}
+
+// WorkoutUrgency y SmartWorkoutSuggestion se importan desde training_provider.dart
