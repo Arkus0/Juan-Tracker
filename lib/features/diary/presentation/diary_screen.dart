@@ -621,34 +621,46 @@ class _DailySummaryCard extends StatelessWidget {
           const Divider(height: 1),
           const SizedBox(height: AppSpacing.lg),
 
-          // Macros
+          // Macros - QW-02: Mostrar RESTANTES en lugar de CONSUMIDOS
           Row(
             children: [
               Expanded(
                 child: _MacroItem(
                   label: 'Proteína',
-                  value: summary.consumed.protein.toStringAsFixed(0),
+                  value: _calculateRemaining(
+                    summary.targets?.proteinTarget,
+                    summary.consumed.protein,
+                  ),
                   target: summary.targets?.proteinTarget?.toStringAsFixed(0),
                   color: AppColors.error,
                   progress: summary.progress.proteinPercent ?? 0,
+                  showRemaining: summary.hasTargets,
                 ),
               ),
               Expanded(
                 child: _MacroItem(
                   label: 'Carbs',
-                  value: summary.consumed.carbs.toStringAsFixed(0),
+                  value: _calculateRemaining(
+                    summary.targets?.carbsTarget,
+                    summary.consumed.carbs,
+                  ),
                   target: summary.targets?.carbsTarget?.toStringAsFixed(0),
                   color: AppColors.warning,
                   progress: summary.progress.carbsPercent ?? 0,
+                  showRemaining: summary.hasTargets,
                 ),
               ),
               Expanded(
                 child: _MacroItem(
                   label: 'Grasa',
-                  value: summary.consumed.fat.toStringAsFixed(0),
+                  value: _calculateRemaining(
+                    summary.targets?.fatTarget,
+                    summary.consumed.fat,
+                  ),
                   target: summary.targets?.fatTarget?.toStringAsFixed(0),
                   color: AppColors.info,
                   progress: summary.progress.fatPercent ?? 0,
+                  showRemaining: summary.hasTargets,
                 ),
               ),
             ],
@@ -664,6 +676,13 @@ class _DailySummaryCard extends StatelessWidget {
     if (remaining <= 0) return AppColors.error;  // Pasó el objetivo
     if (remaining < 200) return AppColors.warning;  // Poco margen
     return colors.primary;  // OK
+  }
+
+  /// Calcula el valor restante de un macro
+  String _calculateRemaining(double? target, double consumed) {
+    if (target == null) return consumed.toStringAsFixed(0);
+    final remaining = (target - consumed).clamp(0, double.infinity);
+    return remaining.toStringAsFixed(0);
   }
 }
 
@@ -727,13 +746,14 @@ class _MacroDonut extends StatelessWidget {
   }
 }
 
-/// Item de macro individual
+/// Item de macro individual - QW-02: Soporta mostrar RESTANTE
 class _MacroItem extends StatelessWidget {
   final String label;
   final String value;
   final String? target;
   final Color color;
   final double? progress;
+  final bool showRemaining;
 
   const _MacroItem({
     required this.label,
@@ -741,6 +761,7 @@ class _MacroItem extends StatelessWidget {
     this.target,
     required this.color,
     required this.progress,
+    this.showRemaining = false,
   });
 
   @override
@@ -762,7 +783,7 @@ class _MacroItem extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              label,
+              showRemaining ? '$label rest.' : label,
               style: AppTypography.labelSmall.copyWith(
                 color: colors.onSurfaceVariant,
               ),
@@ -776,9 +797,16 @@ class _MacroItem extends StatelessWidget {
             color: colors.onSurface,
           ),
         ),
-        if (target != null)
+        if (target != null && !showRemaining)
           Text(
             '/${target}g',
+            style: AppTypography.labelSmall.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+        if (target != null && showRemaining)
+          Text(
+            'de ${target}g',
             style: AppTypography.labelSmall.copyWith(
               color: colors.onSurfaceVariant,
             ),
@@ -789,7 +817,10 @@ class _MacroItem extends StatelessWidget {
           child: LinearProgressIndicator(
             value: (progress ?? 0).clamp(0.0, 1.0),
             minHeight: 4,
-            backgroundColor: color.withAlpha((0.2 * 255).round()),
+            // QW-10: Mejor contraste en light mode
+            backgroundColor: Theme.of(context).brightness == Brightness.light
+                ? color.withAlpha((0.3 * 255).round())
+                : color.withAlpha((0.2 * 255).round()),
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
         ),

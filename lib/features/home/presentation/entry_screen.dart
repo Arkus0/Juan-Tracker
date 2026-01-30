@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/feedback/haptics.dart';
-import 'package:juan_tracker/core/providers/training_providers.dart';
 import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +11,7 @@ import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/models/weighin_model.dart';
 import 'package:juan_tracker/training/utils/design_system.dart' as training;
 import 'package:juan_tracker/training/widgets/analysis/streak_counter.dart';
+import 'package:juan_tracker/training/providers/training_provider.dart';
 
 /// Pantalla de entrada principal con selección de modo
 class EntryScreen extends StatelessWidget {
@@ -619,7 +619,7 @@ class _NutritionModeCard extends ConsumerWidget {
   }
 }
 
-/// Training card that uses providers to show streaks and last session
+/// Training card that uses smartSuggestionProvider to show what to train today
 class _TrainingModeCard extends ConsumerWidget {
   final VoidCallback onTap;
 
@@ -627,53 +627,123 @@ class _TrainingModeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(trainingStatsProvider);
-    final hasStreak = stats.sesionesSemana > 0;
-    final lastSession = stats.ultimaSesion;
+    final suggestionAsync = ref.watch(smartSuggestionProvider);
 
-    String subtitle;
-    if (lastSession != null) {
-      final daysAgo = DateTime.now().difference(lastSession.fecha).inDays;
-      if (daysAgo == 0) {
-        subtitle = 'Entrenaste hoy';
-      } else if (daysAgo == 1) {
-        subtitle = 'Último: ayer';
-      } else {
-        subtitle = 'Último: hace $daysAgo días';
-      }
-    } else {
-      subtitle = 'Comienza tu rutina hoy';
-    }
+    return suggestionAsync.when(
+      data: (suggestion) {
+        if (suggestion == null) {
+          // No hay rutinas configuradas
+          return _ModeCard(
+            title: 'Entrenamiento',
+            subtitle: 'Configura tu primera rutina',
+            icon: Icons.fitness_center_rounded,
+            gradientColors: [
+              training.AppColors.darkRed,
+              training.AppColors.bloodRed,
+            ],
+            stats: const [
+              _Stat(
+                icon: Icons.fitness_center,
+                value: '--',
+                label: 'sin rutina',
+              ),
+              _Stat(
+                icon: Icons.calendar_today,
+                value: '--',
+                label: 'hoy',
+              ),
+            ],
+            onTap: onTap,
+            isDark: true,
+          );
+        }
 
-    return _ModeCard(
-      title: 'Entrenamiento',
-      subtitle: subtitle,
-      icon: Icons.fitness_center_rounded,
-      gradientColors: [
-        training.AppColors.darkRed,
-        training.AppColors.bloodRed,
-      ],
-      stats: [
-        if (hasStreak)
-          _Stat(
-            icon: Icons.local_fire_department,
-            value: '${stats.sesionesSemana}',
-            label: 'sesiones semana',
-          )
-        else
+        // Tenemos sugerencia - mostrar qué toca hoy
+        final dayName = suggestion.dayName;
+        final timeSince = suggestion.timeSinceFormatted;
+        
+        // Subtítulo dinámico basado en contexto
+        String subtitle;
+        if (suggestion.isRestDay) {
+          subtitle = suggestion.reason;
+        } else if (suggestion.timeSinceLastSession == null) {
+          subtitle = 'Primera vez: $dayName';
+        } else {
+          subtitle = 'Toca $dayName • Última: $timeSince';
+        }
+
+        return _ModeCard(
+          title: 'Entrenamiento',
+          subtitle: subtitle,
+          icon: Icons.fitness_center_rounded,
+          gradientColors: [
+            training.AppColors.darkRed,
+            training.AppColors.bloodRed,
+          ],
+          stats: [
+            // Stat 1: Qué toca hoy (lo más importante)
+            _Stat(
+              icon: Icons.fitness_center,
+              value: dayName.length > 8 ? '${dayName.substring(0, 8)}...' : dayName,
+              label: 'hoy',
+            ),
+            // Stat 2: Tiempo desde última sesión
+            _Stat(
+              icon: Icons.history,
+              value: timeSince,
+              label: 'última',
+            ),
+          ],
+          onTap: onTap,
+          isDark: true,
+        );
+      },
+      loading: () => _ModeCard(
+        title: 'Entrenamiento',
+        subtitle: 'Cargando sugerencia...',
+        icon: Icons.fitness_center_rounded,
+        gradientColors: [
+          training.AppColors.darkRed,
+          training.AppColors.bloodRed,
+        ],
+        stats: const [
           _Stat(
             icon: Icons.fitness_center,
-            value: '${stats.sesionesSemana}',
-            label: 'sesiones',
+            value: '...',
+            label: 'cargando',
           ),
-        _Stat(
-          icon: Icons.timer,
-          value: '${stats.setsSemana}',
-          label: 'sets semana',
-        ),
-      ],
-      onTap: onTap,
-      isDark: true,
+          _Stat(
+            icon: Icons.history,
+            value: '--',
+            label: 'última',
+          ),
+        ],
+        onTap: onTap,
+        isDark: true,
+      ),
+      error: (err, stack) => _ModeCard(
+        title: 'Entrenamiento',
+        subtitle: 'Error al cargar',
+        icon: Icons.fitness_center_rounded,
+        gradientColors: [
+          training.AppColors.darkRed,
+          training.AppColors.bloodRed,
+        ],
+        stats: const [
+          _Stat(
+            icon: Icons.error,
+            value: '--',
+            label: 'error',
+          ),
+          _Stat(
+            icon: Icons.history,
+            value: '--',
+            label: 'última',
+          ),
+        ],
+        onTap: onTap,
+        isDark: true,
+      ),
     );
   }
 }
