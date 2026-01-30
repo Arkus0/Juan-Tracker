@@ -33,12 +33,12 @@ class FoodsSearchState {
 }
 
 /// Notifier para gestionar la búsqueda de alimentos en la biblioteca local
-class FoodsSearchNotifier extends AutoDisposeAsyncNotifier<FoodsSearchState> {
+class FoodsSearchNotifier extends Notifier<FoodsSearchState> {
   @override
-  Future<FoodsSearchState> build() async {
+  FoodsSearchState build() {
     // Cargar todos los alimentos inicialmente
-    final foods = await _loadFoods('');
-    return FoodsSearchState(foods: foods);
+    _loadFoods('');
+    return const FoodsSearchState(isLoading: true);
   }
 
   /// Busca alimentos con debounce integrado
@@ -46,25 +46,22 @@ class FoodsSearchNotifier extends AutoDisposeAsyncNotifier<FoodsSearchState> {
     final trimmedQuery = query.trim();
 
     // Actualizar estado con loading
-    state = AsyncData(
-      state.valueOrNull?.copyWith(query: trimmedQuery, isLoading: true) ??
-          FoodsSearchState(query: trimmedQuery, isLoading: true),
-    );
+    state = state.copyWith(query: trimmedQuery, isLoading: true, error: null);
 
     try {
-      final foods = await _loadFoods(trimmedQuery);
-      state = AsyncData(FoodsSearchState(
+      final foods = await _loadFoodsAsync(trimmedQuery);
+      state = FoodsSearchState(
         query: trimmedQuery,
         foods: foods,
         isLoading: false,
-      ));
+      );
     } catch (e) {
-      state = AsyncData(FoodsSearchState(
+      state = FoodsSearchState(
         query: trimmedQuery,
         foods: [],
         isLoading: false,
         error: e.toString(),
-      ));
+      );
     }
   }
 
@@ -75,21 +72,25 @@ class FoodsSearchNotifier extends AutoDisposeAsyncNotifier<FoodsSearchState> {
 
   /// Refresca la lista de alimentos (útil después de añadir/eliminar)
   Future<void> refresh() async {
-    final currentQuery = state.valueOrNull?.query ?? '';
+    final currentQuery = state.query;
     await search(currentQuery);
   }
 
-  Future<List<FoodModel>> _loadFoods(String query) async {
+  Future<List<FoodModel>> _loadFoodsAsync(String query) async {
     final repo = ref.read(foodRepositoryProvider);
     if (query.isEmpty) {
       return repo.getAll();
     }
     return repo.search(query);
   }
+
+  void _loadFoods(String query) {
+    search(query);
+  }
 }
 
 /// Provider para la búsqueda de alimentos en la biblioteca local
 final foodsSearchProvider =
-    AsyncNotifierProvider.autoDispose<FoodsSearchNotifier, FoodsSearchState>(
-  FoodsSearchNotifier.new,
+    NotifierProvider.autoDispose<FoodsSearchNotifier, FoodsSearchState>(
+  () => FoodsSearchNotifier(),
 );

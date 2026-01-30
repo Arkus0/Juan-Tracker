@@ -96,27 +96,25 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
           ),
         ),
       ),
-      body: searchState.when(
-        loading: () => const _FoodsLoadingSkeleton(),
-        error: (error, _) => Center(child: Text('Error: $error')),
-        data: (state) {
-          if (state.isLoading) {
+      body: Builder(
+        builder: (context) {
+          if (searchState.isLoading) {
             return const _FoodsLoadingSkeleton();
           }
 
-          if (state.error != null) {
-            return Center(child: Text('Error: ${state.error}'));
+          if (searchState.error != null) {
+            return Center(child: Text('Error: ${searchState.error}'));
           }
 
-          if (state.foods.isEmpty) {
-            return _EmptyState(isSearch: state.query.isNotEmpty);
+          if (searchState.foods.isEmpty) {
+            return _EmptyState(isSearch: searchState.query.isNotEmpty);
           }
 
           return ListView.builder(
             padding: const EdgeInsets.only(bottom: 100),
-            itemCount: state.foods.length,
+            itemCount: searchState.foods.length,
             itemBuilder: (context, index) {
-              final food = state.foods[index];
+              final food = searchState.foods[index];
               return _FoodTile(
                 food: food,
                 onTap: () => _showFoodDetail(food),
@@ -884,7 +882,7 @@ class _FabOption extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.color,
-  });
+  }); // ignore: unused_element_parameter
 
   @override
   Widget build(BuildContext context) {
