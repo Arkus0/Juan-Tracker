@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/training/models/analysis_models.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
 import 'package:juan_tracker/training/services/exercise_library_service.dart';
+import 'package:juan_tracker/training/services/smart_exercise_search_service.dart';
 import 'package:juan_tracker/training/widgets/common/create_exercise_dialog.dart';
 
 /// Modo de búsqueda
@@ -125,122 +126,27 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     return normalized.split(RegExp(r'\s+')).where((t) => t.length >= 2).toList();
   }
 
-  /// Calcula el score de relevancia de un ejercicio para una query
-  /// Retorna 0 si no hay coincidencia, mayor es mejor
-  int _calculateScore(LibraryExercise ex, String query, List<String> tokens) {
-    final nameNorm = _normalize(ex.name);
-    final queryNorm = _normalize(query);
-    final muscleNorm = _normalize(ex.muscleGroup);
-    final equipmentNorm = _normalize(ex.equipment);
-    
-    // 1. Coincidencia exacta del nombre completo (100 pts)
-    if (nameNorm == queryNorm) return 100;
-    
-    // 2. El nombre empieza exactamente con la query (95 pts)
-    if (nameNorm.startsWith('$queryNorm ')) return 95;
-    if (nameNorm.startsWith(queryNorm)) return 90;
-    
-    // 3. Query está contenida en el nombre como palabra completa (85 pts)
-    if (nameNorm.contains(' $queryNorm ')) return 85;
-    if (nameNorm.contains(' $queryNorm') || nameNorm.contains('$queryNorm ')) return 80;
-    
-    // 4. Query contenida en cualquier parte del nombre (70 pts)
-    if (nameNorm.contains(queryNorm)) return 70;
-    
-    // 5. Scoring por tokens (palabras individuales)
-    if (tokens.isNotEmpty) {
-      final nameTokens = nameNorm.split(RegExp(r'\s+'));
-      var matchedTokens = 0;
-      var prefixMatches = 0;
-      
-      for (final token in tokens) {
-        // Token exacto en nombre
-        if (nameTokens.contains(token)) {
-          matchedTokens++;
-        } else if (nameNorm.contains(token)) {
-          // Token contenido
-          matchedTokens++;
-        } else {
-          // Verificar si alguna palabra del nombre empieza con el token
-          for (final nameToken in nameTokens) {
-            if (nameToken.startsWith(token) || token.startsWith(nameToken)) {
-              prefixMatches++;
-              break;
-            }
-          }
-        }
-      }
-      
-      // Todas las palabras coinciden exactamente (75 pts base + bonus)
-      if (matchedTokens == tokens.length && tokens.length > 1) {
-        return 75 + (tokens.length * 2);
-      }
-      
-      // Todas las palabras coinciden (incluyendo parciales)
-      if (matchedTokens + prefixMatches >= tokens.length && tokens.length > 1) {
-        return 60 + matchedTokens * 5;
-      }
-      
-      // Algunas palabras coinciden
-      if (matchedTokens > 0) {
-        return 40 + (matchedTokens * 10);
-      }
-      
-      if (prefixMatches > 0) {
-        return 30 + (prefixMatches * 5);
-      }
-    }
-    
-    // 6. Coincidencia en grupo muscular (20-40 pts)
-    if (muscleNorm.contains(queryNorm)) return 35;
-    if (tokens.any((t) => muscleNorm.contains(t))) return 25;
-    
-    // 7. Coincidencia en equipo (10-30 pts)
-    if (equipmentNorm.contains(queryNorm)) return 30;
-    if (tokens.any((t) => equipmentNorm.contains(t))) return 20;
-    
-    // 8. Búsqueda en músculos secundarios
-    for (final muscle in ex.muscles) {
-      final muscleToken = _normalize(muscle);
-      if (muscleToken.contains(queryNorm)) return 25;
-      if (tokens.any((t) => muscleToken.contains(t))) return 15;
-    }
-    
-    return 0; // Sin coincidencia
-  }
+  /// SmartExerciseSearchService para búsqueda inteligente
+  final SmartExerciseSearchService _searchService = SmartExerciseSearchService();
 
-  /// Filtra y ordena ejercicios por relevancia
+  /// Filtra y ordena ejercicios usando el motor de búsqueda inteligente
   List<LibraryExercise> _searchExercises(
     List<LibraryExercise> exercises,
     String query,
   ) {
-    if (query.trim().isEmpty) {
-      // Sin query: ordenar alfabéticamente
-      final result = List<LibraryExercise>.from(exercises);
-      result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      return result;
-    }
-    
-    final tokens = _tokenize(query);
-    final scored = <_ScoredExercise>[];
-    
-    for (final ex in exercises) {
-      final score = _calculateScore(ex, query, tokens);
-      if (score > 0) {
-        scored.add(_ScoredExercise(ex, score));
-      }
-    }
-    
-    // Ordenar por score descendente, luego por nombre
-    scored.sort((a, b) {
-      final scoreCmp = b.score.compareTo(a.score);
-      if (scoreCmp != 0) return scoreCmp;
-      return a.exercise.name.toLowerCase().compareTo(
-        b.exercise.name.toLowerCase(),
-      );
-    });
-    
-    return scored.map((s) => s.exercise).toList();
+    // Usar el SmartExerciseSearchService con soporte para sinónimos y fuzzy matching
+    final results = _searchService.search(query, exercises, limit: 200);
+    return results.map((r) => r.exercise).toList();
+  }
+  
+  /// Obtiene sugerencias cuando no hay resultados exactos
+  List<LibraryExercise> _getSuggestions(
+    List<LibraryExercise> exercises,
+    String query,
+  ) {
+    if (query.length < 3) return [];
+    final suggestions = _searchService.suggestAlternatives(query, exercises, limit: 5);
+    return suggestions.map((s) => s.exercise).toList();
   }
   
   /// Aplica filtros opcionales (solo cuando no hay búsqueda de texto)
