@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../features/diary/presentation/diary_screen.dart';
-import '../../../features/foods/presentation/foods_screen.dart';
 import '../../../features/weight/presentation/weight_screen.dart';
 import '../../../features/summary/presentation/summary_screen.dart';
+import '../../../features/settings/presentation/settings_screen.dart';
 import '../../../diet/screens/coach/coach_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -21,10 +21,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // y evitar rebuilds innecesarios al cambiar entre tabs
   static const _tabs = <Widget>[
     DiaryScreen(),
-    FoodsScreen(),
     WeightScreen(),
     SummaryScreen(),
     CoachScreen(),
+    SettingsScreen(),
   ];
 
   @override
@@ -45,13 +45,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Diario'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.fastfood),
-            label: 'Alimentos',
+            icon: Icon(Icons.book),
+            label: 'Diario',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.fitness_center),
+            icon: Icon(Icons.scale),
             label: 'Peso',
           ),
           BottomNavigationBarItem(
@@ -61,6 +60,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.auto_graph),
             label: 'Coach',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Perfil',
           ),
         ],
       ),

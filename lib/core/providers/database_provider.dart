@@ -4,6 +4,7 @@ import '../../diet/models/models.dart' as diet;
 import '../../diet/repositories/repositories.dart';
 import '../../diet/repositories/drift_diet_repositories.dart';
 import '../../training/database/database.dart';
+import '../models/user_profile_model.dart';
 import '../repositories/i_training_repository.dart';
 import '../repositories/in_memory_training_repository.dart';
 import '../repositories/exercise_repository.dart';
@@ -412,3 +413,27 @@ final exerciseRepositoryProvider = Provider<ExerciseRepository>(
 final routineRepositoryProvider = Provider<RoutineRepository>(
   (ref) => InMemoryRoutineRepository(),
 );
+
+// ============================================================================
+// USER PROFILE REPOSITORY & PROVIDERS
+// ============================================================================
+
+final userProfileRepositoryProvider = Provider<IUserProfileRepository>((ref) {
+  return DriftUserProfileRepository(ref.watch(appDatabaseProvider));
+});
+
+/// Provider del perfil de usuario actual
+final userProfileProvider = FutureProvider<UserProfileModel?>((ref) async {
+  final repo = ref.watch(userProfileRepositoryProvider);
+  return repo.get();
+});
+
+/// Provider para verificar si el perfil está completo
+final isProfileCompleteProvider = Provider<AsyncValue<bool>>((ref) {
+  final profileAsync = ref.watch(userProfileProvider);
+  return profileAsync.when(
+    data: (profile) => AsyncValue.data(profile?.isComplete ?? false),
+    loading: () => const AsyncValue.loading(),
+    error: (err, stack) => AsyncValue.error(err, stack),
+  );
+});
