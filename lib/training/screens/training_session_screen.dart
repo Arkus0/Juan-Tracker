@@ -352,6 +352,15 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
       }
     });
+
+    // 🎯 HIGH-004: Scroll automático al ejercicio activo para recuperar contexto
+    if (nextSet != null) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          _scrollToExercise(nextSet.exerciseIndex);
+        }
+      });
+    }
   }
 
   /// Callback cuando el timer de descanso termina

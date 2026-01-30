@@ -368,6 +368,7 @@ class _ModeCard extends StatelessWidget {
   final List<_Stat> stats;
   final VoidCallback onTap;
   final bool isDark;
+  final Widget? trailing; // 🎯 QW-05: Widget opcional (progress ring)
 
   const _ModeCard({
     required this.title,
@@ -377,6 +378,7 @@ class _ModeCard extends StatelessWidget {
     required this.stats,
     required this.onTap,
     this.isDark = false,
+    this.trailing,
   });
 
   @override
@@ -416,10 +418,14 @@ class _ModeCard extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Colors.white.withAlpha((0.7 * 255).round()),
-                    ),
+                    // 🎯 QW-05: Mostrar progress ring o flecha
+                    if (trailing != null)
+                      trailing!
+                    else
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white.withAlpha((0.7 * 255).round()),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -545,7 +551,7 @@ class _NutritionModeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(daySummaryProvider);
 
-    final (stats, subtitle) = summaryAsync.when(
+    final result = summaryAsync.when(
       data: (s) {
         final hasTargets = s.hasTargets;
 
@@ -564,6 +570,7 @@ class _NutritionModeCard extends ConsumerWidget {
               ),
             ],
             'Seguimiento de nutrición',
+            0.0,
           );
         }
 
@@ -572,6 +579,8 @@ class _NutritionModeCard extends ConsumerWidget {
             ? s.targets!.proteinTarget! - s.consumed.protein 
             : 0;
 
+        final progress = s.progress.kcalPercent ?? 0;
+        
         return (
           [
             _Stat(
@@ -586,6 +595,7 @@ class _NutritionModeCard extends ConsumerWidget {
             ),
           ],
           '${s.consumed.kcal}/${s.targets!.kcalTarget} kcal consumidas',
+          progress, // QW-05: Progress para ring
         );
       },
       loading: () => (
@@ -594,16 +604,21 @@ class _NutritionModeCard extends ConsumerWidget {
           const _Stat(icon: Icons.fitness_center, value: '--', label: 'proteína'),
         ],
         'Cargando...',
+        0.0,
       ),
-      // ignore: unnecessary_underscores
-      error: (_, __) => (
+      error: (err, stack) => (
         [
           const _Stat(icon: Icons.error, value: '--', label: 'error'),
           const _Stat(icon: Icons.error, value: '--', label: 'error'),
         ],
         'Error al cargar datos',
+        0.0,
       ),
     );
+
+    final stats = result.$1;
+    final subtitle = result.$2;
+    final progress = result.$3;
 
     return _ModeCard(
       title: 'Nutrición',
@@ -615,6 +630,11 @@ class _NutritionModeCard extends ConsumerWidget {
       ],
       stats: stats,
       onTap: onTap,
+      // 🎯 QW-05: Progress ring mostrando % de calorías consumidas
+      trailing: progress > 0 ? _MiniProgressRing(
+        progress: progress.clamp(0.0, 1.0),
+        remaining: int.tryParse(stats[0].value) ?? 0,
+      ) : null,
     );
   }
 }
@@ -660,38 +680,44 @@ class _TrainingModeCard extends ConsumerWidget {
 
         // Tenemos sugerencia - mostrar qué toca hoy
         final dayName = suggestion.dayName;
-        final timeSince = suggestion.timeSinceFormatted;
+        // 🎯 QW-04: Usar formateo compacto para stat, contextual para subtítulo
+        final timeSinceCompact = suggestion.timeSinceCompact;
+        final timeSinceContextual = suggestion.timeSinceFormattedContextual;
         
-        // Subtítulo dinámico basado en contexto
+        // Subtítulo dinámico basado en contexto con mensaje motivacional
         String subtitle;
         if (suggestion.isRestDay) {
-          subtitle = suggestion.reason;
+          subtitle = suggestion.contextualSubtitle ?? suggestion.reason;
         } else if (suggestion.timeSinceLastSession == null) {
           subtitle = 'Primera vez: $dayName';
         } else {
-          subtitle = 'Toca $dayName • Última: $timeSince';
+          // QW-04: Subtítulo más rico con contexto temporal
+          subtitle = suggestion.motivationalMessage;
         }
 
         return _ModeCard(
-          title: 'Entrenamiento',
+          title: suggestion.isRestDay ? 'Descanso' : 'Entrenamiento',
           subtitle: subtitle,
-          icon: Icons.fitness_center_rounded,
-          gradientColors: [
-            training.AppColors.darkRed,
-            training.AppColors.bloodRed,
-          ],
+          icon: suggestion.isRestDay 
+              ? Icons.bedtime_rounded 
+              : Icons.fitness_center_rounded,
+          gradientColors: suggestion.isRestDay
+              ? [Colors.blueGrey, Colors.blueGrey.shade700]
+              : [training.AppColors.darkRed, training.AppColors.bloodRed],
           stats: [
             // Stat 1: Qué toca hoy (lo más importante)
             _Stat(
-              icon: Icons.fitness_center,
+              icon: suggestion.isRestDay ? Icons.bedtime : Icons.fitness_center,
               value: dayName.length > 8 ? '${dayName.substring(0, 8)}...' : dayName,
-              label: 'hoy',
+              label: suggestion.isRestDay ? 'hoy' : 'toca',
             ),
-            // Stat 2: Tiempo desde última sesión
+            // Stat 2: Tiempo desde última sesión (formato compacto)
             _Stat(
               icon: Icons.history,
-              value: timeSince,
-              label: 'última',
+              value: timeSinceCompact,
+              label: timeSinceContextual.contains('semana') 
+                  ? 'sin gym' 
+                  : 'última',
             ),
           ],
           onTap: onTap,
@@ -743,6 +769,64 @@ class _TrainingModeCard extends ConsumerWidget {
         ],
         onTap: onTap,
         isDark: true,
+      ),
+    );
+  }
+}
+
+/// 🎯 QW-05: Mini progress ring para cards
+class _MiniProgressRing extends StatelessWidget {
+  final double progress;
+  final int remaining;
+
+  const _MiniProgressRing({
+    required this.progress,
+    required this.remaining,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isOverLimit = progress > 1.0;
+    
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Background track
+          CircularProgressIndicator(
+            value: 1,
+            strokeWidth: 4,
+            backgroundColor: Colors.transparent,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Colors.white.withAlpha((0.2 * 255).round()),
+            ),
+          ),
+          // Progress arc
+          CircularProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            strokeWidth: 4,
+            backgroundColor: Colors.transparent,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isOverLimit ? Colors.red.shade300 : Colors.white,
+            ),
+          ),
+          // Percentage text
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${(progress * 100).toInt()}%',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

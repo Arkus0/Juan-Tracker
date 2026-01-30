@@ -102,11 +102,10 @@ class CreateRoutineNotifier extends Notifier<Rutina> {
     state = state.copyWith(nombre: name);
   }
 
-  void addDay() {
-    // 🎯 MED-001: No usar nombres genéricos como "Día 1"
-    // Dejar vacío para que el usuario ponga un nombre descriptivo
-    // El placeholder en UI guiará con ejemplos como "Pecho", "Upper A", etc.
-    final newDia = Dia(nombre: '', ejercicios: []);
+  void addDay({String? suggestedName}) {
+    // 🎯 MED-001 / QW-06: No usar nombres genéricos
+    // Usar nombre sugerido si se proporciona, sino vacío para edición manual
+    final newDia = Dia(nombre: suggestedName ?? '', ejercicios: []);
     state = state.copyWith(dias: [...state.dias, newDia]);
   }
 
