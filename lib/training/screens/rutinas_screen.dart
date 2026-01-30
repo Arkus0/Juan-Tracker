@@ -71,7 +71,7 @@ class RutinasScreen extends ConsumerWidget {
 
   void _navigateToCreate(BuildContext context) {
     HapticFeedback.mediumImpact();
-    // TODO: Esta pantalla requiere parámetros para edición, mantener MaterialPageRoute hasta refactorizar
+    // Navegar a crear nueva rutina (sin parámetro = modo creación)
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const CreateEditRoutineScreen(),

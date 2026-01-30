@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/entry_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/home/presentation/today_screen.dart';
 import '../../features/diary/presentation/diary_screen.dart';
 import '../../features/foods/presentation/foods_screen.dart';
 import '../../features/weight/presentation/weight_screen.dart';
@@ -92,6 +93,15 @@ class AppRouter {
       GoRoute(
         path: entry,
         builder: (context, state) => const EntryScreen(),
+      ),
+
+      // Today screen (vista unificada HOY) - FASE 6
+      GoRoute(
+        path: '/today',
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const TodayScreen(),
+        ),
       ),
 
       // === NUTRICIÓN ===
@@ -270,6 +280,9 @@ extension GoRouterExtension on BuildContext {
 
   /// Navega a la pantalla de peso
   void goToWeight() => go(AppRouter.nutritionWeight);
+
+  /// Navega a Today Screen (vista HOY unificada)
+  void goToToday() => go('/today');
 
   /// Vuelve atrás
   void goBack() => pop();
