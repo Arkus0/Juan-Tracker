@@ -7,6 +7,7 @@ import '../../models/ejercicio.dart';
 import '../../models/library_exercise.dart';
 import '../../models/progression_engine_models.dart';
 import '../../models/serie_log.dart';
+import '../../../core/providers/information_density_provider.dart';
 import '../../providers/exercise_history_provider.dart';
 import '../../providers/focus_manager_provider.dart';
 import '../../providers/progression_provider.dart';
@@ -19,7 +20,7 @@ import '../../utils/design_system.dart';
 import '../../widgets/common/alternativas_dialog.dart';
 import 'advanced_options_modal.dart';
 import 'focused_set_row.dart';
-import 'progression_preview.dart'; // ConsequenceMessage, EmpatheticBanner, etc.
+import 'progression_suggestion_chip.dart'; // Nuevo chip de sugerencias de progresión
 import 'quick_actions_menu.dart'; // QuickActionsMenu for the FAB-style actions
 import 'session_modifiers.dart'; // AddSetButton
 import 'session_set_row.dart';
@@ -659,7 +660,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   }
 }
 
-class ExerciseCard extends StatelessWidget {
+class ExerciseCard extends ConsumerWidget {
   final int exerciseIndex;
   final Ejercicio exercise;
   final List<SerieLog>? historyLogs;
@@ -716,7 +717,9 @@ class ExerciseCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final density = ref.watch(informationDensityProvider);
+    final densityValues = DensityValues.forMode(density);
     final restSeconds = exercise.descansoSugeridoSeconds ?? 90;
 
     // 🆕 Calcular si todas las series están completadas
@@ -732,10 +735,10 @@ class ExerciseCard extends StatelessWidget {
     final isLastSet = currentSetNumber == totalSets && !allSetsCompleted;
 
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: 16,
-      ), // 🆕 Más separación entre ejercicios
-      // 🆕 Color diferente si está colapsado/completado
+      margin: EdgeInsets.only(
+        bottom: densityValues.cardMargin,
+      ), // Ajustado según densidad
+      // Color diferente si está colapsado/completado
       color: isCollapsed
           ? (allSetsCompleted ? const Color(0xFF1A2A1A) : AppColors.bgElevated)
           : null,
@@ -745,12 +748,16 @@ class ExerciseCard extends StatelessWidget {
             ? 'Ejercicio ${exercise.nombre} completado, tocar para expandir'
             : 'Ejercicio ${exercise.nombre}',
         child: InkWell(
-          // 🆕 Tap en header para colapsar/expandir
+          // Tap en header para colapsar/expandir
           onTap: isCollapsed ? onToggleCollapse : null,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            // 🆕 Más padding para aire visual
-            padding: EdgeInsets.all(isCollapsed ? 14 : 18),
+            // Padding ajustado según densidad
+            padding: EdgeInsets.all(
+              isCollapsed 
+                ? densityValues.cardPadding * 0.875 
+                : densityValues.cardPadding,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -791,7 +798,7 @@ class ExerciseCard extends StatelessWidget {
                           child: Text(
                             exercise.nombre.toUpperCase(),
                             style: AppTypography.sectionTitle.copyWith(
-                              fontSize: isCollapsed ? 16 : 17,
+                              fontSize: (isCollapsed ? 16 : 17) + densityValues.fontSizeOffset,
                               fontWeight: FontWeight.w700,
                               color: allSetsCompleted
                                   ? AppColors.completedGreen
@@ -804,10 +811,10 @@ class ExerciseCard extends StatelessWidget {
                         ),
                         // Check si completado
                         if (allSetsCompleted) ...[
-                          const SizedBox(width: 10),
-                          const Icon(
+                          SizedBox(width: 8 + densityValues.fontSizeOffset),
+                          Icon(
                             Icons.check_circle,
-                            size: 20,
+                            size: densityValues.iconSize - 4,
                             color: AppColors.completedGreen,
                           ),
                         ],
@@ -998,10 +1005,12 @@ class ExerciseCard extends StatelessWidget {
             ),
           ),
 
-        // Card de progresión v2 (si hay sugerencia)
+        // 🎯 Chip de progresión prominente y accionable (reemplaza el card anterior)
         if (progressionDecision != null) ...[
           const SizedBox(height: 12),
-          ProgressionPreviewCard(decision: progressionDecision!, compact: true),
+          ProgressionSuggestionChip(
+            exerciseIndex: exerciseIndex,
+          ),
         ],
 
         const SizedBox(height: 12),

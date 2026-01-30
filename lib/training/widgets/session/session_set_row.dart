@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/providers/information_density_provider.dart';
 import '../../models/progression_type.dart';
 import '../../models/serie_log.dart';
 import '../../screens/plate_calculator_dialog.dart';
@@ -74,7 +76,7 @@ class _SetRowStyles {
 /// - RepaintBoundary para inputs
 /// - Widgets const donde posible
 /// - Minimizado número de setState
-class SessionSetRow extends StatefulWidget {
+class SessionSetRow extends ConsumerStatefulWidget {
   final int index;
   final SerieLog log;
   final SerieLog? prevLog;
@@ -105,10 +107,10 @@ class SessionSetRow extends StatefulWidget {
   });
 
   @override
-  State<SessionSetRow> createState() => _SessionSetRowState();
+  ConsumerState<SessionSetRow> createState() => _SessionSetRowState();
 }
 
-class _SessionSetRowState extends State<SessionSetRow> {
+class _SessionSetRowState extends ConsumerState<SessionSetRow> {
   final FocusNode _weightFocusNode = FocusNode();
   final FocusNode _repsFocusNode = FocusNode();
 
@@ -207,6 +209,10 @@ class _SessionSetRowState extends State<SessionSetRow> {
 
   @override
   Widget build(BuildContext context) {
+    // Obtener valores de densidad
+    final density = ref.watch(informationDensityProvider);
+    final densityValues = DensityValues.forMode(density);
+
     // Determinar ghost values
     String? weightGhost;
     String? repsGhost;
@@ -221,7 +227,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
       repsGhost = widget.prevLog!.reps.toString();
     }
 
-    // Colores según estado - 🎯 REDISEÑO: Verde para completado
+    // Colores según estado - REDISEÑO: Verde para completado
     final isCompleted = widget.log.completed;
     final rowColor = isCompleted
         ? AppColors.success.withValues(alpha: 0.12)
@@ -230,7 +236,10 @@ class _SessionSetRowState extends State<SessionSetRow> {
     return GestureDetector(
       onLongPress: widget.onLongPress,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        padding: EdgeInsets.symmetric(
+          vertical: densityValues.dense ? 4 : 6,
+          horizontal: densityValues.horizontalPadding,
+        ),
         decoration: BoxDecoration(
           color: rowColor,
           borderRadius: BorderRadius.circular(8),

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/food_model.dart';
 import '../models/open_food_facts_model.dart';
 import '../services/food_cache_service.dart';
+import '../services/food_search_expander.dart';
 import '../services/open_food_facts_service.dart';
 
 /// Clase auxiliar para resultados con scoring
@@ -94,16 +95,18 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   late final OpenFoodFactsService _apiService;
   late final FoodCacheService _cacheService;
   late final Connectivity _connectivity;
+  late final FoodSearchExpander _searchExpander;
 
   @override
   ExternalSearchState build() {
     _apiService = ref.read(openFoodFactsServiceProvider);
     _cacheService = ref.read(foodCacheServiceProvider);
     _connectivity = Connectivity();
-    
+    _searchExpander = FoodSearchExpander();
+
     // Inicializar en background
     _init();
-    
+
     return const ExternalSearchState();
   }
 
@@ -378,8 +381,15 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
       final nameLower = product.name.toLowerCase();
       final brandLower = (product.brand ?? '').toLowerCase();
       final nameWords = nameLower.split(RegExp(r'\s+'));
-      
-      double score = 0;
+
+      // Calcular relevancia española (bonus por marcas españolas, penalización procesados)
+      final spanishScore = _searchExpander.calculateSpanishRelevance(
+        product.name,
+        product.brand,
+        query,
+      );
+
+      double score = spanishScore;
       int matchedWords = 0;
       
       for (final queryWord in queryWords) {
@@ -442,8 +452,18 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
         score *= (1 + (matchedWords - 1) * 0.5); // +50% por cada palabra extra
       }
       
-      // Solo incluir si tiene alguna coincidencia
-      if (score > 0) {
+      // Bonus por datos nutricionales completos
+      if (product.hasValidNutrition) {
+        score *= 1.1;
+      }
+
+      // Bonus por tener imagen
+      if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
+        score *= 1.05;
+      }
+
+      // Solo incluir si tiene alguna coincidencia significativa
+      if (score > 10) {
         scoredResults.add(_ScoredResult(product, score));
       }
     }
