@@ -297,14 +297,6 @@ class _MealSection extends ConsumerWidget {
                     ),
                   ),
                   
-                  // Botón añadir
-                  IconButton(
-                    onPressed: () => _showAddEntry(context, ref, mealType),
-                    icon: const Icon(Icons.add_circle),
-                    color: colors.primary,
-                    tooltip: 'Añadir a ${mealType.displayName}',
-                  ),
-                  
                   // Icono expandir/colapsar
                   Icon(
                     isExpanded ? Icons.expand_less : Icons.expand_more,

@@ -1,3 +1,5 @@
+import '../services/adaptive_coach_service.dart';
+
 /// Modelo de dominio para objetivos diarios versionados
 class TargetsModel {
   final String id;
@@ -58,6 +60,29 @@ class TargetsModel {
     final f = fatTarget ?? 0;
     // 4 kcal/g de proteína y carbs, 9 kcal/g de grasa
     return ((p * 4) + (c * 4) + (f * 9)).round();
+  }
+
+  /// Crea un TargetsModel desde un CoachPlan
+  /// 
+  /// Convierte el plan del Coach Adaptativo al formato tradicional de targets
+  /// para compatibilidad con UI existente.
+  factory TargetsModel.fromCoachPlan({
+    required CoachPlan coachPlan,
+    required int calculatedCalories,
+  }) {
+    // Importamos aquí para evitar dependencia circular
+    // ignore: unused_import
+    final macroGrams = coachPlan.macroPreset.calculateGrams(calculatedCalories);
+    
+    return TargetsModel(
+      id: coachPlan.id,
+      validFrom: coachPlan.startDate,
+      kcalTarget: calculatedCalories,
+      proteinTarget: macroGrams.protein.toDouble(),
+      carbsTarget: macroGrams.carbs.toDouble(),
+      fatTarget: macroGrams.fat.toDouble(),
+      notes: coachPlan.notes ?? 'Generado por Coach Adaptativo',
+    );
   }
 
   /// Devuelve el objetivo activo para una fecha dada desde una lista ordenada

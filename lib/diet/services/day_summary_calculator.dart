@@ -1,4 +1,5 @@
 import '../models/models.dart';
+import 'adaptive_coach_service.dart';
 
 /// {@template day_summary_calculator}
 /// Servicio puro de cálculo para resúmenes diarios.
@@ -65,6 +66,20 @@ class DaySummaryCalculator {
     }
 
     return null;
+  }
+
+  /// Calcula el TDEE desde un CoachPlan.
+  /// 
+  /// Usa el currentKcalTarget si existe, o calcula desde initialTdeeEstimate
+  /// y el ajuste diario del plan.
+  double calculateTDEEFromCoachPlan(CoachPlan plan) {
+    // Si hay un target actual configurado, usarlo
+    if (plan.currentKcalTarget != null) {
+      return plan.currentKcalTarget!.toDouble();
+    }
+    
+    // Si no, calcular desde el TDEE inicial + ajuste diario
+    return (plan.initialTdeeEstimate + plan.dailyAdjustmentKcal).toDouble();
   }
 }
 
