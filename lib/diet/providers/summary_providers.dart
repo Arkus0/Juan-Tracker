@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/database_provider.dart';
+import '../../diet/providers/coach_providers.dart';
 import '../models/models.dart';
 import '../services/day_summary_calculator.dart';
 
@@ -45,6 +46,32 @@ final dayTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
   return calculator.findActiveTargetForDate(targets, date);
 });
 
+/// Provider que obtiene targets desde CoachPlan si existe, o desde targets tradicionales.
+/// 
+/// Convierte CoachPlan a TargetsModel para mantener compatibilidad con UI existente.
+final activeTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
+  // Primero intentar targets tradicionales
+  final traditionalTargets = await ref.watch(dayTargetsProvider.future);
+  if (traditionalTargets != null) {
+    return traditionalTargets;
+  }
+  
+  // Si no hay targets tradicionales, usar CoachPlan
+  final coachPlan = ref.read(coachPlanProvider);
+  if (coachPlan == null) {
+    return null;
+  }
+  
+  // Convertir CoachPlan a TargetsModel
+  final calculator = ref.watch(daySummaryCalculatorProvider);
+  final tdee = calculator.calculateTDEEFromCoachPlan(coachPlan);
+  
+  return TargetsModel.fromCoachPlan(
+    coachPlan: coachPlan,
+    calculatedCalories: tdee.round(),
+  );
+});
+
 /// Provider de objetivos actuales (para hoy).
 /// 
 /// Alias conveniente para [dayTargetsProvider] con fecha actual.
@@ -62,12 +89,12 @@ final currentTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
 /// Este es el provider principal para la UI de "budget".
 /// Combina:
 /// - Totales consumidos del día
-/// - Target activo para la fecha
+/// - Target activo para la fecha (CoachPlan o targets tradicionales)
 /// - Progreso calculado
 final daySummaryProvider = Provider<AsyncValue<DaySummary>>((ref) {
   final date = ref.watch(selectedDateProvider);
   final totalsAsync = ref.watch(dailyTotalsProvider);
-  final targetsAsync = ref.watch(dayTargetsProvider);
+  final targetsAsync = ref.watch(activeTargetsProvider);
   final calculator = ref.watch(daySummaryCalculatorProvider);
 
   // Combinar ambos streams

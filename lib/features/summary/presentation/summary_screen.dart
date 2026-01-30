@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/widgets/home_button.dart';
+import '../../../diet/providers/coach_providers.dart';
 import '../../../diet/providers/diet_providers.dart';
 import '../../../diet/services/day_summary_calculator.dart';
 
@@ -22,6 +23,7 @@ class SummaryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(daySummaryProvider);
     final selectedDate = ref.watch(selectedDateProvider);
+    final coachPlan = ref.watch(coachPlanProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -36,6 +38,7 @@ class SummaryScreen extends ConsumerWidget {
         data: (summary) => _SummaryContent(
           summary: summary,
           selectedDate: selectedDate,
+          coachPlan: coachPlan,
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, st) => Center(
@@ -50,10 +53,12 @@ class SummaryScreen extends ConsumerWidget {
 class _SummaryContent extends StatelessWidget {
   final DaySummary summary;
   final DateTime selectedDate;
+  final dynamic coachPlan; // CoachPlan?
 
   const _SummaryContent({
     required this.summary,
     required this.selectedDate,
+    this.coachPlan,
   });
 
   @override
@@ -71,9 +76,15 @@ class _SummaryContent extends StatelessWidget {
           _BudgetCard(summary: summary),
           const SizedBox(height: 24),
 
-          // Si no hay targets, mostrar CTA prominente
-          if (!summary.hasTargets) ...[
+          // Si no hay targets ni coach, mostrar CTA
+          if (!summary.hasTargets && coachPlan == null) ...[
             _CreateTargetsCTA(),
+            const SizedBox(height: 24),
+          ],
+          
+          // Si hay coach plan, mostrar indicador
+          if (coachPlan != null) ...[
+            _CoachPlanIndicator(plan: coachPlan),
             const SizedBox(height: 24),
           ],
 
@@ -409,6 +420,75 @@ class _CreateTargetsCTA extends StatelessWidget {
                 color: theme.colorScheme.primary,
                 size: 16,
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Indicador de que se está usando el Coach Adaptativo.
+class _CoachPlanIndicator extends StatelessWidget {
+  final dynamic plan; // CoachPlan
+
+  const _CoachPlanIndicator({required this.plan});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      color: colorScheme.secondaryContainer.withAlpha(128),
+      elevation: 0,
+      child: InkWell(
+        onTap: () => context.pushTo(AppRouter.nutritionCoach),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.auto_graph,
+                  color: colorScheme.onSecondary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Coach Adaptativo',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      plan.goalDescription,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: colorScheme.secondary,
+                size: 14,
+            ),
             ],
           ),
         ),

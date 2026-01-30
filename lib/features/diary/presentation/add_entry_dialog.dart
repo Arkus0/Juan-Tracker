@@ -18,18 +18,11 @@ class AddEntryDialog extends ConsumerStatefulWidget {
 class _AddEntryDialogState extends ConsumerState<AddEntryDialog> {
   late final TextEditingController _amountController;
   ServingUnit _selectedUnit = ServingUnit.grams;
-  MealType _mealType = MealType.snack;
 
   @override
   void initState() {
     super.initState();
     _amountController = TextEditingController(text: '100');
-    
-    // Usar mealType seleccionado si existe
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final selectedMeal = ref.read(selectedMealTypeProvider);
-      setState(() => _mealType = selectedMeal);
-    });
   }
 
   @override
@@ -50,13 +43,6 @@ class _AddEntryDialogState extends ConsumerState<AddEntryDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Selector de tipo de comida
-            _MealTypeSelector(
-              selected: _mealType,
-              onChanged: (v) => setState(() => _mealType = v),
-            ),
-            const SizedBox(height: 16),
-
             // Cantidad y unidad
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,57 +143,19 @@ class _AddEntryDialogState extends ConsumerState<AddEntryDialog> {
     final date = ref.read(selectedDateProvider);
     final existingEntry = ref.read(editingEntryProvider);
 
+    // Usar el mealType seleccionado en el provider
+    final mealType = ref.read(selectedMealTypeProvider);
+    
     final entry = DiaryEntryModel.fromFood(
       id: existingEntry?.id ?? const Uuid().v4(),
       date: date,
-      mealType: _mealType,
+      mealType: mealType,
       food: widget.food,
       amount: amount,
       unit: _selectedUnit,
     );
 
     Navigator.of(context).pop(entry);
-  }
-}
-
-/// Selector de tipo de comida
-class _MealTypeSelector extends StatelessWidget {
-  final MealType selected;
-  final ValueChanged<MealType> onChanged;
-
-  const _MealTypeSelector({
-    required this.selected,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<MealType>(
-      selected: {selected},
-      onSelectionChanged: (set) => onChanged(set.first),
-      segments: const [
-        ButtonSegment(
-          value: MealType.breakfast,
-          label: Text('Desayuno'),
-          icon: Icon(Icons.wb_sunny_outlined),
-        ),
-        ButtonSegment(
-          value: MealType.lunch,
-          label: Text('Comida'),
-          icon: Icon(Icons.wb_cloudy_outlined),
-        ),
-        ButtonSegment(
-          value: MealType.dinner,
-          label: Text('Cena'),
-          icon: Icon(Icons.nights_stay_outlined),
-        ),
-        ButtonSegment(
-          value: MealType.snack,
-          label: Text('Snack'),
-          icon: Icon(Icons.cookie_outlined),
-        ),
-      ],
-    );
   }
 }
 
@@ -315,7 +263,6 @@ class _QuickAddDialogState extends ConsumerState<QuickAddDialog> {
   late final TextEditingController _proteinController;
   late final TextEditingController _carbsController;
   late final TextEditingController _fatController;
-  MealType _mealType = MealType.snack;
 
   @override
   void initState() {
@@ -325,11 +272,6 @@ class _QuickAddDialogState extends ConsumerState<QuickAddDialog> {
     _proteinController = TextEditingController();
     _carbsController = TextEditingController();
     _fatController = TextEditingController();
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final selectedMeal = ref.read(selectedMealTypeProvider);
-      setState(() => _mealType = selectedMeal);
-    });
   }
 
   @override
@@ -351,13 +293,6 @@ class _QuickAddDialogState extends ConsumerState<QuickAddDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Selector de tipo de comida
-            _MealTypeSelector(
-              selected: _mealType,
-              onChanged: (v) => setState(() => _mealType = v),
-            ),
-            const SizedBox(height: 16),
-
             // Nombre
             TextField(
               controller: _nameController,
@@ -444,11 +379,12 @@ class _QuickAddDialogState extends ConsumerState<QuickAddDialog> {
 
     final date = ref.read(selectedDateProvider);
     final existingEntry = ref.read(editingEntryProvider);
+    final mealType = ref.read(selectedMealTypeProvider);
 
     final entry = DiaryEntryModel.quickAdd(
       id: existingEntry?.id ?? const Uuid().v4(),
       date: date,
-      mealType: _mealType,
+      mealType: mealType,
       name: name,
       kcal: kcal,
       protein: double.tryParse(_proteinController.text),

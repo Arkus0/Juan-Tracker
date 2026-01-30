@@ -3,10 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
+import '../../../diet/services/food_label_ocr_service.dart';
+import '../../../diet/services/food_label_parser_service.dart';
+import '../../diary/presentation/barcode_scanner_screen.dart';
+import '../../diary/presentation/external_food_search_screen.dart';
 
 /// Pantalla de biblioteca de alimentos
 /// Permite ver, buscar y añadir alimentos a la base de datos
@@ -25,6 +31,9 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
 
   // Cache del Future para evitar rebuilds innecesarios
   Future<List<FoodModel>>? _foodsFuture;
+  
+  // Estado del FAB expandible
+  bool _isFabExpanded = false;
 
   @override
   void initState() {
@@ -138,10 +147,12 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddFoodDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Añadir'),
+      floatingActionButton: _SmartImportFAB(
+        isExpanded: _isFabExpanded,
+        onToggle: () => setState(() => _isFabExpanded = !_isFabExpanded),
+        onManualAdd: () => _showAddFoodDialog(context),
+        onBarcodeScan: () => _scanBarcode(context),
+        onOcrScan: () => _scanFoodLabel(context),
       ),
     );
   }
@@ -163,6 +174,97 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
     // Fix: Refrescar lista si se añadió un alimento exitosamente
     if (result == true && mounted) {
       setState(() => _refreshFoodsFuture());
+    }
+  }
+
+  Future<void> _scanBarcode(BuildContext context) async {
+    final barcode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+
+    if (barcode != null && mounted) {
+      // Navegar a búsqueda externa
+      if (context.mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const ExternalFoodSearchScreen(returnFoodOnSelect: true),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _scanFoodLabel(BuildContext context) async {
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Escanear etiqueta'),
+        content: const Text('¿Desde dónde quieres escanear?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(ImageSource.camera),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Icon(Icons.camera_alt), SizedBox(width: 8), Text('Cámara')],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(ImageSource.gallery),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Icon(Icons.photo_library), SizedBox(width: 8), Text('Galería')],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null || !mounted) return;
+
+    try {
+      final scanResult = await FoodLabelOcrService.instance.scanLabel(source);
+      
+      if (!mounted) return;
+      
+      if (!scanResult.hasText) {
+        if (context.mounted) {
+          AppSnackbar.show(context, message: 'No se pudo leer texto de la imagen');
+        }
+        return;
+      }
+
+      // Parsear la etiqueta automáticamente
+      final parser = FoodLabelParserService.instance;
+      final parsed = parser.parse(scanResult.fullText);
+      
+      // Convertir a por 100g si es necesario
+      final per100g = parsed.isPerServing && parsed.servingSize > 0
+          ? parser.convertToPer100g(parsed)
+          : parsed;
+
+      if (!context.mounted) return;
+
+      // Mostrar diálogo para crear alimento con valores extraídos
+      final foodName = per100g.name.isNotEmpty ? per100g.name : 'Alimento escaneado';
+      
+      final result = await showDialog<FoodModel>(
+        context: context,
+        builder: (ctx) => _AddFoodDialog(
+          initialName: foodName,
+          initialKcal: per100g.hasData ? per100g.kcal : null,
+          initialProtein: per100g.hasData ? per100g.protein : null,
+          initialCarbs: per100g.hasData ? per100g.carbs : null,
+          initialFat: per100g.hasData ? per100g.fat : null,
+        ),
+      );
+
+      if (result != null && mounted) {
+        setState(() => _refreshFoodsFuture());
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppSnackbar.show(context, message: 'Error al escanear: $e');
+      }
     }
   }
 }
@@ -493,7 +595,19 @@ class _InfoRow extends StatelessWidget {
 
 /// Diálogo para añadir nuevo alimento
 class _AddFoodDialog extends ConsumerStatefulWidget {
-  const _AddFoodDialog();
+  final String? initialName;
+  final int? initialKcal;
+  final double? initialProtein;
+  final double? initialCarbs;
+  final double? initialFat;
+
+  const _AddFoodDialog({
+    this.initialName,
+    this.initialKcal,
+    this.initialProtein,
+    this.initialCarbs,
+    this.initialFat,
+  });
 
   @override
   ConsumerState<_AddFoodDialog> createState() => _AddFoodDialogState();
@@ -501,14 +615,35 @@ class _AddFoodDialog extends ConsumerStatefulWidget {
 
 class _AddFoodDialogState extends ConsumerState<_AddFoodDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _brandController = TextEditingController();
-  final _kcalController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _carbsController = TextEditingController();
-  final _fatController = TextEditingController();
-  final _portionNameController = TextEditingController();
-  final _portionGramsController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _brandController;
+  late final TextEditingController _kcalController;
+  late final TextEditingController _proteinController;
+  late final TextEditingController _carbsController;
+  late final TextEditingController _fatController;
+  late final TextEditingController _portionNameController;
+  late final TextEditingController _portionGramsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+    _brandController = TextEditingController();
+    _kcalController = TextEditingController(
+      text: widget.initialKcal?.toString() ?? '',
+    );
+    _proteinController = TextEditingController(
+      text: widget.initialProtein?.toStringAsFixed(1) ?? '',
+    );
+    _carbsController = TextEditingController(
+      text: widget.initialCarbs?.toStringAsFixed(1) ?? '',
+    );
+    _fatController = TextEditingController(
+      text: widget.initialFat?.toStringAsFixed(1) ?? '',
+    );
+    _portionNameController = TextEditingController();
+    _portionGramsController = TextEditingController();
+  }
 
   @override
   void dispose() {
@@ -680,5 +815,130 @@ class _AddFoodDialogState extends ConsumerState<_AddFoodDialog> {
         ),
       );
     }
+  }
+}
+
+/// FAB expandible con opciones de importación inteligente
+class _SmartImportFAB extends StatelessWidget {
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final VoidCallback onManualAdd;
+  final VoidCallback onBarcodeScan;
+  final VoidCallback onOcrScan;
+
+  const _SmartImportFAB({
+    required this.isExpanded,
+    required this.onToggle,
+    required this.onManualAdd,
+    required this.onBarcodeScan,
+    required this.onOcrScan,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (isExpanded) ...[
+          _FabOption(
+            icon: Icons.edit,
+            label: 'Manual',
+            onTap: () {
+              onToggle();
+              onManualAdd();
+            },
+          ),
+          const SizedBox(height: 8),
+          _FabOption(
+            icon: Icons.qr_code_scanner,
+            label: 'Código de barras',
+            onTap: () {
+              onToggle();
+              onBarcodeScan();
+            },
+          ),
+          const SizedBox(height: 8),
+          _FabOption(
+            icon: Icons.document_scanner,
+            label: 'Escanear etiqueta',
+            onTap: () {
+              onToggle();
+              onOcrScan();
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+        FloatingActionButton(
+          onPressed: onToggle,
+          backgroundColor: colors.primary,
+          foregroundColor: colors.onPrimary,
+          child: AnimatedRotation(
+            turns: isExpanded ? 0.125 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Opción individual del FAB expandible
+class _FabOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  const _FabOption({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color ?? theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(25),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              icon,
+              size: 20,
+              color: color ?? theme.colorScheme.primary,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
