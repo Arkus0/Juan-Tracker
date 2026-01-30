@@ -1,113 +1,64 @@
 # Juan Tracker
+### Tu cuerpo es ciencia. Tu tracker también debería serlo.
 
-[![Android CI](https://github.com/Arkus0/Juan-Tracker/actions/workflows/android-ci.yml/badge.svg)](https://github.com/Arkus0/Juan-Tracker/actions/workflows/android-ci.yml) [![Preview Web](https://github.com/Arkus0/Juan-Tracker/actions/workflows/preview-web.yml/badge.svg)](https://github.com/Arkus0/Juan-Tracker/actions/workflows/preview-web.yml)
+Juan Tracker no es otra app de listas. Es un ecosistema integral de **Nutrición Adaptativa** y **Entrenamiento de Alto Rendimiento** diseñado para atletas y personas serias que buscan resultados medibles.
 
-Proyecto Flutter Android-first para tracking personal de nutrición y entrenamiento, con Riverpod 3 y una arquitectura limpia mínima. ✅
-
-## TL;DR
-App Android-first para registrar comida y entrenamientos, analizar progreso y usar OCR/voz para entrada rápida.
+Sin suscripciones. Sin datos en la nube. **100% Tuyo.**
 
 ---
 
-## Características
-- Diario de alimentos con búsqueda, porciones y soporte para recetas; totales calóricos diarios y objetivos (TDEE). 🔢
-- Registro de peso corporal con historial y gráficos. ⚖️
-- Resumen de metas calóricas (TDEE) y seguimiento de macronutrientes. 🥗
-- Rutinas y sesiones de entrenamiento con registro de ejercicios, series (peso, repeticiones, RPE) y deshacer última serie. 🏋️‍♂️
-- Entrada por voz para agilizar registro de sets y pesos. 🗣️
-- Importación de rutinas vía OCR (ML Kit) desde imágenes/PDF. 📸
-- Temporizador de descanso y notificaciones locales durante sesiones. ⏱️🔔
-- Análisis visual con gráficos y calendario para revisar progreso. 📈
-- Persistencia local con Drift (SQLite) y state management con Riverpod. 🗄️
+## 🥗 Nutrición Inteligente: El "Coach" de Bolsillo
 
-## Flujo de uso (ejemplo)
-1. Abre la app (pantalla inicial `EntryScreen` → `HomeScreen`).
-2. En `Diario` añade alimentos o registra peso (`DiaryScreen`).
-3. Selecciona `ENTRENAR` y elige una rutina o crea una sesión libre (`TrainingHomeScreen`).
-4. Inicia `TrainingSessionScreen`, registra series manualmente o por voz, usa el temporizador de descanso.
-5. Revisa el historial y gráficos en la sección de análisis.
+La mayoría de apps te dan una calculadora estática. Juan Tracker aprende de ti.
 
----
+![Dashboard de Nutrición y Resumen Diario](https://placehold.co/800x400/EEE/31343C?text=Captura+Dashboard+Nutricion)
 
-## Instalación
-- Requisitos: Flutter 3.10.7 (comprueba con `flutter --version`).
-- Instala dependencias:
+### Coach Adaptativo (MacroFactor-style)
+Tu metabolismo no es fijo, cambia cada día. Nuestro **Algoritmo Adaptativo** analiza tu ingesta calórica y tus variaciones de peso para calcular tu **Gasto Energético Real (TDEE)**.
+*   **Ajuste Semanal:** El sistema actualiza tus objetivos de calorías y macros automáticamente para mantenerte en el camino hacia tu meta (perder, mantener o ganar).
+*   **Sin Juicios:** El algoritmo es neutral. Si te pasas un día, simplemente recalcula.
 
-```bash
-flutter pub get
-```
+### Matemáticas, no Ruido
+El peso corporal fluctúa por agua, sodio y estrés.
+*   **Tendencia Real:** Usamos modelos estadísticos avanzados (Media Móvil Exponencial y Filtros de Kalman) para mostrarte tu **Tendencia de Peso**, ignorando las fluctuaciones diarias irrelevantes.
+*   **Claridad:** Sabrás si realmente estás perdiendo grasa o solo reteniendo líquidos.
 
-## Ejecutar
-### Android
-1. Conecta un dispositivo Android o inicia un emulador.
-2. Ejecuta:
-
-```bash
-flutter run -d android
-```
-
-### Web (local)
-
-```bash
-flutter run -d chrome
-```
-
-## Codegen (Drift)
-- Generar código tras modificar tablas o anotaciones:
-
-```bash
-dart run build_runner build --delete-conflicting-outputs
-```
-
-- Modo watch (desarrollo):
-
-```bash
-dart run build_runner watch --delete-conflicting-outputs
-```
-
-## Tests y calidad
-- Ejecutar tests unitarios y de widgets:
-
-```bash
-flutter test
-```
-
-- Analizar y formatear antes de commitear:
-
-```bash
-flutter analyze
-
-dart format lib/ test/
-```
-
-- Checklist recomendado antes de abrir un PR: `flutter analyze`, `flutter test`, `dart format`, `dart run build_runner build --delete-conflicting-outputs`.
-
-## Contribuir
-Lee `CONTRIBUTING.md` para el flujo de contribución, checklist y buenas prácticas. 🙌
-
-## Documentación
-- Documentación de diseño y porting: `docs/PORTING_SPEC.md` y `docs/TRAINING_MVP_NOTES.md`.
-- Información técnica y pautas para agentes: `AGENTS.md`.
+### Registro sin Fricción
+Registrar comida no debería ser un trabajo.
+*   📸 **OCR de Etiquetas:** ¿No encuentras un producto? Haz una foto a la tabla nutricional y la app lo digitaliza en segundos.
+*   🗣️ **Entrada por Voz:** Dicta tus comidas y pesos rápidamente.
+*   📶 **Búsqueda Offline & Online:** Base de datos local ultrarrápida + integración con Open Food Facts.
 
 ---
 
-## Pasos manuales (Android)
-- Revisa permisos de cámara/microfono si activas OCR o voz.
-- Si usas temporizadores con notificaciones, valida permisos y servicios en Android.
+## 🏋️‍♂️ Entrenamiento de Precisión
 
-## Build web (release)
+Diseñado para que dejes el móvil y levantes el peso.
 
-```bash
-flutter build web --release
-```
+![Sesión de Entrenamiento y Timer](https://placehold.co/800x400/222/FFFFFF?text=Captura+Entrenamiento+Focus)
 
-El artefacto final queda en `build/web`.
+### Modo "Focus"
+*   **Timer Nativo Indestructible:** Un temporizador de descanso que funciona en segundo plano, respeta tu música (usa audio focus nativo) y te notifica sin fallos.
+*   **Interfaz Oscura:** Un diseño específico de alto contraste para el gimnasio, optimizado para batería y legibilidad.
 
----
-
-## Licencia
-Este proyecto está bajo la licencia **MIT** — ver el archivo `LICENSE` en la raíz del repositorio.
+### Gestión de Rutinas con IA
+*   **Importación Visual:** ¿Tienes tu rutina en un PDF o una foto de Instagram? Juan Tracker extrae los ejercicios y series automáticamente usando visión artificial.
+*   **Historial Completo:** Consulta qué peso levantaste la última vez mientras entrenas, con gráficas de sobrecarga progresiva al instante.
 
 ---
 
-*Última actualización: Enero 2026*
+## 🛡️ Privacidad y Rendimiento
+
+En un mundo de suscripciones y venta de datos, Juan Tracker es una fortaleza.
+
+*   **Offline-First:** La app funciona perfectamente sin internet. En el sótano del gimnasio o en modo avión.
+*   **Base de Datos Local:** Tus datos (peso, fotos, diario) viven en tu dispositivo. Nadie más tiene acceso a ellos.
+*   **Android Nativo:** Optimizada para el ecosistema Android, aprovechando sensores, haptics y servicios en segundo plano para una experiencia fluida.
+
+---
+
+### ¿Listo para tomar el control?
+
+Juan Tracker es Open Source. Úsalo, modifícalo, hazlo tuyo.
+
+> *Para desarrolladores: Si buscas información sobre la arquitectura (Clean Architecture, Riverpod, Drift), instalación o cómo contribuir, consulta el archivo [`README_TECHNICAL.md`](./README_TECHNICAL.md) o [`AGENTS.md`](./AGENTS.md).*
