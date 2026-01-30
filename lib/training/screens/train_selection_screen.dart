@@ -238,8 +238,41 @@ class _ZeroThoughtHome extends StatelessWidget {
     required this.onAlternativeSelected,
   });
 
+  // 🎯 HIGH-001: Color del icono basado en urgencia
+  Color _getUrgencyIconColor() {
+    switch (suggestion.urgency) {
+      case WorkoutUrgency.rest:
+        return AppColors.success; // Verde para descanso
+      case WorkoutUrgency.ready:
+        return AppColors.textSecondary;
+      case WorkoutUrgency.shouldTrain:
+        return AppColors.goldAccent; // Oro para "deberías"
+      case WorkoutUrgency.urgent:
+        return AppColors.bloodRed; // Rojo para urgente
+      case WorkoutUrgency.fresh:
+        return AppColors.actionPrimary;
+    }
+  }
+
+  // 🎯 HIGH-001: Icono basado en estado
+  IconData _getStateIcon() {
+    if (suggestion.isRestDay) {
+      return Icons.self_improvement_rounded; // Meditación/descanso
+    }
+    switch (suggestion.urgency) {
+      case WorkoutUrgency.urgent:
+        return Icons.priority_high_rounded;
+      case WorkoutUrgency.fresh:
+        return Icons.rocket_launch_rounded;
+      default:
+        return Icons.fitness_center_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isRestDay = suggestion.isRestDay;
+
     return Column(
       children: [
         // ═══════════════════════════════════════════════════════════════════
@@ -256,12 +289,11 @@ class _ZeroThoughtHome extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Icono: Reconocimiento visual instantáneo
+                    // 🎯 HIGH-001: Icono dinámico según urgencia
                     Icon(
-                      Icons.fitness_center_rounded,
+                      _getStateIcon(),
                       size: showAlternatives ? 48 : 72,
-                      // 🎯 REDISEÑO: Rojo solo para CTA, icono en gris
-                      color: AppColors.textSecondary,
+                      color: _getUrgencyIconColor(),
                     ),
 
                     SizedBox(height: showAlternatives ? 16 : 32),
@@ -285,59 +317,129 @@ class _ZeroThoughtHome extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
 
+                    // 🎯 HIGH-001: Subtítulo contextual adicional
+                    if (suggestion.contextualSubtitle != null && !showAlternatives) ...[
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          suggestion.contextualSubtitle!,
+                          style: AppTypography.meta.copyWith(
+                            color: isRestDay
+                                ? AppColors.success.withValues(alpha: 0.8)
+                                : AppColors.textTertiary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+
                     SizedBox(height: showAlternatives ? 24 : 48),
 
                     // ═══════════════════════════════════════════════════════
-                    // CTA ÚNICO GIGANTE: Cero decisiones
+                    // CTA: Diferente para día de descanso vs entrenamiento
                     // ═══════════════════════════════════════════════════════
-                    SizedBox(
-                      width: double.infinity,
-                      height: 64,
-                      child: ElevatedButton(
-                        onPressed: onStart,
-                        style: ElevatedButton.styleFrom(
-                          // 🎯 REDISEÑO: Usar colores del sistema
-                          backgroundColor: AppColors.actionPrimary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.xl),
+                    if (isRestDay) ...[
+                      // 🎯 HIGH-001: UI de día de descanso
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.xl),
+                          border: Border.all(
+                            color: AppColors.success.withValues(alpha: 0.3),
                           ),
-                          elevation: 0,
                         ),
-                        child: Text(
-                          'ENTRENAR',
-                          style: AppTypography.buttonPrimary,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Escape claro: No está atrapado
-                    GestureDetector(
-                      onTap: onToggleAlternatives,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Column(
                           children: [
                             Text(
-                              showAlternatives ? 'Ocultar opciones' : 'Cambiar',
-                              style: AppTypography.label,
+                              'RECUPERACIÓN ACTIVA',
+                              style: AppTypography.button.copyWith(
+                                color: AppColors.success,
+                              ),
                             ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              showAlternatives
-                                  ? Icons.keyboard_arrow_up_rounded
-                                  : Icons.keyboard_arrow_down_rounded,
-                              color: AppColors.textTertiary,
-                              size: 20,
+                            const SizedBox(height: 8),
+                            Text(
+                              'Duerme bien, hidrátate, come proteína',
+                              style: AppTypography.meta.copyWith(
+                                color: AppColors.success.withValues(alpha: 0.8),
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      // Opción de entrenar de todas formas
+                      GestureDetector(
+                        onTap: onToggleAlternatives,
+                        child: Text(
+                          'Entrenar de todas formas',
+                          style: AppTypography.label.copyWith(
+                            color: AppColors.textTertiary,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      // CTA normal para días de entrenamiento
+                      SizedBox(
+                        width: double.infinity,
+                        height: 64,
+                        child: ElevatedButton(
+                          onPressed: onStart,
+                          style: ElevatedButton.styleFrom(
+                            // 🎯 HIGH-001: Color basado en urgencia
+                            backgroundColor: suggestion.urgency == WorkoutUrgency.urgent
+                                ? AppColors.bloodRed
+                                : AppColors.actionPrimary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.xl),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            suggestion.urgency == WorkoutUrgency.urgent
+                                ? '¡A ENTRENAR!'
+                                : 'ENTRENAR',
+                            style: AppTypography.buttonPrimary,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Escape claro: No está atrapado
+                      GestureDetector(
+                        onTap: onToggleAlternatives,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                showAlternatives ? 'Ocultar opciones' : 'Cambiar',
+                                style: AppTypography.label,
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                showAlternatives
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                color: AppColors.textTertiary,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

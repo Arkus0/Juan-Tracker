@@ -84,7 +84,8 @@ class CreateRoutineNotifier extends Notifier<Rutina> {
   Rutina _initialState() {
     final base = _existingRutina?.deepCopy() ?? _createEmptyRoutine();
     if (_existingRutina == null) {
-      final newDia = Dia(nombre: 'D?a ${base.dias.length + 1}', ejercicios: []);
+      // 🎯 MED-001: Nombre vacío - el placeholder guiará al usuario
+      final newDia = Dia(nombre: '', ejercicios: []);
       return base.copyWith(dias: [...base.dias, newDia]);
     }
     return base;
@@ -102,7 +103,10 @@ class CreateRoutineNotifier extends Notifier<Rutina> {
   }
 
   void addDay() {
-    final newDia = Dia(nombre: 'Día ${state.dias.length + 1}', ejercicios: []);
+    // 🎯 MED-001: No usar nombres genéricos como "Día 1"
+    // Dejar vacío para que el usuario ponga un nombre descriptivo
+    // El placeholder en UI guiará con ejemplos como "Pecho", "Upper A", etc.
+    final newDia = Dia(nombre: '', ejercicios: []);
     state = state.copyWith(dias: [...state.dias, newDia]);
   }
 
