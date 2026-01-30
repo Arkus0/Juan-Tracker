@@ -147,6 +147,14 @@ class SessionRepository {
   Stream<List<Sesion>> watchSesionesHistory({int limit = 50}) {
     return ((db.select(db.sessions)
               ..where((s) => s.completedAt.isNotNull())
+              // Ordenar por fecha de finalización en orden descendente
+              // para que el limit devuelva siempre las sesiones más recientes
+              ..orderBy([
+                (s) => OrderingTerm(
+                  expression: s.completedAt,
+                  mode: OrderingMode.desc,
+                ),
+              ])
               ..limit(limit))
             .join([
               leftOuterJoin(

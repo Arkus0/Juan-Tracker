@@ -227,10 +227,12 @@ class StrengthTrend extends ConsumerWidget {
 
     return Column(
       children: [
-        SizedBox(
-          height: 200,
-          child: LineChart(
-            LineChartData(
+        // PC-002: RepaintBoundary para aislar renders del gráfico
+        RepaintBoundary(
+          child: SizedBox(
+            height: 200,
+            child: LineChart(
+              LineChartData(
               minY: minY,
               maxY: maxY,
               gridData: FlGridData(
@@ -340,8 +342,9 @@ class StrengthTrend extends ConsumerWidget {
                 ),
               ),
             ),
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeInOutCubic,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOutCubic,
+            ),
           ),
         ),
 

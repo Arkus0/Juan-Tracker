@@ -4,15 +4,13 @@ import 'package:intl/intl.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/feedback/haptics.dart';
+import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
-import 'package:juan_tracker/training/training_shell.dart';
-import 'home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/models/weighin_model.dart';
 import 'package:juan_tracker/training/widgets/analysis/streak_counter.dart';
 import 'package:juan_tracker/training/providers/training_provider.dart';
-import 'package:juan_tracker/features/diary/presentation/food_search_screen.dart';
 
 /// Pantalla de entrada principal con selección de modo
 class EntryScreen extends StatelessWidget {
@@ -74,70 +72,38 @@ class EntryScreen extends StatelessWidget {
     // 🎯 MED-004: Usar Stack para posicionar accesos rápidos en thumb zone (bottom)
     return Scaffold(
       backgroundColor: colors.surface,
+      // UX-005: Edge-to-edge support
+      extendBodyBehindAppBar: true,
       body: SafeArea(
-        child: Stack(
-          children: [
-            // Contenido scrollable
-            CustomScrollView(
-              slivers: [
-                // Header con saludo
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Logo/Icono animado
-                        _AnimatedLogo(),
-                        const SizedBox(height: 24),
-                        Text(
-                          _greeting,
-                          style: AppTypography.displaySmall.copyWith(
-                            color: colors.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _currentDate.toUpperCase(),
-                          style: AppTypography.labelLarge.copyWith(
-                            color: colors.onSurfaceVariant,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        // 🎯 MED-003: Warm Start hint
-                        if (_warmStartHint.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colors.primaryContainer.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.lightbulb_outline,
-                                  size: 16,
-                                  color: colors.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    _warmStartHint,
-                                    style: AppTypography.labelSmall.copyWith(
-                                      color: colors.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
+        // UX-005: Mantener padding bottom para navegación
+        minimum: EdgeInsets.only(
+          bottom: MediaQuery.of(context).padding.bottom > 0 ? 0 : 16,
+        ),
+        child: CustomScrollView(
+          slivers: [
+            // Header con saludo
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Logo/Icono animado
+                    _AnimatedLogo(),
+                    const SizedBox(height: 24),
+                    Text(
+                      _greeting,
+                      style: AppTypography.displaySmall.copyWith(
+                        color: colors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _currentDate.toUpperCase(),
+                      style: AppTypography.labelLarge.copyWith(
+                        color: colors.onSurfaceVariant,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ),
                 ),
@@ -203,34 +169,12 @@ class EntryScreen extends StatelessWidget {
 
   void _navigateToNutrition(BuildContext context) {
     AppHaptics.buttonPressed();
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (_, animation, _) => const HomeScreen(),
-        transitionsBuilder: (_, animation, _, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-    );
+    context.goToNutrition();
   }
 
   void _navigateToTraining(BuildContext context) {
     AppHaptics.buttonPressed();
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (_, animation, _) => const TrainingShell(),
-        transitionsBuilder: (_, animation, _, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-    );
+    context.goToTraining();
   }
 }
 
@@ -279,15 +223,7 @@ class _QuickActionsRow extends ConsumerWidget {
 
   void _navigateToTraining(BuildContext context) {
     AppHaptics.buttonPressed();
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (_, animation, _) => const TrainingShell(),
-        transitionsBuilder: (_, animation, _, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-    );
+    context.goToTraining();
   }
 
   Future<void> _showAddWeightDialog(BuildContext context, WidgetRef ref) async {
@@ -376,9 +312,7 @@ class _QuickActionsRow extends ConsumerWidget {
 
   void _showAddFoodDialog(BuildContext context, WidgetRef ref) {
     AppHaptics.buttonPressed();
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const FoodSearchScreen()),
-    );
+    context.pushTo(AppRouter.nutritionFoods);
   }
 }
 
@@ -485,10 +419,13 @@ class _ModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      padding: EdgeInsets.zero,
-      child: Container(
+    return Semantics(
+      button: true,
+      label: '$title: $subtitle',
+      child: AppCard(
+        onTap: onTap,
+        padding: EdgeInsets.zero,
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: gradientColors,
@@ -579,6 +516,7 @@ class _ModeCard extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
@@ -600,32 +538,36 @@ class _QuickActionButton extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     return Expanded(
-      child: Material(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onTap();
-          },
+      child: Semantics(
+        button: true,
+        label: label,
+        child: Material(
+          color: colors.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
-              children: [
-                Icon(
-                  icon,
-                  color: colors.primary,
-                  size: 24,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: AppTypography.labelMedium.copyWith(
-                    color: colors.onSurface,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onTap();
+            },
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: [
+                  Icon(
+                    icon,
+                    color: colors.primary,
+                    size: 24,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    label,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: colors.onSurface,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

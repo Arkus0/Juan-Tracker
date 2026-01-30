@@ -173,8 +173,9 @@ class AppError extends StatelessWidget {
   }
 }
 
-/// Skeleton loader para estados de carga de contenido
-class AppSkeleton extends StatelessWidget {
+/// Skeleton loader animado para estados de carga de contenido
+/// MD-004: Efecto shimmer para mejor feedback visual
+class AppSkeleton extends StatefulWidget {
   final double width;
   final double height;
   final double borderRadius;
@@ -194,16 +195,68 @@ class AppSkeleton extends StatelessWidget {
         borderRadius = 9999;
 
   @override
+  State<AppSkeleton> createState() => _AppSkeletonState();
+}
+
+class _AppSkeletonState extends State<AppSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    
+    _animation = Tween<double>(
+      begin: -1.0,
+      end: 2.0,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutSine,
+    ));
+    
+    _controller.repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                colors.surfaceContainerHighest,
+                colors.surfaceContainerHighest.withAlpha((0.7 * 255).round()),
+                colors.surfaceContainerHighest,
+              ],
+              stops: [
+                (_animation.value - 0.3).clamp(0.0, 1.0),
+                _animation.value.clamp(0.0, 1.0),
+                (_animation.value + 0.3).clamp(0.0, 1.0),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -233,6 +286,108 @@ class AppSkeletonList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Skeleton específico para la pantalla de Diario
+/// Muestra la estructura completa: calendario, resumen y secciones de comidas
+class DiarySkeleton extends StatelessWidget {
+  const DiarySkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Calendario semanal
+          const AppSkeleton(
+            width: double.infinity,
+            height: 90,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          
+          // Card de resumen diario
+          const AppSkeleton(
+            width: double.infinity,
+            height: 200,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          
+          // Quick add chips
+          Row(
+            children: [
+              const AppSkeleton(width: 120, height: 44),
+              const SizedBox(width: AppSpacing.md),
+              const AppSkeleton(width: 100, height: 44),
+              const SizedBox(width: AppSpacing.md),
+              const AppSkeleton(width: 110, height: 44),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          
+          // Secciones de comidas
+          ...List.generate(4, (index) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: const AppSkeleton(
+              width: double.infinity,
+              height: 120,
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+/// Skeleton específico para la pantalla de Resumen
+class SummarySkeleton extends StatelessWidget {
+  const SummarySkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header de stats
+          Row(
+            children: [
+              const Expanded(
+                child: AppSkeleton(width: double.infinity, height: 100),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              const Expanded(
+                child: AppSkeleton(width: double.infinity, height: 100),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              const Expanded(
+                child: AppSkeleton(width: double.infinity, height: 100),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          
+          // Gráfico
+          const AppSkeleton(
+            width: double.infinity,
+            height: 250,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          
+          // Lista de datos
+          ...List.generate(5, (index) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: const AppSkeleton(
+              width: double.infinity,
+              height: 64,
+            ),
+          )),
+        ],
+      ),
     );
   }
 }

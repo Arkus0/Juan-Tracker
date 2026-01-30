@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
+import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
@@ -44,6 +45,9 @@ class DiaryScreen extends ConsumerWidget {
     final viewMode = ref.watch(diaryViewModeProvider);
 
     return Scaffold(
+      // UX-005: Edge-to-edge support
+      extendBodyBehindAppBar: true,
+      extendBody: true,
       body: CustomScrollView(
         slivers: [
           // App Bar con fecha y acciones
@@ -54,22 +58,32 @@ class DiaryScreen extends ConsumerWidget {
             centerTitle: true,
             actions: [
               // Toggle vista
-              IconButton(
-                icon: Icon(
-                  viewMode == DiaryViewMode.list 
-                      ? Icons.calendar_month 
-                      : Icons.list,
+              Semantics(
+                button: true,
+                label: viewMode == DiaryViewMode.list 
+                    ? 'Cambiar a vista calendario' 
+                    : 'Cambiar a vista lista',
+                child: IconButton(
+                  icon: Icon(
+                    viewMode == DiaryViewMode.list 
+                        ? Icons.calendar_month 
+                        : Icons.list,
+                  ),
+                  tooltip: viewMode == DiaryViewMode.list 
+                      ? 'Vista calendario' 
+                      : 'Vista lista',
+                  onPressed: () {
+                    ref.read(diaryViewModeProvider.notifier).toggle();
+                  },
                 ),
-                tooltip: viewMode == DiaryViewMode.list 
-                    ? 'Vista calendario' 
-                    : 'Vista lista',
-                onPressed: () {
-                  ref.read(diaryViewModeProvider.notifier).toggle();
-                },
               ),
-              TextButton(
-                onPressed: () => ref.read(selectedDateProvider.notifier).goToToday(),
-                child: const Text('HOY'),
+              Semantics(
+                button: true,
+                label: 'Ir al día de hoy',
+                child: TextButton(
+                  onPressed: () => ref.read(selectedDateProvider.notifier).goToToday(),
+                  child: const Text('HOY'),
+                ),
               ),
             ],
           ),
@@ -105,10 +119,7 @@ class DiaryScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: summaryAsync.when(
                   data: (summary) => _DailySummaryCard(summary: summary),
-                  loading: () => const AppSkeleton(
-                    width: double.infinity,
-                    height: 200,
-                  ),
+                  loading: () => const DiarySkeleton(),
                   error: (_, _) => AppError(
                     message: 'Error al cargar resumen',
                     onRetry: () => ref.invalidate(daySummaryProvider),
@@ -171,7 +182,7 @@ class DiaryScreen extends ConsumerWidget {
                 return _MealsListSliver(entries: entries);
               },
               loading: () => const SliverFillRemaining(
-                child: AppLoading(message: 'Cargando entradas...'),
+                child: DiarySkeleton(),
               ),
               error: (e, _) => SliverFillRemaining(
                 child: AppError(
@@ -202,11 +213,7 @@ class DiaryScreen extends ConsumerWidget {
 
   void _showAddEntry(BuildContext context, WidgetRef ref, MealType mealType) {
     ref.read(selectedMealTypeProvider.notifier).meal = mealType;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const FoodSearchScreen(),
-      ),
-    );
+    context.pushTo(AppRouter.nutritionFoods);
   }
 
   /// 🎯 HIGH-003: Quick add desde sugerencia inteligente
@@ -1010,7 +1017,16 @@ class _QuickAddSection extends ConsumerWidget {
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: recentFoods.length,
-                  itemExtent: null, // Variable width chips
+                  // Performance: prototypeItem calcula tamaño una sola vez
+                  prototypeItem: recentFoods.isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.sm),
+                          child: _QuickAddChip(
+                            food: recentFoods.first,
+                            onTap: () {},
+                          ),
+                        )
+                      : null,
                   itemBuilder: (context, index) {
                     final food = recentFoods[index];
                     return Padding(
@@ -1135,6 +1151,7 @@ class _MealsListSliver extends StatelessWidget {
 }
 
 /// Sección de tipo de comida
+/// MD-002: Usa provider memoizado para totales, evita cálculos en build
 class _MealSection extends ConsumerWidget {
   final MealType mealType;
   final List<DiaryEntryModel> entries;
@@ -1147,7 +1164,8 @@ class _MealSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
-    final totals = _calculateTotals();
+    // MD-002: Usar provider memoizado en lugar de calcular en cada build
+    final totals = ref.watch(mealTotalsProvider(mealType));
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -1219,19 +1237,8 @@ class _MealSection extends ConsumerWidget {
     );
   }
 
-  Macros _calculateTotals() {
-    int kcal = 0;
-    double protein = 0;
-    double carbs = 0;
-    double fat = 0;
-    for (final e in entries) {
-      kcal += e.kcal;
-      protein += e.protein ?? 0;
-      carbs += e.carbs ?? 0;
-      fat += e.fat ?? 0;
-    }
-    return Macros(kcal: kcal, protein: protein, carbs: carbs, fat: fat);
-  }
+  // MD-002: Eliminado _calculateTotals(), ahora usa provider memoizado
+  // Los totales se calculan una sola vez por cambio de datos, no en cada build
 
   IconData _getMealIcon() {
     switch (mealType) {

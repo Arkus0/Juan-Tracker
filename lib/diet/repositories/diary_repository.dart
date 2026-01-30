@@ -37,5 +37,6 @@ abstract class IDiaryRepository {
 
   /// Obtiene las últimas entradas únicas (por foodId/foodName) para quick-add
   /// Útil para mostrar comidas recientes al usuario
-  Future<List<DiaryEntryModel>> getRecentUniqueEntries({int limit = 5});
+  /// UX-002: Default aumentado a 7, ordenado por frecuencia de consumo
+  Future<List<DiaryEntryModel>> getRecentUniqueEntries({int limit = 7});
 }
