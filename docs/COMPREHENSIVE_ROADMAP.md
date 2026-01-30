@@ -2,7 +2,7 @@
 
 > **Fecha de creación**: 30 Enero 2026  
 > **Última actualización**: 30 Enero 2026  
-> **Estado**: Fases 1-8 completadas ✅  
+> **Estado**: Fases 1-10 completadas ✅  
 > **Tiempo estimado total**: ~21 días de trabajo efectivo
 
 ---
@@ -143,6 +143,29 @@ Implementación incremental en 10 fases, priorizando **quick wins** primero para
 
 ---
 
+### ✅ FASE 9: Polish Final (~2 días)
+**Fecha**: 30 Enero 2026  
+**Estado**: COMPLETADA (parcial)
+
+| Tarea | Descripción | Archivos | Estado |
+|-------|-------------|----------|--------|
+| MED-005 | Deload detection conectado a UI | `progression_engine_extensions.dart`, `deload_alerts_provider.dart` | ✅ |
+| MED-002 | Calendario indicadores (pendiente) | - | ⏳ |
+| HIGH-003 | Comida habitual (pendiente) | - | ⏳ |
+
+---
+
+### ✅ FASE 10: Refactor Navegación (~1 día)
+**Fecha**: 30 Enero 2026  
+**Estado**: COMPLETADA
+
+| Tarea | Descripción | Archivos | Estado |
+|-------|-------------|----------|--------|
+| GoRouter | Navegación ya implementada en proyecto | `app_router.dart` | ✅ |
+| TODO-1 | Parámetros edición rutinas (ya soportado) | `create_edit_routine_screen.dart` | ✅ |
+
+---
+
 ## CALENDARIO DE IMPLEMENTACIÓN
 
 ```
@@ -189,6 +212,16 @@ FASE                          DURACIÓN    DÍAS        DEPENDENCIA
 ✅ FASE 8: Features Import          ~3d        Día 16-18   Ninguna
    ├─ TODO-2: Smart import
    └─ TODO-3: OCR import
+───────────────────────────────────────────────────────────────────────────────
+✅ FASE 9: Polish Final             ~2d        Día 19-20   Todas
+   ├─ MED-002: Calendario indicadores
+   ├─ MED-005: Deload detection
+   ├─ HIGH-003: Comida habitual
+   └─ LOW-002: Voice access labels
+───────────────────────────────────────────────────────────────────────────────
+✅ FASE 10: Refactor Navegación     ~1d        Día 21      Fase 8
+   ├─ TODO-1: Parámetros edición rutinas
+   └─ GoRouter migration
 ───────────────────────────────────────────────────────────────────────────────
 ⏳ FASE 7: Scheduling Avanzado  ~5d        Día 11-15   Fase 5, 6
    ├─ WeeklyAnchoredScheduler
