@@ -234,6 +234,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     };
   }
 
+  // 🎯 MED-006: Empty state educativo mejorado
   Widget _buildEmptyStateWithHint(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
@@ -244,7 +245,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             Icon(Icons.history_toggle_off, size: 80, color: Colors.grey[700]),
             const SizedBox(height: 24),
             Text(
-              'SIN ENTRENAMIENTOS',
+              'TU HISTORIA EMPIEZA HOY',
               style: GoogleFonts.montserrat(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
@@ -253,7 +254,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Completa tu primer entrenamiento para ver el historial.',
+              'Aquí verás tu progreso a lo largo del tiempo: '
+              'PRs, volumen total, y cómo vas mejorando en cada ejercicio.',
               textAlign: TextAlign.center,
               style: GoogleFonts.montserrat(
                 fontSize: 14,

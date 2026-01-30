@@ -93,6 +93,20 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
     super.dispose();
   }
 
+  /// 🎯 MED-001: Placeholders sugestivos según el índice del día
+  /// Ayuda al usuario a pensar en nombres descriptivos para sus días de entrenamiento
+  String _getPlaceholderForDay(int dayIndex) {
+    const suggestions = [
+      'ej: Pecho & Tríceps',
+      'ej: Espalda & Bíceps',
+      'ej: Pierna',
+      'ej: Hombro & Core',
+      'ej: Upper A',
+      'ej: Lower B',
+    ];
+    return suggestions[dayIndex % suggestions.length];
+  }
+
   /// Computes visual groups for display. Each group is a list of flat indices
   /// that should be displayed together (supersets grouped, singles alone).
   List<List<int>> _computeVisualGroups(List<EjercicioEnRutina> exercises) {
@@ -279,6 +293,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                   ),
                 ),
                 const SizedBox(width: 12),
+                // 🎯 MED-001: Placeholder que sugiere nombres descriptivos
                 Expanded(
                   child: TextField(
                     controller: _nameController,
@@ -292,8 +307,12 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                       focusedBorder: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       isDense: true,
-                      hintText: 'Nombre del día',
-                      hintStyle: TextStyle(color: scheme.onSurfaceVariant),
+                      // 🎯 MED-001: Sugerencias de nombres descriptivos
+                      hintText: _getPlaceholderForDay(widget.dayIndex),
+                      hintStyle: TextStyle(
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                     onChanged: widget.onUpdateName,
                   ),
