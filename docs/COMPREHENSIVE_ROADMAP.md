@@ -2,7 +2,7 @@
 
 > **Fecha de creación**: 30 Enero 2026  
 > **Última actualización**: 30 Enero 2026  
-> **Estado**: Fases 1-6 completadas ✅  
+> **Estado**: Fases 1-7 completadas ✅ (parcial - base implementada)  
 > **Tiempo estimado total**: ~21 días de trabajo efectivo
 
 ---
@@ -117,6 +117,21 @@ Implementación incremental en 10 fases, priorizando **quick wins** primero para
 
 ---
 
+### ✅ FASE 7: Scheduling Avanzado (~5 días) - PARCIAL
+**Fecha**: 30 Enero 2026  
+**Estado**: BASE IMPLEMENTADA
+
+| Tarea | Descripción | Archivos | Estado |
+|-------|-------------|----------|--------|
+| WeeklyAnchoredConfig | Configuración de días de semana | `scheduling_service.dart` | ✅ |
+| WeeklyAnchoredScheduler | Scheduler basado en días de semana | `scheduling_service.dart` | ✅ |
+| UI config semana | Vista calendario para configurar | Pendiente | ⏳ |
+| Migración automática | Inferir modo desde nombres existentes | Pendiente | ⏳ |
+
+**Nota**: FASE 7 completada parcialmente. La lógica base está implementada pero la UI de configuración y migración automática quedan para iteración futura.
+
+---
+
 ## CALENDARIO DE IMPLEMENTACIÓN
 
 ```
@@ -154,6 +169,11 @@ FASE                          DURACIÓN    DÍAS        DEPENDENCIA
    ├─ today_screen.dart
    ├─ Lógica contextual por hora
    └─ Integración scheduling
+───────────────────────────────────────────────────────────────────────────────
+✅ FASE 7: Scheduling Avanzado    ~5d        Día 11-15   Fase 5, 6 (PARCIAL)
+   ├─ WeeklyAnchoredConfig y Scheduler
+   └─ FloatingCycleScheduler (base)
+   ⚠️  UI config semana, Migración automática: Pendiente futuro
 ───────────────────────────────────────────────────────────────────────────────
 ⏳ FASE 7: Scheduling Avanzado  ~5d        Día 11-15   Fase 5, 6
    ├─ WeeklyAnchoredScheduler
