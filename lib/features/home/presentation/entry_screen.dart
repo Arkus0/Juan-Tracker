@@ -4,13 +4,14 @@ import 'package:intl/intl.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/feedback/haptics.dart';
+import 'package:juan_tracker/core/providers/training_providers.dart';
 import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/models/weighin_model.dart';
+import 'package:juan_tracker/training/utils/design_system.dart' as training;
 import 'package:juan_tracker/training/widgets/analysis/streak_counter.dart';
-import 'package:juan_tracker/training/providers/training_provider.dart';
 
 /// Pantalla de entrada principal con selección de modo
 class EntryScreen extends StatelessWidget {
@@ -27,83 +28,45 @@ class EntryScreen extends StatelessWidget {
     return DateFormat('EEEE, d MMMM', 'es').format(DateTime.now());
   }
 
-  // 🎯 MED-003: Warm Start - Sugerencia contextual basada en la hora
-  String get _warmStartHint {
-    final hour = DateTime.now().hour;
-    final dayOfWeek = DateTime.now().weekday; // 1=Monday, 7=Sunday
-
-    // Mañana (6-11): Sugerir desayuno
-    if (hour >= 6 && hour < 11) {
-      return '¿Ya desayunaste? Registra tu primera comida del día';
-    }
-
-    // Mediodía (11-14): Sugerir almuerzo
-    if (hour >= 11 && hour < 14) {
-      return '¿Hora de comer? Registra tu almuerzo';
-    }
-
-    // Tarde (14-17): Típica hora de gym
-    if (hour >= 14 && hour < 17) {
-      // Fines de semana o cualquier día
-      if (dayOfWeek == 6 || dayOfWeek == 7) {
-        return '¿Fin de semana activo? Buen momento para entrenar';
-      }
-      return '¿Listo para entrenar? El gym te espera';
-    }
-
-    // Tarde-noche (17-20): Post-gym o cena
-    if (hour >= 17 && hour < 20) {
-      return '¿Terminaste de entrenar? Registra tu sesión';
-    }
-
-    // Noche (20-23): Revisar el día
-    if (hour >= 20 && hour < 23) {
-      return '¿Cómo fue tu día? Revisa tu progreso';
-    }
-
-    // Madrugada: Sin sugerencia
-    return '';
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    // 🎯 MED-004: Usar Stack para posicionar accesos rápidos en thumb zone (bottom)
     return Scaffold(
       backgroundColor: colors.surface,
-      // UX-005: Edge-to-edge support
       extendBodyBehindAppBar: true,
       body: SafeArea(
-        // UX-005: Mantener padding bottom para navegación
         minimum: EdgeInsets.only(
           bottom: MediaQuery.of(context).padding.bottom > 0 ? 0 : 16,
         ),
-        child: CustomScrollView(
-          slivers: [
-            // Header con saludo
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Logo/Icono animado
-                    _AnimatedLogo(),
-                    const SizedBox(height: 24),
-                    Text(
-                      _greeting,
-                      style: AppTypography.displaySmall.copyWith(
-                        color: colors.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _currentDate.toUpperCase(),
-                      style: AppTypography.labelLarge.copyWith(
-                        color: colors.onSurfaceVariant,
-                        letterSpacing: 1,
-                      ),
+        child: Stack(
+          children: [
+            CustomScrollView(
+              slivers: [
+                // Header con saludo
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _AnimatedLogo(),
+                        const SizedBox(height: 24),
+                        Text(
+                          _greeting,
+                          style: AppTypography.displaySmall.copyWith(
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _currentDate.toUpperCase(),
+                          style: AppTypography.labelLarge.copyWith(
+                            color: colors.onSurfaceVariant,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -135,8 +98,7 @@ class EntryScreen extends StatelessWidget {
               ],
             ),
 
-            // 🎯 MED-004: Accesos rápidos fijos en thumb zone (bottom 25%)
-            // Esto mejora el uso con una mano según Fitts's Law
+            // Accesos rápidos fijos en thumb zone
             Positioned(
               left: 0,
               right: 0,
@@ -146,7 +108,7 @@ class EntryScreen extends StatelessWidget {
                   color: colors.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: colors.shadow.withValues(alpha: 0.1),
+                      color: colors.shadow.withAlpha((0.1 * 255).round()),
                       blurRadius: 8,
                       offset: const Offset(0, -2),
                     ),
@@ -426,96 +388,93 @@ class _ModeCard extends StatelessWidget {
         onTap: onTap,
         padding: EdgeInsets.zero,
         child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha((0.2 * 255).round()),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha((0.2 * 255).round()),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: Colors.white,
+                        size: 28,
+                      ),
                     ),
-                    child: Icon(
-                      icon,
-                      color: Colors.white,
-                      size: 28,
+                    const Spacer(),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white.withAlpha((0.7 * 255).round()),
                     ),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white.withAlpha((0.7 * 255).round()),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Título
-              Text(
-                title,
-                style: AppTypography.headlineSmall.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: Colors.white.withAlpha((0.8 * 255).round()),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: AppTypography.headlineSmall.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              // Stats
-              Row(
-                children: stats.map((stat) {
-                  return Expanded(
-                    child: Row(
-                      children: [
-                        Icon(
-                          stat.icon,
-                          color: Colors.white.withAlpha((0.6 * 255).round()),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              stat.value,
-                              style: AppTypography.dataSmall.copyWith(
-                                color: Colors.white,
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: Colors.white.withAlpha((0.8 * 255).round()),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: stats.map((stat) {
+                    return Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            stat.icon,
+                            color: Colors.white.withAlpha((0.6 * 255).round()),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                stat.value,
+                                style: AppTypography.dataSmall.copyWith(
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                            Text(
-                              stat.label,
-                              style: AppTypography.labelSmall.copyWith(
-                                color: Colors.white.withAlpha((0.6 * 255).round()),
+                              Text(
+                                stat.label,
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: Colors.white.withAlpha((0.6 * 255).round()),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -586,13 +545,11 @@ class _NutritionModeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(daySummaryProvider);
 
-    // CRIT-03 FIX: Mostrar RESTANTE en lugar de consumido
     final (stats, subtitle) = summaryAsync.when(
       data: (s) {
         final hasTargets = s.hasTargets;
 
         if (!hasTargets) {
-          // Sin objetivos configurados: mostrar consumido
           return (
             [
               _Stat(
@@ -601,56 +558,48 @@ class _NutritionModeCard extends ConsumerWidget {
                 label: 'kcal',
               ),
               _Stat(
-                icon: Icons.egg_alt,
-                value: '${s.consumed.protein.toInt()}g',
-                label: 'prote',
+                icon: Icons.fitness_center,
+                value: '${s.consumed.protein}g',
+                label: 'proteína',
               ),
             ],
-            'Configura objetivos para ver restante',
+            'Seguimiento de nutrición',
           );
         }
 
-        // Con objetivos: mostrar RESTANTE
-        final kcalRemaining = s.progress.kcalRemaining ?? 0;
-        final proteinTarget = s.targets?.proteinTarget ?? 0;
-        final proteinRemaining = (proteinTarget - s.consumed.protein).clamp(0, proteinTarget);
-
-        String subtitle;
-        if (kcalRemaining <= 0) {
-          subtitle = '¡Objetivo alcanzado!';
-        } else if (kcalRemaining < 300) {
-          subtitle = 'Casi llegas a tu objetivo';
-        } else {
-          subtitle = 'Te quedan $kcalRemaining kcal';
-        }
+        final remainingKcal = s.targets!.kcalTarget - s.consumed.kcal;
+        final remainingProtein = s.targets!.proteinTarget != null 
+            ? s.targets!.proteinTarget! - s.consumed.protein 
+            : 0;
 
         return (
           [
             _Stat(
               icon: Icons.local_fire_department,
-              value: '$kcalRemaining',
-              label: 'restantes',
+              value: '$remainingKcal',
+              label: 'kcal rest',
             ),
             _Stat(
-              icon: Icons.egg_alt,
-              value: '${proteinRemaining.toInt()}g',
-              label: 'prote',
+              icon: Icons.fitness_center,
+              value: '${remainingProtein}g',
+              label: 'prot rest',
             ),
           ],
-          subtitle,
+          '${s.consumed.kcal}/${s.targets!.kcalTarget} kcal consumidas',
         );
       },
       loading: () => (
         [
           const _Stat(icon: Icons.local_fire_department, value: '--', label: 'kcal'),
-          const _Stat(icon: Icons.egg_alt, value: '--', label: 'prote'),
+          const _Stat(icon: Icons.fitness_center, value: '--', label: 'proteína'),
         ],
         'Cargando...',
       ),
-      error: (e, _) => (
+      // ignore: unnecessary_underscores
+      error: (_, __) => (
         [
-          const _Stat(icon: Icons.local_fire_department, value: '--', label: 'kcal'),
-          const _Stat(icon: Icons.egg_alt, value: '--', label: 'prote'),
+          const _Stat(icon: Icons.error, value: '--', label: 'error'),
+          const _Stat(icon: Icons.error, value: '--', label: 'error'),
         ],
         'Error al cargar datos',
       ),
@@ -659,14 +608,18 @@ class _NutritionModeCard extends ConsumerWidget {
     return _ModeCard(
       title: 'Nutrición',
       subtitle: subtitle,
-      icon: Icons.restaurant_menu_rounded,
-      gradientColors: [AppColors.primary, AppColors.primaryLight],
+      icon: Icons.restaurant_rounded,
+      gradientColors: [
+        Theme.of(context).colorScheme.primary,
+        Theme.of(context).colorScheme.primary.withAlpha((0.7 * 255).round()),
+      ],
       stats: stats,
       onTap: onTap,
     );
   }
 }
 
+/// Training card that uses providers to show streaks and last session
 class _TrainingModeCard extends ConsumerWidget {
   final VoidCallback onTap;
 
@@ -674,60 +627,53 @@ class _TrainingModeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // CRIT-02 FIX: Usar smartSuggestionProvider en lugar de rutinasStreamProvider
-    final suggestionAsync = ref.watch(smartSuggestionProvider);
+    final stats = ref.watch(trainingStatsProvider);
+    final hasStreak = stats.sesionesSemana > 0;
+    final lastSession = stats.ultimaSesion;
 
-    final (stats, subtitle) = suggestionAsync.when(
-      data: (suggestion) {
-        if (suggestion == null) {
-          return (
-            [
-              const _Stat(icon: Icons.add_circle_outline, value: 'Crear', label: 'rutina'),
-              const _Stat(icon: Icons.timer, value: '--', label: 'min'),
-            ],
-            'Crea tu primera rutina para empezar',
-          );
-        }
-        return (
-          [
-            _Stat(
-              icon: Icons.fitness_center,
-              value: suggestion.dayName,
-              label: 'hoy',
-            ),
-            _Stat(
-              icon: Icons.history,
-              value: suggestion.timeSinceFormatted,
-              label: 'última',
-            ),
-          ],
-          'Toca ${suggestion.dayName} hoy',
-        );
-      },
-      loading: () => (
-        [
-          const _Stat(icon: Icons.fitness_center, value: '...', label: 'hoy'),
-          const _Stat(icon: Icons.history, value: '--', label: 'última'),
-        ],
-        'Cargando...',
-      ),
-      error: (e, _) => (
-        [
-          const _Stat(icon: Icons.calendar_today, value: '—', label: 'hoy'),
-          const _Stat(icon: Icons.timer, value: '--', label: 'min'),
-        ],
-        'Sesiones, rutinas, análisis y progreso',
-      ),
-    );
+    String subtitle;
+    if (lastSession != null) {
+      final daysAgo = DateTime.now().difference(lastSession.fecha).inDays;
+      if (daysAgo == 0) {
+        subtitle = 'Entrenaste hoy';
+      } else if (daysAgo == 1) {
+        subtitle = 'Último: ayer';
+      } else {
+        subtitle = 'Último: hace $daysAgo días';
+      }
+    } else {
+      subtitle = 'Comienza tu rutina hoy';
+    }
 
     return _ModeCard(
       title: 'Entrenamiento',
       subtitle: subtitle,
       icon: Icons.fitness_center_rounded,
-      gradientColors: [AppColors.ironRed, AppColors.ironRedLight],
-      isDark: true,
-      stats: stats,
+      gradientColors: [
+        training.AppColors.darkRed,
+        training.AppColors.bloodRed,
+      ],
+      stats: [
+        if (hasStreak)
+          _Stat(
+            icon: Icons.local_fire_department,
+            value: '${stats.sesionesSemana}',
+            label: 'sesiones semana',
+          )
+        else
+          _Stat(
+            icon: Icons.fitness_center,
+            value: '${stats.sesionesSemana}',
+            label: 'sesiones',
+          ),
+        _Stat(
+          icon: Icons.timer,
+          value: '${stats.setsSemana}',
+          label: 'sets semana',
+        ),
+      ],
       onTap: onTap,
+      isDark: true,
     );
   }
 }

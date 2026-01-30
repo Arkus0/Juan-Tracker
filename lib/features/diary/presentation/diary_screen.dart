@@ -960,7 +960,7 @@ class _SmartSuggestionChip extends StatelessWidget {
                         ),
                         child: Text(
                           suggestion.reason,
-                          style: AppTypography.meta.copyWith(
+                          style: AppTypography.labelSmall.copyWith(
                             color: AppColors.goldAccent,
                             fontSize: 9,
                           ),
