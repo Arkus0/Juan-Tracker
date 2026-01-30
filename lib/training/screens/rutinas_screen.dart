@@ -43,12 +43,16 @@ class RutinasScreen extends ConsumerWidget {
                 onRetry: () => ref.invalidate(rutinasStreamProvider),
               ),
               data: (rutinas) {
+                // 🎯 MED-006: Empty state educativo
                 if (rutinas.isEmpty) {
                   return AppEmpty(
                     icon: Icons.fitness_center_outlined,
-                    title: 'No hay rutinas',
-                    subtitle: 'Crea tu primera rutina para empezar',
-                    actionLabel: 'CREAR RUTINA',
+                    title: 'Tu primer paso hacia la consistencia',
+                    subtitle:
+                        'Una rutina bien estructurada es la clave del progreso. '
+                        'Organiza tus días de entrenamiento, añade ejercicios y '
+                        'el sistema te guiará con sugerencias inteligentes.',
+                    actionLabel: 'CREAR MI PRIMERA RUTINA',
                     onAction: () => _navigateToCreate(context),
                   );
                 }

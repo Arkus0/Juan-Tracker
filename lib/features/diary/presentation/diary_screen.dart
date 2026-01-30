@@ -128,15 +128,35 @@ class DiaryScreen extends ConsumerWidget {
           // Lista de comidas - solo en vista lista
           if (viewMode == DiaryViewMode.list)
             entriesAsync.when(
+              // 🎯 MED-006: Empty state educativo con contexto temporal
               data: (entries) {
                 if (entries.isEmpty) {
+                  final hour = DateTime.now().hour;
+                  final mealSuggestion = hour < 11
+                      ? 'desayuno'
+                      : hour < 15
+                          ? 'almuerzo'
+                          : hour < 19
+                              ? 'merienda'
+                              : 'cena';
+                  final suggestedMealType = hour < 11
+                      ? MealType.breakfast
+                      : hour < 15
+                          ? MealType.lunch
+                          : hour < 19
+                              ? MealType.snack
+                              : MealType.dinner;
+
                   return SliverFillRemaining(
                     child: AppEmpty(
                       icon: Icons.restaurant_menu_outlined,
-                      title: 'Sin entradas hoy',
-                      subtitle: 'Añade tu primera comida para empezar a trackear',
-                      actionLabel: 'AÑADIR COMIDA',
-                      onAction: () => _showAddEntry(context, ref, MealType.breakfast),
+                      title: '¡Empieza a registrar tu día!',
+                      subtitle:
+                          'Registrar lo que comes te ayuda a entender tus patrones '
+                          'y alcanzar tus objetivos. Tus comidas frecuentes se guardarán '
+                          'para añadirlas más rápido la próxima vez.',
+                      actionLabel: 'AÑADIR $mealSuggestion'.toUpperCase(),
+                      onAction: () => _showAddEntry(context, ref, suggestedMealType),
                     ),
                   );
                 }
@@ -222,6 +242,7 @@ class DiaryScreen extends ConsumerWidget {
 }
 
 /// Vista de calendario mensual
+/// 🎯 MED-002: Añade indicadores de cumplimiento
 class _MonthCalendar extends ConsumerWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateSelected;
@@ -234,68 +255,102 @@ class _MonthCalendar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Card(
       margin: const EdgeInsets.all(AppSpacing.lg),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
-        child: TableCalendar(
-          firstDay: DateTime.now().subtract(const Duration(days: 365)),
-          lastDay: DateTime.now().add(const Duration(days: 365)),
-          focusedDay: selectedDate,
-          selectedDayPredicate: (day) => isSameDay(day, selectedDate),
-          onDaySelected: (selectedDay, focusedDay) {
-            onDateSelected(selectedDay);
-          },
-          calendarFormat: CalendarFormat.month,
-          startingDayOfWeek: StartingDayOfWeek.monday,
-          locale: 'es_ES',
-          headerStyle: HeaderStyle(
-            titleCentered: true,
-            formatButtonVisible: false,
-            leftChevronIcon: Icon(
-              Icons.chevron_left,
-              color: colorScheme.onSurface,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TableCalendar(
+              firstDay: DateTime.now().subtract(const Duration(days: 365)),
+              lastDay: DateTime.now().add(const Duration(days: 365)),
+              focusedDay: selectedDate,
+              selectedDayPredicate: (day) => isSameDay(day, selectedDate),
+              onDaySelected: (selectedDay, focusedDay) {
+                onDateSelected(selectedDay);
+              },
+              calendarFormat: CalendarFormat.month,
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              locale: 'es_ES',
+              headerStyle: HeaderStyle(
+                titleCentered: true,
+                formatButtonVisible: false,
+                leftChevronIcon: Icon(
+                  Icons.chevron_left,
+                  color: colorScheme.onSurface,
+                ),
+                rightChevronIcon: Icon(
+                  Icons.chevron_right,
+                  color: colorScheme.onSurface,
+                ),
+                titleTextStyle: AppTypography.titleMedium.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              calendarStyle: CalendarStyle(
+                outsideDaysVisible: false,
+                weekendTextStyle: TextStyle(color: colorScheme.onSurface),
+                holidayTextStyle: TextStyle(color: colorScheme.onSurface),
+                defaultTextStyle: TextStyle(color: colorScheme.onSurface),
+                selectedDecoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                todayTextStyle: TextStyle(
+                  color: colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+                selectedTextStyle: TextStyle(
+                  color: colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+                markersMaxCount: 1,
+                markerSize: 6,
+                markerDecoration: BoxDecoration(
+                  color: colorScheme.tertiary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              daysOfWeekStyle: DaysOfWeekStyle(
+                weekdayStyle: AppTypography.labelSmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                weekendStyle: AppTypography.labelSmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
-            rightChevronIcon: Icon(
-              Icons.chevron_right,
-              color: colorScheme.onSurface,
+            // 🎯 MED-002: Leyenda de marcadores
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Día con registros',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            titleTextStyle: AppTypography.titleMedium.copyWith(
-              color: colorScheme.onSurface,
-            ),
-          ),
-          calendarStyle: CalendarStyle(
-            outsideDaysVisible: false,
-            weekendTextStyle: TextStyle(color: colorScheme.onSurface),
-            holidayTextStyle: TextStyle(color: colorScheme.onSurface),
-            defaultTextStyle: TextStyle(color: colorScheme.onSurface),
-            selectedDecoration: BoxDecoration(
-              color: colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            todayDecoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            todayTextStyle: TextStyle(
-              color: colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.bold,
-            ),
-            selectedTextStyle: TextStyle(
-              color: colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-            markersMaxCount: 3,
-          ),
-          daysOfWeekStyle: DaysOfWeekStyle(
-            weekdayStyle: AppTypography.labelSmall.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            weekendStyle: AppTypography.labelSmall.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
+          ],
         ),
       ),
     );
