@@ -556,8 +556,8 @@ class _PrevValueColumn extends StatelessWidget {
   }
 }
 
-/// Checkbox de completado con estilo mejorado - 🎯 REDISEÑO: Verde
-class _CompletedCheckbox extends StatelessWidget {
+/// Checkbox de completado con animación UX-004
+class _CompletedCheckbox extends StatefulWidget {
   final bool isCompleted;
   final NullableBoolChanged onChanged;
 
@@ -567,23 +567,67 @@ class _CompletedCheckbox extends StatelessWidget {
   });
 
   @override
+  State<_CompletedCheckbox> createState() => _CompletedCheckboxState();
+}
+
+class _CompletedCheckboxState extends State<_CompletedCheckbox>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _scaleAnimation = Tween<double>(begin: 1, end: 1.4).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+  }
+
+  @override
+  void didUpdateWidget(_CompletedCheckbox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // UX-004: Animación de escala al completar
+    if (widget.isCompleted && !oldWidget.isCompleted) {
+      _controller.forward().then((_) => _controller.reverse());
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: Transform.scale(
-        scale: 1.2,
-        child: Checkbox(
-          value: isCompleted,
-          // 🎯 REDISEÑO: Verde para completado (match modelo mental)
-          activeColor: AppColors.success,
-          checkColor: Colors.white,
-          onChanged: (value) => onChanged(value: value),
-          side: BorderSide(
-            color: isCompleted ? AppColors.success : Colors.grey[600]!,
-            width: 2,
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        );
+      },
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Transform.scale(
+          scale: 1.3,
+          child: Checkbox(
+            value: widget.isCompleted,
+            activeColor: AppColors.success,
+            checkColor: Colors.white,
+            onChanged: (value) => widget.onChanged(value: value),
+            side: BorderSide(
+              color: widget.isCompleted ? AppColors.success : Colors.grey[600]!,
+              width: 2,
+            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
       ),
     );

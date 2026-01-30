@@ -3,11 +3,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/router/app_router.dart';
 // import '../../../core/app_constants.dart';
 import '../../providers/coach_providers.dart';
 import '../../services/adaptive_coach_service.dart';
-import 'plan_setup_screen.dart';
-import 'weekly_check_in_screen.dart';
 
 class CoachScreen extends ConsumerWidget {
   const CoachScreen({super.key});
@@ -26,25 +25,21 @@ class CoachScreen extends ConsumerWidget {
           : _ActiveCoachState(
               plan: plan,
               onCheckIn: () => _navigateToCheckIn(context),
-              onEditPlan: () => _navigateToSetup(context, plan: plan),
+              onEditPlan: () => _navigateToSetup(context, plan: plan, ref: ref),
             ),
     );
   }
 
-  void _navigateToSetup(BuildContext context, {CoachPlan? plan}) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => PlanSetupScreen(existingPlan: plan),
-      ),
-    );
+  void _navigateToSetup(BuildContext context, {CoachPlan? plan, WidgetRef? ref}) {
+    // Guardar el plan en edición si existe
+    if (plan != null && ref != null) {
+      ref.read(editingPlanProvider.notifier).setPlan(plan);
+    }
+    context.goToCoachSetup();
   }
 
   void _navigateToCheckIn(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const WeeklyCheckInScreen(),
-      ),
-    );
+    context.goToCoachCheckIn();
   }
 }
 

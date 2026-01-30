@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../diet/providers/diet_providers.dart';
 import '../../../diet/services/day_summary_calculator.dart';
-import '../../targets/presentation/targets_screen.dart';
 
 /// Pantalla de resumen tipo "budget" con progreso detallado.
 ///
@@ -29,11 +29,7 @@ class SummaryScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TargetsScreen()),
-              );
-            },
+            onPressed: () => context.pushTo(AppRouter.nutritionTargets),
             tooltip: 'Gestionar objetivos',
           ),
         ],
@@ -360,11 +356,7 @@ class _CreateTargetsCTA extends StatelessWidget {
       color: theme.colorScheme.primaryContainer,
       elevation: 0,
       child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const TargetsScreen()),
-          );
-        },
+        onTap: () => context.pushTo(AppRouter.nutritionTargets),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(20),
