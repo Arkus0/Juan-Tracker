@@ -116,15 +116,16 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     await _loadRecentSearches();
     await _checkConnectivity();
     await _rebuildSearchIndex();
-    _initializeAutocomplete();
+    await _initializeAutocomplete();
   }
 
-  void _initializeAutocomplete() {
-    _autocomplete.initialize();
-    
-    // Registrar búsquedas recientes en autocomplete
+  Future<void> _initializeAutocomplete() async {
+    await _autocomplete.initialize();
+
+    // Las búsquedas recientes ya están persistidas en el autocomplete service,
+    // pero si hay nuevas en el cache service, las registramos
     for (final recent in state.recentSearches) {
-      _autocomplete.recordSearch(recent);
+      await _autocomplete.recordSearch(recent);
     }
   }
 

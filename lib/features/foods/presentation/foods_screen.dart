@@ -13,6 +13,7 @@ import '../../../diet/services/food_label_ocr_service.dart';
 import '../../../diet/services/food_label_parser_service.dart';
 import '../../diary/presentation/barcode_scanner_screen.dart';
 import '../../diary/presentation/external_food_search_screen.dart';
+import '../providers/foods_search_provider.dart';
 
 /// Pantalla de biblioteca de alimentos
 /// Permite ver, buscar y añadir alimentos a la base de datos
@@ -24,22 +25,11 @@ class FoodsScreen extends ConsumerStatefulWidget {
 }
 
 class _FoodsScreenState extends ConsumerState<FoodsScreen> {
-  String _searchQuery = '';
-  String _debouncedQuery = '';
-  Timer? _debounceTimer;
   final _searchController = TextEditingController();
+  Timer? _debounceTimer;
 
-  // Cache del Future para evitar rebuilds innecesarios
-  Future<List<FoodModel>>? _foodsFuture;
-  
   // Estado del FAB expandible
   bool _isFabExpanded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _refreshFoodsFuture();
-  }
 
   @override
   void dispose() {
@@ -49,41 +39,25 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
   }
 
   void _onSearchChanged(String value) {
-    setState(() => _searchQuery = value);
-
     // Debounce de 300ms para evitar queries excesivas
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      if (mounted && _debouncedQuery != value) {
-        setState(() {
-          _debouncedQuery = value;
-          _refreshFoodsFuture();
-        });
+      if (mounted) {
+        ref.read(foodsSearchProvider.notifier).search(value);
       }
     });
-  }
-
-  void _refreshFoodsFuture() {
-    final repo = ref.read(foodRepositoryProvider);
-    _foodsFuture = _debouncedQuery.isEmpty
-        ? repo.getAll()
-        : repo.search(_debouncedQuery);
   }
 
   void _clearSearch() {
     _searchController.clear();
     _debounceTimer?.cancel();
-    setState(() {
-      _searchQuery = '';
-      _debouncedQuery = '';
-      _refreshFoodsFuture();
-    });
+    ref.read(foodsSearchProvider.notifier).clearSearch();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Solo watch para invalidación, no para rebuild del Future
-    ref.watch(foodRepositoryProvider);
+    // Usar el provider reactivo para la búsqueda
+    final searchState = ref.watch(foodsSearchProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -93,52 +67,56 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
           preferredSize: const Size.fromHeight(60),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar alimentos...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: _clearSearch,
-                      )
-                    : null,
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              onChanged: _onSearchChanged,
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _searchController,
+              builder: (context, value, child) {
+                return TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar alimentos...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: value.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: _clearSearch,
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  onChanged: _onSearchChanged,
+                );
+              },
             ),
           ),
         ),
       ),
-      body: FutureBuilder<List<FoodModel>>(
-        future: _foodsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+      body: searchState.when(
+        loading: () => const _FoodsLoadingSkeleton(),
+        error: (error, _) => Center(child: Text('Error: $error')),
+        data: (state) {
+          if (state.isLoading) {
+            return const _FoodsLoadingSkeleton();
           }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+          if (state.error != null) {
+            return Center(child: Text('Error: ${state.error}'));
           }
 
-          final foods = snapshot.data ?? [];
-
-          if (foods.isEmpty) {
-            return _EmptyState(isSearch: _debouncedQuery.isNotEmpty);
+          if (state.foods.isEmpty) {
+            return _EmptyState(isSearch: state.query.isNotEmpty);
           }
 
           return ListView.builder(
             padding: const EdgeInsets.only(bottom: 100),
-            itemCount: foods.length,
+            itemCount: state.foods.length,
             itemBuilder: (context, index) {
-              final food = foods[index];
+              final food = state.foods[index];
               return _FoodTile(
                 food: food,
                 onTap: () => _showFoodDetail(food),
@@ -170,10 +148,10 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
       context: context,
       builder: (ctx) => const _AddFoodDialog(),
     );
-    
-    // Fix: Refrescar lista si se añadió un alimento exitosamente
+
+    // Refrescar lista si se añadió un alimento exitosamente
     if (result == true && mounted) {
-      setState(() => _refreshFoodsFuture());
+      ref.read(foodsSearchProvider.notifier).refresh();
     }
   }
 
@@ -183,13 +161,21 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
     );
 
     if (barcode != null && mounted) {
-      // Navegar a búsqueda externa
+      // Navegar a búsqueda externa con el código de barras
       if (context.mounted) {
-        Navigator.of(context).push(
+        final food = await Navigator.of(context).push<FoodModel>(
           MaterialPageRoute(
-            builder: (_) => const ExternalFoodSearchScreen(returnFoodOnSelect: true),
+            builder: (_) => ExternalFoodSearchScreen(
+              returnFoodOnSelect: true,
+              initialBarcode: barcode,
+            ),
           ),
         );
+
+        // Si se añadió un alimento, refrescar la lista
+        if (food != null && mounted) {
+          ref.read(foodsSearchProvider.notifier).refresh();
+        }
       }
     }
   }
@@ -247,7 +233,7 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
       // Mostrar diálogo para crear alimento con valores extraídos
       final foodName = per100g.name.isNotEmpty ? per100g.name : 'Alimento escaneado';
       
-      final result = await showDialog<FoodModel>(
+      final saved = await showDialog<bool>(
         context: context,
         builder: (ctx) => _AddFoodDialog(
           initialName: foodName,
@@ -258,8 +244,8 @@ class _FoodsScreenState extends ConsumerState<FoodsScreen> {
         ),
       );
 
-      if (result != null && mounted) {
-        setState(() => _refreshFoodsFuture());
+      if (saved == true && mounted) {
+        ref.read(foodsSearchProvider.notifier).refresh();
       }
     } catch (e) {
       if (context.mounted) {
@@ -939,6 +925,128 @@ class _FabOption extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Skeleton de carga para la lista de alimentos
+class _FoodsLoadingSkeleton extends StatelessWidget {
+  const _FoodsLoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: 8,
+      itemBuilder: (context, index) {
+        return _SkeletonFoodTile(colors: colors);
+      },
+    );
+  }
+}
+
+/// Tile de alimento en estado skeleton
+class _SkeletonFoodTile extends StatefulWidget {
+  final ColorScheme colors;
+
+  const _SkeletonFoodTile({required this.colors});
+
+  @override
+  State<_SkeletonFoodTile> createState() => _SkeletonFoodTileState();
+}
+
+class _SkeletonFoodTileState extends State<_SkeletonFoodTile>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+
+    _controller.repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: _shimmerGradient(),
+            ),
+          ),
+          title: Container(
+            height: 16,
+            width: 120,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              gradient: _shimmerGradient(),
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                height: 12,
+                width: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  gradient: _shimmerGradient(),
+                ),
+              ),
+            ],
+          ),
+          trailing: Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              gradient: _shimmerGradient(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  LinearGradient _shimmerGradient() {
+    return LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [
+        widget.colors.surfaceContainerHighest,
+        widget.colors.surfaceContainerHighest.withAlpha((0.7 * 255).round()),
+        widget.colors.surfaceContainerHighest,
+      ],
+      stops: [
+        (_animation.value - 0.3).clamp(0.0, 1.0),
+        _animation.value.clamp(0.0, 1.0),
+        (_animation.value + 0.3).clamp(0.0, 1.0),
+      ],
     );
   }
 }
