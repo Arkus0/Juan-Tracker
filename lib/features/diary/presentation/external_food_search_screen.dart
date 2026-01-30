@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +15,7 @@ import 'barcode_scanner_screen.dart';
 /// Pantalla de búsqueda de alimentos externos (Open Food Facts)
 ///
 /// Funcionalidades:
-/// - Búsqueda por texto con debounce
+/// - Búsqueda por texto (debounce en provider)
 /// - Escaneo de código de barras (cámara primero)
 /// - Búsqueda por voz
 /// - OCR de etiquetas
@@ -41,7 +39,6 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
   late final TextEditingController _searchController;
   final _speech = SpeechToText();
   bool _isListening = false;
-  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -64,18 +61,17 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
   @override
   void dispose() {
     _searchController.dispose();
-    _debounceTimer?.cancel();
+    _speech.stop();
     super.dispose();
   }
 
-  /// Debounce para no spamear la API
+  /// Búsqueda - el debounce está en el provider (300ms)
   void _onSearchChanged(String value) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      if (mounted && value.trim().isNotEmpty) {
-        ref.read(externalFoodSearchProvider.notifier).search(value);
-      }
-    });
+    if (value.trim().isNotEmpty) {
+      ref.read(externalFoodSearchProvider.notifier).search(value);
+    } else if (value.isEmpty) {
+      ref.read(externalFoodSearchProvider.notifier).clear();
+    }
   }
 
   /// Inicia escucha de voz

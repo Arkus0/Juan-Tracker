@@ -676,7 +676,13 @@ class _AddFoodDialogState extends ConsumerState<_AddFoodDialog> {
                   labelText: 'Kcal / 100g *',
                   border: OutlineInputBorder(),
                 ),
-                validator: (v) => v?.isEmpty == true ? 'Requerido' : null,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Requerido';
+                  final parsed = int.tryParse(v);
+                  if (parsed == null) return 'Debe ser un número';
+                  if (parsed < 1 || parsed > 9999) return 'Valor entre 1-9999';
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
               Row(

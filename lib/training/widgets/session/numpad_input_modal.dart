@@ -194,7 +194,9 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
 
   void _onConfirm() {
     final value = double.tryParse(_displayValue);
-    if (value != null && value >= 0) {
+    // Reps (isInteger) debe ser >= 1; peso puede ser 0 (bodyweight)
+    final minValue = widget.isInteger ? 1.0 : 0.0;
+    if (value != null && value >= minValue) {
       HapticFeedback.mediumImpact();
       widget.onConfirm(value);
     }
@@ -233,7 +235,9 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
 
   bool get _canConfirm {
     final value = double.tryParse(_displayValue);
-    return value != null && value >= 0;
+    // Reps (isInteger) debe ser >= 1; peso puede ser 0 (bodyweight)
+    final minValue = widget.isInteger ? 1.0 : 0.0;
+    return value != null && value >= minValue;
   }
 
   @override

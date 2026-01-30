@@ -116,7 +116,20 @@ class _AddWeightDialogState extends ConsumerState<AddWeightDialog> {
   Future<void> _save() async {
     final text = _weightController.text.trim();
     final value = double.tryParse(text.replaceAll(',', '.'));
-    if (value == null) return;
+
+    // Validación: peso debe ser un número válido entre 20-500 kg
+    if (value == null || value < 20 || value > 500) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ingresa un peso válido (20-500 kg)'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
     final repo = ref.read(weighInRepositoryProvider);
     final id = 'wi_${DateTime.now().millisecondsSinceEpoch}';
     await repo.insert(WeighInModel(id: id, dateTime: _selectedDate, weightKg: value));
