@@ -81,6 +81,21 @@ final weightStreamProvider = StreamProvider<List<diet.WeighInModel>>((ref) {
   return ref.watch(weighInRepositoryProvider).watchByDateRange(from, DateTime.now());
 });
 
+/// 🎯 MED-002: Provider de días con entradas para el calendario
+/// Emite un Set de fechas (truncadas a día) que tienen al menos una entrada
+final calendarEntryDaysProvider = StreamProvider<Set<DateTime>>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+
+  // Watch all diary entries table for changes
+  return db.select(db.diaryEntries).watch().map((entries) {
+    // Extract unique dates (truncated to day)
+    return entries.map((e) {
+      final date = e.date;
+      return DateTime(date.year, date.month, date.day);
+    }).toSet();
+  });
+});
+
 // ============================================================================
 // UI STATE - SIMPLE STATE (migrado a Notifier para compatibilidad con Riverpod 3)
 // ============================================================================
