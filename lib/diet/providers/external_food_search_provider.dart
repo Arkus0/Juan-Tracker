@@ -8,6 +8,14 @@ import '../models/open_food_facts_model.dart';
 import '../services/food_cache_service.dart';
 import '../services/open_food_facts_service.dart';
 
+/// Clase auxiliar para resultados con scoring
+class _ScoredResult {
+  final OpenFoodFactsResult result;
+  final double score;
+  
+  _ScoredResult(this.result, this.score);
+}
+
 /// Estados posibles de la búsqueda
 enum ExternalSearchStatus {
   idle,
@@ -344,39 +352,135 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     await _loadRecentSearches();
   }
 
-  /// Filtra resultados irrelevantes basado en la query
-  /// Ahora más permisivo - solo elimina resultados claramente irrelevantes
+  /// Filtra y ordena resultados por relevancia usando scoring
+  /// 
+  /// Algoritmo tipo "search engine":
+  /// - Cada resultado recibe un score basado en coincidencias
+  /// - Resultados se ordenan por score descendente
+  /// - Mantiene todos los resultados relevantes, no limita artificialmente
   List<OpenFoodFactsResult> _filterRelevantResults(
     List<OpenFoodFactsResult> results,
     String query,
   ) {
-    final queryLower = query.toLowerCase();
-    final queryWords = queryLower.split(RegExp(r'\s+')).where((w) => w.length >= 2).toList();
+    final queryLower = query.toLowerCase().trim();
+    final queryWords = queryLower
+        .split(RegExp(r'\s+'))
+        .where((w) => w.length >= 2)
+        .toList();
     
-    // Si no hay palabras significativas, devolver todo
+    // Si no hay palabras significativas, devolver todo sin ordenar
     if (queryWords.isEmpty) return results;
     
-    return results.where((product) {
+    // Scoring de resultados
+    final scoredResults = <_ScoredResult>[];
+    
+    for (final product in results) {
       final nameLower = product.name.toLowerCase();
       final brandLower = (product.brand ?? '').toLowerCase();
-      final fullText = '$nameLower $brandLower';
+      final nameWords = nameLower.split(RegExp(r'\s+'));
       
-      // Debe contener al menos una palabra de la query
-      for (final word in queryWords) {
-        if (fullText.contains(word)) {
-          return true;
+      double score = 0;
+      int matchedWords = 0;
+      
+      for (final queryWord in queryWords) {
+        // Coincidencia exacta del nombre completo (máximo puntaje)
+        if (nameLower == queryLower) {
+          score += 1000;
+          matchedWords++;
+          continue;
+        }
+        
+        // Coincidencia exacta de una palabra
+        if (nameWords.contains(queryWord)) {
+          score += 100;
+          matchedWords++;
+          continue;
+        }
+        
+        // Coincidencia al inicio del nombre
+        if (nameLower.startsWith(queryWord)) {
+          score += 80;
+          matchedWords++;
+          continue;
+        }
+        
+        // Coincidencia al inicio de alguna palabra del nombre
+        if (nameWords.any((w) => w.startsWith(queryWord))) {
+          score += 60;
+          matchedWords++;
+          continue;
+        }
+        
+        // Coincidencia parcial en el nombre
+        if (nameLower.contains(queryWord)) {
+          score += 40;
+          matchedWords++;
+          continue;
+        }
+        
+        // Coincidencia en la marca
+        if (brandLower.contains(queryWord)) {
+          score += 30;
+          matchedWords++;
+          continue;
+        }
+        
+        // Fuzzy matching: distancia de edición <= 1 para palabras cortas
+        if (queryWord.length <= 5) {
+          for (final nameWord in nameWords) {
+            if (_levenshteinDistance(queryWord, nameWord) <= 1) {
+              score += 20;
+              matchedWords++;
+              break;
+            }
+          }
         }
       }
       
-      // Si la query es corta (1-3 chars), aceptar si empieza igual
-      if (query.length <= 3) {
-        return nameLower.startsWith(queryLower);
+      // Bonus por múltiples coincidencias
+      if (matchedWords > 1) {
+        score *= (1 + (matchedWords - 1) * 0.5); // +50% por cada palabra extra
       }
       
-      return false;
-    }).toList();
+      // Solo incluir si tiene alguna coincidencia
+      if (score > 0) {
+        scoredResults.add(_ScoredResult(product, score));
+      }
+    }
+    
+    // Ordenar por score descendente
+    scoredResults.sort((a, b) => b.score.compareTo(a.score));
+    
+    return scoredResults.map((s) => s.result).toList();
   }
-
+  
+  /// Calcula la distancia de Levenshtein entre dos strings
+  /// Usado para fuzzy matching (detectar errores ortográficos simples)
+  int _levenshteinDistance(String s1, String s2) {
+    if (s1.length < s2.length) return _levenshteinDistance(s2, s1);
+    if (s2.isEmpty) return s1.length;
+    
+    List<int> prev = List.generate(s2.length + 1, (i) => i);
+    List<int> curr = List.filled(s2.length + 1, 0);
+    
+    for (int i = 0; i < s1.length; i++) {
+      curr[0] = i + 1;
+      for (int j = 0; j < s2.length; j++) {
+        final cost = (s1[i] == s2[j]) ? 0 : 1;
+        curr[j + 1] = [
+          curr[j] + 1,      // inserción
+          prev[j + 1] + 1,  // eliminación
+          prev[j] + cost,   // sustitución
+        ].reduce((a, b) => a < b ? a : b);
+      }
+      final temp = prev;
+      prev = curr;
+      curr = temp;
+    }
+    
+    return prev[s2.length];
+  }
+  
   /// Obtiene sugerencias offline basadas en búsquedas previas
   Future<void> loadOfflineSuggestions() async {
     final allCached = <OpenFoodFactsResult>[];
