@@ -106,3 +106,99 @@ class _HoltWintersResult {
   final double trend;
   _HoltWintersResult(this.level, this.trend);
 }
+
+/// 🎯 MED-005: Análisis de riesgo de sobreentrenamiento y recomendación de deload
+class OvertrainingRisk {
+  final RiskLevel level;
+  final bool shouldDeload;
+  final String recommendation;
+  final List<String> warningSigns;
+
+  const OvertrainingRisk({
+    required this.level,
+    required this.shouldDeload,
+    required this.recommendation,
+    this.warningSigns = const [],
+  });
+}
+
+enum RiskLevel { low, moderate, high, critical }
+
+/// Extensión para detección de deload
+extension DeloadDetection on ProgressionEngine {
+  /// 🎯 MED-005: Detecta riesgo de sobreentrenamiento
+  /// 
+  /// Señales de alerta:
+  /// - 3+ semanas sin progreso (plateau)
+  /// - RPE promedio aumentando
+  /// - Fallos repetidos al mismo peso
+  OvertrainingRisk detectOvertrainingRisk({
+    required List<StrengthDataPoint> recent1RMs,
+    required List<int> recentRPEs,
+    required int failuresAtCurrentWeight,
+  }) {
+    final signs = <String>[];
+    var riskScore = 0;
+
+    // Señal 1: Estancamiento prolongado
+    if (recent1RMs.length >= 4) {
+      final analysis = analyzeStrengthTrend(recent1RMs);
+      if (analysis.isStalled) {
+        signs.add('${recent1RMs.length} semanas sin progreso');
+        riskScore += 3;
+      }
+    }
+
+    // Señal 2: RPE aumentando
+    if (recentRPEs.length >= 3) {
+      final avgRecent = recentRPEs.take(3).reduce((a, b) => a + b) / 3;
+      final avgPrevious = recentRPEs.skip(3).take(3).reduce((a, b) => a + b) / 3;
+      if (avgRecent > avgPrevious + 1) {
+        signs.add('RPE aumentando (${avgRecent.toStringAsFixed(1)} vs ${avgPrevious.toStringAsFixed(1)})');
+        riskScore += 2;
+      }
+    }
+
+    // Señal 3: Fallos repetidos
+    if (failuresAtCurrentWeight >= 2) {
+      signs.add('$failuresAtCurrentWeight fallos al mismo peso');
+      riskScore += 2;
+    }
+
+    // Determinar nivel de riesgo
+    RiskLevel level;
+    if (riskScore >= 6) {
+      level = RiskLevel.critical;
+    } else if (riskScore >= 4) {
+      level = RiskLevel.high;
+    } else if (riskScore >= 2) {
+      level = RiskLevel.moderate;
+    } else {
+      level = RiskLevel.low;
+    }
+
+    // Generar recomendación
+    String recommendation;
+    switch (level) {
+      case RiskLevel.critical:
+        recommendation = 'Deload URGENTE: Reduce volumen 40-50% esta semana';
+        break;
+      case RiskLevel.high:
+        recommendation = 'Deload recomendado: Reduce volumen 20-30%';
+        break;
+      case RiskLevel.moderate:
+        recommendation = 'Monitorea tu recuperación. Considera descanso extra';
+        break;
+      case RiskLevel.low:
+        recommendation = 'Progresión normal. Sigue así!';
+        break;
+    }
+
+    return OvertrainingRisk(
+      level: level,
+      shouldDeload: level == RiskLevel.high || level == RiskLevel.critical,
+      recommendation: recommendation,
+      warningSigns: signs,
+    );
+  }
+}
