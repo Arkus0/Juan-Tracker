@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import 'database_connection.dart';
 
@@ -20,6 +21,7 @@ class StringListConverter extends TypeConverter<List<String>, String> {
     try {
       return List<String>.from(json.decode(fromDb));
     } catch (e) {
+      debugPrint('[StringListConverter] JSON parse error: $e | Data: $fromDb');
       return [];
     }
   }
@@ -40,6 +42,7 @@ class JsonMapConverter extends TypeConverter<Map<String, dynamic>, String> {
     try {
       return Map<String, dynamic>.from(json.decode(fromDb));
     } catch (e) {
+      debugPrint('[JsonMapConverter] JSON parse error: $e | Data: $fromDb');
       return {};
     }
   }
@@ -56,7 +59,12 @@ class MealTypeConverter extends TypeConverter<MealType, String> {
 
   @override
   MealType fromSql(String fromDb) {
-    return MealType.values.byName(fromDb);
+    try {
+      return MealType.values.byName(fromDb);
+    } catch (e) {
+      debugPrint('[MealTypeConverter] Unknown value "$fromDb", defaulting to snack');
+      return MealType.snack; // Default seguro
+    }
   }
 
   @override
@@ -77,7 +85,12 @@ class ServingUnitConverter extends TypeConverter<ServingUnit, String> {
 
   @override
   ServingUnit fromSql(String fromDb) {
-    return ServingUnit.values.byName(fromDb);
+    try {
+      return ServingUnit.values.byName(fromDb);
+    } catch (e) {
+      debugPrint('[ServingUnitConverter] Unknown value "$fromDb", defaulting to grams');
+      return ServingUnit.grams; // Default seguro
+    }
   }
 
   @override
@@ -543,33 +556,52 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(foods, foods.lastUsedAt);
           await m.addColumn(foods, foods.nutriScore);
           await m.addColumn(foods, foods.novaGroup);
-          
+
           // Crear tablas de búsqueda
           await m.createTable(searchHistory);
           await m.createTable(consumptionPatterns);
-          
+
           // Crear tabla FTS5 virtual y triggers
           await _createFts5Tables(m);
         } catch (e) {
           // Tables or columns might already exist
         }
       }
+      // Migration path to version 8: Fix FTS5 structure (TEXT id instead of INTEGER rowid)
+      if (from < 8 && from >= 7) {
+        try {
+          // Eliminar triggers antiguos
+          await customStatement('DROP TRIGGER IF EXISTS foods_fts_insert');
+          await customStatement('DROP TRIGGER IF EXISTS foods_fts_update');
+          await customStatement('DROP TRIGGER IF EXISTS foods_fts_delete');
+          // Eliminar tabla FTS antigua
+          await customStatement('DROP TABLE IF EXISTS foods_fts');
+          // Recrear con estructura correcta
+          await _createFts5Tables(m);
+        } catch (e) {
+          debugPrint('Migration v8 FTS rebuild error: $e');
+        }
+      }
     },
   );
 
   /// 🆕 Crea tabla FTS5 virtual y triggers para sincronización
+  /// NOTA: Usamos tabla FTS5 standalone (sin content=) porque Foods.id es TEXT (UUID),
+  /// y FTS5 content_rowid requiere INTEGER. La sincronización se hace via triggers.
   Future<void> _createFts5Tables(Migrator m) async {
-    // Crear tabla virtual FTS5
+    // Crear tabla virtual FTS5 standalone con food_id para JOIN
     await customStatement('''
       CREATE VIRTUAL TABLE IF NOT EXISTS foods_fts USING fts5(
+        food_id UNINDEXED,
         name,
-        brand,
-        content='foods',
-        content_rowid='id'
+        brand
       )
     ''');
-    
+
     await _createFts5Triggers(m);
+
+    // Poblar índice FTS con datos existentes
+    await _rebuildFtsIndex();
   }
 
   /// 🆕 Crea triggers para mantener FTS sincronizado
@@ -577,31 +609,39 @@ class AppDatabase extends _$AppDatabase {
     // Trigger para INSERT
     await customStatement('''
       CREATE TRIGGER IF NOT EXISTS foods_fts_insert AFTER INSERT ON foods BEGIN
-        INSERT INTO foods_fts(rowid, name, brand)
-        VALUES (new.id, new.name, new.brand);
+        INSERT INTO foods_fts(food_id, name, brand)
+        VALUES (new.id, new.name, COALESCE(new.brand, ''));
       END
     ''');
-    
+
     // Trigger para UPDATE
     await customStatement('''
       CREATE TRIGGER IF NOT EXISTS foods_fts_update AFTER UPDATE ON foods BEGIN
-        UPDATE foods_fts SET 
-          name = new.name,
-          brand = new.brand
-        WHERE rowid = old.id;
+        DELETE FROM foods_fts WHERE food_id = old.id;
+        INSERT INTO foods_fts(food_id, name, brand)
+        VALUES (new.id, new.name, COALESCE(new.brand, ''));
       END
     ''');
-    
+
     // Trigger para DELETE
     await customStatement('''
       CREATE TRIGGER IF NOT EXISTS foods_fts_delete AFTER DELETE ON foods BEGIN
-        DELETE FROM foods_fts WHERE rowid = old.id;
+        DELETE FROM foods_fts WHERE food_id = old.id;
       END
     ''');
   }
 
+  /// Reconstruye el índice FTS desde la tabla foods
+  Future<void> _rebuildFtsIndex() async {
+    await customStatement('DELETE FROM foods_fts');
+    await customStatement('''
+      INSERT INTO foods_fts(food_id, name, brand)
+      SELECT id, name, COALESCE(brand, '') FROM foods
+    ''');
+  }
+
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   // ============================================================================
   // 🆕 NUEVO: MÉTODOS DE BÚSQUEDA FTS5
@@ -610,24 +650,27 @@ class AppDatabase extends _$AppDatabase {
   /// Búsqueda FTS5 con ranking por relevancia
   Future<List<Food>> searchFoodsFTS(String query, {int limit = 50}) async {
     if (query.trim().isEmpty) return [];
-    
+
     // Normalizar query para FTS (agregar wildcard para búsqueda por prefijo)
-    final ftsQuery = '${query.trim()}*';
-    
-    // Usar SQL directo y mapear resultados manualmente
+    // Escapar caracteres especiales de FTS5
+    final sanitized = query.trim().replaceAll(RegExp(r'["\-*()]'), ' ');
+    if (sanitized.trim().isEmpty) return [];
+    final ftsQuery = '"${sanitized.trim()}"*';
+
+    // Usar SQL directo con JOIN por food_id
     final results = await customSelect(
       'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
       'f.kcal_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, '
       'f.portion_name, f.portion_grams, f.user_created, f.verified_source, '
       'f.source_metadata, f.use_count, f.last_used_at, f.nutri_score, f.nova_group, '
       'f.created_at, f.updated_at FROM foods f '
-      'INNER JOIN foods_fts fts ON f.id = fts.rowid '
+      'INNER JOIN foods_fts fts ON f.id = fts.food_id '
       'WHERE foods_fts MATCH ? '
-      'ORDER BY rank '
+      'ORDER BY bm25(foods_fts) '
       'LIMIT ?',
       variables: [Variable(ftsQuery), Variable(limit)],
     ).get();
-    
+
     return results.map((row) => _mapRowToFood(row)).toList();
   }
   
