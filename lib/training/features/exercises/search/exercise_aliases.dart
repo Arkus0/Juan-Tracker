@@ -130,7 +130,7 @@ const Map<String, List<String>> exerciseAliases = {
   // ═══════════════════════════════════════════════════════════════════════════
   // CURL / CURL DE BÍCEPS
   // ═══════════════════════════════════════════════════════════════════════════
-  'curl': ['curl bíceps', 'curl de bíceps', 'bicep curl'],
+  'curl': ['curl bíceps', 'curl de bíceps', 'bicep curl', 'curl de biceps'],
   'curl biceps': ['curl de bíceps', 'bicep curl'],
   'curl de biceps': ['bicep curl', 'curl'],
   'bicep curl': ['curl de bíceps', 'curl bíceps'],
@@ -178,7 +178,6 @@ const Map<String, List<String>> exerciseAliases = {
   'elevación frontal': ['front raise'],
   'front raise': ['elevación frontal'],
   
-  'face pull': ['remo a la cara', 'facepull'],
   'rear delt fly': ['pájaro posterior', 'vuelo posterior'],
   'pajaro posterior': ['rear delt fly', 'rear deltoid fly'],
   'shrugs': ['encogimientos', 'shrugs trapecio'],

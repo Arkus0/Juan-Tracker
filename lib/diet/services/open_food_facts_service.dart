@@ -224,18 +224,50 @@ class OpenFoodFactsService {
     await _waitForRateLimit();
 
     // Construir URL con parámetros optimizados según la documentación de OFF v2
+    // Documentación: https://openfoodfacts.github.io/openfoodfacts-server/reference/api-v3.html
     final uri = Uri.parse('$apiUrl/search').replace(
       queryParameters: {
-        'search_terms': trimmedQuery, // Parámetro correcto de la API v2
+        // Términos de búsqueda (obligatorio)
+        'search_terms': trimmedQuery,
+        
+        // Paginación
         'page': page.toString(),
         'page_size': pageSize.toString(),
-        'countries_tags_en': 'spain', // Priorizar productos españoles
-        'languages_tags': 'es', // Productos con etiquetas en español
-        'fields':
-            'code,product_name,generic_name,brands,image_url,image_small_url,'
-                'ingredients_text,serving_size,nutriments,product_quantity,'
-                'categories_tags,labels_tags,origins_tags',
-        'sort_by': 'popularity_key', // Ordenar por popularidad
+        
+        // FILTROS GEOGRÁFICOS (priorizar España fuertemente)
+        'countries_tags_en': 'spain',
+        'languages_tags': 'es',
+        'stores_tags': '', // Dejar vacío para no restringir demasiado
+        
+        // FILTROS DE CALIDAD (solo productos con datos completos)
+        'states_tags': 'en:complete', // Solo productos completos
+        
+        // CAMPOS A RETORNAR (optimizado para nuestra app)
+        'fields': 
+            'code,'
+            'product_name,'
+            'generic_name,'
+            'brands,'
+            'image_url,'
+            'image_small_url,'
+            'ingredients_text,'
+            'serving_size,'
+            'product_quantity,'
+            'nutriments,'
+            'nutriscore_grade,'
+            'nutriscore_score,'
+            'nova_group,'
+            'categories_tags,'
+            'labels_tags,'
+            'origins_tags,'
+            'states_tags',
+        
+        // ORDENAMIENTO
+        // Opciones: popularity_key, product_name, created_t, last_modified_t
+        'sort_by': 'popularity_key',
+        
+        // Dirección del ordenamiento
+        'sort_direction': 'desc',
       },
     );
 
