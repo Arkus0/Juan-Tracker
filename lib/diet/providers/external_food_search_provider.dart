@@ -6,17 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/food_model.dart';
 import '../models/open_food_facts_model.dart';
 import '../services/food_cache_service.dart';
-import '../services/food_search_expander.dart';
 import '../services/food_search_index.dart';
+import '../services/food_search_scoring.dart';
 import '../services/open_food_facts_service.dart';
 
-/// Clase auxiliar para resultados con scoring
-class _ScoredResult {
-  final OpenFoodFactsResult result;
-  final double score;
-  
-  _ScoredResult(this.result, this.score);
-}
+// Scoring de resultados ahora manejado por FoodSearchScoring con BM25
 
 /// Estados posibles de la búsqueda
 enum ExternalSearchStatus {
@@ -96,7 +90,6 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   late final OpenFoodFactsService _apiService;
   late final FoodCacheService _cacheService;
   late final Connectivity _connectivity;
-  late final FoodSearchExpander _searchExpander;
   late final FoodSearchIndex _searchIndex;
 
   @override
@@ -104,7 +97,6 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     _apiService = ref.read(openFoodFactsServiceProvider);
     _cacheService = ref.read(foodCacheServiceProvider);
     _connectivity = Connectivity();
-    _searchExpander = FoodSearchExpander();
     _searchIndex = FoodSearchIndex();
 
     // Inicializar en background
@@ -247,8 +239,8 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     // PASO 3: Llamar a API Open Food Facts
     final response = await _apiService.searchProducts(query, page: 1);
 
-    // PASO 4: Filtrar y ordenar resultados
-    final filteredProducts = _filterRelevantResults(response.products, query);
+    // PASO 4: Filtrar y ordenar resultados con BM25
+    final filteredProducts = _rankWithBM25(response.products, query);
 
     // PASO 5: Merge final (API + local + cache)
     final finalResults = _mergeResults(
@@ -258,9 +250,9 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     );
 
     // PASO 6: Guardar en cache y actualizar índice
-    if (filteredProducts.isNotEmpty) {
-      await _cacheService.cacheSearchResults(query, filteredProducts);
-      for (final product in filteredProducts.take(10)) {
+    if (response.products.isNotEmpty) {
+      await _cacheService.cacheSearchResults(query, response.products);
+      for (final product in response.products.take(10)) {
         _searchIndex.addExternalFood(product);
       }
     }
@@ -309,8 +301,17 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
       }
     }
     
-    // Reordenar por relevancia
-    return _filterRelevantResults(merged, query);
+    // Reordenar por relevancia con BM25
+    return _rankWithBM25(merged, query);
+  }
+
+  /// Ranking con BM25 (mejor que el scoring anterior)
+  List<OpenFoodFactsResult> _rankWithBM25(
+    List<OpenFoodFactsResult> products,
+    String query,
+  ) {
+    final scored = FoodSearchScoring.rankProducts(products, query);
+    return scored.map((s) => s.product).toList();
   }
 
   /// Búsqueda offline (cache local)
@@ -439,151 +440,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     await _loadRecentSearches();
   }
 
-  /// Filtra y ordena resultados por relevancia usando scoring
-  /// 
-  /// Algoritmo tipo "search engine":
-  /// - Cada resultado recibe un score basado en coincidencias
-  /// - Resultados se ordenan por score descendente
-  /// - Mantiene todos los resultados relevantes, no limita artificialmente
-  List<OpenFoodFactsResult> _filterRelevantResults(
-    List<OpenFoodFactsResult> results,
-    String query,
-  ) {
-    final queryLower = query.toLowerCase().trim();
-    final queryWords = queryLower
-        .split(RegExp(r'\s+'))
-        .where((w) => w.length >= 2)
-        .toList();
-    
-    // Si no hay palabras significativas, devolver todo sin ordenar
-    if (queryWords.isEmpty) return results;
-    
-    // Scoring de resultados
-    final scoredResults = <_ScoredResult>[];
-    
-    for (final product in results) {
-      final nameLower = product.name.toLowerCase();
-      final brandLower = (product.brand ?? '').toLowerCase();
-      final nameWords = nameLower.split(RegExp(r'\s+'));
-
-      // Calcular relevancia española (bonus por marcas españolas, penalización procesados)
-      final spanishScore = _searchExpander.calculateSpanishRelevance(
-        product.name,
-        product.brand,
-        query,
-      );
-
-      double score = spanishScore;
-      int matchedWords = 0;
-      
-      for (final queryWord in queryWords) {
-        // Coincidencia exacta del nombre completo (máximo puntaje)
-        if (nameLower == queryLower) {
-          score += 1000;
-          matchedWords++;
-          continue;
-        }
-        
-        // Coincidencia exacta de una palabra
-        if (nameWords.contains(queryWord)) {
-          score += 100;
-          matchedWords++;
-          continue;
-        }
-        
-        // Coincidencia al inicio del nombre
-        if (nameLower.startsWith(queryWord)) {
-          score += 80;
-          matchedWords++;
-          continue;
-        }
-        
-        // Coincidencia al inicio de alguna palabra del nombre
-        if (nameWords.any((w) => w.startsWith(queryWord))) {
-          score += 60;
-          matchedWords++;
-          continue;
-        }
-        
-        // Coincidencia parcial en el nombre
-        if (nameLower.contains(queryWord)) {
-          score += 40;
-          matchedWords++;
-          continue;
-        }
-        
-        // Coincidencia en la marca
-        if (brandLower.contains(queryWord)) {
-          score += 30;
-          matchedWords++;
-          continue;
-        }
-        
-        // Fuzzy matching: distancia de edición <= 1 para palabras cortas
-        if (queryWord.length <= 5) {
-          for (final nameWord in nameWords) {
-            if (_levenshteinDistance(queryWord, nameWord) <= 1) {
-              score += 20;
-              matchedWords++;
-              break;
-            }
-          }
-        }
-      }
-      
-      // Bonus por múltiples coincidencias
-      if (matchedWords > 1) {
-        score *= (1 + (matchedWords - 1) * 0.5); // +50% por cada palabra extra
-      }
-      
-      // Bonus por datos nutricionales completos
-      if (product.hasValidNutrition) {
-        score *= 1.1;
-      }
-
-      // Bonus por tener imagen
-      if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
-        score *= 1.05;
-      }
-
-      // Solo incluir si tiene alguna coincidencia significativa
-      if (score > 10) {
-        scoredResults.add(_ScoredResult(product, score));
-      }
-    }
-    
-    // Ordenar por score descendente
-    scoredResults.sort((a, b) => b.score.compareTo(a.score));
-    
-    return scoredResults.map((s) => s.result).toList();
-  }
-  
-  /// Calcula la distancia de Levenshtein entre dos strings
-  /// Usado para fuzzy matching (detectar errores ortográficos simples)
-  int _levenshteinDistance(String s1, String s2) {
-    if (s1.length < s2.length) return _levenshteinDistance(s2, s1);
-    if (s2.isEmpty) return s1.length;
-    
-    List<int> prev = List.generate(s2.length + 1, (i) => i);
-    List<int> curr = List.filled(s2.length + 1, 0);
-    
-    for (int i = 0; i < s1.length; i++) {
-      curr[0] = i + 1;
-      for (int j = 0; j < s2.length; j++) {
-        final cost = (s1[i] == s2[j]) ? 0 : 1;
-        curr[j + 1] = [
-          curr[j] + 1,      // inserción
-          prev[j + 1] + 1,  // eliminación
-          prev[j] + cost,   // sustitución
-        ].reduce((a, b) => a < b ? a : b);
-      }
-      final temp = prev;
-      prev = curr;
-      curr = temp;
-    }
-    
-    return prev[s2.length];
-  }
+  // El scoring antiguo ha sido reemplazado por BM25 en FoodSearchScoring
   
   /// Obtiene sugerencias offline basadas en búsquedas previas
   Future<void> loadOfflineSuggestions() async {
