@@ -230,10 +230,15 @@ class FoodAutocompleteService {
     final normalizedPrefix = prefix.toLowerCase();
     final results = <AutocompleteSuggestion>[];
 
-    // Encontrar el nodo del prefijo
+    // Encontrar el nodo del prefijo con validación
     var node = _root;
     for (final char in normalizedPrefix.split('')) {
-      node = node.children[char]!;
+      final child = node.children[char];
+      if (child == null) {
+        // El prefijo no existe en el Trie, retornar lista vacía
+        return results;
+      }
+      node = child;
     }
 
     // Recolectar todos los términos desde ese nodo
