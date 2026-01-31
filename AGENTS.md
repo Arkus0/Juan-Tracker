@@ -157,11 +157,20 @@ Sistema de ajuste de targets basado en TDEE real.
 - Fórmula: `TDEE_real = AVG_kcal - (ΔTrendWeight × 7700 / días)`
 - Check-in semanal con propuestas de ajuste
 
+### 6. Sistema de Búsqueda Inteligente de Alimentos (NUEVO) ✅
+Búsqueda híbrida local + Open Food Facts con debounce y cancelación.
+- **FTS5**: Tabla virtual para búsqueda por texto completo
+- **Debounce**: 300ms para reducir llamadas API
+- **Cancelación**: CancelToken de Dio para requests en vuelo
+- **Ranking**: Por frecuencia de uso, recencia, y verificación
+- **Providers**: `FoodSearchNotifier`, `predictiveFoodsProvider`, `recentSearchesProvider`
+- **UI**: `FoodSearchBar` con autocompletado, `FoodSearchResults` con estados (loading, empty, offline, error)
+
 ---
 
 ## Database (Drift)
 
-### Schema v5
+### Schema v7
 
 **Training:**
 - `Routines`, `RoutineDays`, `RoutineExercises`
@@ -169,6 +178,12 @@ Sistema de ajuste de targets basado en TDEE real.
 
 **Diet:**
 - `Foods`, `DiaryEntries`, `WeighIns`, `Targets`, `Recipes`, `RecipeItems`
+- `FoodsFts` - Tabla FTS5 para búsqueda de texto (sincronización manual)
+- `SearchHistory` - Historial de búsquedas
+- `ConsumptionPatterns` - Patrones de consumo para ML
+
+**Nota importante sobre FTS5:**
+Los triggers automáticos para sincronizar `foods` con `foods_fts` fueron eliminados porque FTS5 requiere `rowid` INTEGER pero usamos UUIDs TEXT. La sincronización debe hacerse manualmente mediante los métodos `insertFoodFts()`, `updateFoodFts()`, `deleteFoodFts()` en `AppDatabase`.
 
 ### Providers Clave
 
@@ -246,7 +261,7 @@ flutter test
 ```
 
 **Cobertura:**
-- 201 tests pasando
+- 242 tests pasando
 - Tests de servicios puros, repositorios, UI
 
 **Patrones:**
@@ -274,4 +289,4 @@ const model = MyModel(id: '1'); // ❌
 
 ---
 
-*Última actualización: Enero 2026 - Roadmap completado, 201 tests*
+*Última actualización: Enero 2026 - Sistema de búsqueda inteligente implementado, 242 tests*

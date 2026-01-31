@@ -494,8 +494,8 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
-      // 🆕 Crear índices FTS5 virtuales
-      await _createFts5Triggers(m);
+      // 🆕 Crear tabla FTS5 virtual
+      await _createFts5Tables(m);
     },
     onUpgrade: (m, from, to) async {
       // Migration path to version 2: add supersetId column to routine_exercises
@@ -585,11 +585,11 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
-  /// 🆕 Crea tabla FTS5 virtual y triggers para sincronización
-  /// NOTA: Usamos tabla FTS5 standalone (sin content=) porque Foods.id es TEXT (UUID),
-  /// y FTS5 content_rowid requiere INTEGER. La sincronización se hace via triggers.
+  /// 🆕 Crea tabla FTS5 virtual para búsqueda de alimentos
+  /// Usa un enfoque external content con sincronización manual
   Future<void> _createFts5Tables(Migrator m) async {
-    // Crear tabla virtual FTS5 standalone con food_id para JOIN
+    // Crear tabla virtual FTS5 sin content_rowid
+    // Usamos 'id' como columna UNINDEXED para almacenar el UUID
     await customStatement('''
       CREATE VIRTUAL TABLE IF NOT EXISTS foods_fts USING fts5(
         food_id UNINDEXED,
@@ -603,10 +603,9 @@ class AppDatabase extends _$AppDatabase {
     // Poblar índice FTS con datos existentes
     await _rebuildFtsIndex();
   }
-
-  /// 🆕 Crea triggers para mantener FTS sincronizado
-  Future<void> _createFts5Triggers(Migrator m) async {
-    // Trigger para INSERT
+  
+  /// 🆕 Inserta entrada en FTS5 para un alimento
+  Future<void> insertFoodFts(String foodId, String name, String? brand) async {
     await customStatement('''
       CREATE TRIGGER IF NOT EXISTS foods_fts_insert AFTER INSERT ON foods BEGIN
         INSERT INTO foods_fts(food_id, name, brand)
