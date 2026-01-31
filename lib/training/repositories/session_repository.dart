@@ -444,39 +444,35 @@ class SessionRepository {
   // --- Active Session ---
 
   Future<void> saveActiveSession(ActiveSessionData data) async {
-    final session = Sesion(
-      id: 'active_session',
-      rutinaId: data.activeRutina?.id ?? '',
-      fecha: data.startTime ?? DateTime.now(),
-      durationSeconds: 0,
-      ejerciciosCompletados: data.exercises,
-      ejerciciosObjetivo: data.targets,
-    );
-
-    final active = await (db.select(
-      db.sessions,
-    )..where((s) => s.completedAt.isNull())).getSingleOrNull();
-    final idToUse = active?.id ?? const Uuid().v4();
-
-    final sesionToSave = Sesion(
-      id: idToUse,
-      rutinaId: session.rutinaId,
-      fecha: session.fecha,
-      durationSeconds: session.durationSeconds,
-      ejerciciosCompletados: session.ejerciciosCompletados,
-      ejerciciosObjetivo: session.ejerciciosObjetivo,
-    );
-
+    // Toda la lógica dentro de la transacción para evitar race conditions
     await db.transaction(() async {
+      // Buscar sesión activa existente DENTRO de la transacción
+      final active = await (db.select(
+        db.sessions,
+      )..where((s) => s.completedAt.isNull())).getSingleOrNull();
+      final idToUse = active?.id ?? const Uuid().v4();
+
+      final sesionToSave = Sesion(
+        id: idToUse,
+        rutinaId: data.activeRutina?.id ?? '',
+        fecha: data.startTime ?? DateTime.now(),
+        durationSeconds: 0,
+        ejerciciosCompletados: data.exercises,
+        ejerciciosObjetivo: data.targets,
+      );
+
       await _saveSessionInternal(sesionToSave, isCompleted: false);
     });
   }
 
   Future<ActiveSessionData?> getActiveSession() async {
-    final sessionRow = await (db.select(
+    // Usar get() y tomar el primero para manejar múltiples sesiones activas gracefully
+    // (podría ocurrir por corrupción de datos o bugs anteriores)
+    final activeSessions = await (db.select(
       db.sessions,
-    )..where((s) => s.completedAt.isNull())).getSingleOrNull();
-    if (sessionRow == null) return null;
+    )..where((s) => s.completedAt.isNull())).get();
+    if (activeSessions.isEmpty) return null;
+    final sessionRow = activeSessions.first;
 
     final sessionExercises = await (db.select(
       db.sessionExercises,

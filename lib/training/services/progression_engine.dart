@@ -37,8 +37,16 @@ class ProgressionEngine {
       );
     }
 
-    // Evaluar la última sesión
-    final lastSession = context.lastSession!;
+    // Evaluar la última sesión (con check defensivo)
+    final lastSession = context.lastSession;
+    if (lastSession == null) {
+      // Fallback defensivo si hasEnoughData es true pero lastSession es null
+      return ProgressionDecision.calibrating(
+        weight: context.confirmedWeight,
+        reps: context.targetReps,
+        sessionNumber: 1,
+      );
+    }
     final sessionResult = lastSession.evaluate();
 
     // Aplicar modelo de progresión específico

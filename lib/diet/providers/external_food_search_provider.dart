@@ -112,10 +112,11 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
 
   // 🆕 NUEVO: Timer para debounce
   Timer? _debounceTimer;
-  
-  // 🆕 NUEVO: CancelToken para cancelar requests
-  CancelToken? _cancelToken;
-  
+
+  // 🆕 CancelTokens separados para evitar race conditions
+  CancelToken? _searchCancelToken;     // Para búsquedas nuevas
+  CancelToken? _paginationCancelToken; // Para loadMore/paginación
+
   // 🆕 Constante de debounce
   static const _debounceDuration = Duration(milliseconds: 300);
 
@@ -131,7 +132,8 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     // 🆕 NUEVO: Cleanup al dispose
     ref.onDispose(() {
       _debounceTimer?.cancel();
-      _cancelToken?.cancel();
+      _searchCancelToken?.cancel();
+      _paginationCancelToken?.cancel();
     });
 
     // Inicializar en background
@@ -196,13 +198,13 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   // ============================================================================
 
   /// Realiza una búsqueda nueva con debounce y cancelación
-  /// 
+  ///
   /// El debounce de 300ms asegura que no se disparen búsquedas
   /// mientras el usuario está escribiendo rápidamente.
   Future<void> search(String query, {bool forceOffline = false}) async {
-    // Cancelar timer y request previos
+    // Cancelar timer y request previos (solo de búsqueda, no paginación)
     _debounceTimer?.cancel();
-    _cancelToken?.cancel();
+    _searchCancelToken?.cancel();
 
     if (query.trim().isEmpty) {
       state = const ExternalSearchState();
@@ -227,7 +229,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   /// Ejecuta la búsqueda real después del debounce
   Future<void> _performSearch(String query, {bool forceOffline = false}) async {
     // Crear nuevo CancelToken para esta búsqueda
-    _cancelToken = CancelToken();
+    _searchCancelToken = CancelToken();
 
     // Verificar conectividad
     await _checkConnectivity();
@@ -235,7 +237,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
 
     try {
       if (isOnline) {
-        await _searchOnline(query.trim(), cancelToken: _cancelToken);
+        await _searchOnline(query.trim(), cancelToken: _searchCancelToken);
       } else {
         await _searchOffline(query.trim());
       }
@@ -567,16 +569,16 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
 
     state = state.copyWith(status: ExternalSearchStatus.loadingMore);
 
-    // Cancelar request previo si existe
-    _cancelToken?.cancel();
-    _cancelToken = CancelToken();
+    // Cancelar request de paginación previo (NO el de búsqueda)
+    _paginationCancelToken?.cancel();
+    _paginationCancelToken = CancelToken();
 
     try {
       final nextPage = state.page + 1;
       final response = await _apiService.searchProducts(
         state.query,
         page: nextPage,
-        cancelToken: _cancelToken,
+        cancelToken: _paginationCancelToken,
       );
 
       final allResults = [...state.results, ...response.products];
@@ -611,9 +613,9 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   Future<OpenFoodFactsResult?> searchByBarcode(String barcode) async {
     await _checkConnectivity();
 
-    // Cancelar request previo
-    _cancelToken?.cancel();
-    _cancelToken = CancelToken();
+    // Cancelar búsqueda previa (barcode es una búsqueda nueva)
+    _searchCancelToken?.cancel();
+    _searchCancelToken = CancelToken();
 
     if (!state.isOnline) {
       // Buscar en cache local
@@ -629,7 +631,7 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
     try {
       final result = await _apiService.searchByBarcode(
         barcode,
-        cancelToken: _cancelToken,
+        cancelToken: _searchCancelToken,
       );
       if (result != null) {
         // Guardar en cache
@@ -670,7 +672,8 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
   /// Limpia la búsqueda actual
   void clear() {
     _debounceTimer?.cancel();
-    _cancelToken?.cancel();
+    _searchCancelToken?.cancel();
+    _paginationCancelToken?.cancel();
     state = const ExternalSearchState();
     _loadRecentSearches();
   }

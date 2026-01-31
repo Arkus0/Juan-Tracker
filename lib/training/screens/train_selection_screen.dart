@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/rutina.dart';
+import '../providers/session_progress_provider.dart';
+import '../providers/session_tolerance_provider.dart';
 import '../providers/training_provider.dart';
 import '../utils/design_system.dart';
 import '../widgets/common/app_widgets.dart';
@@ -145,6 +147,12 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
     try {
       HapticFeedback.heavyImpact();
     } catch (_) {}
+
+    // Reset state providers antes de iniciar nueva sesión
+    // para evitar que el estado de sesiones anteriores afecte la nueva
+    ref.read(sessionProgressProvider.notifier).reset();
+    ref.read(exerciseCompletionProvider.notifier).reset();
+    ref.read(sessionToleranceProvider.notifier).reset();
 
     ref
         .read(trainingSessionProvider.notifier)

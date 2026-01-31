@@ -194,14 +194,15 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
 
   void _onConfirm() {
     final value = double.tryParse(_displayValue);
-    if (value != null && value >= 0) {
+    // Reps >= 0 (0 = intento fallido); Peso sin restricción (negativo = asistido)
+    if (value != null) {
       HapticFeedback.mediumImpact();
       widget.onConfirm(value);
     }
   }
 
   void _onUsePrevious() {
-    if (widget.previousValue != null && widget.previousValue! > 0) {
+    if (widget.previousValue != null) {
       HapticFeedback.selectionClick();
       setState(() {
         _displayValue = widget.isInteger
@@ -233,7 +234,30 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
 
   bool get _canConfirm {
     final value = double.tryParse(_displayValue);
-    return value != null && value >= 0;
+    // Cualquier número válido es aceptable (0, negativo para asistido, etc.)
+    return value != null;
+  }
+
+  /// Toggle signo +/- para pesos asistidos
+  void _onToggleSign() {
+    if (_displayValue.isEmpty) {
+      setState(() {
+        _displayValue = '-';
+      });
+    } else if (_displayValue == '-') {
+      setState(() {
+        _displayValue = '';
+      });
+    } else if (_displayValue.startsWith('-')) {
+      setState(() {
+        _displayValue = _displayValue.substring(1);
+      });
+    } else {
+      setState(() {
+        _displayValue = '-$_displayValue';
+      });
+    }
+    HapticFeedback.selectionClick();
   }
 
   @override
@@ -485,6 +509,39 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
               padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + bottomPadding),
               child: Row(
                 children: [
+                  // Botón +/- para pesos asistidos (solo KG)
+                  if (widget.fieldLabel == 'KG')
+                    Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: SizedBox(
+                        height: 56,
+                        width: 56,
+                        child: TextButton(
+                          onPressed: _onToggleSign,
+                          style: TextButton.styleFrom(
+                            foregroundColor: _displayValue.startsWith('-')
+                                ? _ModalColors.activeSet
+                                : _ModalColors.textSecondary,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: _displayValue.startsWith('-')
+                                    ? _ModalColors.activeSet
+                                    : AppColors.border,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            '+/−',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   // Botón limpiar - Sutil
                   if (_displayValue.isNotEmpty)
                     Padding(
