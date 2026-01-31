@@ -79,29 +79,62 @@ class CoachRepository {
       weeklyRateKg = (json['weeklyRateKg'] as num).toDouble();
     } else if (json.containsKey('weeklyRatePercent')) {
       // Legacy: convertir % a kg usando startingWeight
+      // Asume que percent está en formato decimal (0.02 = 2%)
       final percent = (json['weeklyRatePercent'] as num).toDouble();
       final weight = (json['startingWeight'] as num).toDouble();
-      weeklyRateKg = weight * percent;
+      // Si percent > 1, probablemente está en formato entero (2 = 2%)
+      final normalizedPercent = percent > 1 ? percent / 100 : percent;
+      weeklyRateKg = weight * normalizedPercent;
     } else {
       weeklyRateKg = 0.5; // Default
     }
 
+    // Parseo seguro de enums con fallback
+    WeightGoal goal;
+    try {
+      goal = WeightGoal.values.byName(json['goal'] as String);
+    } catch (e) {
+      goal = WeightGoal.maintain; // Fallback seguro
+    }
+
+    MacroPreset macroPreset;
+    try {
+      macroPreset = json.containsKey('macroPreset')
+          ? MacroPreset.values.byName(json['macroPreset'] as String)
+          : MacroPreset.balanced;
+    } catch (e) {
+      macroPreset = MacroPreset.balanced; // Fallback seguro
+    }
+
+    // Parseo seguro de fechas con fallback
+    DateTime startDate;
+    try {
+      startDate = DateTime.parse(json['startDate'] as String);
+    } catch (e) {
+      startDate = DateTime.now(); // Fallback a fecha actual
+    }
+
+    DateTime? lastCheckInDate;
+    try {
+      lastCheckInDate = json['lastCheckInDate'] != null
+          ? DateTime.parse(json['lastCheckInDate'] as String)
+          : null;
+    } catch (e) {
+      lastCheckInDate = null;
+    }
+
     return CoachPlan(
       id: json['id'] as String,
-      goal: WeightGoal.values.byName(json['goal'] as String),
+      goal: goal,
       weeklyRateKg: weeklyRateKg,
       initialTdeeEstimate: json['initialTdeeEstimate'] as int,
       startingWeight: (json['startingWeight'] as num).toDouble(),
-      startDate: DateTime.parse(json['startDate'] as String),
-      lastCheckInDate: json['lastCheckInDate'] != null
-          ? DateTime.parse(json['lastCheckInDate'] as String)
-          : null,
+      startDate: startDate,
+      lastCheckInDate: lastCheckInDate,
       currentTargetId: json['currentTargetId'] as String?,
       currentKcalTarget: json['currentKcalTarget'] as int?,
       notes: json['notes'] as String?,
-      macroPreset: json.containsKey('macroPreset')
-          ? MacroPreset.values.byName(json['macroPreset'] as String)
-          : MacroPreset.balanced,
+      macroPreset: macroPreset,
     );
   }
 }
