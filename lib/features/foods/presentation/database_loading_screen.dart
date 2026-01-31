@@ -51,10 +51,10 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
 
       // Cargar la base de datos con progreso
       final loadedCount = await loader.loadDatabase(
-        onProgress: (progress) {
+        onProgress: (progress, loaded) {
           setState(() {
             _progress = progress;
-            _status = 'Cargando alimentos... (${(progress * 100).toStringAsFixed(0)}%)';
+            _status = 'Cargando alimentos... ${(progress * 100).toStringAsFixed(0)}% ($loaded)';
           });
         },
       );
