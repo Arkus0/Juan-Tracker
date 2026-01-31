@@ -137,21 +137,24 @@ class TargetsProgress {
   });
 
   /// Porcentajes de progreso (0.0 - 1.0+)
+  /// Retorna null si el objetivo es 0 o no existe (evita división por cero)
   double? get kcalPercent =>
-      targets != null ? kcalConsumed / targets!.kcalTarget : null;
+      targets != null && targets!.kcalTarget > 0
+          ? kcalConsumed / targets!.kcalTarget
+          : null;
 
   double? get proteinPercent =>
-      targets?.proteinTarget != null
+      targets?.proteinTarget != null && targets!.proteinTarget! > 0
           ? proteinConsumed / targets!.proteinTarget!
           : null;
 
   double? get carbsPercent =>
-      targets?.carbsTarget != null
+      targets?.carbsTarget != null && targets!.carbsTarget! > 0
           ? carbsConsumed / targets!.carbsTarget!
           : null;
 
   double? get fatPercent =>
-      targets?.fatTarget != null
+      targets?.fatTarget != null && targets!.fatTarget! > 0
           ? fatConsumed / targets!.fatTarget!
           : null;
 

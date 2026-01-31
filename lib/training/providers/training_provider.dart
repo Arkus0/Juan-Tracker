@@ -367,12 +367,15 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     );
     final finalReps = ErrorToleranceRules.enforceRepsLimits(reps ?? log.reps);
 
+    // Validar RPE en rango 1-10
+    final validRpe = rpe != null ? rpe.clamp(1, 10) : log.rpe;
+
     final newLog = SerieLog(
       id: log.id, // Preserve UUID
       peso: finalPeso,
       reps: finalReps,
       completed: completed ?? log.completed,
-      rpe: rpe ?? log.rpe,
+      rpe: validRpe,
       notas: notas ?? log.notas,
       restSeconds: restSeconds ?? log.restSeconds,
       isFailure: isFailure ?? log.isFailure,

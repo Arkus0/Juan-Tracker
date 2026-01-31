@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import '../../core/providers/database_provider.dart';
 import '../../training/database/database.dart';
 import '../repositories/alimento_repository.dart';
+import 'habitual_food_provider.dart';
 
 // ============================================================================
 // ESTADO
@@ -312,11 +313,14 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
   Future<void> selectFood(String foodId, {MealType? mealType}) async {
     final repository = ref.read(alimentoRepositoryProvider);
     await repository.recordSelection(foodId, mealType: mealType);
-    
+
     // Guardar en historial que se seleccionó este alimento para la query actual
     if (state.query.isNotEmpty) {
       await repository.recordSearch(state.query, selectedFoodId: foodId);
     }
+
+    // Invalidar providers dependientes para refrescar sugerencias
+    ref.invalidate(habitualFoodProvider);
   }
 
   /// Limpiar búsqueda actual

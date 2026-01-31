@@ -132,13 +132,22 @@ class Macros {
     this.fat,
   });
 
-  /// Suma dos Macros
+  /// Suma dos Macros preservando null cuando ambos son desconocidos
+  /// - null + null = null (ambos desconocidos)
+  /// - null + valor = valor (preserva lo conocido)
+  /// - valor + valor = suma
   Macros operator +(Macros other) => Macros(
         kcal: kcal + other.kcal,
-        protein: (protein ?? 0) + (other.protein ?? 0),
-        carbs: (carbs ?? 0) + (other.carbs ?? 0),
-        fat: (fat ?? 0) + (other.fat ?? 0),
+        protein: _sumNullable(protein, other.protein),
+        carbs: _sumNullable(carbs, other.carbs),
+        fat: _sumNullable(fat, other.fat),
       );
+
+  /// Helper para sumar valores nullable preservando semántica
+  static double? _sumNullable(double? a, double? b) {
+    if (a == null && b == null) return null;
+    return (a ?? 0) + (b ?? 0);
+  }
 
   static const Macros zero = Macros(kcal: 0);
 
