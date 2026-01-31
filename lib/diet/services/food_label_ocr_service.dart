@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -127,13 +129,22 @@ class FoodLabelOcrService {
   }
 
   /// Procesa una imagen y extrae texto
+  /// Timeout de 30 segundos para evitar bloqueo indefinido
   Future<FoodLabelScanResult> _processImage(String imagePath) async {
     final inputImage = InputImage.fromFilePath(imagePath);
     final textRecognizer = TextRecognizer();
 
     try {
-      final recognizedText = await textRecognizer.processImage(inputImage);
-      
+      final recognizedText = await textRecognizer
+          .processImage(inputImage)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              _logger.w('OCR timeout - procesamiento excedió 30 segundos');
+              throw TimeoutException('OCR processing timeout', const Duration(seconds: 30));
+            },
+          );
+
       if (recognizedText.text.isEmpty) {
         return const FoodLabelScanResult.empty();
       }

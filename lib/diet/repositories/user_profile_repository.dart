@@ -57,13 +57,30 @@ class DriftUserProfileRepository implements IUserProfileRepository {
   }
 
   UserProfileModel _mapToModel(UserProfile row) {
+    // Parseo seguro de enums con fallback
+    Gender? gender;
+    if (row.gender != null) {
+      try {
+        gender = Gender.values.byName(row.gender!);
+      } catch (e) {
+        gender = null; // Fallback si el valor es inválido
+      }
+    }
+
+    ActivityLevel activityLevel;
+    try {
+      activityLevel = ActivityLevel.values.byName(row.activityLevel);
+    } catch (e) {
+      activityLevel = ActivityLevel.moderatelyActive; // Fallback seguro
+    }
+
     return UserProfileModel(
       id: row.id,
       age: row.age,
-      gender: row.gender != null ? Gender.values.byName(row.gender!) : null,
+      gender: gender,
       heightCm: row.heightCm,
       currentWeightKg: row.currentWeightKg,
-      activityLevel: ActivityLevel.values.byName(row.activityLevel),
+      activityLevel: activityLevel,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );
