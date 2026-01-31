@@ -7,7 +7,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../../core/providers/database_provider.dart';
 import '../../../diet/models/models.dart';
-import '../../../diet/providers/external_food_search_provider.dart';
+import '../../../diet/presentation/providers/food_search_provider.dart';
 import '../../../diet/services/food_label_ocr_service.dart';
 import 'add_entry_dialog.dart';
 import 'barcode_scanner_screen.dart';
@@ -68,9 +68,9 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
   /// Búsqueda - el debounce está en el provider (300ms)
   void _onSearchChanged(String value) {
     if (value.trim().isNotEmpty) {
-      ref.read(externalFoodSearchProvider.notifier).search(value);
+      ref.read(foodSearchProvider.notifier).search(value);
     } else if (value.isEmpty) {
-      ref.read(externalFoodSearchProvider.notifier).clear();
+      ref.read(foodSearchProvider.notifier).clear();
     }
   }
 
@@ -183,18 +183,26 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
 
   /// Procesa el código de barras
   Future<void> _processBarcode(String barcode) async {
-    final notifier = ref.read(externalFoodSearchProvider.notifier);
+    setState(() => _searchController.text = barcode);
     
-    // Mostrar loading
-    notifier.setLoading(barcode);
-
-    final result = await notifier.searchByBarcode(barcode);
+    // Buscar por barcode usando el repositorio
+    final repository = ref.read(foodSearchRepositoryProvider);
+    final result = await repository.searchByBarcode(barcode);
     
-    if (result != null && mounted) {
-      _selectProduct(result);
-    } else if (mounted) {
-      _showError('Producto no encontrado');
-      notifier.clear();
+    if (result == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Producto no encontrado')),
+      );
+    } else if (result != null && mounted) {
+      // Convertir ScoredFood a ScoredFoodItem
+      final item = ScoredFoodItem(
+        id: result.food.id,
+        name: result.food.name,
+        brand: result.food.brand,
+        kcalPer100g: (result.food.metadata['kcalPer100g'] as num?)?.toDouble() ?? 0,
+        score: result.score,
+      );
+      _selectProduct(item);
     }
   }
 
@@ -336,10 +344,10 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
   }
 
   /// Selecciona un producto para guardar/usar
-  Future<void> _selectProduct(OpenFoodFactsResult result) async {
+  Future<void> _selectProduct(ScoredFoodItem item) async {
     // Verificar si ya existe en biblioteca local
     final foodRepo = ref.read(foodRepositoryProvider);
-    final existing = await foodRepo.findByBarcode(result.code);
+    final existing = await foodRepo.findByBarcode(item.id);
 
     if (existing != null) {
       // Ya existe, usar directamente
@@ -354,13 +362,23 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
     
     final shouldSave = await showDialog<bool>(
       context: context,
-      builder: (ctx) => _SaveFoodDialog(result: result),
+      builder: (ctx) => _SaveFoodDialog(item: item),
     );
 
     if (shouldSave == true && mounted) {
-      // Guardar en biblioteca
-      final food = await ref.read(externalFoodSearchProvider.notifier)
-          .saveToLocalLibrary(result);
+      // Crear y guardar en biblioteca
+      final food = FoodModel(
+        id: 'off_${item.id}_${DateTime.now().millisecondsSinceEpoch}',
+        name: item.name,
+        brand: item.brand,
+        barcode: item.id,
+        kcalPer100g: item.kcalPer100g.round(),
+        proteinPer100g: item.proteinPer100g,
+        carbsPer100g: item.carbsPer100g,
+        fatPer100g: item.fatPer100g,
+        userCreated: false,
+        verifiedSource: 'open_food_facts',
+      );
       
       // Insertar en repositorio
       await foodRepo.insert(food);
@@ -411,7 +429,7 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
 
   @override
   Widget build(BuildContext context) {
-    final searchState = ref.watch(externalFoodSearchProvider);
+    final searchState = ref.watch(foodSearchProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -420,7 +438,7 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
         centerTitle: true,
         actions: [
           // Indicador de modo offline
-          if (!searchState.isOnline)
+          if (searchState.status == FoodSearchStatus.offline)
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: Icon(
@@ -443,7 +461,7 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
             onPastePressed: _pasteFromClipboard,
             onClear: () {
               _searchController.clear();
-              ref.read(externalFoodSearchProvider.notifier).clear();
+              ref.read(foodSearchProvider.notifier).clear();
             },
           ),
 
@@ -461,53 +479,44 @@ class _ExternalFoodSearchScreenState extends ConsumerState<ExternalFoodSearchScr
     );
   }
 
-  Widget _buildContent(ExternalSearchState state) {
+  Widget _buildContent(FoodSearchState state) {
     switch (state.status) {
-      case ExternalSearchStatus.idle:
+      case FoodSearchStatus.idle:
         return _IdleState(
-          recentSearches: state.recentSearches,
-          offlineSuggestions: state.offlineSuggestions,
+          recentSearches: const [],
+          offlineSuggestions: const [],
           onRecentTap: (q) {
             _searchController.text = q;
-            ref.read(externalFoodSearchProvider.notifier).selectRecentSearch(q);
+            _searchController.text = q;
+            ref.read(foodSearchProvider.notifier).search(q);
           },
           onSuggestionTap: _selectProduct,
         );
 
-      case ExternalSearchStatus.loading:
+      case FoodSearchStatus.loading:
         return const Center(child: CircularProgressIndicator());
 
-      case ExternalSearchStatus.loadingMore:
+      case FoodSearchStatus.success:
+        if (state.items.isEmpty) {
+          return const _EmptyState();
+        }
         return _ResultsList(
-          results: state.results,
-          isLoadingMore: true,
-          onProductTap: _selectProduct,
-          onLoadMore: () {},
-        );
-
-      case ExternalSearchStatus.success:
-        return _ResultsList(
-          results: state.results,
+          items: state.items,
           hasMore: state.hasMore,
           onProductTap: _selectProduct,
-          onLoadMore: () => ref.read(externalFoodSearchProvider.notifier).loadMore(),
+          onLoadMore: () => ref.read(foodSearchProvider.notifier).loadMore(),
         );
 
-      case ExternalSearchStatus.offline:
-        return _OfflineResults(
-          results: state.results,
-          errorMessage: state.errorMessage,
-          onProductTap: _selectProduct,
-        );
-
-      case ExternalSearchStatus.empty:
-        return const _EmptyState();
-
-      case ExternalSearchStatus.error:
+      case FoodSearchStatus.error:
         return _ErrorState(
           message: state.errorMessage ?? 'Error desconocido',
-          onRetry: () => ref.read(externalFoodSearchProvider.notifier)
+          onRetry: () => ref.read(foodSearchProvider.notifier)
               .search(_searchController.text),
+        );
+      case FoodSearchStatus.offline:
+        return _OfflineResults(
+          items: state.items,
+          onProductTap: _selectProduct,
         );
     }
   }
@@ -695,7 +704,7 @@ class _ActionChip extends StatelessWidget {
 
 /// Indicador de estado de búsqueda
 class _StatusBar extends StatelessWidget {
-  final ExternalSearchState state;
+  final FoodSearchState state;
 
   const _StatusBar({required this.state});
 
@@ -729,7 +738,7 @@ class _StatusBar extends StatelessWidget {
       );
     }
 
-    if (state.isOfflineMode) {
+    if (state.status == FoodSearchStatus.offline) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         color: theme.colorScheme.tertiaryContainer.withAlpha((0.3 * 255).round()),
@@ -755,11 +764,11 @@ class _StatusBar extends StatelessWidget {
       );
     }
 
-    if (state.isSuccess && state.results.isNotEmpty) {
+    if (state.status == FoodSearchStatus.success && state.items.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Text(
-          '${state.results.length} resultados',
+          '${state.items.length} resultados',
           style: TextStyle(
             color: theme.colorScheme.onSurfaceVariant,
             fontSize: 12,
@@ -775,9 +784,9 @@ class _StatusBar extends StatelessWidget {
 /// Estado inicial con búsquedas recientes y sugerencias
 class _IdleState extends StatelessWidget {
   final List<String> recentSearches;
-  final List<OpenFoodFactsResult> offlineSuggestions;
+  final List<ScoredFoodItem> offlineSuggestions;
   final ValueChanged<String> onRecentTap;
-  final ValueChanged<OpenFoodFactsResult> onSuggestionTap;
+  final ValueChanged<ScoredFoodItem> onSuggestionTap;
 
   const _IdleState({
     required this.recentSearches,
@@ -816,7 +825,7 @@ class _IdleState extends StatelessWidget {
           const _SectionTitle(title: 'Disponibles offline'),
           const SizedBox(height: 8),
           ...offlineSuggestions.take(10).map((r) => _ProductListTile(
-            result: r,
+            item: r,
             onTap: () => onSuggestionTap(r),
           )),
         ],
@@ -861,14 +870,14 @@ class _SectionTitle extends StatelessWidget {
 
 /// Lista de resultados
 class _ResultsList extends StatelessWidget {
-  final List<OpenFoodFactsResult> results;
+  final List<ScoredFoodItem> items;
   final bool hasMore;
   final bool isLoadingMore;
-  final ValueChanged<OpenFoodFactsResult> onProductTap;
+  final ValueChanged<ScoredFoodItem> onProductTap;
   final VoidCallback onLoadMore;
 
   const _ResultsList({
-    required this.results,
+    required this.items,
     required this.onProductTap,
     required this.onLoadMore,
     this.hasMore = false,
@@ -878,9 +887,9 @@ class _ResultsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: results.length + (hasMore || isLoadingMore ? 1 : 0),
+      itemCount: items.length + (hasMore || isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == results.length) {
+        if (index == items.length) {
           if (isLoadingMore) {
             return const Padding(
               padding: EdgeInsets.all(16),
@@ -897,8 +906,8 @@ class _ResultsList extends StatelessWidget {
         }
 
         return _ProductListTile(
-          result: results[index],
-          onTap: () => onProductTap(results[index]),
+          item: items[index],
+          onTap: () => onProductTap(items[index]),
         );
       },
     );
@@ -907,11 +916,11 @@ class _ResultsList extends StatelessWidget {
 
 /// Tile de producto
 class _ProductListTile extends StatelessWidget {
-  final OpenFoodFactsResult result;
+  final ScoredFoodItem item;
   final VoidCallback onTap;
 
   const _ProductListTile({
-    required this.result,
+    required this.item,
     required this.onTap,
   });
 
@@ -927,11 +936,11 @@ class _ProductListTile extends StatelessWidget {
           color: theme.colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: result.imageUrl != null
+        child: item.imageUrl != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  result.imageUrl!,
+                  item.imageUrl!,
                   fit: BoxFit.cover,
                   errorBuilder: (ctx, err, stack) => Icon(
                     Icons.fastfood,
@@ -953,7 +962,7 @@ class _ProductListTile extends StatelessWidget {
             : Icon(Icons.fastfood, color: theme.colorScheme.primary),
       ),
       title: Text(
-        result.name,
+        item.name,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontWeight: FontWeight.w600),
@@ -961,9 +970,9 @@ class _ProductListTile extends StatelessWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (result.brand != null)
+          if (item.brand != null)
             Text(
-              result.brand!,
+              item.brand!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -971,14 +980,7 @@ class _ProductListTile extends StatelessWidget {
                 fontSize: 13,
               ),
             ),
-          if (result.portionName != null)
-            Text(
-              'Porción: ${result.portionName}',
-              style: TextStyle(
-                color: theme.colorScheme.onSurfaceVariant.withAlpha((0.7 * 255).round()),
-                fontSize: 12,
-              ),
-            ),
+
         ],
       ),
       trailing: Column(
@@ -986,7 +988,7 @@ class _ProductListTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '${result.kcalPer100g.round()}',
+            '${item.kcalPer100g.round()}',
             style: GoogleFonts.montserrat(
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.primary,
@@ -1008,19 +1010,19 @@ class _ProductListTile extends StatelessWidget {
 
 /// Resultados en modo offline
 class _OfflineResults extends StatelessWidget {
-  final List<OpenFoodFactsResult> results;
+  final List<ScoredFoodItem> items;
   final String? errorMessage;
-  final ValueChanged<OpenFoodFactsResult> onProductTap;
+  final ValueChanged<ScoredFoodItem> onProductTap;
 
   const _OfflineResults({
-    required this.results,
+    required this.items,
     this.errorMessage,
     required this.onProductTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (results.isEmpty) {
+    if (items.isEmpty) {
       return _ErrorState(
         message: errorMessage ?? 'Sin conexión y no hay datos guardados',
         icon: Icons.offline_bolt,
@@ -1028,7 +1030,7 @@ class _OfflineResults extends StatelessWidget {
     }
 
     return _ResultsList(
-      results: results,
+      items: items,
       onProductTap: onProductTap,
       onLoadMore: () {},
     );
@@ -1285,9 +1287,9 @@ class _OcrResultDialogState extends State<_OcrResultDialog> {
 
 /// Diálogo para guardar alimento
 class _SaveFoodDialog extends StatelessWidget {
-  final OpenFoodFactsResult result;
+  final ScoredFoodItem item;
 
-  const _SaveFoodDialog({required this.result});
+  const _SaveFoodDialog({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -1297,7 +1299,7 @@ class _SaveFoodDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('"${result.name}"'),
+          Text('"${item.name}"'),
           const SizedBox(height: 8),
           Text(
             '¿Guardar en tu biblioteca local?',
@@ -1307,7 +1309,7 @@ class _SaveFoodDialog extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '${result.kcalPer100g.round()} kcal / 100g',
+            '${item.kcalPer100g.round()} kcal / 100g',
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ],

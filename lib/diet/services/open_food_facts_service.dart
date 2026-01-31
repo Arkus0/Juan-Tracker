@@ -33,6 +33,8 @@ class SearchCancelledException implements Exception {
   const SearchCancelledException();
 }
 
+/// @deprecated Usar FoodSearchRemoteDataSource en su lugar
+/// 
 /// Servicio para interactuar con la API de Open Food Facts
 ///
 /// Características:
@@ -43,6 +45,7 @@ class SearchCancelledException implements Exception {
 /// - Manejo de errores limpio
 /// - Cache en memoria de últimos 20 resultados
 /// - Soporte para cancelación de requests con CancelToken
+@Deprecated('Usar FoodSearchRemoteDataSource en su lugar')
 class OpenFoodFactsService {
   late final Dio _dio;
   final Duration _timeout;

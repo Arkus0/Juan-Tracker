@@ -4,11 +4,11 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/database_provider.dart';
-import '../../diet/providers/external_food_search_provider.dart';
+
 import '../../training/database/database.dart';
 import '../models/food_model.dart';
-import '../models/open_food_facts_model.dart';
-import '../services/open_food_facts_service.dart';
+
+
 
 /// Filtros avanzados para búsqueda de alimentos
 class SearchFilters {
@@ -82,14 +82,13 @@ class ScoredFood {
 /// 
 /// Características:
 /// - Búsqueda FTS5 nativa de SQLite
-/// - Búsqueda híbrida: local primero, API después
 /// - Ranking inteligente con múltiples señales
-/// - Caché automático de resultados remotos
+/// 
+/// Nota: Para búsquedas externas (Open Food Facts), usar FoodSearchRepository
 class AlimentoRepository {
   final AppDatabase _db;
-  final OpenFoodFactsService _offService;
 
-  AlimentoRepository(this._db, this._offService);
+  AlimentoRepository(this._db);
 
   // ============================================================================
   // BÚSQUEDA PRINCIPAL
@@ -128,31 +127,7 @@ class AlimentoRepository {
       isFromCache: true,
     )).toList();
     
-    // 3. Si hay pocos resultados y se permite remote, buscar en API
-    if (includeRemote && scoredResults.length < 10) {
-      try {
-        final remoteResults = await _searchRemote(normalizedQuery);
-        
-        // Guardar en caché
-        await _cacheRemoteResults(remoteResults);
-        
-        // Convertir y añadir a resultados
-        for (final offResult in remoteResults) {
-          final food = _convertOffResultToFood(offResult);
-          if (!scoredResults.any((s) => s.food.barcode == food.barcode)) {
-            scoredResults.add(ScoredFood(
-              food: food,
-              score: _calculateBaseScore(food, normalizedQuery) * 0.9, // Ligeramente menor que local
-              isFromRemote: true,
-            ));
-          }
-        }
-      } catch (e) {
-        // Ignorar errores de API, usar solo resultados locales
-      }
-    }
-    
-    // 4. Aplicar ranking final
+    // 3. Aplicar ranking final
     return _applyRanking(scoredResults, normalizedQuery).take(limit).toList();
   }
 
@@ -161,13 +136,15 @@ class AlimentoRepository {
     return _db.searchFoodsOffline(query, limit: limit);
   }
 
-  /// Búsqueda por código de barras
+  /// Búsqueda por código de barras (solo local)
+  /// 
+  /// Nota: Para búsqueda externa por barcode, usar FoodSearchRepository
   Future<Food?> searchByBarcode(String barcode) async {
     if (barcode.trim().isEmpty) return null;
     
     final cleanBarcode = barcode.trim();
     
-    // 1. Buscar localmente
+    // Buscar localmente
     final local = await (_db.select(_db.foods)
       ..where((f) => f.barcode.equals(cleanBarcode)))
       .getSingleOrNull();
@@ -175,18 +152,6 @@ class AlimentoRepository {
     if (local != null) {
       await _db.recordFoodUsage(local.id);
       return local;
-    }
-    
-    // 2. Buscar en Open Food Facts
-    try {
-      final offResult = await _offService.searchByBarcode(cleanBarcode);
-      if (offResult != null) {
-        final food = _convertOffResultToFood(offResult);
-        await _insertOrUpdateFood(food);
-        return food;
-      }
-    } catch (e) {
-      // Log error pero no propagar
     }
     
     return null;
@@ -288,41 +253,7 @@ class AlimentoRepository {
   // MÉTODOS PRIVADOS
   // ============================================================================
 
-  Future<List<OpenFoodFactsResult>> _searchRemote(String query) async {
-    try {
-      final response = await _offService.searchProducts(query, pageSize: 20);
-      return response.products;
-    } catch (e) {
-      return [];
-    }
-  }
 
-  Future<void> _cacheRemoteResults(List<OpenFoodFactsResult> results) async {
-    for (final result in results) {
-      final food = _convertOffResultToFood(result);
-      await _insertOrUpdateFood(food);
-    }
-  }
-
-  Future<void> _insertOrUpdateFood(Food food) async {
-    await _db.into(_db.foods).insertOnConflictUpdate(
-      FoodsCompanion(
-        id: Value(food.id),
-        name: Value(food.name),
-        normalizedName: Value(food.name.toLowerCase()),
-        brand: Value(food.brand),
-        barcode: Value(food.barcode),
-        kcalPer100g: Value(food.kcalPer100g),
-        proteinPer100g: Value(food.proteinPer100g ?? 0),
-        carbsPer100g: Value(food.carbsPer100g ?? 0),
-        fatPer100g: Value(food.fatPer100g ?? 0),
-        nutriScore: Value(food.nutriScore),
-        novaGroup: Value(food.novaGroup),
-        verifiedSource: const Value('open_food_facts'),
-        updatedAt: Value(DateTime.now()),
-      ),
-    );
-  }
 
   List<Food> _applyFilters(List<Food> foods, SearchFilters filters) {
     return foods.where((f) {
@@ -393,38 +324,15 @@ class AlimentoRepository {
     return foods;
   }
 
-  Food _convertOffResultToFood(OpenFoodFactsResult result) {
-    return Food(
-      id: 'off_${result.code}_${DateTime.now().millisecondsSinceEpoch}',
-      name: result.name,
-      normalizedName: result.name.toLowerCase(),
-      brand: result.brand,
-      barcode: result.code,
-      kcalPer100g: result.kcalPer100g.round(),
-      proteinPer100g: result.proteinPer100g,
-      carbsPer100g: result.carbsPer100g,
-      fatPer100g: result.fatPer100g,
-      portionName: result.portionName,
-      portionGrams: result.portionGrams,
-      nutriScore: result.nutriScore,
-      novaGroup: result.novaGroup,
-      userCreated: false,
-      verifiedSource: 'open_food_facts',
-      useCount: 0,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-  }
 }
 
 // ============================================================================
 // PROVIDERS
 // ============================================================================
 
-/// Provider del AlimentoRepository
+/// Provider del AlimentoRepository (solo búsqueda local)
+/// 
+/// Nota: Para búsquedas externas (Open Food Facts), usar foodSearchRepositoryProvider
 final alimentoRepositoryProvider = Provider<AlimentoRepository>((ref) {
-  return AlimentoRepository(
-    ref.watch(appDatabaseProvider),
-    ref.watch(openFoodFactsServiceProvider),
-  );
+  return AlimentoRepository(ref.watch(appDatabaseProvider));
 });

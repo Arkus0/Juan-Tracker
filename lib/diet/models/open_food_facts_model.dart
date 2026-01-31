@@ -24,6 +24,10 @@ class OpenFoodFactsResult {
   final String? nutriScore; // 'a', 'b', 'c', 'd', 'e'
   final int? novaGroup; // 1, 2, 3, 4
 
+  // Disponibilidad geográfica (para scoring España)
+  final List<String> countriesTags;
+  final List<String> storesTags;
+
   // Metadata
   final String source;
   final DateTime fetchedAt;
@@ -46,6 +50,8 @@ class OpenFoodFactsResult {
     this.portionGrams,
     this.nutriScore,
     this.novaGroup,
+    this.countriesTags = const [],
+    this.storesTags = const [],
     this.source = 'OFF',
     required this.fetchedAt,
     this.rawData,
@@ -106,6 +112,8 @@ class OpenFoodFactsResult {
       novaGroup: product['nova_group'] != null 
           ? int.tryParse(product['nova_group'].toString()) 
           : null,
+      countriesTags: _parseStringList(product['countries_tags']),
+      storesTags: _parseStringList(product['stores_tags']),
       fetchedAt: DateTime.now(),
       rawData: product,
     );
@@ -145,6 +153,14 @@ class OpenFoodFactsResult {
     return null;
   }
 
+  /// Parsea una lista de strings desde la API
+  static List<String> _parseStringList(dynamic value) {
+    if (value is List) {
+      return value.map((v) => v.toString()).toList();
+    }
+    return [];
+  }
+
   /// Serializa a JSON para cache local
   Map<String, dynamic> toCacheJson() => {
     'code': code,
@@ -163,6 +179,8 @@ class OpenFoodFactsResult {
     'portionGrams': portionGrams,
     'nutriScore': nutriScore,
     'novaGroup': novaGroup,
+    'countriesTags': countriesTags,
+    'storesTags': storesTags,
     'source': source,
     'fetchedAt': fetchedAt.toIso8601String(),
   };
@@ -186,6 +204,8 @@ class OpenFoodFactsResult {
       portionGrams: (json['portionGrams'] as num?)?.toDouble(),
       nutriScore: json['nutriScore'] as String?,
       novaGroup: json['novaGroup'] as int?,
+      countriesTags: (json['countriesTags'] as List<dynamic>?)?.cast<String>() ?? const [],
+      storesTags: (json['storesTags'] as List<dynamic>?)?.cast<String>() ?? const [],
       source: json['source'] as String,
       fetchedAt: DateTime.parse(json['fetchedAt'] as String),
     );

@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'core/providers/app_providers.dart';
-import 'diet/services/food_cache_service.dart';
+
 import 'training/services/timer_audio_service.dart';
 
 Future<void> main() async {
@@ -24,8 +24,7 @@ Future<void> main() async {
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
   
-  // Initialize Food Cache Service
-  await FoodCacheService().initialize();
+
   
   runApp(
     ProviderScope(
