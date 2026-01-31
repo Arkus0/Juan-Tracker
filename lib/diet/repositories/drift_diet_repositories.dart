@@ -31,6 +31,7 @@ extension FoodModelMapping on models.FoodModel {
   db.FoodsCompanion toCompanion() => db.FoodsCompanion(
         id: Value(id),
         name: Value(name),
+        normalizedName: Value(name.toLowerCase()),
         brand: Value(brand),
         barcode: Value(barcode),
         kcalPer100g: Value(kcalPer100g),
@@ -42,6 +43,8 @@ extension FoodModelMapping on models.FoodModel {
         userCreated: Value(userCreated),
         verifiedSource: Value(verifiedSource),
         sourceMetadata: Value(sourceMetadata),
+        useCount: const Value(0),
+        lastUsedAt: Value(updatedAt),
         createdAt: Value(createdAt),
         updatedAt: Value(updatedAt),
       );
