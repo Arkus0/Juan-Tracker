@@ -37,8 +37,37 @@ class $RoutinesTable extends Routines with TableInfo<$RoutinesTable, Routine> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _schedulingModeMeta = const VerificationMeta(
+    'schedulingMode',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  late final GeneratedColumn<String> schedulingMode = GeneratedColumn<String>(
+    'scheduling_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('sequential'),
+  );
+  static const VerificationMeta _schedulingConfigMeta = const VerificationMeta(
+    'schedulingConfig',
+  );
+  @override
+  late final GeneratedColumn<String> schedulingConfig = GeneratedColumn<String>(
+    'scheduling_config',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    createdAt,
+    schedulingMode,
+    schedulingConfig,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -72,6 +101,24 @@ class $RoutinesTable extends Routines with TableInfo<$RoutinesTable, Routine> {
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('scheduling_mode')) {
+      context.handle(
+        _schedulingModeMeta,
+        schedulingMode.isAcceptableOrUnknown(
+          data['scheduling_mode']!,
+          _schedulingModeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('scheduling_config')) {
+      context.handle(
+        _schedulingConfigMeta,
+        schedulingConfig.isAcceptableOrUnknown(
+          data['scheduling_config']!,
+          _schedulingConfigMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -93,6 +140,14 @@ class $RoutinesTable extends Routines with TableInfo<$RoutinesTable, Routine> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      schedulingMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scheduling_mode'],
+      )!,
+      schedulingConfig: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scheduling_config'],
+      ),
     );
   }
 
@@ -106,10 +161,14 @@ class Routine extends DataClass implements Insertable<Routine> {
   final String id;
   final String name;
   final DateTime createdAt;
+  final String schedulingMode;
+  final String? schedulingConfig;
   const Routine({
     required this.id,
     required this.name,
     required this.createdAt,
+    required this.schedulingMode,
+    this.schedulingConfig,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -117,6 +176,10 @@ class Routine extends DataClass implements Insertable<Routine> {
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['scheduling_mode'] = Variable<String>(schedulingMode);
+    if (!nullToAbsent || schedulingConfig != null) {
+      map['scheduling_config'] = Variable<String>(schedulingConfig);
+    }
     return map;
   }
 
@@ -125,6 +188,10 @@ class Routine extends DataClass implements Insertable<Routine> {
       id: Value(id),
       name: Value(name),
       createdAt: Value(createdAt),
+      schedulingMode: Value(schedulingMode),
+      schedulingConfig: schedulingConfig == null && nullToAbsent
+          ? const Value.absent()
+          : Value(schedulingConfig),
     );
   }
 
@@ -137,6 +204,8 @@ class Routine extends DataClass implements Insertable<Routine> {
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      schedulingMode: serializer.fromJson<String>(json['schedulingMode']),
+      schedulingConfig: serializer.fromJson<String?>(json['schedulingConfig']),
     );
   }
   @override
@@ -146,19 +215,37 @@ class Routine extends DataClass implements Insertable<Routine> {
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'schedulingMode': serializer.toJson<String>(schedulingMode),
+      'schedulingConfig': serializer.toJson<String?>(schedulingConfig),
     };
   }
 
-  Routine copyWith({String? id, String? name, DateTime? createdAt}) => Routine(
+  Routine copyWith({
+    String? id,
+    String? name,
+    DateTime? createdAt,
+    String? schedulingMode,
+    Value<String?> schedulingConfig = const Value.absent(),
+  }) => Routine(
     id: id ?? this.id,
     name: name ?? this.name,
     createdAt: createdAt ?? this.createdAt,
+    schedulingMode: schedulingMode ?? this.schedulingMode,
+    schedulingConfig: schedulingConfig.present
+        ? schedulingConfig.value
+        : this.schedulingConfig,
   );
   Routine copyWithCompanion(RoutinesCompanion data) {
     return Routine(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      schedulingMode: data.schedulingMode.present
+          ? data.schedulingMode.value
+          : this.schedulingMode,
+      schedulingConfig: data.schedulingConfig.present
+          ? data.schedulingConfig.value
+          : this.schedulingConfig,
     );
   }
 
@@ -167,37 +254,48 @@ class Routine extends DataClass implements Insertable<Routine> {
     return (StringBuffer('Routine(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('schedulingMode: $schedulingMode, ')
+          ..write('schedulingConfig: $schedulingConfig')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt);
+  int get hashCode =>
+      Object.hash(id, name, createdAt, schedulingMode, schedulingConfig);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Routine &&
           other.id == this.id &&
           other.name == this.name &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.schedulingMode == this.schedulingMode &&
+          other.schedulingConfig == this.schedulingConfig);
 }
 
 class RoutinesCompanion extends UpdateCompanion<Routine> {
   final Value<String> id;
   final Value<String> name;
   final Value<DateTime> createdAt;
+  final Value<String> schedulingMode;
+  final Value<String?> schedulingConfig;
   final Value<int> rowid;
   const RoutinesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.schedulingMode = const Value.absent(),
+    this.schedulingConfig = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutinesCompanion.insert({
     required String id,
     required String name,
     required DateTime createdAt,
+    this.schedulingMode = const Value.absent(),
+    this.schedulingConfig = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -206,12 +304,16 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
     Expression<String>? id,
     Expression<String>? name,
     Expression<DateTime>? createdAt,
+    Expression<String>? schedulingMode,
+    Expression<String>? schedulingConfig,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (createdAt != null) 'created_at': createdAt,
+      if (schedulingMode != null) 'scheduling_mode': schedulingMode,
+      if (schedulingConfig != null) 'scheduling_config': schedulingConfig,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -220,12 +322,16 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
     Value<String>? id,
     Value<String>? name,
     Value<DateTime>? createdAt,
+    Value<String>? schedulingMode,
+    Value<String?>? schedulingConfig,
     Value<int>? rowid,
   }) {
     return RoutinesCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       createdAt: createdAt ?? this.createdAt,
+      schedulingMode: schedulingMode ?? this.schedulingMode,
+      schedulingConfig: schedulingConfig ?? this.schedulingConfig,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -242,6 +348,12 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (schedulingMode.present) {
+      map['scheduling_mode'] = Variable<String>(schedulingMode.value);
+    }
+    if (schedulingConfig.present) {
+      map['scheduling_config'] = Variable<String>(schedulingConfig.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -254,6 +366,8 @@ class RoutinesCompanion extends UpdateCompanion<Routine> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('createdAt: $createdAt, ')
+          ..write('schedulingMode: $schedulingMode, ')
+          ..write('schedulingConfig: $schedulingConfig, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -321,6 +435,28 @@ class $RoutineDaysTable extends RoutineDays
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _weekdaysMeta = const VerificationMeta(
+    'weekdays',
+  );
+  @override
+  late final GeneratedColumn<String> weekdays = GeneratedColumn<String>(
+    'weekdays',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _minRestHoursMeta = const VerificationMeta(
+    'minRestHours',
+  );
+  @override
+  late final GeneratedColumn<int> minRestHours = GeneratedColumn<int>(
+    'min_rest_hours',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -328,6 +464,8 @@ class $RoutineDaysTable extends RoutineDays
     name,
     progressionType,
     dayIndex,
+    weekdays,
+    minRestHours,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -379,6 +517,21 @@ class $RoutineDaysTable extends RoutineDays
     } else if (isInserting) {
       context.missing(_dayIndexMeta);
     }
+    if (data.containsKey('weekdays')) {
+      context.handle(
+        _weekdaysMeta,
+        weekdays.isAcceptableOrUnknown(data['weekdays']!, _weekdaysMeta),
+      );
+    }
+    if (data.containsKey('min_rest_hours')) {
+      context.handle(
+        _minRestHoursMeta,
+        minRestHours.isAcceptableOrUnknown(
+          data['min_rest_hours']!,
+          _minRestHoursMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -408,6 +561,14 @@ class $RoutineDaysTable extends RoutineDays
         DriftSqlType.int,
         data['${effectivePrefix}day_index'],
       )!,
+      weekdays: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}weekdays'],
+      ),
+      minRestHours: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}min_rest_hours'],
+      ),
     );
   }
 
@@ -423,12 +584,16 @@ class RoutineDay extends DataClass implements Insertable<RoutineDay> {
   final String name;
   final String progressionType;
   final int dayIndex;
+  final String? weekdays;
+  final int? minRestHours;
   const RoutineDay({
     required this.id,
     required this.routineId,
     required this.name,
     required this.progressionType,
     required this.dayIndex,
+    this.weekdays,
+    this.minRestHours,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -438,6 +603,12 @@ class RoutineDay extends DataClass implements Insertable<RoutineDay> {
     map['name'] = Variable<String>(name);
     map['progression_type'] = Variable<String>(progressionType);
     map['day_index'] = Variable<int>(dayIndex);
+    if (!nullToAbsent || weekdays != null) {
+      map['weekdays'] = Variable<String>(weekdays);
+    }
+    if (!nullToAbsent || minRestHours != null) {
+      map['min_rest_hours'] = Variable<int>(minRestHours);
+    }
     return map;
   }
 
@@ -448,6 +619,12 @@ class RoutineDay extends DataClass implements Insertable<RoutineDay> {
       name: Value(name),
       progressionType: Value(progressionType),
       dayIndex: Value(dayIndex),
+      weekdays: weekdays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weekdays),
+      minRestHours: minRestHours == null && nullToAbsent
+          ? const Value.absent()
+          : Value(minRestHours),
     );
   }
 
@@ -462,6 +639,8 @@ class RoutineDay extends DataClass implements Insertable<RoutineDay> {
       name: serializer.fromJson<String>(json['name']),
       progressionType: serializer.fromJson<String>(json['progressionType']),
       dayIndex: serializer.fromJson<int>(json['dayIndex']),
+      weekdays: serializer.fromJson<String?>(json['weekdays']),
+      minRestHours: serializer.fromJson<int?>(json['minRestHours']),
     );
   }
   @override
@@ -473,6 +652,8 @@ class RoutineDay extends DataClass implements Insertable<RoutineDay> {
       'name': serializer.toJson<String>(name),
       'progressionType': serializer.toJson<String>(progressionType),
       'dayIndex': serializer.toJson<int>(dayIndex),
+      'weekdays': serializer.toJson<String?>(weekdays),
+      'minRestHours': serializer.toJson<int?>(minRestHours),
     };
   }
 
@@ -482,12 +663,16 @@ class RoutineDay extends DataClass implements Insertable<RoutineDay> {
     String? name,
     String? progressionType,
     int? dayIndex,
+    Value<String?> weekdays = const Value.absent(),
+    Value<int?> minRestHours = const Value.absent(),
   }) => RoutineDay(
     id: id ?? this.id,
     routineId: routineId ?? this.routineId,
     name: name ?? this.name,
     progressionType: progressionType ?? this.progressionType,
     dayIndex: dayIndex ?? this.dayIndex,
+    weekdays: weekdays.present ? weekdays.value : this.weekdays,
+    minRestHours: minRestHours.present ? minRestHours.value : this.minRestHours,
   );
   RoutineDay copyWithCompanion(RoutineDaysCompanion data) {
     return RoutineDay(
@@ -498,6 +683,10 @@ class RoutineDay extends DataClass implements Insertable<RoutineDay> {
           ? data.progressionType.value
           : this.progressionType,
       dayIndex: data.dayIndex.present ? data.dayIndex.value : this.dayIndex,
+      weekdays: data.weekdays.present ? data.weekdays.value : this.weekdays,
+      minRestHours: data.minRestHours.present
+          ? data.minRestHours.value
+          : this.minRestHours,
     );
   }
 
@@ -508,14 +697,23 @@ class RoutineDay extends DataClass implements Insertable<RoutineDay> {
           ..write('routineId: $routineId, ')
           ..write('name: $name, ')
           ..write('progressionType: $progressionType, ')
-          ..write('dayIndex: $dayIndex')
+          ..write('dayIndex: $dayIndex, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('minRestHours: $minRestHours')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, routineId, name, progressionType, dayIndex);
+  int get hashCode => Object.hash(
+    id,
+    routineId,
+    name,
+    progressionType,
+    dayIndex,
+    weekdays,
+    minRestHours,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -524,7 +722,9 @@ class RoutineDay extends DataClass implements Insertable<RoutineDay> {
           other.routineId == this.routineId &&
           other.name == this.name &&
           other.progressionType == this.progressionType &&
-          other.dayIndex == this.dayIndex);
+          other.dayIndex == this.dayIndex &&
+          other.weekdays == this.weekdays &&
+          other.minRestHours == this.minRestHours);
 }
 
 class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
@@ -533,6 +733,8 @@ class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
   final Value<String> name;
   final Value<String> progressionType;
   final Value<int> dayIndex;
+  final Value<String?> weekdays;
+  final Value<int?> minRestHours;
   final Value<int> rowid;
   const RoutineDaysCompanion({
     this.id = const Value.absent(),
@@ -540,6 +742,8 @@ class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
     this.name = const Value.absent(),
     this.progressionType = const Value.absent(),
     this.dayIndex = const Value.absent(),
+    this.weekdays = const Value.absent(),
+    this.minRestHours = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutineDaysCompanion.insert({
@@ -548,6 +752,8 @@ class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
     required String name,
     this.progressionType = const Value.absent(),
     required int dayIndex,
+    this.weekdays = const Value.absent(),
+    this.minRestHours = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        routineId = Value(routineId),
@@ -559,6 +765,8 @@ class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
     Expression<String>? name,
     Expression<String>? progressionType,
     Expression<int>? dayIndex,
+    Expression<String>? weekdays,
+    Expression<int>? minRestHours,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -567,6 +775,8 @@ class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
       if (name != null) 'name': name,
       if (progressionType != null) 'progression_type': progressionType,
       if (dayIndex != null) 'day_index': dayIndex,
+      if (weekdays != null) 'weekdays': weekdays,
+      if (minRestHours != null) 'min_rest_hours': minRestHours,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -577,6 +787,8 @@ class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
     Value<String>? name,
     Value<String>? progressionType,
     Value<int>? dayIndex,
+    Value<String?>? weekdays,
+    Value<int?>? minRestHours,
     Value<int>? rowid,
   }) {
     return RoutineDaysCompanion(
@@ -585,6 +797,8 @@ class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
       name: name ?? this.name,
       progressionType: progressionType ?? this.progressionType,
       dayIndex: dayIndex ?? this.dayIndex,
+      weekdays: weekdays ?? this.weekdays,
+      minRestHours: minRestHours ?? this.minRestHours,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -607,6 +821,12 @@ class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
     if (dayIndex.present) {
       map['day_index'] = Variable<int>(dayIndex.value);
     }
+    if (weekdays.present) {
+      map['weekdays'] = Variable<String>(weekdays.value);
+    }
+    if (minRestHours.present) {
+      map['min_rest_hours'] = Variable<int>(minRestHours.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -621,6 +841,8 @@ class RoutineDaysCompanion extends UpdateCompanion<RoutineDay> {
           ..write('name: $name, ')
           ..write('progressionType: $progressionType, ')
           ..write('dayIndex: $dayIndex, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('minRestHours: $minRestHours, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9950,6 +10172,8 @@ typedef $$RoutinesTableCreateCompanionBuilder =
       required String id,
       required String name,
       required DateTime createdAt,
+      Value<String> schedulingMode,
+      Value<String?> schedulingConfig,
       Value<int> rowid,
     });
 typedef $$RoutinesTableUpdateCompanionBuilder =
@@ -9957,6 +10181,8 @@ typedef $$RoutinesTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> name,
       Value<DateTime> createdAt,
+      Value<String> schedulingMode,
+      Value<String?> schedulingConfig,
       Value<int> rowid,
     });
 
@@ -10004,6 +10230,16 @@ class $$RoutinesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get schedulingMode => $composableBuilder(
+    column: $table.schedulingMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get schedulingConfig => $composableBuilder(
+    column: $table.schedulingConfig,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10056,6 +10292,16 @@ class $$RoutinesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get schedulingMode => $composableBuilder(
+    column: $table.schedulingMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get schedulingConfig => $composableBuilder(
+    column: $table.schedulingConfig,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RoutinesTableAnnotationComposer
@@ -10075,6 +10321,16 @@ class $$RoutinesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get schedulingMode => $composableBuilder(
+    column: $table.schedulingMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get schedulingConfig => $composableBuilder(
+    column: $table.schedulingConfig,
+    builder: (column) => column,
+  );
 
   Expression<T> routineDaysRefs<T extends Object>(
     Expression<T> Function($$RoutineDaysTableAnnotationComposer a) f,
@@ -10133,11 +10389,15 @@ class $$RoutinesTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String> schedulingMode = const Value.absent(),
+                Value<String?> schedulingConfig = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesCompanion(
                 id: id,
                 name: name,
                 createdAt: createdAt,
+                schedulingMode: schedulingMode,
+                schedulingConfig: schedulingConfig,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10145,11 +10405,15 @@ class $$RoutinesTableTableManager
                 required String id,
                 required String name,
                 required DateTime createdAt,
+                Value<String> schedulingMode = const Value.absent(),
+                Value<String?> schedulingConfig = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesCompanion.insert(
                 id: id,
                 name: name,
                 createdAt: createdAt,
+                schedulingMode: schedulingMode,
+                schedulingConfig: schedulingConfig,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10214,6 +10478,8 @@ typedef $$RoutineDaysTableCreateCompanionBuilder =
       required String name,
       Value<String> progressionType,
       required int dayIndex,
+      Value<String?> weekdays,
+      Value<int?> minRestHours,
       Value<int> rowid,
     });
 typedef $$RoutineDaysTableUpdateCompanionBuilder =
@@ -10223,6 +10489,8 @@ typedef $$RoutineDaysTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> progressionType,
       Value<int> dayIndex,
+      Value<String?> weekdays,
+      Value<int?> minRestHours,
       Value<int> rowid,
     });
 
@@ -10299,6 +10567,16 @@ class $$RoutineDaysTableFilterComposer
 
   ColumnFilters<int> get dayIndex => $composableBuilder(
     column: $table.dayIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get weekdays => $composableBuilder(
+    column: $table.weekdays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minRestHours => $composableBuilder(
+    column: $table.minRestHours,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10380,6 +10658,16 @@ class $$RoutineDaysTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get weekdays => $composableBuilder(
+    column: $table.weekdays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minRestHours => $composableBuilder(
+    column: $table.minRestHours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutinesTableOrderingComposer get routineId {
     final $$RoutinesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10426,6 +10714,14 @@ class $$RoutineDaysTableAnnotationComposer
 
   GeneratedColumn<int> get dayIndex =>
       $composableBuilder(column: $table.dayIndex, builder: (column) => column);
+
+  GeneratedColumn<String> get weekdays =>
+      $composableBuilder(column: $table.weekdays, builder: (column) => column);
+
+  GeneratedColumn<int> get minRestHours => $composableBuilder(
+    column: $table.minRestHours,
+    builder: (column) => column,
+  );
 
   $$RoutinesTableAnnotationComposer get routineId {
     final $$RoutinesTableAnnotationComposer composer = $composerBuilder(
@@ -10509,6 +10805,8 @@ class $$RoutineDaysTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> progressionType = const Value.absent(),
                 Value<int> dayIndex = const Value.absent(),
+                Value<String?> weekdays = const Value.absent(),
+                Value<int?> minRestHours = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutineDaysCompanion(
                 id: id,
@@ -10516,6 +10814,8 @@ class $$RoutineDaysTableTableManager
                 name: name,
                 progressionType: progressionType,
                 dayIndex: dayIndex,
+                weekdays: weekdays,
+                minRestHours: minRestHours,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10525,6 +10825,8 @@ class $$RoutineDaysTableTableManager
                 required String name,
                 Value<String> progressionType = const Value.absent(),
                 required int dayIndex,
+                Value<String?> weekdays = const Value.absent(),
+                Value<int?> minRestHours = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutineDaysCompanion.insert(
                 id: id,
@@ -10532,6 +10834,8 @@ class $$RoutineDaysTableTableManager
                 name: name,
                 progressionType: progressionType,
                 dayIndex: dayIndex,
+                weekdays: weekdays,
+                minRestHours: minRestHours,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

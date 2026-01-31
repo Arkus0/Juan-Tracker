@@ -108,6 +108,16 @@ class Routines extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
   DateTimeColumn get createdAt => dateTime()();
+  
+  // 🆕 Schema v9: Modo de scheduling para sugerencias inteligentes
+  // 'sequential' (default), 'weeklyAnchored', 'floatingCycle'
+  TextColumn get schedulingMode => text().withDefault(
+    const Constant('sequential'),
+  )();
+  
+  // 🆕 Schema v9: Configuración JSON adicional para scheduling
+  // Ej: {"minRestHours": 20, "autoAlternate": true}
+  TextColumn get schedulingConfig => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -123,6 +133,12 @@ class RoutineDays extends Table {
     const Constant('none'),
   )(); // 'none', 'lineal', 'double', 'percentage1RM'
   IntColumn get dayIndex => integer()();
+  
+  // 🆕 Schema v9: Días de la semana asignados (JSON array [1,3,5] = Lunes, Miércoles, Viernes)
+  TextColumn get weekdays => text().nullable()();
+  
+  // 🆕 Schema v9: Horas mínimas de descanso después de este día específico
+  IntColumn get minRestHours => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -582,6 +598,20 @@ class AppDatabase extends _$AppDatabase {
           debugPrint('Migration v8 FTS rebuild error: $e');
         }
       }
+      // 🆕 Migration path to version 9: Add scheduling mode columns
+      if (from < 9) {
+        try {
+          // Añadir columnas de scheduling a Routines
+          await m.addColumn(routines, routines.schedulingMode);
+          await m.addColumn(routines, routines.schedulingConfig);
+          
+          // Añadir columnas de scheduling a RoutineDays
+          await m.addColumn(routineDays, routineDays.weekdays);
+          await m.addColumn(routineDays, routineDays.minRestHours);
+        } catch (e) {
+          debugPrint('Migration v9 scheduling columns error: $e');
+        }
+      }
     },
   );
 
@@ -620,7 +650,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   // ============================================================================
   // 🆕 NUEVO: MÉTODOS DE BÚSQUEDA FTS5
