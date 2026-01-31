@@ -481,8 +481,8 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
-      // 🆕 Crear índices FTS5 virtuales
-      await _createFts5Triggers(m);
+      // 🆕 Crear tabla FTS5 virtual
+      await _createFts5Tables(m);
     },
     onUpgrade: (m, from, to) async {
       // Migration path to version 2: add supersetId column to routine_exercises
@@ -557,47 +557,39 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
-  /// 🆕 Crea tabla FTS5 virtual y triggers para sincronización
+  /// 🆕 Crea tabla FTS5 virtual para búsqueda de alimentos
+  /// Usa un enfoque external content con sincronización manual
   Future<void> _createFts5Tables(Migrator m) async {
-    // Crear tabla virtual FTS5
+    // Crear tabla virtual FTS5 sin content_rowid
+    // Usamos 'id' como columna UNINDEXED para almacenar el UUID
     await customStatement('''
       CREATE VIRTUAL TABLE IF NOT EXISTS foods_fts USING fts5(
         name,
         brand,
-        content='foods',
-        content_rowid='id'
+        food_id UNINDEXED
       )
     ''');
-    
-    await _createFts5Triggers(m);
   }
-
-  /// 🆕 Crea triggers para mantener FTS sincronizado
-  Future<void> _createFts5Triggers(Migrator m) async {
-    // Trigger para INSERT
+  
+  /// 🆕 Inserta entrada en FTS5 para un alimento
+  Future<void> insertFoodFts(String foodId, String name, String? brand) async {
     await customStatement('''
-      CREATE TRIGGER IF NOT EXISTS foods_fts_insert AFTER INSERT ON foods BEGIN
-        INSERT INTO foods_fts(rowid, name, brand)
-        VALUES (new.id, new.name, new.brand);
-      END
-    ''');
-    
-    // Trigger para UPDATE
+      INSERT INTO foods_fts(name, brand, food_id) VALUES (?, ?, ?)
+    ''', [name, brand, foodId]);
+  }
+  
+  /// 🆕 Actualiza entrada en FTS5 para un alimento
+  Future<void> updateFoodFts(String foodId, String name, String? brand) async {
     await customStatement('''
-      CREATE TRIGGER IF NOT EXISTS foods_fts_update AFTER UPDATE ON foods BEGIN
-        UPDATE foods_fts SET 
-          name = new.name,
-          brand = new.brand
-        WHERE rowid = old.id;
-      END
-    ''');
-    
-    // Trigger para DELETE
+      UPDATE foods_fts SET name = ?, brand = ? WHERE food_id = ?
+    ''', [name, brand, foodId]);
+  }
+  
+  /// 🆕 Elimina entrada en FTS5 para un alimento
+  Future<void> deleteFoodFts(String foodId) async {
     await customStatement('''
-      CREATE TRIGGER IF NOT EXISTS foods_fts_delete AFTER DELETE ON foods BEGIN
-        DELETE FROM foods_fts WHERE rowid = old.id;
-      END
-    ''');
+      DELETE FROM foods_fts WHERE food_id = ?
+    ''', [foodId]);
   }
 
   @override
@@ -615,14 +607,15 @@ class AppDatabase extends _$AppDatabase {
     final ftsQuery = '${query.trim()}*';
     
     // Usar SQL directo y mapear resultados manualmente
+    // JOIN entre foods_fts (que contiene food_id) y foods
     final results = await customSelect(
       'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
       'f.kcal_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, '
       'f.portion_name, f.portion_grams, f.user_created, f.verified_source, '
       'f.source_metadata, f.use_count, f.last_used_at, f.nutri_score, f.nova_group, '
       'f.created_at, f.updated_at FROM foods f '
-      'INNER JOIN foods_fts fts ON f.id = fts.rowid '
-      'WHERE foods_fts MATCH ? '
+      'INNER JOIN foods_fts fts ON f.id = fts.food_id '
+      'WHERE fts MATCH ? '
       'ORDER BY rank '
       'LIMIT ?',
       variables: [Variable(ftsQuery), Variable(limit)],
