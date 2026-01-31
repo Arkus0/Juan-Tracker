@@ -881,6 +881,7 @@ class _FabOption extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  // ignore: unused_element_parameter
   final Color? color;
 
   const _FabOption({
@@ -888,7 +889,7 @@ class _FabOption extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.color,
-  }); // ignore: unused_element_parameter
+  });
 
   @override
   Widget build(BuildContext context) {

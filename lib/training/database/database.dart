@@ -598,14 +598,13 @@ class AppDatabase extends _$AppDatabase {
       )
     ''');
 
-    await _createFts5Triggers(m);
-
     // Poblar índice FTS con datos existentes
     await _rebuildFtsIndex();
   }
   
-  /// 🆕 Inserta entrada en FTS5 para un alimento
-  Future<void> insertFoodFts(String foodId, String name, String? brand) async {
+  /// 🆕 Crea los triggers FTS5 para mantener sincronizada la tabla virtual
+  Future<void> _createFts5Triggers(Migrator m) async {
+    // Trigger para INSERT
     await customStatement('''
       CREATE TRIGGER IF NOT EXISTS foods_fts_insert AFTER INSERT ON foods BEGIN
         INSERT INTO foods_fts(food_id, name, brand)
@@ -628,6 +627,14 @@ class AppDatabase extends _$AppDatabase {
         DELETE FROM foods_fts WHERE food_id = old.id;
       END
     ''');
+  }
+  
+  /// 🆕 Inserta entrada en FTS5 para un alimento manualmente
+  Future<void> insertFoodFts(String foodId, String name, String? brand) async {
+    await customStatement('''
+      INSERT INTO foods_fts(food_id, name, brand)
+      VALUES (?, ?, ?)
+    ''', [foodId, name, brand ?? '']);
   }
 
   /// Reconstruye el índice FTS desde la tabla foods
