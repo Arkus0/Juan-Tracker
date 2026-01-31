@@ -220,8 +220,9 @@ class ExternalFoodSearchNotifier extends Notifier<ExternalSearchState> {
       showCreateCustomOption: false,
     );
 
-    // Debounce de 300ms
+    // Debounce de 300ms con check de mounted para evitar crash si provider disposed
     _debounceTimer = Timer(_debounceDuration, () async {
+      if (!ref.mounted) return; // Evitar acceso a provider disposed
       await _performSearch(query.trim(), forceOffline: forceOffline);
     });
   }

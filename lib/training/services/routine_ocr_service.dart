@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
@@ -126,7 +128,16 @@ class RoutineOcrService {
       final textRecognizer = TextRecognizer();
 
       try {
-        final recognizedText = await textRecognizer.processImage(inputImage);
+        // Timeout de 30 segundos para evitar bloqueo indefinido
+        final recognizedText = await textRecognizer
+            .processImage(inputImage)
+            .timeout(
+              const Duration(seconds: 30),
+              onTimeout: () {
+                _logger.w('OCR timeout - procesamiento excedió 30 segundos');
+                throw TimeoutException('OCR processing timeout', const Duration(seconds: 30));
+              },
+            );
 
         // Extraer líneas de texto (cada bloque puede tener múltiples líneas)
         final lines = <String>[];
