@@ -217,6 +217,7 @@ class _WavAudioSource extends StreamAudioSource {
   Future<StreamAudioResponse> request([int? start, int? end]) async {
     start ??= 0;
     end ??= _bytes.length;
+    // ignore: experimental_member_use
     return StreamAudioResponse(
       sourceLength: _bytes.length,
       contentLength: end - start,

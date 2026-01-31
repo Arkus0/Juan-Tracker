@@ -192,7 +192,9 @@ void main() {
         // Los integrales tienen mayor score
         final integralIndex1 = results.indexWhere((r) => r.name == 'Pan integral');
         final integralIndex2 = results.indexWhere((r) => r.name == 'Pan de molde integral');
-        final _centenoIndex = results.indexWhere((r) => r.name == 'Pan de centeno');
+        final centenoIndex = results.indexWhere((r) => r.name == 'Pan de centeno');
+        // ignore: avoid_print
+        if (centenoIndex >= 0) debugPrint('Pan de centeno encontrado en posición $centenoIndex');
         final blancoIndex = results.indexWhere((r) => r.name == 'Pan blanco');
         
         // Los integrales deberían estar antes que el blanco
@@ -236,7 +238,9 @@ void main() {
         
         // "Pan de molde integral" tiene dos coincidencias vs "Pan integral" una
         final moldeIntegral = results.indexWhere((r) => r.name == 'Pan de molde integral');
-        final _panIntegral = results.indexWhere((r) => r.name == 'Pan integral');
+        final panIntegralIndex = results.indexWhere((r) => r.name == 'Pan integral');
+        // ignore: avoid_print
+        if (panIntegralIndex >= 0) debugPrint('Pan integral encontrado en posición $panIntegralIndex');
         
         // Ambos tienen "integral", pero molde tiene más palabras coincidentes
         expect(results[moldeIntegral].name, contains('integral'));
