@@ -22,7 +22,6 @@ class DatabaseLoadingScreen extends ConsumerStatefulWidget {
 class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
   double _progress = 0.0;
   String _status = 'Preparando base de datos...';
-  bool _isLoading = true;
   String? _error;
 
   @override
@@ -63,7 +62,6 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
       setState(() {
         _status = '¡Base de datos lista! ($loadedCount alimentos)';
         _progress = 1.0;
-        _isLoading = false;
       });
 
       // Pequeña pausa para mostrar el mensaje de completado
@@ -73,7 +71,6 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
     } catch (e) {
       setState(() {
         _error = 'Error: $e';
-        _isLoading = false;
       });
     }
   }
