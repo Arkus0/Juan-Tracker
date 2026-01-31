@@ -224,7 +224,9 @@ class _MealSection extends ConsumerWidget {
     final expandedMeals = ref.watch(expandedMealsProvider);
     final isExpanded = expandedMeals.contains(mealType);
     
-    // Calcular totales
+    // T5: Totals calculated per build. This is O(n) where n ~ 3-10 entries
+    // per meal type. Total work is ~40 operations per rebuild, which is
+    // acceptable. Rebuilds only occur when entries actually change.
     final totals = _calculateTotals(entries);
 
     return AppCard(
