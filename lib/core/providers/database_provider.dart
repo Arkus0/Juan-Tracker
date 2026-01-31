@@ -182,13 +182,15 @@ bool _areDiaryEntryListsEqual(
 /// no ha cambiado realmente.
 final recentFoodsProvider = StreamProvider<List<diet.DiaryEntryModel>>((ref) {
   final db = ref.watch(appDatabaseProvider);
+  // Capture repo reference outside asyncMap to avoid accessing disposed ref
+  // inside stream callback (ref.read inside asyncMap can fail if provider disposed)
+  final repo = ref.watch(diaryRepositoryProvider);
 
   // Escuchar cambios en la tabla diary_entries
   return db
       .select(db.diaryEntries)
       .watch()
       .asyncMap((_) async {
-        final repo = ref.read(diaryRepositoryProvider);
         // UX-002: Aumentado a 7 items, ordenado por frecuencia
         return repo.getRecentUniqueEntries(limit: 7);
       })
