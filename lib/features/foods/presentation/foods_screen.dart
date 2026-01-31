@@ -882,13 +882,10 @@ class _FabOption extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   // ignore: unused_element_parameter
-  final Color? color;
-
   const _FabOption({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color,
   });
 
   @override
@@ -900,7 +897,7 @@ class _FabOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color ?? theme.colorScheme.surfaceContainerHighest,
+          color: theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
@@ -925,7 +922,7 @@ class _FabOption extends StatelessWidget {
             Icon(
               icon,
               size: 20,
-              color: color ?? theme.colorScheme.primary,
+              color: theme.colorScheme.primary,
             ),
           ],
         ),
