@@ -2,6 +2,18 @@ import 'package:uuid/uuid.dart';
 import 'dia.dart';
 import 'training_block.dart';
 
+/// Modos de scheduling disponibles para rutinas
+enum SchedulingMode {
+  /// Modo secuencial tradicional: Día 1 → Día 2 → Día 3...
+  sequential,
+  
+  /// Modo anclado a días de semana: Lunes=Pecho, Miércoles=Espalda...
+  weeklyAnchored,
+  
+  /// Modo ciclo flotante: basado en horas de descanso entre sesiones
+  floatingCycle,
+}
+
 class Rutina {
   final String id;
   String nombre;
@@ -19,6 +31,27 @@ class Rutina {
 
   /// Verifica si hay un bloque activo actualmente en modo Pro
   bool get hasActiveBlock => activeBlock != null;
+  
+  // 🆕 SCHEMA v9: Configuración de scheduling (solo modo Pro)
+  
+  /// Modo de scheduling para sugerencias inteligentes
+  /// [sequential] (default): Rotación secuencial tradicional
+  /// [weeklyAnchored]: Anclado a días específicos de la semana
+  /// [floatingCycle]: Basado en tiempo transcurrido desde última sesión
+  final SchedulingMode schedulingMode;
+  
+  /// Configuración adicional del scheduling en formato JSON
+  /// Ej: {"minRestHours": 20, "autoAlternate": true, "maxRestHours": 72}
+  final Map<String, dynamic>? schedulingConfig;
+  
+  /// Helper para obtener minRestHours del config o valor por defecto
+  int get minRestHours => schedulingConfig?['minRestHours'] ?? 20;
+  
+  /// Helper para obtener maxRestHours del config o valor por defecto  
+  int get maxRestHours => schedulingConfig?['maxRestHours'] ?? 72;
+  
+  /// Helper para verificar si usa auto-alternancia (para floatingCycle)
+  bool get autoAlternate => schedulingConfig?['autoAlternate'] ?? true;
 
   Rutina({
     required this.id,
@@ -27,6 +60,8 @@ class Rutina {
     required this.creada,
     this.isProMode = false,
     this.blocks = const [],
+    this.schedulingMode = SchedulingMode.sequential,
+    this.schedulingConfig,
   });
 
   /// Creates a DEEP copy of this routine including all days and exercises.
@@ -41,6 +76,10 @@ class Rutina {
       creada: creada,
       isProMode: isProMode,
       blocks: blocks.map((b) => b.copyWith()).toList(),
+      schedulingMode: schedulingMode,
+      schedulingConfig: schedulingConfig != null 
+          ? Map<String, dynamic>.from(schedulingConfig!) 
+          : null,
     );
   }
 
@@ -51,6 +90,8 @@ class Rutina {
     DateTime? creada,
     bool? isProMode,
     List<TrainingBlock>? blocks,
+    SchedulingMode? schedulingMode,
+    Map<String, dynamic>? schedulingConfig,
   }) {
     return Rutina(
       id: id ?? this.id,
@@ -59,19 +100,23 @@ class Rutina {
       creada: creada ?? this.creada,
       isProMode: isProMode ?? this.isProMode,
       blocks: blocks ?? this.blocks,
+      schedulingMode: schedulingMode ?? this.schedulingMode,
+      schedulingConfig: schedulingConfig ?? this.schedulingConfig,
     );
   }
 
   /// Serializes the routine to a JSON-compatible map for export.
   Map<String, dynamic> toJson() {
     return {
-      'version': 2, // Schema version for future compatibility
+      'version': 3, // Schema version v3: añadido scheduling
       'exportDate': DateTime.now().toIso8601String(),
       'id': id,
       'nombre': nombre,
       'creada': creada.toIso8601String(),
       'dias': dias.map((d) => d.toJson()).toList(),
       'isProMode': isProMode,
+      'schedulingMode': schedulingMode.name,
+      if (schedulingConfig != null) 'schedulingConfig': schedulingConfig,
       if (isProMode) 'blocks': blocks.map((b) => b.toJson()).toList(),
     };
   }
@@ -97,6 +142,13 @@ class Rutina {
             .toList()
         : <TrainingBlock>[];
 
+    // Parse scheduling config (v3)
+    final schedulingModeStr = json['schedulingMode'] as String?;
+    final schedulingMode = schedulingModeStr != null
+        ? SchedulingMode.values.byName(schedulingModeStr)
+        : SchedulingMode.sequential;
+    final schedulingConfig = json['schedulingConfig'] as Map<String, dynamic>?;
+
     return Rutina(
       id: uuid.v4(), // Always generate new ID for imports
       nombre: json['nombre'] as String? ?? 'Rutina Importada',
@@ -104,6 +156,8 @@ class Rutina {
       creada: DateTime.now(), // Use current date for imports
       isProMode: isProMode,
       blocks: blocks,
+      schedulingMode: schedulingMode,
+      schedulingConfig: schedulingConfig,
     );
   }
 

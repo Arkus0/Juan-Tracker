@@ -16,6 +16,7 @@ import 'package:juan_tracker/training/services/routine_sharing_service.dart';
 import 'package:juan_tracker/training/services/voice_input_service.dart';
 import 'package:juan_tracker/training/utils/design_system.dart';
 import 'package:juan_tracker/training/widgets/routine/block_timeline_widget.dart';
+import 'package:juan_tracker/training/widgets/routine/scheduling_config_widget.dart';
 import 'package:juan_tracker/training/widgets/routine_import_dialog.dart';
 import 'package:juan_tracker/training/widgets/smart_import_sheet.dart';
 import 'package:juan_tracker/training/widgets/voice/voice_input_sheet.dart';
@@ -1314,6 +1315,22 @@ class _CreateEditRoutineScreenState
                   onEditBlock: _editBlock,
                   onDeleteBlock: _deleteBlock,
                   isEditing: true,
+                ),
+
+              // ═════════════════════════════════════════════════════════════════
+              // MODO PRO: CONFIGURACIÓN DE SCHEDULING
+              // ═════════════════════════════════════════════════════════════════
+              if (_isProMode && routineState.dias.isNotEmpty)
+                SchedulingConfigWidget(
+                  rutina: routineState,
+                  onSchedulingChanged: (mode, config) {
+                    final notifier = ref.read(_createRoutineProvider.notifier);
+                    notifier.updateScheduling(mode, config);
+                  },
+                  onDayConfigChanged: (dayIndex, weekdays, minRestHours) {
+                    final notifier = ref.read(_createRoutineProvider.notifier);
+                    notifier.updateDayScheduling(dayIndex, weekdays, minRestHours);
+                  },
                 ),
 
               // Days List (Reorderable)
