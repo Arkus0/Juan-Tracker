@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_tracker/diet/models/diary_entry_model.dart';
 import 'package:juan_tracker/diet/providers/habitual_food_provider.dart';
+import 'package:juan_tracker/core/providers/database_provider.dart'
+    show currentMealTypeProvider, mealContextMessageProvider;
 import 'package:juan_tracker/core/design_system/design_system.dart';
 
 /// Chips horizontales que muestran comidas habituales para el tipo de comida actual
