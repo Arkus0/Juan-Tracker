@@ -254,10 +254,25 @@ class SmartFoodSuggestion {
   }
 }
 
-/// Provider que detecta el MealType actual basado en la hora
-final currentMealTypeProvider = Provider<diet.MealType>((ref) {
-  return _getMealTypeForTime(DateTime.now());
-});
+/// Notifier para el MealType actual basado en la hora.
+///
+/// IMPORTANTE: Este provider cachea el valor calculado. Para obtener un valor
+/// actualizado con la hora actual, invalide el provider:
+///   ref.invalidate(currentMealTypeProvider);
+///
+/// Se recomienda invalidar:
+/// - En initState/didChangeDependencies de pantallas principales
+/// - Cuando la app vuelve de segundo plano (AppLifecycleState.resumed)
+class CurrentMealTypeNotifier extends Notifier<diet.MealType> {
+  @override
+  diet.MealType build() {
+    return _getMealTypeForTime(DateTime.now());
+  }
+}
+
+final currentMealTypeProvider = NotifierProvider<CurrentMealTypeNotifier, diet.MealType>(
+  CurrentMealTypeNotifier.new,
+);
 
 /// Provider de sugerencias inteligentes de comida basadas en:
 /// 1. Hora del día (desayuno, almuerzo, cena, snack)
