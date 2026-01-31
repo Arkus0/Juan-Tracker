@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/database_provider.dart';
 import '../../../features/diary/presentation/diary_screen.dart';
 import '../../../features/weight/presentation/weight_screen.dart';
 import '../../../features/summary/presentation/summary_screen.dart';
@@ -14,7 +15,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   // Usamos IndexedStack para preservar el estado de cada tab
@@ -26,6 +27,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     CoachScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Refresh meal type provider to get current time-based value
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(currentMealTypeProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh meal type when app resumes from background
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(currentMealTypeProvider);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -140,37 +140,9 @@ final habitualFoodByMealProvider = FutureProvider.family<List<HabitualFoodPatter
   },
 );
 
-/// Provider que determina el tipo de comida actual basado en la hora del día
-final currentMealTypeProvider = Provider<MealType>((ref) {
-  final hour = DateTime.now().hour;
-
-  if (hour >= 6 && hour < 11) {
-    return MealType.breakfast;
-  } else if (hour >= 11 && hour < 15) {
-    return MealType.lunch;
-  } else if (hour >= 15 && hour < 19) {
-    return MealType.snack;
-  } else {
-    return MealType.dinner;
-  }
-});
-
-/// Provider para obtener el mensaje de contexto de comida
-final mealContextMessageProvider = Provider<String>((ref) {
-  final mealType = ref.watch(currentMealTypeProvider);
-  final hour = DateTime.now().hour;
-
-  switch (mealType) {
-    case MealType.breakfast:
-      return hour < 9 ? '¡Buenos días! ¿Qué desayunas hoy?' : '¿Algo más para desayunar?';
-    case MealType.lunch:
-      return hour < 13 ? 'Hora de almorzar' : '¿Qué almorzaste?';
-    case MealType.snack:
-      return 'Merienda time ☕';
-    case MealType.dinner:
-      return hour >= 21 ? 'Cena de campeones' : '¿Qué cenamos hoy?';
-  }
-});
+// NOTE: currentMealTypeProvider and mealContextMessageProvider are defined in
+// database_provider.dart to avoid duplicate provider instances.
+// Import from 'package:juan_tracker/core/providers/database_provider.dart' to use them.
 
 /// Provider para añadir una comida habitual al diario
 final addHabitualFoodProvider = Provider.autoDispose

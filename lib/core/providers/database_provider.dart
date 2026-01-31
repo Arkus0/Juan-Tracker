@@ -84,14 +84,22 @@ final weightStreamProvider = StreamProvider<List<diet.WeighInModel>>((ref) {
 
 /// 🎯 MED-002: Provider de días con entradas para el calendario
 /// Emite un Set de fechas (truncadas a día) que tienen al menos una entrada
+///
+/// OPTIMIZACIÓN: Usa SELECT DISTINCT solo en la columna date en lugar de
+/// cargar todas las filas. Esto reduce significativamente el uso de memoria
+/// y CPU para usuarios con muchas entradas de diario.
 final calendarEntryDaysProvider = StreamProvider<Set<DateTime>>((ref) {
   final db = ref.watch(appDatabaseProvider);
 
-  // Watch all diary entries table for changes
-  return db.select(db.diaryEntries).watch().map((entries) {
-    // Extract unique dates (truncated to day)
-    return entries.map((e) {
-      final date = e.date;
+  // Use selectOnly with distinct to fetch only unique dates
+  // This is O(unique_dates) instead of O(total_entries)
+  final query = db.selectOnly(db.diaryEntries, distinct: true)
+    ..addColumns([db.diaryEntries.date]);
+
+  return query.watch().map((rows) {
+    return rows.map((row) {
+      final date = row.read(db.diaryEntries.date)!;
+      // Truncate to day (dates should already be truncated per schema)
       return DateTime(date.year, date.month, date.day);
     }).toSet();
   });
@@ -174,13 +182,15 @@ bool _areDiaryEntryListsEqual(
 /// no ha cambiado realmente.
 final recentFoodsProvider = StreamProvider<List<diet.DiaryEntryModel>>((ref) {
   final db = ref.watch(appDatabaseProvider);
+  // Capture repo reference outside asyncMap to avoid accessing disposed ref
+  // inside stream callback (ref.read inside asyncMap can fail if provider disposed)
+  final repo = ref.watch(diaryRepositoryProvider);
 
   // Escuchar cambios en la tabla diary_entries
   return db
       .select(db.diaryEntries)
       .watch()
       .asyncMap((_) async {
-        final repo = ref.read(diaryRepositoryProvider);
         // UX-002: Aumentado a 7 items, ordenado por frecuencia
         return repo.getRecentUniqueEntries(limit: 7);
       })
@@ -254,10 +264,25 @@ class SmartFoodSuggestion {
   }
 }
 
-/// Provider que detecta el MealType actual basado en la hora
-final currentMealTypeProvider = Provider<diet.MealType>((ref) {
-  return _getMealTypeForTime(DateTime.now());
-});
+/// Notifier para el MealType actual basado en la hora.
+///
+/// IMPORTANTE: Este provider cachea el valor calculado. Para obtener un valor
+/// actualizado con la hora actual, invalide el provider:
+///   ref.invalidate(currentMealTypeProvider);
+///
+/// Se recomienda invalidar:
+/// - En initState/didChangeDependencies de pantallas principales
+/// - Cuando la app vuelve de segundo plano (AppLifecycleState.resumed)
+class CurrentMealTypeNotifier extends Notifier<diet.MealType> {
+  @override
+  diet.MealType build() {
+    return _getMealTypeForTime(DateTime.now());
+  }
+}
+
+final currentMealTypeProvider = NotifierProvider<CurrentMealTypeNotifier, diet.MealType>(
+  CurrentMealTypeNotifier.new,
+);
 
 /// Provider de sugerencias inteligentes de comida basadas en:
 /// 1. Hora del día (desayuno, almuerzo, cena, snack)

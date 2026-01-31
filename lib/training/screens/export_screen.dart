@@ -201,7 +201,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       Directory? downloadsDir;
       if (Platform.isAndroid) {
         downloadsDir = Directory('/storage/emulated/0/Download');
-        if (!downloadsDir.existsSync()) {
+        // Use async exists() to avoid blocking the UI thread
+        if (!await downloadsDir.exists()) {
           downloadsDir = await getExternalStorageDirectory();
         }
       } else if (Platform.isIOS) {
