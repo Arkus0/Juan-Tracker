@@ -95,8 +95,13 @@ void _showMicroToast(BuildContext context, String message, IconData icon) {
   overlay.insert(overlayEntry);
 
   // Remover después de 1.5 segundos
+  // T7 FIX: Guard against overlay being disposed during delay
   Future.delayed(const Duration(milliseconds: 1500), () {
-    overlayEntry.remove();
+    try {
+      overlayEntry.remove();
+    } catch (_) {
+      // Overlay may have been disposed if screen was popped
+    }
   });
 }
 
