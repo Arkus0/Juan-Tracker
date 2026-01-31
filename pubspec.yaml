@@ -54,6 +54,7 @@ flutter:
   assets:
     - assets/data/exercises_local.json
     - assets/data/alternativas.json
+    - assets/data/foods.jsonl.gz
     - assets/fonts/
     - assets/sounds/
 

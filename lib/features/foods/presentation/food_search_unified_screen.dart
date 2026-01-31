@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,12 +8,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-import '../../../../core/design_system/design_system.dart';
-import '../../../../core/providers/database_provider.dart';
-import '../../../../diet/models/models.dart';
+
 import '../../../../diet/providers/food_search_provider.dart';
 import '../../../../diet/repositories/alimento_repository.dart';
-import '../../../diary/presentation/add_entry_dialog.dart';
+import '../../../../training/database/database.dart';
+import '../../diary/presentation/add_entry_dialog.dart';
 import '../providers/food_input_providers.dart';
 import '../providers/unified_search_provider.dart';
 import '../widgets/add_food_manual_sheet.dart';
@@ -71,7 +69,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     // Cargar recientes al inicio
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(searchQueryProvider.notifier).setQuery('');
-      ref.read(foodInputModeProvider.notifier).state = FoodInputMode.recent;
+      ref.read(foodInputModeProvider.notifier).setMode(FoodInputMode.recent);
     });
   }
 
@@ -121,7 +119,6 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
         }
       },
       localeId: 'es_ES',
-      listenMode: ListenMode.confirmation,
     );
   }
 
@@ -137,11 +134,11 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     if (parsed.foodName.isNotEmpty) {
       // Buscar el alimento
       _searchController.text = parsed.foodName;
-      ref.read(foodSearchQueryProvider.notifier).query = parsed.foodName;
+      ref.read(searchQueryProvider.notifier).setQuery(parsed.foodName);
       
       // Si especificó cantidad, guardarla para el diálogo
       if (parsed.amount != null) {
-        ref.read(voiceInputAmountProvider.notifier).state = parsed.amount;
+        ref.read(voiceInputAmountProvider.notifier).setAmount(parsed.amount);
       }
       
       // Mostrar snackbar con opción rápida
@@ -177,19 +174,16 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
       // Eliminar la cantidad del nombre
       foodName = text.replaceFirst(amountMatch.group(0)!, '').trim();
       // Limpiar preposiciones comunes
-      foodName = foodName.replaceFirst(RegExp(r'^(de\s+|d\')', caseSensitive: false), '').trim();
+      foodName = foodName.replaceFirst(RegExp(r"^(de\s+|d')", caseSensitive: false), '').trim();
     }
     
     return _ParsedVoiceInput(foodName: foodName, amount: amount);
   }
 
   Future<void> _quickAddFromVoice(_ParsedVoiceInput parsed) async {
-    final results = ref.read(foodSearchResultsProvider);
-    results.whenData((foods) {
-      if (foods.isNotEmpty) {
-        _selectFood(foods.first);
-      }
-    });
+    // Buscar alimentos con el query parseado
+    ref.read(searchQueryProvider.notifier).setQuery(parsed.foodName);
+    ref.read(foodSearchProvider.notifier).search(parsed.foodName);
   }
 
   // ============================================================================
@@ -229,7 +223,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     // Buscar coincidencias en la base local
     if (extractedData.name.isNotEmpty) {
       _searchController.text = extractedData.name;
-      ref.read(foodSearchQueryProvider.notifier).query = extractedData.name;
+      ref.read(searchQueryProvider.notifier).setQuery(extractedData.name);
       
       // Mostrar opciones
       showModalBottomSheet(
@@ -240,7 +234,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
           fullText: text,
           onSearch: (query) {
             _searchController.text = query;
-            ref.read(foodSearchQueryProvider.notifier).query = query;
+            ref.read(searchQueryProvider.notifier).setQuery(query);
           },
           onManualAdd: () => _showManualAddSheet(prefillData: extractedData),
         ),
@@ -337,41 +331,31 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
       }
       
       // Si no está en local, llamar a Open Food Facts (requiere internet)
-      final remoteResult = await ref.read(alimentoRepositoryProvider).searchByBarcodeOnline(barcode);
+      // TODO: Implementar búsqueda online
       
       Navigator.of(context).pop(); // Cerrar loading
       
-      if (remoteResult != null) {
-        // Guardar en local automáticamente
-        await ref.read(alimentoRepositoryProvider).insertFood(remoteResult);
-        _selectFood(remoteResult);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Producto guardado localmente')),
-        );
-      } else {
-        // No encontrado
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Producto no encontrado'),
-            content: Text('No se encontró información para el código: $barcode'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  _showManualAddSheet(prefillData: _OcrExtractedData(name: 'Producto $barcode'));
-                },
-                child: const Text('Añadir manual'),
-              ),
-            ],
-          ),
-        );
-      }
+      // No encontrado
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Producto no encontrado'),
+          content: Text('No se encontró información para el código: $barcode'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _showManualAddSheet(prefillData: _OcrExtractedData(name: 'Producto $barcode'));
+              },
+              child: const Text('Añadir manual'),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       Navigator.of(context).pop(); // Cerrar loading
       _showError('Error al buscar producto: $e');
@@ -386,12 +370,12 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     _debounceTimer?.cancel();
     
     if (value.trim().isEmpty) {
-      ref.read(foodInputModeProvider.notifier).state = FoodInputMode.recent;
-      ref.read(foodSearchQueryProvider.notifier).query = '';
+      ref.read(foodInputModeProvider.notifier).setMode(FoodInputMode.recent);
+      ref.read(searchQueryProvider.notifier).setQuery('');
       return;
     }
     
-    ref.read(foodInputModeProvider.notifier).state = FoodInputMode.search;
+    ref.read(foodInputModeProvider.notifier).setMode(FoodInputMode.search);
     
     _debounceTimer = Timer(_debounceDuration, () {
       ref.read(searchQueryProvider.notifier).setQuery(value.trim());
@@ -403,7 +387,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
   // ============================================================================
   
   Future<void> _selectFood(Food food) async {
-    final result = await showDialog<DiaryEntryModel>(
+    final result = await showDialog<DiaryEntry>(
       context: context,
       builder: (ctx) => AddEntryDialog(
         food: food.toModel(),
@@ -519,8 +503,8 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     _searchController.clear();
-                    ref.read(foodSearchQueryProvider.notifier).query = '';
-                    ref.read(foodInputModeProvider.notifier).state = FoodInputMode.recent;
+                    ref.read(searchQueryProvider.notifier).setQuery('');
+                    ref.read(foodInputModeProvider.notifier).setMode(FoodInputMode.recent);
                     _searchFocusNode.requestFocus();
                   },
                 ),
@@ -546,9 +530,9 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
             label: const Text('Recientes'),
             selected: currentMode == FoodInputMode.recent,
             onSelected: (_) {
-              ref.read(foodInputModeProvider.notifier).state = FoodInputMode.recent;
+              ref.read(foodInputModeProvider.notifier).setMode(FoodInputMode.recent);
               _searchController.clear();
-              ref.read(foodSearchQueryProvider.notifier).query = '';
+              ref.read(searchQueryProvider.notifier).setQuery('');
             },
           ),
           const SizedBox(width: 8),
@@ -556,9 +540,9 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
             label: const Text('Favoritos'),
             selected: currentMode == FoodInputMode.favorites,
             onSelected: (_) {
-              ref.read(foodInputModeProvider.notifier).state = FoodInputMode.favorites;
+              ref.read(foodInputModeProvider.notifier).setMode(FoodInputMode.favorites);
               _searchController.clear();
-              ref.read(foodSearchQueryProvider.notifier).query = '';
+              ref.read(searchQueryProvider.notifier).setQuery('');
             },
           ),
         ],
@@ -624,7 +608,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
   Widget _buildResultsList({
     required AsyncValue<List<ScoredFood>> searchResults,
     required FoodInputMode inputMode,
-    required AsyncValue<List<FoodModel>> recentFoods,
+    required AsyncValue<List<Food>> recentFoods,
     required String searchQuery,
   }) {
     // Modo recientes
@@ -639,7 +623,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
               onBarcodeScan: _scanBarcode,
             );
           }
-          return _buildFoodList(foods.map((f) => f.food).toList());
+          return _buildFoodList(foods);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const Center(child: Text('Error al cargar recientes')),
@@ -649,8 +633,8 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     // Modo búsqueda
     if (inputMode == FoodInputMode.search) {
       return searchResults.when(
-        data: (foods) {
-          if (foods.isEmpty && searchQuery.isNotEmpty) {
+        data: (scoredFoods) {
+          if (scoredFoods.isEmpty && searchQuery.isNotEmpty) {
             return SearchEmptyState(
               query: searchQuery,
               onManualAdd: () => _showManualAddSheet(prefillData: _OcrExtractedData(name: searchQuery)),
@@ -659,7 +643,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
               onBarcodeScan: _scanBarcode,
             );
           }
-          if (foods.isEmpty) {
+          if (scoredFoods.isEmpty) {
             return SearchEmptyState(
               onManualAdd: () => _showManualAddSheet(),
               onVoiceInput: _startListening,
@@ -667,7 +651,8 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
               onBarcodeScan: _scanBarcode,
             );
           }
-          return _buildFoodList(foods);
+          // Convertir ScoredFood a Food
+          return _buildFoodList(scoredFoods.map((s) => s.food).toList());
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const Center(child: Text('Error al buscar')),
@@ -933,16 +918,6 @@ class _BarcodeScannerScreen extends StatelessWidget {
             }
           }
         },
-        overlay: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.white,
-              width: 2,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: const EdgeInsets.all(50),
-        ),
       ),
     );
   }

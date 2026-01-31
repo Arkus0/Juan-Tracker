@@ -74,8 +74,6 @@ class _InputMethodFabState extends State<InputMethodFab>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Stack(
       alignment: Alignment.bottomRight,
       children: [
@@ -189,7 +187,7 @@ class _InputMethodFabState extends State<InputMethodFab>
                     margin: const EdgeInsets.only(right: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
@@ -204,7 +202,7 @@ class _InputMethodFabState extends State<InputMethodFab>
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurface,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),

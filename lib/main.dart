@@ -24,12 +24,10 @@ Future<void> main() async {
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
   
-
-  
   runApp(
     ProviderScope(
       overrides: getProviderOverrides(prefs),
-      child: const JuanTrackerApp(),
+      child: const JuanTrackerAppWithLoader(),
     ),
   );
 

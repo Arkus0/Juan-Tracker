@@ -115,7 +115,7 @@ class SearchEmptyState extends StatelessWidget {
               TextButton.icon(
                 onPressed: onManualAdd,
                 icon: const Icon(Icons.add_circle_outline),
-                label: const Text('Añadir "$query" manualmente'),
+                label: Text('Añadir "$query" manualmente'),
               ),
             ],
           ],

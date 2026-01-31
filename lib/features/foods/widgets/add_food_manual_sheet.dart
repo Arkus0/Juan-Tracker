@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/providers/database_provider.dart';
@@ -101,17 +102,18 @@ class _AddFoodManualSheetState extends ConsumerState<AddFoodManualSheet> {
   Future<void> _saveFood() async {
     if (!_formKey.currentState!.validate()) return;
     
-    final food = FoodModel(
-      id: const Uuid().v4(),
-      name: _nameController.text.trim(),
-      brand: _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
-      kcalPer100g: double.parse(_kcalController.text),
-      proteinPer100g: double.tryParse(_proteinController.text),
-      carbsPer100g: double.tryParse(_carbsController.text),
-      fatPer100g: double.tryParse(_fatController.text),
-      defaultPortion: _defaultPortion,
-      source: 'user_created',
-      createdAt: DateTime.now(),
+    final food = FoodsCompanion(
+      id: Value(const Uuid().v4()),
+      name: Value(_nameController.text.trim()),
+      brand: Value(_brandController.text.trim().isEmpty ? null : _brandController.text.trim()),
+      kcalPer100g: Value(double.parse(_kcalController.text).round()),
+      proteinPer100g: Value(double.tryParse(_proteinController.text)),
+      carbsPer100g: Value(double.tryParse(_carbsController.text)),
+      fatPer100g: Value(double.tryParse(_fatController.text)),
+      portionGrams: Value(_defaultPortion),
+      userCreated: const Value(true),
+      createdAt: Value(DateTime.now()),
+      updatedAt: Value(DateTime.now()),
     );
     
     try {
@@ -259,7 +261,7 @@ class _AddFoodManualSheetState extends ConsumerState<AddFoodManualSheet> {
                         label: 'Proteínas',
                         icon: Icons.fitness_center,
                         color: Colors.green,
-                        onChanged: (_) => _calculateKcal(),
+                        onChanged: () => _calculateKcal(),
                       ),
                       const SizedBox(height: 12),
                       
@@ -269,7 +271,7 @@ class _AddFoodManualSheetState extends ConsumerState<AddFoodManualSheet> {
                         label: 'Carbohidratos',
                         icon: Icons.grain,
                         color: Colors.orange,
-                        onChanged: (_) => _calculateKcal(),
+                        onChanged: () => _calculateKcal(),
                       ),
                       const SizedBox(height: 12),
                       
@@ -279,7 +281,7 @@ class _AddFoodManualSheetState extends ConsumerState<AddFoodManualSheet> {
                         label: 'Grasas',
                         icon: Icons.water_drop,
                         color: Colors.blue,
-                        onChanged: (_) => _calculateKcal(),
+                        onChanged: () => _calculateKcal(),
                       ),
                       const SizedBox(height: 16),
                       

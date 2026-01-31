@@ -24,7 +24,7 @@ class FoodListItem extends StatelessWidget {
     final theme = Theme.of(context);
     
     // Determinar color de calorías
-    final kcalColor = _getKcalColor(food.kcalPer100g);
+    final kcalColor = _getKcalColor(food.kcalPer100g.toDouble());
     
     // Emoji/icono según categoría
     final emoji = _getEmojiForFood(food);

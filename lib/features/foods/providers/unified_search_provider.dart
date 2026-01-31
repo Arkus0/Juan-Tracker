@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../diet/models/food_model.dart';
 import '../../../../diet/providers/food_search_provider.dart';
 import '../../../../diet/repositories/alimento_repository.dart';
+import '../../../../training/database/database.dart';
 
 /// Provider unificado para la búsqueda de alimentos en la pantalla unificada
 /// 
@@ -15,7 +15,7 @@ final unifiedSearchProvider = Provider<AsyncValue<List<ScoredFood>>>((ref) {
     return const AsyncValue.loading();
   }
   
-  if (searchState.hasError) {
+  if (searchState.errorMessage != null) {
     return AsyncValue.error(
       searchState.errorMessage ?? 'Error de búsqueda',
       StackTrace.current,
@@ -25,20 +25,20 @@ final unifiedSearchProvider = Provider<AsyncValue<List<ScoredFood>>>((ref) {
   return AsyncValue.data(searchState.results);
 });
 
-/// Provider para obtener alimentos recientes en formato para la UI unificada
+/// Provider de alimentos recientes (usados por el usuario)
 final recentFoodsForUnifiedProvider = FutureProvider<List<Food>>((ref) async {
-  final repository = ref.watch(alimentoRepositoryProvider);
-  return repository.getRecentFoods(limit: 20);
+  // TODO: Implementar getRecentFoods en el repositorio
+  return [];
 });
 
 /// Provider para buscar por código de barras
 final barcodeSearchProvider = FutureProvider.family<Food?, String>((ref, barcode) async {
-  final repository = ref.watch(alimentoRepositoryProvider);
-  return repository.searchByBarcode(barcode);
+  // TODO: Implementar búsqueda por barcode
+  return null;
 });
 
 /// Provider para búsqueda online por código de barras
 final onlineBarcodeSearchProvider = FutureProvider.family<Food?, String>((ref, barcode) async {
-  final repository = ref.watch(alimentoRepositoryProvider);
-  return repository.searchByBarcodeOnline(barcode);
+  // TODO: Implementar búsqueda online por barcode
+  return null;
 });

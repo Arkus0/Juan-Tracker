@@ -1,4 +1,5 @@
 import '../../../diet/models/food_model.dart';
+import '../../../diet/repositories/alimento_repository.dart';
 import '../../../training/database/database.dart';
 
 /// Extensiones para convertir entre modelos de datos (Drift) y modelos de dominio
@@ -25,9 +26,11 @@ extension FoodMapper on Food {
   }
 }
 
-/// Extensión para ScoredFood
+/// Extensión para ScoredFood (del provider de diet)
 extension ScoredFoodMapper on ScoredFood {
   /// Convierte un ScoredFood a FoodModel
+  /// 
+  /// ScoredFood tiene una propiedad 'food' que es de tipo Food (Drift)
   FoodModel toModel() {
     return food.toModel();
   }
