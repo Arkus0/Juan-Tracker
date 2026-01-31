@@ -160,6 +160,8 @@ class FoodSearchRepositoryImpl implements FoodSearchRepository {
   }
 
   /// Convierte CachedFoodItem a ScorableFood y scora
+  /// 
+  /// Filtra productos con textScore < 0.3 (umbral mínimo de relevancia)
   List<ScoredFood> _scoreAndRank(List<CachedFoodItem> items, String query) {
     final scorable = items.map((item) => ScorableFood(
       id: item.code,
@@ -179,7 +181,11 @@ class FoodSearchRepositoryImpl implements FoodSearchRepository {
       },
     )).toList();
 
-    return _scoring.rankProducts(scorable, query);
+    final ranked = _scoring.rankProducts(scorable, query);
+    
+    // Filtrar por umbral mínimo de relevancia (textScore >= 0.3)
+    // Esto elimina resultados irrelevantes que pueda devolver la API
+    return ranked.where((scored) => scored.breakdown.textMatch >= 0.3).toList();
   }
 
   @override
@@ -286,12 +292,8 @@ class FoodSearchRepositoryImpl implements FoodSearchRepository {
 
   @override
   Future<bool> get isOnline async {
-    // Implementación simple - se puede mejorar con connectivity_plus
-    try {
-      // Intentar una operación rápida de red
-      return true;
-    } catch (_) {
-      return false;
-    }
+    // TODO: Integrar con connectivity_plus para verificación real
+    // Por ahora asumimos online, el fallback maneja errores de red
+    return true;
   }
 }

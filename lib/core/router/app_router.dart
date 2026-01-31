@@ -13,7 +13,7 @@ import '../../features/home/presentation/entry_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/home/presentation/today_screen.dart';
 import '../../features/diary/presentation/diary_screen.dart';
-import '../../features/diary/presentation/food_search_screen.dart';
+import '../../features/foods/presentation/food_search_unified_screen.dart';
 import '../../features/diary/presentation/external_food_search_screen.dart';
 import '../../features/foods/presentation/foods_screen.dart';
 import '../../features/weight/presentation/weight_screen.dart';
@@ -130,7 +130,7 @@ class AppRouter {
 
       GoRoute(
         path: nutritionFoodSearch,
-        builder: (context, state) => const FoodSearchScreen(),
+        builder: (context, state) => const FoodSearchUnifiedScreen(),
       ),
 
       // Búsqueda externa en Open Food Facts (soporta barcode opcional)

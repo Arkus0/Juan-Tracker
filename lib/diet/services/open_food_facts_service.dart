@@ -52,8 +52,8 @@ class OpenFoodFactsService {
 
   // Rate limiting
   final List<DateTime> _requestTimestamps = [];
-  static const int _maxRequestsPerMinute = 60; // Conservador
-  static const int _maxRequestsBurst = 10; // Máximo en ventana corta
+  static const int _maxRequestsPerMinute = 10; // Límite OFF API para búsquedas (2026)
+  static const int _maxRequestsBurst = 5; // Máximo en ventana corta
 
   // Retry configuration
   static const int _maxRetries = 3;
@@ -62,7 +62,7 @@ class OpenFoodFactsService {
   // In-memory cache (últimos 20 resultados)
   final Map<String, _CachedResponse> _memoryCache = {};
   static const int _maxMemoryCacheSize = 20;
-  static const Duration _memoryCacheTTL = Duration(minutes: 5);
+  static const Duration _memoryCacheTTL = Duration(minutes: 30); // Datos estáticos, cache más largo
 
   // URLs base
   static const String baseUrl = 'https://world.openfoodfacts.org';

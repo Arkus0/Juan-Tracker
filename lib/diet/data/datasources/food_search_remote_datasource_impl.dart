@@ -14,9 +14,14 @@ class FoodSearchRemoteDataSourceImpl implements FoodSearchRemoteDataSource {
   static const String _userAgent = 'JuanTracker/1.0 (Flutter; Android; es-ES)';
   static const Duration _timeout = Duration(seconds: 10);
   
-  // Rate limiting simple
+  // Rate limiting - OFF API límite: 10 req/min para búsquedas (2026)
   final List<DateTime> _requestTimestamps = [];
-  static const int _maxRequestsPerMinute = 60;
+  static const int _maxRequestsPerMinute = 10;
+  static const int _maxBurstRequests = 5; // Máximo en ventana corta
+  
+  // Retry configuration
+  static const int _maxRetries = 3;
+  static const Duration _initialRetryDelay = Duration(milliseconds: 500);
 
   FoodSearchRemoteDataSourceImpl({Dio? dio}) : _dio = dio ?? _createDio();
 
@@ -39,49 +44,80 @@ class FoodSearchRemoteDataSourceImpl implements FoodSearchRemoteDataSource {
     int pageSize = 24,
     String? countryCode,
   }) async {
+    return _executeWithRetry(
+      () => _performSearch(query, page: page, pageSize: pageSize, countryCode: countryCode),
+    );
+  }
+  
+  /// Ejecuta la búsqueda real
+  Future<CachedSearchResult> _performSearch(
+    String query, {
+    required int page,
+    required int pageSize,
+    String? countryCode,
+  }) async {
     await _waitForRateLimit();
     
     _cancelToken = CancelToken();
 
-    // Usar endpoint clásico /cgi/search.pl que sí soporta búsqueda de texto libre
-    // El endpoint /api/v2/search ignora search_terms
-    try {
-      final queryParams = <String, dynamic>{
-        'search_terms': query,
-        'search_simple': '1',
-        'json': '1',
-        'page': page.toString(),
-        'page_size': pageSize.toString(),
-        'fields': 'code,product_name,brands,image_url,nutriments,'
-                  'nutriscore_grade,nova_group,categories_tags,'
-                  'countries_tags,stores_tags',
-        'sort_by': 'unique_scans_n',
-      };
+    final queryParams = <String, dynamic>{
+      'search_terms': query,
+      'search_simple': '1',
+      'json': '1',
+      'page': page.toString(),
+      'page_size': pageSize.toString(),
+      'fields': 'code,product_name,brands,image_url,nutriments,'
+                'nutriscore_grade,nova_group,categories_tags,'
+                'countries_tags,stores_tags',
+      'sort_by': 'unique_scans_n',
+    };
 
-      // Filtro por España (opcional)
-      if (countryCode != null) {
-        queryParams['countries_tags'] = 'en:spain';
-        queryParams['lc'] = countryCode;
-      }
+    if (countryCode != null) {
+      queryParams['countries_tags'] = 'en:spain';
+      queryParams['lc'] = countryCode;
+    }
 
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/cgi/search.pl',
-        queryParameters: queryParams,
-        cancelToken: _cancelToken,
+    _recordRequest(); // Registrar ANTES de la petición
+    
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/cgi/search.pl',
+      queryParameters: queryParams,
+      cancelToken: _cancelToken,
+    );
+
+    if (response.statusCode == 429) {
+      throw RateLimitException();
+    }
+    
+    if (response.statusCode == 503) {
+      // Service unavailable - lanzar excepción para retry
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        type: DioExceptionType.badResponse,
+        error: 'Service Unavailable',
       );
+    }
 
-      _recordRequest();
+    if (response.data == null) {
+      throw NetworkException('Respuesta vacía');
+    }
 
-      if (response.statusCode == 429) {
-        throw RateLimitException();
-      }
-
-      if (response.data == null) {
-        throw NetworkException('Respuesta vacía');
-      }
-
-      return _parseResponse(response.data!, query);
+    return _parseResponse(response.data!, query);
+  }
+  
+  /// Ejecuta con retry y backoff exponencial para errores 503
+  Future<T> _executeWithRetry<T>(Future<T> Function() operation, {int attempt = 1}) async {
+    try {
+      return await operation();
     } on DioException catch (e) {
+      // Manejar 503 Service Unavailable con retry
+      if (e.response?.statusCode == 503 && attempt < _maxRetries) {
+        final delay = _initialRetryDelay * (1 << (attempt - 1)); // Exponential backoff
+        await Future.delayed(delay);
+        return _executeWithRetry(operation, attempt: attempt + 1);
+      }
+      
       if (CancelToken.isCancel(e)) {
         throw NetworkException('Búsqueda cancelada');
       }
@@ -90,51 +126,64 @@ class FoodSearchRemoteDataSourceImpl implements FoodSearchRemoteDataSource {
         throw TimeoutException();
       }
       throw NetworkException('Error de red: ${e.message}');
+    } on NetworkException {
+      rethrow;
     }
   }
 
   @override
   Future<CachedFoodItem?> searchByBarcode(String barcode) async {
+    return _executeWithRetry(
+      () => _performBarcodeSearch(barcode),
+    );
+  }
+  
+  /// Ejecuta la búsqueda de barcode
+  Future<CachedFoodItem?> _performBarcodeSearch(String barcode) async {
     await _waitForRateLimit();
+    _recordRequest(); // Registrar ANTES
     
     _cancelToken = CancelToken();
 
-    try {
-      // El endpoint de producto sí está en api/v2
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/api/v2/product/$barcode',
-        queryParameters: {
-          'fields': 'code,product_name,brands,image_url,nutriments,'
-                   'nutriscore_grade,nova_group,countries_tags,stores_tags',
-        },
-        cancelToken: _cancelToken,
-      );
+    // El endpoint de producto sí está en api/v2
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v2/product/$barcode',
+      queryParameters: {
+        'fields': 'code,product_name,brands,image_url,nutriments,'
+                 'nutriscore_grade,nova_group,countries_tags,stores_tags',
+      },
+      cancelToken: _cancelToken,
+    );
 
-      _recordRequest();
-
-      if (response.statusCode == 404) {
-        return null;
-      }
-
-      if (response.data == null) {
-        throw NetworkException('Respuesta vacía');
-      }
-
-      final status = response.data!['status'] as int? ?? 0;
-      if (status == 0) {
-        return null;
-      }
-
-      final product = response.data!['product'] as Map<String, dynamic>?;
-      if (product == null) return null;
-
-      return _parseProduct(product);
-    } on DioException catch (e) {
-      if (CancelToken.isCancel(e)) {
-        throw NetworkException('Búsqueda cancelada');
-      }
-      throw NetworkException('Error de red: ${e.message}');
+    if (response.statusCode == 404) {
+      return null;
     }
+    
+    if (response.statusCode == 503) {
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        type: DioExceptionType.badResponse,
+        error: 'Service Unavailable',
+      );
+    }
+
+    if (response.data == null) {
+      throw NetworkException('Respuesta vacía');
+    }
+
+    // Verificar status_verbose si existe
+    final statusVerbose = response.data!['status_verbose'] as String?;
+    final status = response.data!['status'] as int? ?? 0;
+    
+    if (status == 0 || statusVerbose == 'product not found') {
+      return null;
+    }
+
+    final product = response.data!['product'] as Map<String, dynamic>?;
+    if (product == null) return null;
+
+    return _parseProduct(product);
   }
 
   @override
@@ -236,14 +285,27 @@ class FoodSearchRemoteDataSourceImpl implements FoodSearchRemoteDataSource {
   Future<void> _waitForRateLimit() async {
     final now = DateTime.now();
     
-    // Limpiar timestamps antiguos
+    // Limpiar timestamps antiguos (> 1 minuto)
     _requestTimestamps.removeWhere(
       (ts) => now.difference(ts).inMinutes >= 1,
     );
     
-    // Esperar si estamos cerca del límite
+    // Verificar límite por minuto (10 req/min según docs OFF 2026)
     if (_requestTimestamps.length >= _maxRequestsPerMinute) {
-      await Future.delayed(const Duration(milliseconds: 1000));
+      // Calcular tiempo hasta que el más antiguo expire
+      final oldest = _requestTimestamps.first;
+      final waitTime = const Duration(minutes: 1) - now.difference(oldest);
+      await Future.delayed(waitTime > Duration.zero ? waitTime : const Duration(seconds: 6));
+      return _waitForRateLimit(); // Recursivo para verificar de nuevo
+    }
+    
+    // Verificar burst limit (máximo 5 requests en ventana de 10 segundos)
+    final recentRequests = _requestTimestamps
+        .where((ts) => now.difference(ts).inSeconds <= 10)
+        .length;
+    if (recentRequests >= _maxBurstRequests) {
+      await Future.delayed(const Duration(seconds: 2));
+      return _waitForRateLimit();
     }
   }
 }
