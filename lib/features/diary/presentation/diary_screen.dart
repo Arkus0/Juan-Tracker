@@ -351,7 +351,17 @@ class _MealSection extends ConsumerWidget {
     );
 
     if (result != null) {
-      await ref.read(diaryRepositoryProvider).update(result);
+      // T2 FIX: Add error handling to prevent silent failures
+      try {
+        await ref.read(diaryRepositoryProvider).update(result);
+        if (context.mounted) {
+          AppSnackbar.show(context, message: 'Entrada actualizada');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          AppSnackbar.showError(context, message: 'Error al guardar: $e');
+        }
+      }
     }
   }
 
@@ -378,9 +388,16 @@ class _MealSection extends ConsumerWidget {
     );
 
     if (confirmed == true) {
-      await ref.read(diaryRepositoryProvider).delete(entry.id);
-      if (context.mounted) {
-        AppSnackbar.show(context, message: 'Entrada eliminada');
+      // T2 FIX: Add error handling to prevent silent failures
+      try {
+        await ref.read(diaryRepositoryProvider).delete(entry.id);
+        if (context.mounted) {
+          AppSnackbar.show(context, message: 'Entrada eliminada');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          AppSnackbar.showError(context, message: 'Error al eliminar: $e');
+        }
       }
     }
   }
