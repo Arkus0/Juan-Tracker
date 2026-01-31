@@ -6,12 +6,25 @@ class Dia {
   List<EjercicioEnRutina> ejercicios;
   String progressionType; // 'none', 'lineal', 'double', 'percentage1RM'
   final String id;
+  
+  // 🆕 SCHEMA v9: Configuración de scheduling por día (solo modo Pro)
+  
+  /// Días de la semana asignados a este día de rutina (1=Lunes, 7=Domingo)
+  /// Ej: [1, 3, 5] = Lunes, Miércoles, Viernes
+  /// Usado cuando la rutina tiene schedulingMode = weeklyAnchored
+  final List<int>? weekdays;
+  
+  /// Horas mínimas de descanso después de este día específico
+  /// Si es null, usa el valor global de la rutina
+  final int? minRestHours;
 
   Dia({
     required this.nombre,
     required this.ejercicios,
     this.progressionType = 'none',
     String? id,
+    this.weekdays,
+    this.minRestHours,
   }) : id = id ?? const Uuid().v4();
 
   /// Creates a DEEP copy of this day including all exercises.
@@ -23,6 +36,8 @@ class Dia {
       nombre: nombre,
       ejercicios: ejercicios.map((e) => e.deepCopy()).toList(),
       progressionType: progressionType,
+      weekdays: weekdays != null ? List<int>.from(weekdays!) : null,
+      minRestHours: minRestHours,
     );
   }
 
@@ -31,12 +46,16 @@ class Dia {
     String? nombre,
     List<EjercicioEnRutina>? ejercicios,
     String? progressionType,
+    List<int>? weekdays,
+    int? minRestHours,
   }) {
     return Dia(
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       ejercicios: ejercicios ?? this.ejercicios,
       progressionType: progressionType ?? this.progressionType,
+      weekdays: weekdays ?? this.weekdays,
+      minRestHours: minRestHours ?? this.minRestHours,
     );
   }
 
@@ -47,6 +66,8 @@ class Dia {
       'nombre': nombre,
       'progressionType': progressionType,
       'ejercicios': ejercicios.map((e) => e.toJson()).toList(),
+      if (weekdays != null) 'weekdays': weekdays,
+      if (minRestHours != null) 'minRestHours': minRestHours,
     };
   }
 
@@ -88,11 +109,18 @@ class Dia {
       );
     }
 
+    // Parse scheduling fields (v3)
+    final weekdaysJson = json['weekdays'] as List<dynamic>?;
+    final weekdays = weekdaysJson?.cast<int>();
+    final minRestHours = json['minRestHours'] as int?;
+
     return Dia(
       id: newId ?? uuid.v4(),
       nombre: json['nombre'] as String? ?? 'Día',
       progressionType: json['progressionType'] as String? ?? 'none',
       ejercicios: ejercicios,
+      weekdays: weekdays,
+      minRestHours: minRestHours,
     );
   }
 }

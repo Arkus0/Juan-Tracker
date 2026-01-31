@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:logger/logger.dart';
 
@@ -28,15 +30,38 @@ class RoutineRepository {
       exercisesByDay.putIfAbsent(ex.dayId, () => []).add(ex);
     }
 
+    // Parse scheduling config JSON
+    Map<String, dynamic>? schedulingConfig;
+    if (row.schedulingConfig != null) {
+      try {
+        schedulingConfig = jsonDecode(row.schedulingConfig!) as Map<String, dynamic>;
+      } catch (_) {
+        schedulingConfig = null;
+      }
+    }
+
     final dias = days.map((dayRow) {
       final dayExercises = exercisesByDay[dayRow.id] ?? [];
       // Sort by index
       dayExercises.sort((a, b) => a.exerciseIndex.compareTo(b.exerciseIndex));
 
+      // Parse weekdays JSON
+      List<int>? weekdays;
+      if (dayRow.weekdays != null) {
+        try {
+          final decoded = jsonDecode(dayRow.weekdays!) as List<dynamic>;
+          weekdays = decoded.cast<int>();
+        } catch (_) {
+          weekdays = null;
+        }
+      }
+
       return Dia(
         id: dayRow.id,
         nombre: dayRow.name,
         progressionType: dayRow.progressionType,
+        weekdays: weekdays,
+        minRestHours: dayRow.minRestHours,
         ejercicios: dayExercises
             .map(
               (e) => EjercicioEnRutina(
@@ -72,11 +97,21 @@ class RoutineRepository {
       return dayA.dayIndex.compareTo(dayB.dayIndex);
     });
 
+    // Parse scheduling mode
+    SchedulingMode schedulingMode;
+    try {
+      schedulingMode = SchedulingMode.values.byName(row.schedulingMode);
+    } catch (_) {
+      schedulingMode = SchedulingMode.sequential;
+    }
+
     return Rutina(
       id: row.id,
       nombre: row.name,
       dias: dias,
       creada: row.createdAt,
+      schedulingMode: schedulingMode,
+      schedulingConfig: schedulingConfig,
     );
   }
 
@@ -164,6 +199,10 @@ class RoutineRepository {
                 id: rutina.id,
                 name: rutina.nombre,
                 createdAt: rutina.creada,
+                schedulingMode: Value(rutina.schedulingMode.name),
+                schedulingConfig: rutina.schedulingConfig != null
+                    ? Value(jsonEncode(rutina.schedulingConfig))
+                    : const Value.absent(),
               ),
             );
 
@@ -196,6 +235,12 @@ class RoutineRepository {
               name: dia.nombre,
               progressionType: Value(dia.progressionType),
               dayIndex: i,
+              weekdays: dia.weekdays != null
+                  ? Value(jsonEncode(dia.weekdays))
+                  : const Value.absent(),
+              minRestHours: dia.minRestHours != null
+                  ? Value(dia.minRestHours!)
+                  : const Value.absent(),
             ),
           );
 

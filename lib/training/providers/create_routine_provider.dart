@@ -808,6 +808,34 @@ class CreateRoutineNotifier extends Notifier<Rutina> {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MÉTODOS DE CONFIGURACIÓN DE SCHEDULING (Modo Pro)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Actualiza el modo de scheduling y su configuración
+  void updateScheduling(SchedulingMode mode, Map<String, dynamic>? config) {
+    state = state.copyWith(
+      schedulingMode: mode,
+      schedulingConfig: config,
+    );
+  }
+
+  /// Actualiza la configuración de scheduling de un día específico
+  void updateDayScheduling(int dayIndex, List<int>? weekdays, int? minRestHours) {
+    if (dayIndex < 0 || dayIndex >= state.dias.length) return;
+    
+    final currentDia = state.dias[dayIndex];
+    final updatedDia = currentDia.copyWith(
+      weekdays: weekdays,
+      minRestHours: minRestHours,
+    );
+    
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDia;
+    
+    state = state.copyWith(dias: newDias);
+  }
+
   /// Añade un nuevo bloque a la rutina
   void addBlock(TrainingBlock block) {
     // Verificar que no haya solapamiento
