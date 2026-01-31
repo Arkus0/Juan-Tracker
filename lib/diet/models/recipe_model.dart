@@ -39,20 +39,29 @@ class RecipeModel {
     required this.items,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
+  })  : assert(servings > 0, 'servings must be positive'),
+        assert(totalGrams >= 0, 'totalGrams cannot be negative'),
+        createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
-  /// Valores por porción
-  double get servingGrams => totalGrams / servings;
-  int get kcalPerServing => (totalKcal / servings).round();
+  /// Servings efectivos (mínimo 1 para evitar división por cero)
+  int get _safeServings => servings > 0 ? servings : 1;
+
+  /// Gramos totales efectivos (mínimo 1 para evitar división por cero)
+  double get _safeTotalGrams => totalGrams > 0 ? totalGrams : 1;
+
+  /// Valores por porción (usa _safeServings para evitar división por cero)
+  double get servingGrams => totalGrams / _safeServings;
+  int get kcalPerServing => (totalKcal / _safeServings).round();
   double? get proteinPerServing =>
-      totalProtein != null ? totalProtein! / servings : null;
+      totalProtein != null ? totalProtein! / _safeServings : null;
   double? get carbsPerServing =>
-      totalCarbs != null ? totalCarbs! / servings : null;
+      totalCarbs != null ? totalCarbs! / _safeServings : null;
   double? get fatPerServing =>
-      totalFat != null ? totalFat! / servings : null;
+      totalFat != null ? totalFat! / _safeServings : null;
 
   /// Crea una receta a partir de items
+  /// Valida que servings >= 1 para evitar división por cero
   factory RecipeModel.fromItems({
     required String id,
     required String name,
@@ -61,6 +70,9 @@ class RecipeModel {
     String? servingName,
     required List<RecipeItemModel> items,
   }) {
+    // Asegurar servings >= 1
+    final safeServings = servings > 0 ? servings : 1;
+
     int totalKcal = 0;
     double totalProtein = 0;
     double totalCarbs = 0;
@@ -84,23 +96,24 @@ class RecipeModel {
       totalCarbs: totalCarbs > 0 ? totalCarbs : null,
       totalFat: totalFat > 0 ? totalFat : null,
       totalGrams: totalGrams,
-      servings: servings,
+      servings: safeServings,
       servingName: servingName,
       items: items,
     );
   }
 
   /// Convierte la receta a un FoodModel para usar en el diario
+  /// Usa _safeTotalGrams para evitar división por cero
   FoodModel toFoodModel() => FoodModel(
         id: id,
         name: name,
-        kcalPer100g: ((totalKcal / totalGrams) * 100).round(),
+        kcalPer100g: ((totalKcal / _safeTotalGrams) * 100).round(),
         proteinPer100g: totalProtein != null
-            ? (totalProtein! / totalGrams) * 100
+            ? (totalProtein! / _safeTotalGrams) * 100
             : null,
         carbsPer100g:
-            totalCarbs != null ? (totalCarbs! / totalGrams) * 100 : null,
-        fatPer100g: totalFat != null ? (totalFat! / totalGrams) * 100 : null,
+            totalCarbs != null ? (totalCarbs! / _safeTotalGrams) * 100 : null,
+        fatPer100g: totalFat != null ? (totalFat! / _safeTotalGrams) * 100 : null,
         portionName: servingName ?? 'porción',
         portionGrams: servingGrams,
         userCreated: userCreated,
@@ -162,6 +175,7 @@ class RecipeItemModel {
   final double? proteinPer100gSnapshot;
   final double? carbsPer100gSnapshot;
   final double? fatPer100gSnapshot;
+  final double? portionGramsSnapshot; // Gramos por porción del food original
 
   final int sortOrder;
 
@@ -176,6 +190,7 @@ class RecipeItemModel {
     this.proteinPer100gSnapshot,
     this.carbsPer100gSnapshot,
     this.fatPer100gSnapshot,
+    this.portionGramsSnapshot,
     this.sortOrder = 0,
   });
 
@@ -199,16 +214,18 @@ class RecipeItemModel {
         proteinPer100gSnapshot: food.proteinPer100g,
         carbsPer100gSnapshot: food.carbsPer100g,
         fatPer100gSnapshot: food.fatPer100g,
+        portionGramsSnapshot: food.portionGrams,
         sortOrder: sortOrder,
       );
 
   /// Cantidad en gramos para cálculos
+  /// Usa portionGramsSnapshot si está disponible, fallback a 100g
   double get amountInGrams {
     if (unit == ServingUnit.grams) return amount;
     if (unit == ServingUnit.portion) {
-      // Asumimos porción estándar de 100g si no hay info
-      // En producción se usaría el portionGrams del food original
-      return amount * 100;
+      // Usar el portionGrams real del food, fallback a 100g si no hay info
+      final gramsPerPortion = portionGramsSnapshot ?? 100;
+      return amount * gramsPerPortion;
     }
     // Para ml, asumimos densidad de agua (1g/ml)
     return amount;

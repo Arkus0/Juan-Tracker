@@ -82,7 +82,12 @@ class _EditEntryDialogState extends ConsumerState<EditEntryDialog> {
   ({int kcal, double protein, double carbs, double fat}) _calculateMacros() {
     final entry = widget.entry;
     final newAmount = double.tryParse(_amountController.text) ?? entry.amount;
-    
+
+    // Protección contra división por cero
+    if (entry.amount <= 0 || newAmount <= 0) {
+      return (kcal: 0, protein: 0.0, carbs: 0.0, fat: 0.0);
+    }
+
     // Calcular factor de cambio
     final factor = newAmount / entry.amount;
 
@@ -99,6 +104,10 @@ class _EditEntryDialogState extends ConsumerState<EditEntryDialog> {
     if (newAmount <= 0) return;
 
     final entry = widget.entry;
+
+    // Protección contra división por cero
+    if (entry.amount <= 0) return;
+
     final factor = newAmount / entry.amount;
 
     final updatedEntry = entry.copyWith(
