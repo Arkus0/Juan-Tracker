@@ -84,14 +84,22 @@ final weightStreamProvider = StreamProvider<List<diet.WeighInModel>>((ref) {
 
 /// 🎯 MED-002: Provider de días con entradas para el calendario
 /// Emite un Set de fechas (truncadas a día) que tienen al menos una entrada
+///
+/// OPTIMIZACIÓN: Usa SELECT DISTINCT solo en la columna date en lugar de
+/// cargar todas las filas. Esto reduce significativamente el uso de memoria
+/// y CPU para usuarios con muchas entradas de diario.
 final calendarEntryDaysProvider = StreamProvider<Set<DateTime>>((ref) {
   final db = ref.watch(appDatabaseProvider);
 
-  // Watch all diary entries table for changes
-  return db.select(db.diaryEntries).watch().map((entries) {
-    // Extract unique dates (truncated to day)
-    return entries.map((e) {
-      final date = e.date;
+  // Use selectOnly with distinct to fetch only unique dates
+  // This is O(unique_dates) instead of O(total_entries)
+  final query = db.selectOnly(db.diaryEntries, distinct: true)
+    ..addColumns([db.diaryEntries.date]);
+
+  return query.watch().map((rows) {
+    return rows.map((row) {
+      final date = row.read(db.diaryEntries.date)!;
+      // Truncate to day (dates should already be truncated per schema)
       return DateTime(date.year, date.month, date.day);
     }).toSet();
   });
