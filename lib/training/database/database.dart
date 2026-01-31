@@ -602,33 +602,6 @@ class AppDatabase extends _$AppDatabase {
     await _rebuildFtsIndex();
   }
   
-  /// 🆕 Crea los triggers FTS5 para mantener sincronizada la tabla virtual
-  Future<void> _createFts5Triggers(Migrator m) async {
-    // Trigger para INSERT
-    await customStatement('''
-      CREATE TRIGGER IF NOT EXISTS foods_fts_insert AFTER INSERT ON foods BEGIN
-        INSERT INTO foods_fts(food_id, name, brand)
-        VALUES (new.id, new.name, COALESCE(new.brand, ''));
-      END
-    ''');
-
-    // Trigger para UPDATE
-    await customStatement('''
-      CREATE TRIGGER IF NOT EXISTS foods_fts_update AFTER UPDATE ON foods BEGIN
-        DELETE FROM foods_fts WHERE food_id = old.id;
-        INSERT INTO foods_fts(food_id, name, brand)
-        VALUES (new.id, new.name, COALESCE(new.brand, ''));
-      END
-    ''');
-
-    // Trigger para DELETE
-    await customStatement('''
-      CREATE TRIGGER IF NOT EXISTS foods_fts_delete AFTER DELETE ON foods BEGIN
-        DELETE FROM foods_fts WHERE food_id = old.id;
-      END
-    ''');
-  }
-  
   /// 🆕 Inserta entrada en FTS5 para un alimento manualmente
   Future<void> insertFoodFts(String foodId, String name, String? brand) async {
     await customStatement('''
