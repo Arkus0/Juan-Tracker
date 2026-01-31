@@ -60,11 +60,15 @@ final selectedDateProvider = NotifierProvider<SelectedDateNotifier, DateTime>(
 // ============================================================================
 
 final dayEntriesStreamProvider = StreamProvider.autoDispose<List<diet.DiaryEntryModel>>((ref) {
-  return ref.watch(diaryRepositoryProvider).watchByDate(ref.watch(selectedDateProvider));
+  return ref.watch(diaryRepositoryProvider)
+      .watchByDate(ref.watch(selectedDateProvider))
+      .distinct(_areDiaryEntryListsEqual);
 });
 
 final dailyTotalsProvider = StreamProvider.autoDispose<diet.DailyTotals>((ref) {
-  return ref.watch(diaryRepositoryProvider).watchDailyTotals(ref.watch(selectedDateProvider));
+  return ref.watch(diaryRepositoryProvider)
+      .watchDailyTotals(ref.watch(selectedDateProvider))
+      .distinct(_areDailyTotalsEqual);
 });
 
 final foodSearchResultsProvider = FutureProvider.autoDispose<List<diet.FoodModel>>((ref) async {
@@ -156,6 +160,15 @@ class SelectedMealTypeNotifier extends Notifier<diet.MealType> {
 // ============================================================================
 // RECENT FOODS - Para Quick Add (UX optimization)
 // ============================================================================
+
+/// Compara dos DailyTotals para evitar emisiones redundantes
+bool _areDailyTotalsEqual(diet.DailyTotals previous, diet.DailyTotals next) {
+  if (identical(previous, next)) return true;
+  return previous.kcal == next.kcal &&
+      previous.protein == next.protein &&
+      previous.carbs == next.carbs &&
+      previous.fat == next.fat;
+}
 
 /// Compara dos listas de DiaryEntryModel para evitar emisiones redundantes
 bool _areDiaryEntryListsEqual(
