@@ -319,22 +319,25 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
       barrierDismissible: false,
       builder: (ctx) => const Center(child: CircularProgressIndicator()),
     );
-    
+
     try {
       // Primero buscar en local
       final localResults = await ref.read(alimentoRepositoryProvider).searchByBarcode(barcode);
-      
+
+      // Check mounted before Navigator operations to prevent crash on dispose
+      if (!mounted) return;
+
       if (localResults != null) {
         Navigator.of(context).pop(); // Cerrar loading
         _selectFood(localResults);
         return;
       }
-      
+
       // Si no está en local, llamar a Open Food Facts (requiere internet)
       // TODO: Implementar búsqueda online
-      
+
       Navigator.of(context).pop(); // Cerrar loading
-      
+
       // No encontrado
       showDialog(
         context: context,
@@ -357,6 +360,8 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
         ),
       );
     } catch (e) {
+      // Check mounted before Navigator operations to prevent crash on dispose
+      if (!mounted) return;
       Navigator.of(context).pop(); // Cerrar loading
       _showError('Error al buscar producto: $e');
     }
