@@ -75,12 +75,25 @@ final onlineTextSearchProvider = FutureProvider.family<List<Food>, String>((ref,
 
   // Buscar en Open Food Facts via FoodSearchRepository
   final searchRepo = ref.read(presentation.foodSearchRepositoryProvider);
-  final scoredFoods = await searchRepo.search(query, limit: 30, includeRemote: true);
+  final result = await searchRepo.search(query, pageSize: 30);
 
   // Filtrar solo los resultados que vienen de remoto (no locales)
-  // y convertir a Food
-  return scoredFoods
-      .where((sf) => sf.isFromRemote)
-      .map((sf) => sf.food)
+  // y convertir a Food (usando metadata para determinar source)
+  final remoteItems = result.items
+      .where((sf) => sf.food.metadata['source'] != 'local')
       .toList();
+
+  // Convertir ScoredFood a Food (del database)
+  final alimentoRepo = ref.read(alimentoRepositoryProvider);
+  final foods = <Food>[];
+
+  for (final scoredFood in remoteItems) {
+    // El repositorio de búsqueda guarda automáticamente en cache
+    final food = await alimentoRepo.getById(scoredFood.food.id);
+    if (food != null) {
+      foods.add(food);
+    }
+  }
+
+  return foods;
 });
