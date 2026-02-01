@@ -353,10 +353,24 @@ class DriftDiaryRepository implements IDiaryRepository {
 }
 
 /// Implementación Drift de IWeighInRepository
+///
+/// Auto-sincroniza el peso más reciente con UserProfile.currentWeightKg
+/// después de cada mutación (insert/update/delete).
 class DriftWeighInRepository implements IWeighInRepository {
   final db.AppDatabase _db;
+  final IUserProfileRepository? _userProfileRepo;
 
-  DriftWeighInRepository(this._db);
+  DriftWeighInRepository(this._db, [this._userProfileRepo]);
+
+  /// Sincroniza el peso más reciente con el perfil de usuario
+  Future<void> _syncLatestWeightToProfile() async {
+    if (_userProfileRepo == null) return;
+
+    final latest = await getLatest();
+    if (latest != null) {
+      await _userProfileRepo.updateWeight(latest.weightKg);
+    }
+  }
 
   @override
   Future<List<models.WeighInModel>> getAll({int? limit}) async {
@@ -414,16 +428,22 @@ class DriftWeighInRepository implements IWeighInRepository {
   @override
   Future<void> insert(models.WeighInModel weighIn) async {
     await _db.into(_db.weighIns).insert(weighIn.toCompanion());
+    // Auto-sync: actualizar perfil con el peso más reciente
+    await _syncLatestWeightToProfile();
   }
 
   @override
   Future<void> update(models.WeighInModel weighIn) async {
     await _db.update(_db.weighIns).replace(weighIn.toCompanion());
+    // Auto-sync: actualizar perfil con el peso más reciente
+    await _syncLatestWeightToProfile();
   }
 
   @override
   Future<void> delete(String id) async {
     await (_db.delete(_db.weighIns)..where((w) => w.id.equals(id))).go();
+    // Auto-sync: actualizar perfil con el peso más reciente (o null si no hay más)
+    await _syncLatestWeightToProfile();
   }
 
   @override

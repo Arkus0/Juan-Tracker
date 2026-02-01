@@ -7,6 +7,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/widgets/home_button.dart';
 import '../../../diet/providers/coach_providers.dart';
 import '../../../diet/providers/diet_providers.dart';
+import '../../../diet/providers/summary_providers.dart' show weeklyCalorieTrendProvider, DayTrendData;
 import '../../../diet/services/day_summary_calculator.dart';
 
 /// Pantalla de resumen tipo "budget" con progreso detallado.
@@ -74,6 +75,15 @@ class _SummaryContent extends StatelessWidget {
 
           // Card principal de budget
           _BudgetCard(summary: summary),
+          const SizedBox(height: 24),
+
+          // Gráfico de tendencia semanal
+          Text(
+            'TENDENCIA SEMANAL',
+            style: _sectionStyle(context),
+          ),
+          const SizedBox(height: 12),
+          const _WeeklyTrendChart(),
           const SizedBox(height: 24),
 
           // Si no hay targets ni coach, mostrar CTA
@@ -793,4 +803,254 @@ class _StatusInfo {
     required this.title,
     required this.message,
   });
+}
+
+/// Gráfico de barras de la tendencia semanal de calorías.
+class _WeeklyTrendChart extends ConsumerWidget {
+  const _WeeklyTrendChart();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trendAsync = ref.watch(weeklyCalorieTrendProvider);
+
+    return trendAsync.when(
+      data: (data) => _TrendChartContent(data: data),
+      loading: () => const SizedBox(
+        height: 160,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, st) => SizedBox(
+        height: 160,
+        child: Center(child: Text('Error: $e')),
+      ),
+    );
+  }
+}
+
+/// Contenido del gráfico de tendencia.
+class _TrendChartContent extends StatelessWidget {
+  final List<DayTrendData> data;
+
+  const _TrendChartContent({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final hasTarget = data.isNotEmpty && data.first.kcalTarget != null;
+
+    // Calcular el máximo para escalar las barras
+    final maxKcal = data.fold<int>(
+      hasTarget ? (data.first.kcalTarget! * 1.2).round() : 2500,
+      (max, d) => d.kcalConsumed > max ? d.kcalConsumed : max,
+    );
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Leyenda
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _LegendItem(color: colorScheme.primary, label: 'Consumido'),
+                if (hasTarget) ...[
+                  const SizedBox(width: 16),
+                  _LegendItem(
+                    color: Colors.green.withAlpha(128),
+                    label: 'Objetivo',
+                    dashed: true,
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Barras
+            SizedBox(
+              height: 120,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: data.map((d) {
+                  final barHeight = maxKcal > 0
+                      ? (d.kcalConsumed / maxKcal * 100).clamp(0.0, 100.0)
+                      : 0.0;
+                  final targetHeight = hasTarget && maxKcal > 0
+                      ? (d.kcalTarget! / maxKcal * 100).clamp(0.0, 100.0)
+                      : 0.0;
+                  final isToday = _isSameDay(d.date, DateTime.now());
+
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: _DayBar(
+                        dayName: DateFormat('E', 'es').format(d.date).substring(0, 2),
+                        kcal: d.kcalConsumed,
+                        barHeight: barHeight,
+                        targetHeight: targetHeight,
+                        isToday: isToday,
+                        isOverTarget: hasTarget && d.kcalConsumed > d.kcalTarget!,
+                        colorScheme: colorScheme,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            // Promedio semanal
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                _calculateAverage(),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _calculateAverage() {
+    if (data.isEmpty) return '';
+    final daysWithData = data.where((d) => d.kcalConsumed > 0).toList();
+    if (daysWithData.isEmpty) return 'Sin datos esta semana';
+
+    final avg = daysWithData.fold<int>(0, (sum, d) => sum + d.kcalConsumed) ~/
+        daysWithData.length;
+    return 'Promedio: $avg kcal/día (${daysWithData.length} días con registro)';
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+}
+
+/// Barra individual de un día.
+class _DayBar extends StatelessWidget {
+  final String dayName;
+  final int kcal;
+  final double barHeight;
+  final double targetHeight;
+  final bool isToday;
+  final bool isOverTarget;
+  final ColorScheme colorScheme;
+
+  const _DayBar({
+    required this.dayName,
+    required this.kcal,
+    required this.barHeight,
+    required this.targetHeight,
+    required this.isToday,
+    required this.isOverTarget,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        // Barra con indicador de objetivo
+        SizedBox(
+          height: 80,
+          child: Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              // Línea de objetivo
+              if (targetHeight > 0)
+                Positioned(
+                  bottom: targetHeight * 0.8,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 2,
+                    decoration: BoxDecoration(
+                      color: Colors.green.withAlpha(128),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                ),
+              // Barra de consumo
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                height: barHeight * 0.8,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: kcal == 0
+                      ? Colors.grey.shade200
+                      : isOverTarget
+                          ? Colors.red.shade400
+                          : colorScheme.primary,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Nombre del día
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          decoration: isToday
+              ? BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(4),
+                )
+              : null,
+          child: Text(
+            dayName.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+              color: isToday ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Item de leyenda.
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  final bool dashed;
+
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    this.dashed = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 16,
+          height: dashed ? 2 : 8,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(dashed ? 1 : 2),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../diet/models/models.dart' as diet;
 import '../../diet/repositories/repositories.dart';
 import '../../diet/repositories/drift_diet_repositories.dart';
+import '../../diet/repositories/user_profile_repository.dart';
 import '../../training/database/database.dart';
 import '../models/user_profile_model.dart';
 import '../repositories/i_training_repository.dart';
@@ -27,7 +28,9 @@ final diaryRepositoryProvider = Provider<IDiaryRepository>((ref) {
 });
 
 final weighInRepositoryProvider = Provider<IWeighInRepository>((ref) {
-  return DriftWeighInRepository(ref.watch(appDatabaseProvider));
+  // Inject userProfileRepository for auto-sync of latest weight
+  final userProfileRepo = DriftUserProfileRepository(ref.watch(appDatabaseProvider));
+  return DriftWeighInRepository(ref.watch(appDatabaseProvider), userProfileRepo);
 });
 
 final targetsRepositoryProvider = Provider<ITargetsRepository>((ref) {

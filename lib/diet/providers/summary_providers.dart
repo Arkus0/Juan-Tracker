@@ -24,57 +24,61 @@ final daySummaryCalculatorProvider = Provider<DaySummaryCalculator>(
 );
 
 // ============================================================================
-// TARGETS
+// TARGETS (DEPRECATED - usar CoachPlan)
 // ============================================================================
 
+/// @deprecated Usar [activeTargetsProvider] que obtiene datos del CoachPlan.
+/// Este provider existe solo por compatibilidad con código legacy.
+///
 /// Provider de todos los objetivos (ordenados por fecha descendente).
-/// 
 /// Se auto-refresca cuando cambia la base de datos.
+@Deprecated('Usar activeTargetsProvider - el sistema manual de Targets está deprecado')
 final allTargetsProvider = StreamProvider<List<TargetsModel>>((ref) {
   return ref.watch(targetsRepositoryProvider).watchAll();
 });
 
+/// @deprecated Usar [activeTargetsProvider] que obtiene datos del CoachPlan.
+/// Este provider existe solo por compatibilidad con código legacy.
+///
 /// Provider de objetivos activos para una fecha específica.
-/// 
-/// Usa el calculador puro para determinar cuál target aplica para la fecha.
-/// Si no hay target configurado, retorna null.
+@Deprecated('Usar activeTargetsProvider - el sistema manual de Targets está deprecado')
 final dayTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
   final date = ref.watch(selectedDateProvider);
+  // ignore: deprecated_member_use_from_same_package
   final targets = await ref.watch(allTargetsProvider.future);
   final calculator = ref.watch(daySummaryCalculatorProvider);
 
   return calculator.findActiveTargetForDate(targets, date);
 });
 
-/// Provider que obtiene targets desde CoachPlan si existe, o desde targets tradicionales.
-/// 
+/// Provider que obtiene targets SOLO desde CoachPlan.
+///
+/// El sistema de Targets manuales está deprecado - el Coach es la única
+/// fuente de objetivos calóricos y de macros.
+///
 /// Convierte CoachPlan a TargetsModel para mantener compatibilidad con UI existente.
 final activeTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
-  // Primero intentar targets tradicionales
-  final traditionalTargets = await ref.watch(dayTargetsProvider.future);
-  if (traditionalTargets != null) {
-    return traditionalTargets;
-  }
-  
-  // Si no hay targets tradicionales, usar CoachPlan
+  // Solo usar CoachPlan - el sistema de Targets manuales está deprecado
   final coachPlan = ref.read(coachPlanProvider);
   if (coachPlan == null) {
     return null;
   }
-  
+
   // Convertir CoachPlan a TargetsModel
   final calculator = ref.watch(daySummaryCalculatorProvider);
   final tdee = calculator.calculateTDEEFromCoachPlan(coachPlan);
-  
+
   return TargetsModel.fromCoachPlan(
     coachPlan: coachPlan,
     calculatedCalories: tdee.round(),
   );
 });
 
+/// @deprecated Usar [activeTargetsProvider] que obtiene datos del CoachPlan.
+/// Este provider existe solo por compatibilidad con código legacy.
+///
 /// Provider de objetivos actuales (para hoy).
-/// 
-/// Alias conveniente para [dayTargetsProvider] con fecha actual.
+@Deprecated('Usar activeTargetsProvider - el sistema manual de Targets está deprecado')
 final currentTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
   final repo = ref.watch(targetsRepositoryProvider);
   return repo.getCurrent();
@@ -123,12 +127,12 @@ final daySummaryProvider = Provider<AsyncValue<DaySummary>>((ref) {
 });
 
 /// Provider del resumen del día como Future (para widgets que necesitan Future).
-/// 
-/// Combina el totales del día con el cálculo de targets.
+///
+/// Combina el totales del día con el cálculo de targets desde CoachPlan.
 final daySummaryFutureProvider = FutureProvider<DaySummary>((ref) async {
   final date = ref.watch(selectedDateProvider);
   final totals = await ref.watch(dailyTotalsProvider.future);
-  final targets = await ref.watch(dayTargetsProvider.future);
+  final targets = await ref.watch(activeTargetsProvider.future); // Usa CoachPlan
   final calculator = ref.watch(daySummaryCalculatorProvider);
 
   return calculator.calculate(
@@ -139,10 +143,75 @@ final daySummaryFutureProvider = FutureProvider<DaySummary>((ref) async {
 });
 
 // ============================================================================
-// UI STATE - TARGETS MANAGEMENT
+// WEEKLY TRENDS (para gráficas)
 // ============================================================================
 
+/// Datos de un día para las gráficas semanales.
+class DayTrendData {
+  final DateTime date;
+  final int kcalConsumed;
+  final int? kcalTarget;
+
+  const DayTrendData({
+    required this.date,
+    required this.kcalConsumed,
+    this.kcalTarget,
+  });
+
+  double get kcalPercent => kcalTarget != null && kcalTarget! > 0
+      ? (kcalConsumed / kcalTarget!).clamp(0.0, 2.0)
+      : 0.0;
+}
+
+/// Provider de tendencia semanal de calorías (últimos 7 días).
+///
+/// Retorna datos de calorías consumidas por día para mostrar en gráficos.
+final weeklyCalorieTrendProvider = FutureProvider<List<DayTrendData>>((ref) async {
+  final diaryRepo = ref.watch(diaryRepositoryProvider);
+  final coachPlan = ref.read(coachPlanProvider);
+
+  final today = DateTime.now();
+  final startOfToday = DateTime(today.year, today.month, today.day);
+  final weekAgo = startOfToday.subtract(const Duration(days: 6));
+
+  final result = <DayTrendData>[];
+  int? targetKcal;
+
+  // Calcular target desde CoachPlan si existe
+  if (coachPlan != null) {
+    final calculator = ref.read(daySummaryCalculatorProvider);
+    targetKcal = calculator.calculateTDEEFromCoachPlan(coachPlan).round();
+  }
+
+  // Obtener datos de cada día
+  for (var i = 0; i < 7; i++) {
+    final date = weekAgo.add(Duration(days: i));
+    final dayStart = DateTime(date.year, date.month, date.day);
+    final dayEnd = dayStart.add(const Duration(days: 1));
+
+    final entries = await diaryRepo.getByDateRange(dayStart, dayEnd);
+
+    final kcalSum = entries.fold<double>(0.0, (sum, e) => sum + e.kcal).round();
+
+    result.add(DayTrendData(
+      date: dayStart,
+      kcalConsumed: kcalSum,
+      kcalTarget: targetKcal,
+    ));
+  }
+
+  return result;
+});
+
+// ============================================================================
+// UI STATE - TARGETS MANAGEMENT (DEPRECATED)
+// ============================================================================
+
+/// @deprecated El sistema manual de Targets está deprecado.
+/// Usar el Coach (CoachPlan) para configurar objetivos.
+///
 /// Notifier para gestionar el formulario de creación/edición de targets.
+@Deprecated('Usar CoachPlan via coach_providers - el sistema manual de Targets está deprecado')
 class TargetsFormNotifier extends Notifier<TargetsFormState> {
   @override
   TargetsFormState build() => TargetsFormState.empty();
