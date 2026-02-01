@@ -99,7 +99,9 @@ class VoiceInputNotifier extends Notifier<VoiceInputState> {
     Future.microtask(() async {
       await _init();
     });
-    return const VoiceInputState();
+    // T3 FIX: Return initializing status so UI doesn't show "not available"
+    // before initialization completes
+    return const VoiceInputState(status: VoiceInputStatus.initializing);
   }
 
   /// Inicialización async
@@ -118,6 +120,14 @@ class VoiceInputNotifier extends Notifier<VoiceInputState> {
   /// Inicia la escucha de voz
   /// [continuous] activa modo continuo (no se detiene automáticamente)
   Future<bool> startListening({bool continuous = false}) async {
+    // T3 FIX: Handle initializing state - wait or inform user
+    if (state.status == VoiceInputStatus.initializing) {
+      state = state.copyWith(
+        status: VoiceInputStatus.error,
+        errorMessage: 'Espera, inicializando...',
+      );
+      return false;
+    }
     if (!state.isAvailable) {
       state = state.copyWith(
         status: VoiceInputStatus.error,
