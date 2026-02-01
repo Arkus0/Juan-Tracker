@@ -704,46 +704,72 @@ class AppDatabase extends _$AppDatabase {
   // ============================================================================
 
   /// Búsqueda FTS5 con ranking por relevancia
+  /// 
+  /// Optimizations applied:
+  /// - Multi-word queries use AND semantics (all terms must match)
+  /// - Single-word queries use prefix matching
+  /// - Results ordered by FTS5 rank (relevance)
+  /// - Uses AND-first strategy with OR fallback for zero results
   Future<List<Food>> searchFoodsFTS(String query, {int limit = 50}) async {
     if (query.trim().isEmpty) return [];
 
-    // Normalizar query para FTS
+    // Normalizar query para FTS5
+    // Remove special characters that could break FTS syntax
     final sanitized = query.trim().toLowerCase()
-      .replaceAll(RegExp(r'["\-*()]'), ' ')
+      .replaceAll(RegExp(r'["\-*():]'), ' ')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 
     if (sanitized.isEmpty) return [];
 
-    final terms = sanitized.split(' ').where((t) => t.isNotEmpty).toList();
+    final terms = sanitized.split(' ').where((t) => t.isNotEmpty && t.length >= 2).toList();
     if (terms.isEmpty) return [];
 
-    // Para FTS5: usar OR entre términos para más flexibilidad
-    // Esto encuentra productos que contengan AL MENOS UN término
-    // Luego ordenamos por rank que favorece los que tienen más coincidencias
-    final ftsQuery = terms.map((t) => '$t*').join(' OR ');
-    debugPrint('[searchFoodsFTS] Query: "$query" -> FTS query: "$ftsQuery"');
+    // Strategy: AND first (more precise), OR fallback (more tolerant)
+    // This gives best of both worlds:
+    // - "leche desnatada" finds items with BOTH terms first
+    // - If nothing found, relaxes to items with ANY term
+    
+    // 1. Try AND semantics first (space = AND in FTS5)
+    final andQuery = terms.map((t) => '$t*').join(' ');
+    debugPrint('[searchFoodsFTS] Query: "$query" -> AND query: "$andQuery"');
 
     try {
-      final results = await customSelect(
-        'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
-        'f.kcal_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, '
-        'f.portion_name, f.portion_grams, f.user_created, f.verified_source, '
-        'f.source_metadata, f.use_count, f.last_used_at, f.nutri_score, f.nova_group, '
-        'f.is_favorite, f.created_at, f.updated_at FROM foods f '
-        'INNER JOIN foods_fts fts ON f.id = fts.food_id '
-        'WHERE fts MATCH ? '
-        'ORDER BY rank '
-        'LIMIT ?',
-        variables: [Variable(ftsQuery), Variable(limit)],
-      ).get();
+      var results = await _executeFtsQuery(andQuery, limit);
+      
+      // 2. If AND yields 0 results and we have multiple terms, try OR
+      if (results.isEmpty && terms.length > 1) {
+        final orQuery = terms.map((t) => '$t*').join(' OR ');
+        debugPrint('[searchFoodsFTS] AND returned 0 results, trying OR: "$orQuery"');
+        results = await _executeFtsQuery(orQuery, limit);
+        debugPrint('[searchFoodsFTS] OR fallback found ${results.length} results');
+      } else {
+        debugPrint('[searchFoodsFTS] AND found ${results.length} results');
+      }
 
-      debugPrint('[searchFoodsFTS] Found ${results.length} results');
-      return results.map((row) => _mapRowToFood(row)).toList();
+      return results;
     } catch (e) {
       debugPrint('[searchFoodsFTS] FTS search error: $e, falling back to LIKE');
       return _searchFoodsLike(query, limit: limit);
     }
+  }
+  
+  /// Helper to execute FTS query and map results
+  Future<List<Food>> _executeFtsQuery(String ftsQuery, int limit) async {
+    final results = await customSelect(
+      'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
+      'f.kcal_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, '
+      'f.portion_name, f.portion_grams, f.user_created, f.verified_source, '
+      'f.source_metadata, f.use_count, f.last_used_at, f.nutri_score, f.nova_group, '
+      'f.is_favorite, f.created_at, f.updated_at FROM foods f '
+      'INNER JOIN foods_fts fts ON f.id = fts.food_id '
+      'WHERE foods_fts MATCH ? '
+      'ORDER BY rank '
+      'LIMIT ?',
+      variables: [Variable(ftsQuery), Variable(limit)],
+    ).get();
+    
+    return results.map((row) => _mapRowToFood(row)).toList();
   }
   
   /// Búsqueda fallback usando LIKE (cuando FTS falla)

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/design_system/design_system.dart';
@@ -71,6 +72,12 @@ class _SettingsContent extends StatelessWidget {
 
         // Sección Biblioteca
         _LibrarySection(),
+
+        // Debug section (only in debug mode)
+        if (kDebugMode) ...[
+          const SizedBox(height: AppSpacing.lg),
+          const _DebugSection(),
+        ],
       ],
     );
   }
@@ -439,5 +446,65 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
       ref.invalidate(userProfileProvider);
       Navigator.of(context).pop();
     }
+  }
+}
+
+// ============================================================================
+// DEBUG SECTION (only visible in debug mode)
+// ============================================================================
+
+class _DebugSection extends StatelessWidget {
+  const _DebugSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withAlpha(30),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: const Icon(
+                    Icons.bug_report,
+                    color: Colors.orange,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Text(
+                  'Herramientas de Desarrollo',
+                  style: AppTypography.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Solo visible en modo debug',
+              style: AppTypography.bodySmall.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppButton(
+              variant: AppButtonVariant.secondary,
+              onPressed: () => context.pushTo(AppRouter.debugSearchBenchmark),
+              icon: Icons.speed,
+              label: 'Benchmark Búsqueda',
+              isFullWidth: true,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

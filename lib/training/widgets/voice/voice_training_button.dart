@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../providers/voice_input_provider.dart' as vip;
 import '../../utils/design_system.dart';
 import 'voice_training_fab.dart' show VoiceTrainingCommand, VoiceCommandType;
@@ -162,14 +162,15 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
 
   void _showNotUnderstoodSnackbar(String? transcript) {
     if (!mounted) return;
+    final colorScheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.warning_amber_rounded,
-              color: Colors.orange,
+              color: colorScheme.error,
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -178,7 +179,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
                 transcript != null
                     ? 'No entendido: "$transcript"'
                     : 'No se detectó voz',
-                style: GoogleFonts.montserrat(fontSize: 13),
+                style: core.AppTypography.bodyMedium,
               ),
             ),
           ],
@@ -188,7 +189,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: 'REINTENTAR',
-          textColor: Colors.orange,
+          textColor: colorScheme.error,
           onPressed: _onTap,
         ),
       ),
@@ -309,6 +310,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       return const SizedBox.shrink();
     }
 
+    final colorScheme = Theme.of(context).colorScheme;
     final voiceState = ref.watch(vip.voiceInputProvider);
     final isListening = voiceState.isListening;
 
@@ -335,7 +337,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
             onPressed: _onTap,
             icon: Icon(
               isListening ? Icons.mic : Icons.mic_none,
-              color: isListening ? AppColors.neonPrimary : Colors.white70,
+              color: isListening ? AppColors.neonPrimary : colorScheme.onSurface.withAlpha(178),
             ),
             tooltip: isListening
                 ? 'Escuchando...'
@@ -362,6 +364,7 @@ class _ListeningOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final voiceState = ref.watch(vip.voiceInputProvider);
     final text = voiceState.partialTranscript.isNotEmpty
         ? voiceState.partialTranscript
@@ -408,9 +411,7 @@ class _ListeningOverlay extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Text(
                         'ESCUCHANDO...',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        style: core.AppTypography.headlineSmall.copyWith(
                           color: AppColors.neonPrimary,
                         ),
                       ),
@@ -420,7 +421,7 @@ class _ListeningOverlay extends ConsumerWidget {
 
                   // CONTEXTO: Qué serie se va a modificar
                   if (this.context != null) ...[
-                    _buildContextIndicator(this.context!),
+                    _buildContextIndicator(this.context!, colorScheme),
                     const SizedBox(height: 16),
                   ],
 
@@ -436,11 +437,10 @@ class _ListeningOverlay extends ConsumerWidget {
                       children: [
                         Text(
                           text,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 16,
+                          style: core.AppTypography.titleMedium.copyWith(
                             color: voiceState.partialTranscript.isEmpty
-                                ? Colors.white38
-                                : Colors.white,
+                                ? colorScheme.onSurface.withAlpha(97)
+                                : colorScheme.onSurface,
                             fontStyle: voiceState.partialTranscript.isEmpty
                                 ? FontStyle.italic
                                 : FontStyle.normal,
@@ -457,15 +457,14 @@ class _ListeningOverlay extends ConsumerWidget {
                   const SizedBox(height: 16),
 
                   // Comandos disponibles
-                  _buildAvailableCommands(),
+                  _buildAvailableCommands(colorScheme),
 
                   const SizedBox(height: 12),
                   // Hint para cerrar
                   Text(
                     'Toca en cualquier lugar para detener',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
-                      color: Colors.white38,
+                    style: core.AppTypography.labelSmall.copyWith(
+                      color: colorScheme.onSurface.withAlpha(97),
                     ),
                   ),
                 ],
@@ -478,7 +477,7 @@ class _ListeningOverlay extends ConsumerWidget {
   }
 
   /// Indicador de contexto: muestra qué serie se va a modificar
-  Widget _buildContextIndicator(VoiceTrainingContext ctx) {
+  Widget _buildContextIndicator(VoiceTrainingContext ctx, ColorScheme colorScheme) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -500,10 +499,9 @@ class _ListeningOverlay extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(
                 'MODIFICANDO:',
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+                style: core.AppTypography.labelSmall.copyWith(
                   color: AppColors.neonCyan,
+                  fontWeight: FontWeight.bold,
                   letterSpacing: 1,
                 ),
               ),
@@ -512,16 +510,17 @@ class _ListeningOverlay extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             ctx.exerciseName,
-            style: GoogleFonts.montserrat(
-              fontSize: 15,
+            style: core.AppTypography.titleMedium.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             'Serie ${ctx.currentSet} de ${ctx.totalSets}',
-            style: GoogleFonts.montserrat(fontSize: 13, color: Colors.white70),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: colorScheme.onSurface.withAlpha(178),
+            ),
           ),
           const SizedBox(height: 8),
           // Campos actuales
@@ -533,18 +532,21 @@ class _ListeningOverlay extends ConsumerWidget {
                     ? '${ctx.currentWeight!.toStringAsFixed(1)} kg'
                     : '--',
                 isSet: ctx.currentWeight != null,
+                colorScheme: colorScheme,
               ),
               const SizedBox(width: 8),
               _FieldChip(
                 label: 'Reps',
                 value: ctx.currentReps?.toString() ?? '--',
                 isSet: ctx.currentReps != null,
+                colorScheme: colorScheme,
               ),
               const SizedBox(width: 8),
               _FieldChip(
                 label: 'RPE',
                 value: ctx.currentRpe?.toStringAsFixed(1) ?? '--',
                 isSet: ctx.currentRpe != null,
+                colorScheme: colorScheme,
               ),
             ],
           ),
@@ -554,17 +556,17 @@ class _ListeningOverlay extends ConsumerWidget {
   }
 
   /// Lista de comandos disponibles
-  Widget _buildAvailableCommands() {
-    return const Wrap(
+  Widget _buildAvailableCommands(ColorScheme colorScheme) {
+    return Wrap(
       spacing: 8,
       runSpacing: 4,
       alignment: WrapAlignment.center,
       children: [
-        _CommandHint(label: '80 kilos', icon: Icons.scale),
-        _CommandHint(label: '10 reps', icon: Icons.tag),
-        _CommandHint(label: 'RPE 8', icon: Icons.speed),
-        _CommandHint(label: 'Hecho', icon: Icons.check),
-        _CommandHint(label: 'Nota: ...', icon: Icons.note),
+        _CommandHint(label: '80 kilos', icon: Icons.scale, colorScheme: colorScheme),
+        _CommandHint(label: '10 reps', icon: Icons.tag, colorScheme: colorScheme),
+        _CommandHint(label: 'RPE 8', icon: Icons.speed, colorScheme: colorScheme),
+        _CommandHint(label: 'Hecho', icon: Icons.check, colorScheme: colorScheme),
+        _CommandHint(label: 'Nota: ...', icon: Icons.note, colorScheme: colorScheme),
       ],
     );
   }
@@ -575,11 +577,13 @@ class _FieldChip extends StatelessWidget {
   final String label;
   final String value;
   final bool isSet;
+  final ColorScheme colorScheme;
 
   const _FieldChip({
     required this.label,
     required this.value,
     required this.isSet,
+    required this.colorScheme,
   });
 
   @override
@@ -601,14 +605,15 @@ class _FieldChip extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.montserrat(fontSize: 10, color: Colors.white54),
+            style: core.AppTypography.labelSmall.copyWith(
+              color: colorScheme.onSurface.withAlpha(138),
+            ),
           ),
           Text(
             value,
-            style: GoogleFonts.montserrat(
-              fontSize: 13,
+            style: core.AppTypography.bodyMedium.copyWith(
               fontWeight: FontWeight.bold,
-              color: isSet ? AppColors.success : Colors.white38,
+              color: isSet ? AppColors.success : colorScheme.onSurface.withAlpha(97),
             ),
           ),
         ],
@@ -621,8 +626,13 @@ class _FieldChip extends StatelessWidget {
 class _CommandHint extends StatelessWidget {
   final String label;
   final IconData icon;
+  final ColorScheme colorScheme;
 
-  const _CommandHint({required this.label, required this.icon});
+  const _CommandHint({
+    required this.label,
+    required this.icon,
+    required this.colorScheme,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -635,11 +645,13 @@ class _CommandHint extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: Colors.white38),
+          Icon(icon, size: 12, color: colorScheme.onSurface.withAlpha(97)),
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.montserrat(fontSize: 10, color: Colors.white54),
+            style: core.AppTypography.labelSmall.copyWith(
+              color: colorScheme.onSurface.withAlpha(138),
+            ),
           ),
         ],
       ),

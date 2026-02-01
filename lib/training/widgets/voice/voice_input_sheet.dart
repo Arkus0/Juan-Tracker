@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../models/library_exercise.dart';
 import '../../providers/voice_input_provider.dart';
 import '../../services/voice_input_service.dart';
@@ -101,7 +101,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
         SnackBar(
           content: Text(
             'No hay ejercicios válidos para añadir',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           backgroundColor: AppColors.error,
         ),
@@ -207,10 +209,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
             // Título
             Text(
               'DICTADO POR VOZ',
-              style: GoogleFonts.montserrat(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
+              style: core.AppTypography.headlineSmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -254,9 +254,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               const SizedBox(height: 8),
               Text(
                 'Procesando...',
-                style: GoogleFonts.montserrat(
-                  color: Colors.white54,
-                  fontSize: 13,
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 ),
               ),
               const SizedBox(height: 16),
@@ -302,15 +301,13 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                         widget.onCancel?.call();
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white70,
+                        foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                         side: const BorderSide(color: Colors.white30),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
                         'CANCELAR',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: core.AppTypography.titleLarge,
                       ),
                     ),
                   ),
@@ -323,15 +320,13 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
+                        foregroundColor: Theme.of(context).colorScheme.onSurface,
                         disabledBackgroundColor: AppColors.bgDeep,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
                         'AÑADIR ${voiceState.validExercises.length} EJERCICIO${voiceState.validExercises.length == 1 ? '' : 'S'}',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: core.AppTypography.headlineSmall,
                       ),
                     ),
                   ),
@@ -362,9 +357,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
           const SizedBox(width: 8),
           Text(
             'ESCUCHANDO...',
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+            style: core.AppTypography.labelLarge.copyWith(
               color: AppColors.neonPrimary,
             ),
           ),
@@ -375,14 +368,18 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
     if (voiceState.isProcessing) {
       return Text(
         'Procesando...',
-        style: GoogleFonts.montserrat(fontSize: 14, color: Colors.white54),
+        style: core.AppTypography.bodyMedium.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+        ),
       );
     }
 
     // Estado idle - instrucciones
     return Text(
       'Mantén pulsado para hablar',
-      style: GoogleFonts.montserrat(fontSize: 13, color: Colors.white38),
+      style: core.AppTypography.bodyMedium.copyWith(
+        color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
+      ),
     );
   }
 
@@ -406,9 +403,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
           Expanded(
             child: Text(
               message,
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.bodyMedium.copyWith(
                 color: AppColors.neonPrimary,
-                fontSize: 13,
               ),
             ),
           ),
@@ -416,10 +412,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
             onPressed: () => ref.read(voiceInputProvider.notifier).retry(),
             child: Text(
               'REINTENTAR',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.labelSmall.copyWith(
                 color: AppColors.neonPrimary,
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
               ),
             ),
           ),
@@ -450,10 +445,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               const SizedBox(width: 8),
               Text(
                 'NO ENTENDIDO',
-                style: GoogleFonts.montserrat(
+                style: core.AppTypography.labelLarge.copyWith(
                   color: Colors.orange,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -461,7 +454,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
           const SizedBox(height: 8),
           Text(
             message,
-            style: GoogleFonts.montserrat(color: Colors.white70, fontSize: 12),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -500,10 +495,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
         children: [
           Text(
             'Ejemplos de comandos:',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.bold,
-              color: Colors.white70,
-              fontSize: 13,
+            style: core.AppTypography.titleLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
             ),
           ),
           const SizedBox(height: 12),
@@ -530,9 +523,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
           Flexible(
             child: Text(
               '"$text"',
-              style: GoogleFonts.montserrat(
-                color: Colors.white54,
-                fontSize: 13,
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -593,27 +585,22 @@ class _ParsedExerciseCard extends StatelessWidget {
                     if (isValid)
                       Text(
                         exercise.matchedName!,
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontSize: 15,
+                        style: core.AppTypography.titleMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       )
                     else
                       Text(
                         'No encontrado',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
+                        style: core.AppTypography.titleMedium.copyWith(
                           color: AppColors.neonPrimary,
-                          fontSize: 15,
                         ),
                       ),
                     const SizedBox(height: 2),
                     Text(
                       '"${exercise.rawText}"',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white38,
-                        fontSize: 12,
+                      style: core.AppTypography.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                         fontStyle: FontStyle.italic,
                       ),
                       maxLines: 1,
@@ -635,9 +622,8 @@ class _ParsedExerciseCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${(exercise.confidence * 100).toInt()}%',
-                    style: GoogleFonts.montserrat(
+                    style: core.AppTypography.labelSmall.copyWith(
                       color: confidenceColor,
-                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -708,9 +694,8 @@ class _ParsedExerciseCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${exercise.weight!.toStringAsFixed(1)} kg',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white70,
-                      fontSize: 13,
+                    style: core.AppTypography.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -738,9 +723,8 @@ class _ParsedExerciseCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     'Superserie',
-                    style: GoogleFonts.montserrat(
+                    style: core.AppTypography.labelSmall.copyWith(
                       color: AppColors.warning,
-                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -754,9 +738,8 @@ class _ParsedExerciseCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Nota: ${exercise.notes}',
-              style: GoogleFonts.montserrat(
-                color: Colors.white38,
-                fontSize: 12,
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -794,9 +777,8 @@ class _CompactField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.montserrat(
-            color: Colors.white54,
-            fontSize: 11,
+          style: core.AppTypography.labelSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -806,9 +788,8 @@ class _CompactField extends StatelessWidget {
           onChanged: onChanged,
           keyboardType: keyboardType,
           textAlign: TextAlign.center,
-          style: GoogleFonts.montserrat(
-            color: Colors.white,
-            fontSize: 16,
+          style: core.AppTypography.bodyLarge.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
           decoration: InputDecoration(
@@ -890,10 +871,8 @@ class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
         children: [
           Text(
             'Seleccionar ejercicio',
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+            style: core.AppTypography.titleLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -901,11 +880,18 @@ class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
             controller: _searchController,
             onChanged: _search,
             autofocus: true,
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             decoration: InputDecoration(
               hintText: 'Buscar ejercicio...',
-              hintStyle: GoogleFonts.montserrat(color: Colors.white38),
-              prefixIcon: const Icon(Icons.search, color: Colors.white54),
+              hintStyle: core.AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+              ),
               filled: true,
               fillColor: AppColors.bgDeep,
               border: OutlineInputBorder(
@@ -931,24 +917,21 @@ class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
                       backgroundColor: AppColors.live,
                       child: Text(
                         exercise.name[0].toUpperCase(),
-                        style: GoogleFonts.montserrat(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                        style: core.AppTypography.titleLarge.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
                     title: Text(
                       exercise.name,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
+                      style: core.AppTypography.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     subtitle: Text(
                       exercise.muscleGroup,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white54,
-                        fontSize: 12,
+                      style: core.AppTypography.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                       ),
                     ),
                     onTap: () {
@@ -994,8 +977,7 @@ class _VoiceCapabilitiesBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'La voz captura:',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
+                style: core.AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.neonCyan,
                 ),
@@ -1017,9 +999,8 @@ class _VoiceCapabilitiesBanner extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Detalles avanzados se ajustan después.',
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
-              color: Colors.white38,
+            style: core.AppTypography.labelSmall.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -1047,11 +1028,17 @@ class _CapabilityChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: Colors.white54),
+          Icon(
+            icon,
+            size: 12,
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+          ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.montserrat(fontSize: 11, color: Colors.white70),
+            style: core.AppTypography.labelSmall.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+            ),
           ),
         ],
       ),

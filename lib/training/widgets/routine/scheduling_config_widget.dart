@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../models/rutina.dart';
 import '../../utils/design_system.dart';
 
@@ -49,11 +48,9 @@ class SchedulingConfigWidget extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'CONFIGURACIÓN DE SCHEDULING',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
+                style: core.AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.neonPrimary,
-                  letterSpacing: 1,
                 ),
               ),
             ],
@@ -61,32 +58,31 @@ class SchedulingConfigWidget extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Selector de modo
-          _buildModeSelector(),
+          _buildModeSelector(context),
           const SizedBox(height: 16),
 
           // Configuración específica según modo
           if (rutina.schedulingMode == SchedulingMode.weeklyAnchored)
-            _buildWeeklyAnchoredConfig(),
+            _buildWeeklyAnchoredConfig(context),
           
           if (rutina.schedulingMode == SchedulingMode.floatingCycle)
-            _buildFloatingCycleConfig(),
+            _buildFloatingCycleConfig(context),
 
           // Info del modo seleccionado
-          _buildModeInfo(),
+          _buildModeInfo(context),
         ],
       ),
     );
   }
 
-  Widget _buildModeSelector() {
+  Widget _buildModeSelector(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Modo de Programación',
-          style: GoogleFonts.montserrat(
-            fontSize: 14,
-            color: Colors.white70,
+          style: core.AppTypography.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
           ),
         ),
         const SizedBox(height: 8),
@@ -100,20 +96,23 @@ class SchedulingConfigWidget extends StatelessWidget {
               value: rutina.schedulingMode,
               isExpanded: true,
               dropdownColor: AppColors.bgElevated,
-              icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+              icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.onSurface.withAlpha(178)),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               items: [
                 _buildDropdownItem(
+                  context,
                   SchedulingMode.sequential,
                   'Secuencial',
                   Icons.format_list_numbered,
                 ),
                 _buildDropdownItem(
+                  context,
                   SchedulingMode.weeklyAnchored,
                   'Anclado a Semana',
                   Icons.calendar_today,
                 ),
                 _buildDropdownItem(
+                  context,
                   SchedulingMode.floatingCycle,
                   'Ciclo Flotante',
                   Icons.timelapse,
@@ -125,9 +124,9 @@ class SchedulingConfigWidget extends StatelessWidget {
                 }
               },
               selectedItemBuilder: (context) => [
-                _buildSelectedItem('Secuencial', Icons.format_list_numbered),
-                _buildSelectedItem('Anclado a Semana', Icons.calendar_today),
-                _buildSelectedItem('Ciclo Flotante', Icons.timelapse),
+                _buildSelectedItem(context, 'Secuencial', Icons.format_list_numbered),
+                _buildSelectedItem(context, 'Anclado a Semana', Icons.calendar_today),
+                _buildSelectedItem(context, 'Ciclo Flotante', Icons.timelapse),
               ],
             ),
           ),
@@ -137,6 +136,7 @@ class SchedulingConfigWidget extends StatelessWidget {
   }
 
   DropdownMenuItem<SchedulingMode> _buildDropdownItem(
+    BuildContext context,
     SchedulingMode mode,
     String label,
     IconData icon,
@@ -145,13 +145,12 @@ class SchedulingConfigWidget extends StatelessWidget {
       value: mode,
       child: Row(
         children: [
-          Icon(icon, color: Colors.white70, size: 18),
+          Icon(icon, color: Theme.of(context).colorScheme.onSurface.withAlpha(178), size: 18),
           const SizedBox(width: 12),
           Text(
             label,
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontSize: 14,
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -159,16 +158,14 @@ class SchedulingConfigWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedItem(String label, IconData icon) {
+  Widget _buildSelectedItem(BuildContext context, String label, IconData icon) {
     return Row(
       children: [
         Icon(icon, color: AppColors.neonPrimary, size: 18),
         const SizedBox(width: 12),
         Text(
           label,
-          style: GoogleFonts.montserrat(
-            color: Colors.white,
-            fontSize: 14,
+          style: core.AppTypography.bodyMedium.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -176,15 +173,14 @@ class SchedulingConfigWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildWeeklyAnchoredConfig() {
+  Widget _buildWeeklyAnchoredConfig(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Asignar Días de la Semana',
-          style: GoogleFonts.montserrat(
-            fontSize: 14,
-            color: Colors.white70,
+          style: core.AppTypography.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
           ),
         ),
         const SizedBox(height: 12),
@@ -204,7 +200,7 @@ class SchedulingConfigWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildFloatingCycleConfig() {
+  Widget _buildFloatingCycleConfig(BuildContext context) {
     final minRestHours = rutina.minRestHours;
     final maxRestHours = rutina.maxRestHours;
 
@@ -213,9 +209,8 @@ class SchedulingConfigWidget extends StatelessWidget {
       children: [
         Text(
           'Configuración de Descanso',
-          style: GoogleFonts.montserrat(
-            fontSize: 14,
-            color: Colors.white70,
+          style: core.AppTypography.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
           ),
         ),
         const SizedBox(height: 12),
@@ -223,7 +218,7 @@ class SchedulingConfigWidget extends StatelessWidget {
         // Min rest hours slider
         Row(
           children: [
-            const Icon(Icons.bedtime, color: Colors.white54, size: 18),
+            Icon(Icons.bedtime, color: Theme.of(context).colorScheme.onSurface.withAlpha(138), size: 18),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -231,10 +226,7 @@ class SchedulingConfigWidget extends StatelessWidget {
                 children: [
                   Text(
                     'Descanso mínimo: $minRestHours horas',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white,
-                      fontSize: 13,
-                    ),
+                    style: core.AppTypography.bodyMedium,
                   ),
                   Slider(
                     value: minRestHours.toDouble(),
@@ -259,7 +251,7 @@ class SchedulingConfigWidget extends StatelessWidget {
         // Max rest hours slider
         Row(
           children: [
-            const Icon(Icons.timer_off, color: Colors.white54, size: 18),
+            Icon(Icons.timer_off, color: Theme.of(context).colorScheme.onSurface.withAlpha(138), size: 18),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -267,10 +259,7 @@ class SchedulingConfigWidget extends StatelessWidget {
                 children: [
                   Text(
                     'Descanso máximo: $maxRestHours horas',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white,
-                      fontSize: 13,
-                    ),
+                    style: core.AppTypography.bodyMedium,
                   ),
                   Slider(
                     value: maxRestHours.toDouble(),
@@ -297,7 +286,7 @@ class SchedulingConfigWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildModeInfo() {
+  Widget _buildModeInfo(BuildContext context) {
     String info;
     switch (rutina.schedulingMode) {
       case SchedulingMode.sequential:
@@ -332,9 +321,8 @@ class SchedulingConfigWidget extends StatelessWidget {
           Expanded(
             child: Text(
               info,
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                color: Colors.blue.shade200,
+              style: core.AppTypography.bodySmall.copyWith(
+                color: Colors.blue,
                 height: 1.4,
               ),
             ),
@@ -361,6 +349,8 @@ class _DayWeekdaySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -369,9 +359,7 @@ class _DayWeekdaySelector extends StatelessWidget {
             flex: 2,
             child: Text(
               dayName,
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 13,
+              style: core.AppTypography.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
               ),
               overflow: TextOverflow.ellipsis,
@@ -401,15 +389,14 @@ class _DayWeekdaySelector extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.neonPrimary
-                          : Colors.white.withValues(alpha: 0.1),
+                          : colorScheme.onSurface.withAlpha((0.1 * 255).round()),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Center(
                       child: Text(
                         _weekdayNames[index],
-                        style: GoogleFonts.montserrat(
-                          color: isSelected ? Colors.black : Colors.white70,
-                          fontSize: 12,
+                        style: core.AppTypography.labelSmall.copyWith(
+                          color: isSelected ? colorScheme.surface : colorScheme.onSurface.withAlpha(178),
                           fontWeight: FontWeight.bold,
                         ),
                       ),

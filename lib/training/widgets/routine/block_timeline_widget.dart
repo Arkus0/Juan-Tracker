@@ -4,7 +4,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import 'package:juan_tracker/core/design_system/app_theme.dart';
 import '../../models/training_block.dart';
 
@@ -60,10 +60,8 @@ class BlockTimelineWidget extends StatelessWidget {
               Expanded(
                 child: Text(
                   'PERIODIZACIÓN POR BLOQUES',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
+                  style: core.AppTypography.labelSmall.copyWith(
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
                     color: activeBlock != null
                         ? AppColors.ironRed
                         : AppColors.darkTextSecondary,
@@ -132,9 +130,7 @@ class _AddBlockButton extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 'AÑADIR BLOQUE',
-                style: GoogleFonts.montserrat(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                style: core.AppTypography.labelSmall.copyWith(
                   color: AppColors.ironRed,
                 ),
               ),
@@ -167,17 +163,14 @@ class _EmptyBlocksMessage extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Sin bloques configurados',
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
+            style: core.AppTypography.bodyMedium.copyWith(
               color: AppColors.darkTextSecondary,
-              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             'Añade bloques para periodizar tu entrenamiento',
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
+            style: core.AppTypography.bodySmall.copyWith(
               color: AppColors.darkTextTertiary,
             ),
             textAlign: TextAlign.center,
@@ -190,9 +183,8 @@ class _EmptyBlocksMessage extends StatelessWidget {
               label: const Text('CREAR PRIMER BLOQUE'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.ironRed,
-                foregroundColor: Colors.white,
-                textStyle: GoogleFonts.montserrat(
-                  fontSize: 12,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                textStyle: core.AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -280,14 +272,13 @@ class _BlockTimeline extends StatelessWidget {
         backgroundColor: AppColors.darkSurface,
         title: Text(
           '¿Eliminar bloque?',
-          style: GoogleFonts.montserrat(
+          style: core.AppTypography.titleMedium.copyWith(
             color: AppColors.darkTextPrimary,
-            fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
           '¿Estás seguro de que quieres eliminar el bloque "${block.name}"?',
-          style: GoogleFonts.montserrat(
+          style: core.AppTypography.bodyMedium.copyWith(
             color: AppColors.darkTextSecondary,
           ),
         ),
@@ -296,7 +287,7 @@ class _BlockTimeline extends StatelessWidget {
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'CANCELAR',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.bodyMedium.copyWith(
                 color: AppColors.darkTextSecondary,
               ),
             ),
@@ -308,9 +299,8 @@ class _BlockTimeline extends StatelessWidget {
             },
             child: Text(
               'ELIMINAR',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.labelLarge.copyWith(
                 color: AppColors.error,
-                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -378,10 +368,8 @@ class _BlockCard extends StatelessWidget {
                   const Spacer(),
                   Text(
                     '${block.durationWeeks} sem',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 10,
+                    style: core.AppTypography.labelSmall.copyWith(
                       color: AppColors.darkTextTertiary,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -391,8 +379,7 @@ class _BlockCard extends StatelessWidget {
               // Nombre
               Text(
                 block.name,
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
+                style: core.AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isActive ? AppColors.darkTextPrimary : AppColors.darkTextSecondary,
                 ),
@@ -404,8 +391,7 @@ class _BlockCard extends StatelessWidget {
               // Tipo
               Text(
                 block.type.label,
-                style: GoogleFonts.montserrat(
-                  fontSize: 10,
+                style: core.AppTypography.labelSmall.copyWith(
                   color: AppColors.darkTextTertiary,
                 ),
               ),
@@ -429,9 +415,7 @@ class _BlockCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       'COMPLETADO',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
+                      style: core.AppTypography.labelSmall.copyWith(
                         color: AppColors.ironRed,
                       ),
                     ),
@@ -469,9 +453,7 @@ class _ProgressBar extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           '${(progress * 100).round()}%',
-          style: GoogleFonts.montserrat(
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
+          style: core.AppTypography.labelSmall.copyWith(
             color: AppColors.ironRed,
           ),
         ),
@@ -510,11 +492,8 @@ class _ActiveBlockInfo extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'BLOQUE ACTIVO',
-                style: GoogleFonts.montserrat(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                style: core.AppTypography.labelSmall.copyWith(
                   color: AppColors.ironRed,
-                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -522,8 +501,7 @@ class _ActiveBlockInfo extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             block.name,
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
+            style: core.AppTypography.bodyLarge.copyWith(
               fontWeight: FontWeight.w700,
               color: AppColors.darkTextPrimary,
             ),
@@ -531,8 +509,7 @@ class _ActiveBlockInfo extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Semana ${block.currentWeek} de ${block.durationWeeks} • ${block.type.label}',
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
+            style: core.AppTypography.bodySmall.copyWith(
               color: AppColors.darkTextSecondary,
             ),
           ),
@@ -545,8 +522,7 @@ class _ActiveBlockInfo extends StatelessWidget {
                 return Chip(
                   label: Text(
                     goal,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 10,
+                    style: core.AppTypography.labelSmall.copyWith(
                       color: AppColors.darkTextPrimary,
                     ),
                   ),

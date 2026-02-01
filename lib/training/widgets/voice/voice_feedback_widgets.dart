@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../services/noise_detection_service.dart';
 import '../../utils/design_system.dart';
 
@@ -61,10 +61,8 @@ class VoiceFallbackBanner extends StatelessWidget {
                   isWarning
                       ? 'Ambiente ruidoso detectado'
                       : 'Dificultad para reconocer voz',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                  style: core.AppTypography.labelLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -72,7 +70,7 @@ class VoiceFallbackBanner extends StatelessWidget {
                 IconButton(
                   onPressed: onDismiss,
                   icon: const Icon(Icons.close, size: 18),
-                  color: Colors.white54,
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                   constraints: const BoxConstraints(),
                   padding: EdgeInsets.zero,
                 ),
@@ -83,7 +81,9 @@ class VoiceFallbackBanner extends StatelessWidget {
             isWarning
                 ? 'Intenta hablar más cerca del micrófono o usa otro método.'
                 : 'Después de varios intentos fallidos, te recomendamos usar texto o entrada manual.',
-            style: GoogleFonts.montserrat(fontSize: 12, color: Colors.white70),
+            style: core.AppTypography.bodySmall.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -156,15 +156,13 @@ class _FallbackButton extends StatelessWidget {
             Icon(
               icon,
               size: 14,
-              color: isPrimary ? AppColors.neonCyan : Colors.white70,
+              color: isPrimary ? AppColors.neonCyan : Theme.of(context).colorScheme.onSurface.withAlpha(178),
             ),
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isPrimary ? AppColors.neonCyan : Colors.white70,
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: isPrimary ? AppColors.neonCyan : Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
             ),
           ],
@@ -226,9 +224,7 @@ class ConfidenceIndicator extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${(confidence * 100).toInt()}%',
-                style: GoogleFonts.montserrat(
-                  fontSize: size * 0.5,
-                  fontWeight: FontWeight.bold,
+                style: core.AppTypography.labelLarge.copyWith(
                   color: _color,
                 ),
               ),
@@ -296,7 +292,9 @@ class VoiceUndoSnackbar {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.montserrat(color: Colors.white),
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
           ],
@@ -339,21 +337,21 @@ class VoiceListeningStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (hasError) {
-      return _buildErrorState();
+      return _buildErrorState(context);
     }
 
     if (isProcessing) {
-      return _buildProcessingState();
+      return _buildProcessingState(context);
     }
 
     if (isListening) {
-      return _buildListeningState();
+      return _buildListeningState(context);
     }
 
-    return _buildIdleState();
+    return _buildIdleState(context);
   }
 
-  Widget _buildIdleState() {
+  Widget _buildIdleState(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -364,18 +362,20 @@ class VoiceListeningStatus extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.mic_none, color: Colors.white54, size: 20),
+          Icon(Icons.mic_none, color: Theme.of(context).colorScheme.onSurface.withAlpha(138), size: 20),
           const SizedBox(width: 8),
           Text(
             'Pulsa para hablar',
-            style: GoogleFonts.montserrat(color: Colors.white54, fontSize: 14),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildListeningState() {
+  Widget _buildListeningState(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -394,10 +394,8 @@ class VoiceListeningStatus extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Escuchando...',
-                style: GoogleFonts.montserrat(
+                style: core.AppTypography.labelLarge.copyWith(
                   color: AppColors.error,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -406,9 +404,8 @@ class VoiceListeningStatus extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               partialTranscript!,
-              style: GoogleFonts.montserrat(
-                color: Colors.white70,
-                fontSize: 14,
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -419,7 +416,7 @@ class VoiceListeningStatus extends StatelessWidget {
     );
   }
 
-  Widget _buildProcessingState() {
+  Widget _buildProcessingState(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -441,10 +438,8 @@ class VoiceListeningStatus extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'Procesando...',
-            style: GoogleFonts.montserrat(
+            style: core.AppTypography.labelLarge.copyWith(
               color: Colors.amber,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -452,7 +447,7 @@ class VoiceListeningStatus extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -468,7 +463,9 @@ class VoiceListeningStatus extends StatelessWidget {
           Flexible(
             child: Text(
               errorMessage ?? 'No entendido',
-              style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 14),
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: Colors.orange,
+              ),
             ),
           ),
         ],
@@ -543,9 +540,8 @@ class VoiceLimitsInfo extends StatelessWidget {
             Flexible(
               child: Text(
                 'La voz captura: nombre, series, reps, peso',
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
-                  color: Colors.white54,
+                style: core.AppTypography.labelSmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 ),
               ),
             ),
@@ -574,34 +570,33 @@ class VoiceLimitsInfo extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Qué puede hacer la voz',
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                style: core.AppTypography.labelLarge.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          _buildCapability(Icons.check, 'Nombre del ejercicio', true),
-          _buildCapability(Icons.check, 'Series y repeticiones', true),
-          _buildCapability(Icons.check, 'Peso en kg', true),
-          _buildCapability(Icons.check, 'Notas simples', true),
+          _buildCapability(context, Icons.check, 'Nombre del ejercicio', true),
+          _buildCapability(context, Icons.check, 'Series y repeticiones', true),
+          _buildCapability(context, Icons.check, 'Peso en kg', true),
+          _buildCapability(context, Icons.check, 'Notas simples', true),
           const SizedBox(height: 8),
           const Divider(color: AppColors.border),
           const SizedBox(height: 8),
           _buildCapability(
+            context,
             Icons.close,
             'Detalles avanzados (editar después)',
             false,
           ),
-          _buildCapability(Icons.close, 'Ejercicios muy específicos', false),
+          _buildCapability(context, Icons.close, 'Ejercicios muy específicos', false),
         ],
       ),
     );
   }
 
-  Widget _buildCapability(IconData icon, String text, bool supported) {
+  Widget _buildCapability(BuildContext context, IconData icon, String text, bool supported) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -609,14 +604,13 @@ class VoiceLimitsInfo extends StatelessWidget {
           Icon(
             icon,
             size: 14,
-            color: supported ? AppColors.neonCyan : Colors.white38,
+            color: supported ? AppColors.neonCyan : Theme.of(context).colorScheme.onSurface.withAlpha(97),
           ),
           const SizedBox(width: 8),
           Text(
             text,
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
-              color: supported ? Colors.white70 : Colors.white38,
+            style: core.AppTypography.bodySmall.copyWith(
+              color: supported ? Theme.of(context).colorScheme.onSurface.withAlpha(178) : Theme.of(context).colorScheme.onSurface.withAlpha(97),
             ),
           ),
         ],

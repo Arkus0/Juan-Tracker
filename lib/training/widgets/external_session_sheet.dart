@@ -805,8 +805,6 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildExercisesList() {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

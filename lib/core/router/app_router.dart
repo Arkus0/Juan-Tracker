@@ -5,6 +5,7 @@
 // - juantracker://training/session/123
 // - https://juantracker.app/nutrition/weight
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +26,7 @@ import '../../training/screens/training_session_screen.dart';
 import '../../diet/screens/coach/coach_screen.dart';
 import '../../diet/screens/coach/plan_setup_screen.dart';
 import '../../diet/screens/coach/weekly_check_in_screen.dart';
+import '../../diet/screens/search_benchmark_screen.dart';
 import '../../core/onboarding/splash_wrapper.dart';
 import '../../training/training_shell.dart';
 
@@ -57,6 +59,9 @@ class AppRouter {
   static const String trainingLibrary = '/training/library';
   static const String trainingSession = '/training/session';
   static const String trainingSessionDetail = '/training/session/detail';
+
+  // Debug routes (only available in debug mode)
+  static const String debugSearchBenchmark = '/debug/search-benchmark';
   
   // Helper para navegar a detalle de sesión (requiere objeto Sesion)
   static String trainingSessionDetailWithId(String id) => '/training/session/detail/$id';
@@ -157,6 +162,13 @@ class AppRouter {
         path: nutritionCoachCheckin,
         builder: (context, state) => const WeeklyCheckInScreen(),
       ),
+
+      // === DEBUG ROUTES (only in debug mode) ===
+      if (kDebugMode)
+        GoRoute(
+          path: debugSearchBenchmark,
+          builder: (context, state) => const SearchBenchmarkScreen(),
+        ),
 
       // === ENTRENAMIENTO ===
       // Transición fade desde EntryScreen (usa TrainingShell internamente)

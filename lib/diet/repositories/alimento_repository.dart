@@ -374,48 +374,87 @@ class AlimentoRepository {
     }).toList();
   }
 
+  // ============================================================================
+  // RANKING ALGORITHM
+  // Score weights documented for tuning
+  // ============================================================================
+  
+  /// Score weights for relevance ranking
+  /// Higher = more important for ranking
+  static const _kScoreExactStartMatch = 100.0;   // "lech" → "leche"
+  static const _kScoreExactContains = 50.0;      // "desc" → "leche descremada"
+  static const _kScoreWordStartMatch = 30.0;     // "desc" → "leche descremada"
+  static const _kScorePopularityMultiplier = 5.0; // log(useCount) * this
+  static const _kScoreRecencyBase = 30.0;        // Recent usage boost (was 20)
+  static const _kScoreRecencyDecayDays = 14;     // Days until recency = 0 (was 20)
+  static const _kScoreVerifiedBoost = 10.0;      // Verified sources
+  static const _kScoreCompleteDataBoost = 5.0;   // Has all macros
+  static const _kScoreFavoriteBoost = 25.0;      // User-favorited items
+  static const _kScoreUsedTodayBoost = 15.0;     // Used within last 24h
+
   double _calculateBaseScore(Food food, String query) {
     var score = 0.0;
     final nameLower = food.name.toLowerCase();
     final queryLower = query.toLowerCase();
     
-    // 1. Coincidencia exacta al inicio (máxima prioridad)
+    // 1. Text matching (position-aware)
     if (nameLower.startsWith(queryLower)) {
-      score += 100;
-    } 
-    // 2. Coincidencia exacta en cualquier parte
-    else if (nameLower.contains(queryLower)) {
-      score += 50;
-    }
-    // 3. Coincidencia en palabras individuales
-    else if (nameLower.split(' ').any((word) => word.startsWith(queryLower))) {
-      score += 30;
+      score += _kScoreExactStartMatch;
+    } else if (nameLower.contains(queryLower)) {
+      score += _kScoreExactContains;
+    } else if (nameLower.split(' ').any((word) => word.startsWith(queryLower))) {
+      score += _kScoreWordStartMatch;
     }
     
-    // 4. Popularidad (escala logarítmica para no favorecer demasiado)
-    score += math.log(food.useCount + 1) * 5;
+    // 2. Popularity (logarithmic to prevent domination by very popular items)
+    score += math.log(food.useCount + 1) * _kScorePopularityMultiplier;
     
-    // 5. Recencia de uso
+    // 3. Recency boost (linear decay over 14 days)
     if (food.lastUsedAt != null) {
-      final diasDesdeUso = DateTime.now().difference(food.lastUsedAt!).inDays;
-      score += math.max(0, 20 - diasDesdeUso);
+      final daysSinceUse = DateTime.now().difference(food.lastUsedAt!).inDays;
+      
+      // Extra boost for used TODAY (within 24h)
+      if (daysSinceUse == 0) {
+        score += _kScoreUsedTodayBoost;
+      }
+      
+      // Linear decay: full boost at day 0, zero at 14 days
+      final recencyScore = math.max(
+        0.0, 
+        _kScoreRecencyBase * (1 - (daysSinceUse / _kScoreRecencyDecayDays)),
+      );
+      score += recencyScore;
     }
     
-    // 6. Verificación (alimentos verificados tienen boost)
-    if (food.verifiedSource != null) score += 10;
+    // 4. Favorites boost
+    if (food.isFavorite == true) {
+      score += _kScoreFavoriteBoost;
+    }
     
-    // 7. Preferir alimentos con datos completos
+    // 5. Quality signals
+    if (food.verifiedSource != null) {
+      score += _kScoreVerifiedBoost;
+    }
+    
     final hasCompleteData = food.proteinPer100g != null && 
                            food.carbsPer100g != null && 
                            food.fatPer100g != null;
-    if (hasCompleteData) score += 5;
+    if (hasCompleteData) {
+      score += _kScoreCompleteDataBoost;
+    }
     
     return score;
   }
 
   List<ScoredFood> _applyRanking(List<ScoredFood> foods, String query) {
-    // Ordenar por score descendente
-    foods.sort((a, b) => b.score.compareTo(a.score));
+    // Sort by score descending, with deterministic tie-breaker (ID)
+    // This ensures identical scores always produce the same order
+    foods.sort((a, b) {
+      final scoreComparison = b.score.compareTo(a.score);
+      if (scoreComparison != 0) return scoreComparison;
+      // Tie-breaker: alphabetical by ID for consistency
+      return a.food.id.compareTo(b.food.id);
+    });
     return foods;
   }
 

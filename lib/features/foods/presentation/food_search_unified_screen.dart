@@ -707,6 +707,13 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
 
     // Modo búsqueda
     if (inputMode == FoodInputMode.search) {
+      final searchState = ref.watch(foodSearchProvider);
+      
+      // SHORT QUERY: Show recents + hint message
+      if (searchQuery.isNotEmpty && searchQuery.length < 3) {
+        return _buildShortQueryView(searchQuery, searchState);
+      }
+      
       return searchResults.when(
         data: (scoredFoods) {
           if (scoredFoods.isEmpty && searchQuery.isNotEmpty) {
@@ -744,6 +751,69 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     }
 
     return const SizedBox.shrink();
+  }
+
+  /// Builds view for short queries (<3 chars)
+  /// Shows hint message + recent foods as alternatives
+  Widget _buildShortQueryView(String query, FoodSearchState searchState) {
+    final theme = Theme.of(context);
+    final recents = searchState.popularAlternatives;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Hint message
+        Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Escribe 3 o más caracteres para buscar',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Recent foods as alternatives
+        if (recents.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Alimentos recientes',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: _buildFoodList(recents),
+          ),
+        ] else ...[
+          const Expanded(
+            child: Center(
+              child: Text('Continúa escribiendo...'),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   Widget _buildFoodList(List<Food> foods, {String? searchQuery}) {

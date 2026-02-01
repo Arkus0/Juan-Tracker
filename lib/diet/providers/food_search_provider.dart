@@ -96,7 +96,11 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
   Timer? _debounceTimer;
   CancelToken? _cancelToken;
   
-  static const _debounceDuration = Duration(milliseconds: 300);
+  // OPTIMIZED: Reduced from 300ms to 150ms for faster local search
+  static const _debounceDuration = Duration(milliseconds: 150);
+  
+  // Minimum query length for DB search (short queries show recents)
+  static const _minQueryLength = 3;
 
   @override
   FoodSearchState build() {
@@ -113,6 +117,9 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
   /// 
   /// Búsqueda instantánea en base de datos local (FTS5).
   /// Para buscar en internet, usar `searchOnline()` después.
+  /// 
+  /// OPTIMIZATION: Short queries (<3 chars) don't scan DB.
+  /// Instead, we show recents/frequent foods.
   void search(String query) {
     // Cancelar timer y request previos
     _debounceTimer?.cancel();
@@ -125,21 +132,18 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
       return;
     }
     
-    // Mínimo 2 caracteres para buscar (evita búsquedas inútiles)
-    if (trimmed.length < 2) {
-      state = state.copyWith(
-        query: trimmed,
-        status: SearchStatus.idle,
-        results: const [],
-      );
+    // SHORT QUERY POLICY: < 3 chars → show recents, no DB scan
+    // This is critical for performance on large DBs
+    if (trimmed.length < _minQueryLength) {
+      _handleShortQuery(trimmed);
       return;
     }
 
-    // Estado de "escribiendo" inmediato
+    // Estado de "escribiendo" inmediato (show loading spinner)
     state = state.copyWith(
       status: SearchStatus.loading,
       query: trimmed,
-      results: const [],
+      // Keep previous results while loading for smoother UX
       suggestions: const [],
       popularAlternatives: const [],
       showCreateCustom: false,
@@ -147,11 +151,37 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
       hasMore: true,
     );
 
-    // Debounce de 300ms con check de mounted para evitar crash si provider disposed
+    // Debounce 150ms (reduced from 300ms for faster response)
     _debounceTimer = Timer(_debounceDuration, () async {
-      if (!ref.mounted) return; // Evitar acceso a provider disposed
+      if (!ref.mounted) return;
       await _performSearch(trimmed);
     });
+  }
+
+  /// Handles short queries (< 3 chars) by showing recents
+  /// without scanning the full database
+  Future<void> _handleShortQuery(String query) async {
+    state = state.copyWith(
+      query: query,
+      status: SearchStatus.idle,
+      results: const [],
+      suggestions: const ['Escribe 3+ caracteres para buscar'],
+      showCreateCustom: false,
+    );
+    
+    // Show recent/frequent foods as alternatives
+    try {
+      final repository = ref.read(alimentoRepositoryProvider);
+      final recents = await repository.getRecentlyUsed(limit: 10);
+      
+      if (!ref.mounted) return;
+      
+      state = state.copyWith(
+        popularAlternatives: recents,
+      );
+    } catch (e) {
+      debugPrint('[FoodSearch] Error loading recents for short query: $e');
+    }
   }
 
   /// Ejecuta la búsqueda real (solo LOCAL - instantánea)
