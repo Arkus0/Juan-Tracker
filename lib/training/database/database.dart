@@ -672,14 +672,28 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Reconstruye el índice FTS desde la tabla foods
-  /// 
-  /// Público para poder llamarlo desde FoodDatabaseLoader después de la carga inicial
+  ///
+  /// Público para poder llamarlo desde FoodDatabaseLoader después de la carga inicial.
+  /// Also fixes any foods missing normalizedName for LIKE fallback search.
   Future<void> rebuildFtsIndex() async {
+    debugPrint('[rebuildFtsIndex] Starting FTS index rebuild...');
+
+    // First, fix any foods missing normalizedName (for LIKE fallback)
+    await customStatement('''
+      UPDATE foods SET normalized_name = LOWER(name)
+      WHERE normalized_name IS NULL
+    ''');
+
+    // Clear and rebuild FTS index
     await customStatement('DELETE FROM foods_fts');
     await customStatement('''
       INSERT INTO foods_fts(food_id, name, brand)
       SELECT id, name, COALESCE(brand, '') FROM foods
     ''');
+
+    // Verify the rebuild
+    final count = await customSelect('SELECT COUNT(*) as cnt FROM foods_fts').getSingle();
+    debugPrint('[rebuildFtsIndex] FTS index rebuilt with ${count.data['cnt']} entries');
   }
 
   @override
@@ -699,18 +713,23 @@ class AppDatabase extends _$AppDatabase {
       .replaceAll(RegExp(r'["\-*()]'), ' ')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
-    
+
     if (sanitized.isEmpty) return [];
-    
+
     // Formato FTS5: cada término con * para búsqueda por prefijo
     // Ej: "lomo embuchado" -> "lomo"* "embuchado"*
     final terms = sanitized.split(' ').where((t) => t.isNotEmpty).toList();
     if (terms.isEmpty) return [];
-    
+
     // Construir query: término1* término2* ... (todos deben coincidir)
     final ftsQuery = terms.map((t) => '$t*').join(' ');
+    debugPrint('[searchFoodsFTS] Query: "$query" -> FTS query: "$ftsQuery"');
 
     try {
+      // First check FTS table count for debugging
+      final ftsCountResult = await customSelect('SELECT COUNT(*) as cnt FROM foods_fts').getSingle();
+      debugPrint('[searchFoodsFTS] FTS table has ${ftsCountResult.data['cnt']} rows');
+
       // Usar SQL directo con JOIN por food_id
       final results = await customSelect(
         'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
@@ -725,10 +744,11 @@ class AppDatabase extends _$AppDatabase {
         variables: [Variable(ftsQuery), Variable(limit)],
       ).get();
 
+      debugPrint('[searchFoodsFTS] Found ${results.length} results');
       return results.map((row) => _mapRowToFood(row)).toList();
     } catch (e) {
       // Si FTS falla, hacer fallback a LIKE
-      debugPrint('FTS search error: $e, falling back to LIKE');
+      debugPrint('[searchFoodsFTS] FTS search error: $e, falling back to LIKE');
       return _searchFoodsLike(query, limit: limit);
     }
   }
@@ -736,10 +756,14 @@ class AppDatabase extends _$AppDatabase {
   /// Búsqueda fallback usando LIKE (cuando FTS falla)
   Future<List<Food>> _searchFoodsLike(String query, {int limit = 50}) async {
     final normalized = query.toLowerCase().trim();
-    return (select(foods)
-      ..where((f) => 
-        f.normalizedName.like('%$normalized%') | 
-        f.brand.like('%$normalized%')
+    debugPrint('[_searchFoodsLike] Fallback LIKE search for: $normalized');
+
+    // Search in both normalizedName and name (LOWER) for robustness
+    final results = await (select(foods)
+      ..where((f) =>
+        f.normalizedName.like('%$normalized%') |
+        f.name.lower().like('%$normalized%') |
+        f.brand.lower().like('%$normalized%')
       )
       ..orderBy([
         (f) => OrderingTerm.desc(f.useCount),
@@ -747,6 +771,9 @@ class AppDatabase extends _$AppDatabase {
       ])
       ..limit(limit))
       .get();
+
+    debugPrint('[_searchFoodsLike] Found ${results.length} results');
+    return results;
   }
   
   /// Mapea una fila de query a Food
@@ -799,12 +826,15 @@ class AppDatabase extends _$AppDatabase {
   /// Búsqueda por prefijo (para autocompletado rápido)
   Future<List<Food>> searchFoodsByPrefix(String prefix, {int limit = 10}) async {
     final normalized = prefix.toLowerCase().trim();
-    
+
     return (select(foods)
-      ..where((f) => f.normalizedName.like('$normalized%'))
+      ..where((f) =>
+        f.normalizedName.like('$normalized%') |
+        f.name.lower().like('$normalized%')
+      )
       ..orderBy([
         (f) => OrderingTerm.desc(f.useCount),
-        (f) => OrderingTerm.asc(f.normalizedName),
+        (f) => OrderingTerm.asc(f.name),
       ])
       ..limit(limit))
       .get();
@@ -815,20 +845,9 @@ class AppDatabase extends _$AppDatabase {
     // Intentar FTS primero
     final ftsResults = await searchFoodsFTS(query, limit: limit);
     if (ftsResults.isNotEmpty) return ftsResults;
-    
-    // Fallback a LIKE en nombre y marca
-    final normalized = query.toLowerCase().trim();
-    return (select(foods)
-      ..where((f) => 
-        f.normalizedName.like('%$normalized%') | 
-        f.brand.like('%$normalized%')
-      )
-      ..orderBy([
-        (f) => OrderingTerm.desc(f.useCount),
-        (f) => OrderingTerm.desc(f.lastUsedAt),
-      ])
-      ..limit(limit))
-      .get();
+
+    // Fallback a LIKE - use the robust _searchFoodsLike method
+    return _searchFoodsLike(query, limit: limit);
   }
 
   /// Sugerencias de autocompletado basadas en historial y alimentos populares
