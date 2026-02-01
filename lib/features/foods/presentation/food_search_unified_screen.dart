@@ -413,7 +413,93 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
   // ============================================================================
   // BÚSQUEDA POR TEXTO
   // ============================================================================
-  
+
+  /// Buscar en Open Food Facts cuando la búsqueda local no encuentra resultados
+  Future<void> _searchOnline(String query) async {
+    if (query.trim().isEmpty) return;
+
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      debugPrint('[SearchOnline] Buscando en OFF: $query');
+      final results = await ref.read(onlineTextSearchProvider(query).future);
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Cerrar loading
+
+      if (results.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se encontró "$query" en Open Food Facts'),
+            action: SnackBarAction(
+              label: 'Añadir manual',
+              onPressed: () => _showManualAddSheet(prefillData: _OcrExtractedData(name: query)),
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Mostrar resultados en un bottom sheet
+      if (!mounted) return;
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (ctx) => DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) => Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Resultados de Open Food Facts (${results.length})',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: results.length,
+                  itemBuilder: (context, index) {
+                    final food = results[index];
+                    return FoodListItem(
+                      food: food,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _selectFood(food);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Cerrar loading
+      _showError('Error al buscar en Open Food Facts: $e');
+    }
+  }
+
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
     
@@ -677,7 +763,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
         error: (_, _) => const Center(child: Text('Error al cargar recientes')),
       );
     }
-    
+
     // Modo búsqueda
     if (inputMode == FoodInputMode.search) {
       return searchResults.when(
@@ -689,6 +775,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
               onVoiceInput: _startListening,
               onOcrScan: () => _scanLabel(),
               onBarcodeScan: _scanBarcode,
+              onSearchOnline: () => _searchOnline(searchQuery),
             );
           }
           if (scoredFoods.isEmpty) {
@@ -706,12 +793,12 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
         error: (_, _) => const Center(child: Text('Error al buscar')),
       );
     }
-    
+
     // Modo favoritos
     if (inputMode == FoodInputMode.favorites) {
       return const Center(child: Text('Favoritos - Próximamente'));
     }
-    
+
     return const SizedBox.shrink();
   }
 

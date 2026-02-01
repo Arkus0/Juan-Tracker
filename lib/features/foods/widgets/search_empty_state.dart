@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 /// Estado vacío de búsqueda con opciones alternativas
-/// 
+///
 /// Muestra mensaje motivacional y botones para:
+/// - Buscar en Open Food Facts (cuando hay query sin resultados locales)
 /// - Añadir manual
 /// - Dictar con voz
 /// - Escanear etiqueta
@@ -13,6 +14,7 @@ class SearchEmptyState extends StatelessWidget {
   final VoidCallback onVoiceInput;
   final VoidCallback onOcrScan;
   final VoidCallback onBarcodeScan;
+  final VoidCallback? onSearchOnline; // Nuevo: buscar en OFF
 
   const SearchEmptyState({
     super.key,
@@ -21,13 +23,14 @@ class SearchEmptyState extends StatelessWidget {
     required this.onVoiceInput,
     required this.onOcrScan,
     required this.onBarcodeScan,
+    this.onSearchOnline,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasQuery = query != null && query!.isNotEmpty;
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -41,7 +44,7 @@ class SearchEmptyState extends StatelessWidget {
               color: theme.colorScheme.primary.withAlpha((0.3 * 255).round()),
             ),
             const SizedBox(height: 24),
-            
+
             // Título
             Text(
               hasQuery ? 'No hay coincidencias locales' : 'Busca tus alimentos',
@@ -51,18 +54,18 @@ class SearchEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            
+
             // Subtítulo
             Text(
               hasQuery
-                  ? 'Prueba con voz, cámara o escanea el código de barras'
+                  ? 'Puedes buscar en internet o usar otros métodos'
                   : 'Escribe el nombre, usa la voz, escanea una etiqueta o el código de barras',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
             ),
-            
+
             if (hasQuery) ...[
               const SizedBox(height: 8),
               Text(
@@ -74,10 +77,51 @@ class SearchEmptyState extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
-            
-            const SizedBox(height: 32),
-            
-            // Botones de acción
+
+            // Botón principal: Buscar en Open Food Facts (solo si hay query)
+            if (hasQuery && onSearchOnline != null) ...[
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: onSearchOnline,
+                icon: const Icon(Icons.cloud_download),
+                label: const Text('Buscar en Open Food Facts'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(200, 48),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Requiere conexión a internet',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 24),
+
+            // Separador con texto
+            if (hasQuery)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.grey[300])),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'o usa otros métodos',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: Colors.grey[300])),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 16),
+
+            // Botones de acción secundarios
             Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -109,7 +153,7 @@ class SearchEmptyState extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             if (hasQuery) ...[
               const SizedBox(height: 24),
               TextButton.icon(
