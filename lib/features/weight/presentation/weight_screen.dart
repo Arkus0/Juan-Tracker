@@ -7,6 +7,8 @@ import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/home_button.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
+import 'package:juan_tracker/diet/providers/weight_trend_providers.dart'
+    show weightChartStatsProvider, WeightChartStats;
 import 'package:juan_tracker/diet/models/weighin_model.dart';
 
 import 'package:intl/intl.dart';
@@ -326,30 +328,47 @@ class _WeightChartCard extends ConsumerWidget {
 }
 
 /// Gráfica de línea para evolución de peso
-class _WeightLineChart extends StatelessWidget {
+/// PERF: Uses memoized stats from weightChartStatsProvider
+class _WeightLineChart extends ConsumerWidget {
   final List<WeighInModel> weighIns;
 
   const _WeightLineChart({required this.weighIns});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    
-    // Tomar últimos 30 días máximo
+    // PERF: Use memoized stats instead of calculating in build()
+    final statsAsync = ref.watch(weightChartStatsProvider);
+
+    return statsAsync.when(
+      data: (stats) {
+        if (stats == null) {
+          return const Center(child: Text('Se necesitan más datos'));
+        }
+        return _buildChart(context, theme, stats);
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => const Center(child: Text('Error al cargar datos')),
+    );
+  }
+
+  Widget _buildChart(BuildContext context, ThemeData theme, WeightChartStats stats) {
+    // Filter to last 30 days for display
     final cutoffDate = DateTime.now().subtract(const Duration(days: 30));
     final filteredWeighIns = weighIns
         .where((w) => w.dateTime.isAfter(cutoffDate))
         .toList()
-        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
     if (filteredWeighIns.length < 2) {
       return const Center(child: Text('Se necesitan más datos'));
     }
 
-    final minWeight = filteredWeighIns.map((w) => w.weightKg).reduce((a, b) => a < b ? a : b);
-    final maxWeight = filteredWeighIns.map((w) => w.weightKg).reduce((a, b) => a > b ? a : b);
-    final weightRange = maxWeight - minWeight;
-    final padding = weightRange > 0 ? weightRange * 0.1 : 1.0;
+    // PERF: Use pre-computed values from provider
+    final minWeight = stats.minWeight;
+    final maxWeight = stats.maxWeight;
+    final weightRange = stats.weightRange;
+    final padding = stats.padding;
 
     final spots = filteredWeighIns.asMap().entries.map((entry) {
       return FlSpot(entry.key.toDouble(), entry.value.weightKg);
@@ -449,27 +468,24 @@ class _WeightLineChart extends StatelessWidget {
 }
 
 /// Card con contexto de progreso
+/// PERF: Uses memoized stats from weightChartStatsProvider
 class _ProgressContextCard extends ConsumerWidget {
   const _ProgressContextCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final weighInsAsync = ref.watch(recentWeighInsProvider);
+    // PERF: Use memoized stats instead of calculating in build()
+    final statsAsync = ref.watch(weightChartStatsProvider);
     final theme = Theme.of(context);
 
-    return weighInsAsync.when(
-      data: (weighIns) {
-        if (weighIns.isEmpty) return const SizedBox.shrink();
+    return statsAsync.when(
+      data: (stats) {
+        if (stats == null) return const SizedBox.shrink();
 
-        final firstWeight = weighIns.last.weightKg;
-        final latestWeight = weighIns.first.weightKg;
-        final totalChange = latestWeight - firstWeight;
-        final daysCount = DateTime.now().difference(weighIns.last.dateTime).inDays + 1;
-        
-        // Calcular promedio semanal
-        final weeklyAvg = weighIns.length >= 7 
-            ? weighIns.take(7).map((w) => w.weightKg).reduce((a, b) => a + b) / 7
-            : null;
+        // PERF: Use pre-computed values from provider
+        final totalChange = stats.totalChange;
+        final daysCount = stats.daysTracking;
+        final weeklyAvg = stats.weeklyAverage;
 
         return Card(
           elevation: 0,

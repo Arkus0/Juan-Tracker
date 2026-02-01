@@ -21,6 +21,48 @@ import '../widgets/input_method_fab.dart';
 import '../utils/food_mapper.dart';
 import '../widgets/search_empty_state.dart';
 
+// ============================================================================
+// PERF: Pre-compiled regex patterns - avoid creating RegExp per call
+// ============================================================================
+
+/// Voice input: matches amounts like "200g", "200 gramos", "150ml"
+final _voiceAmountRegex = RegExp(
+  r'(\d+(?:[.,]\d+)?)\s*(g|gramos|gr|ml|mililitros|l|litros)?',
+  caseSensitive: false,
+);
+
+/// Voice input: removes leading prepositions like "de " or "d'"
+final _voicePrepositionRegex = RegExp(r"^(de\s+|d')", caseSensitive: false);
+
+/// OCR: matches calorie values like "250 kcal" or "1000 kJ"
+final _ocrKcalRegex = RegExp(
+  r'(\d+(?:[.,]\d+)?)\s*(kcal|kJ)',
+  caseSensitive: false,
+);
+
+/// OCR: matches protein values
+final _ocrProteinRegex = RegExp(
+  r'prote[ií]nas?[:\s]*(\d+(?:[.,]\d+)?)',
+  caseSensitive: false,
+);
+
+/// OCR: matches carbohydrate values
+final _ocrCarbsRegex = RegExp(
+  r'(carbohidratos?|hidratos?|carbs?)[:\s]*(\d+(?:[.,]\d+)?)',
+  caseSensitive: false,
+);
+
+/// OCR: matches fat values
+final _ocrFatRegex = RegExp(
+  r'(grasas?|l[ií]pidos?)[:\s]*(\d+(?:[.,]\d+)?)',
+  caseSensitive: false,
+);
+
+/// OCR: identifies lines that are just numbers (barcodes, etc.)
+final _ocrDigitsOnlyRegex = RegExp(r'^\d+$');
+
+// ============================================================================
+
 /// Pantalla unificada de búsqueda de alimentos - Offline First
 /// 
 /// Combina todos los métodos de entrada:
@@ -158,25 +200,24 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
   }
 
   _ParsedVoiceInput _parseVoiceInput(String text) {
-    // Regex simple para extraer cantidad y nombre
+    // PERF: Use pre-compiled regex patterns
     // Soporta: "200g de pollo", "200 gramos de pollo", "dos huevos", etc.
-    
-    final amountRegex = RegExp(r'(\d+(?:[.,]\d+)?)\s*(g|gramos|gr|ml|mililitros|l|litros)?', caseSensitive: false);
-    final amountMatch = amountRegex.firstMatch(text);
-    
+
+    final amountMatch = _voiceAmountRegex.firstMatch(text);
+
     double? amount;
     String foodName = text;
-    
+
     if (amountMatch != null) {
       final amountStr = amountMatch.group(1)?.replaceAll(',', '.');
       amount = double.tryParse(amountStr ?? '');
-      
+
       // Eliminar la cantidad del nombre
       foodName = text.replaceFirst(amountMatch.group(0)!, '').trim();
-      // Limpiar preposiciones comunes
-      foodName = foodName.replaceFirst(RegExp(r"^(de\s+|d')", caseSensitive: false), '').trim();
+      // PERF: Use pre-compiled regex for preposition removal
+      foodName = foodName.replaceFirst(_voicePrepositionRegex, '').trim();
     }
-    
+
     return _ParsedVoiceInput(foodName: foodName, amount: amount);
   }
 
@@ -247,45 +288,38 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
 
   _OcrExtractedData _extractFoodDataFromOcr(String text) {
     final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
-    
+
     // Buscar nombre (primera línea significativa, típicamente el nombre del producto)
     String name = '';
     if (lines.isNotEmpty) {
-      // Filtrar líneas muy cortas o que parezcan código de barras/numeros
-      final candidates = lines.where((l) => l.length > 3 && !RegExp(r'^\d+$').hasMatch(l));
+      // PERF: Use pre-compiled regex for digit-only check
+      final candidates = lines.where((l) => l.length > 3 && !_ocrDigitsOnlyRegex.hasMatch(l));
       if (candidates.isNotEmpty) {
         name = candidates.first;
       }
     }
-    
-    // Buscar valores nutricionales
-    final kcalRegex = RegExp(r'(\d+(?:[.,]\d+)?)\s*(kcal|kJ)', caseSensitive: false);
-    final kcalMatch = kcalRegex.firstMatch(text);
+
+    // PERF: Use pre-compiled regex patterns for all nutritional value extraction
+    final kcalMatch = _ocrKcalRegex.firstMatch(text);
     final kcal = kcalMatch != null
         ? double.tryParse(kcalMatch.group(1)!.replaceAll(',', '.'))
         : null;
-    
-    // Proteínas
-    final proteinRegex = RegExp(r'prote[ií]nas?[:\s]*(\d+(?:[.,]\d+)?)', caseSensitive: false);
-    final proteinMatch = proteinRegex.firstMatch(text);
+
+    final proteinMatch = _ocrProteinRegex.firstMatch(text);
     final proteins = proteinMatch != null
         ? double.tryParse(proteinMatch.group(1)!.replaceAll(',', '.'))
         : null;
-    
-    // Carbohidratos
-    final carbsRegex = RegExp(r'(carbohidratos?|hidratos?|carbs?)[:\s]*(\d+(?:[.,]\d+)?)', caseSensitive: false);
-    final carbsMatch = carbsRegex.firstMatch(text);
+
+    final carbsMatch = _ocrCarbsRegex.firstMatch(text);
     final carbs = carbsMatch != null
         ? double.tryParse(carbsMatch.group(2)!.replaceAll(',', '.'))
         : null;
-    
-    // Grasas
-    final fatRegex = RegExp(r'(grasas?|l[ií]pidos?)[:\s]*(\d+(?:[.,]\d+)?)', caseSensitive: false);
-    final fatMatch = fatRegex.firstMatch(text);
+
+    final fatMatch = _ocrFatRegex.firstMatch(text);
     final fat = fatMatch != null
         ? double.tryParse(fatMatch.group(2)!.replaceAll(',', '.'))
         : null;
-    
+
     return _OcrExtractedData(
       name: name,
       kcal: kcal,
