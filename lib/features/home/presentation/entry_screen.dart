@@ -8,7 +8,7 @@ import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
-import 'package:juan_tracker/diet/models/weighin_model.dart';
+import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/training/utils/design_system.dart' as training;
 import 'package:juan_tracker/training/widgets/analysis/streak_counter.dart';
 import 'package:juan_tracker/training/providers/training_provider.dart';
@@ -274,8 +274,48 @@ class _QuickActionsRow extends ConsumerWidget {
 
   void _showAddFoodDialog(BuildContext context, WidgetRef ref) {
     AppHaptics.buttonPressed();
-    // Navegar al diario con selección de comida rápida
-    context.pushTo(AppRouter.nutritionFoodSearch);
+    // Mostrar diálogo para elegir en qué comida añadir
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '¿En qué comida quieres añadir?',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 16),
+              ...MealType.values.map((meal) => ListTile(
+                leading: Icon(_getMealIcon(meal)),
+                title: Text(meal.displayName),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  ref.read(selectedMealTypeProvider.notifier).meal = meal;
+                  context.pushTo(AppRouter.nutritionFoodSearch);
+                },
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getMealIcon(MealType meal) {
+    switch (meal) {
+      case MealType.breakfast:
+        return Icons.free_breakfast;
+      case MealType.lunch:
+        return Icons.lunch_dining;
+      case MealType.dinner:
+        return Icons.dinner_dining;
+      case MealType.snack:
+        return Icons.cookie;
+    }
   }
 }
 

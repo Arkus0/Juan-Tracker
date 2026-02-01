@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../models/external_session.dart';
-
 import '../providers/analysis_provider.dart';
 import '../providers/training_provider.dart';
-import '../utils/design_system.dart';
 import '../widgets/external_session_sheet.dart';
 import '../widgets/analysis/activity_heatmap.dart';
 import '../widgets/analysis/calendar_view.dart';
@@ -55,22 +53,16 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   @override
   Widget build(BuildContext context) {
     final tabIndex = ref.watch(analysisTabIndexProvider);
-    final scheme = Theme.of(context).colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'ANÁLISIS',
-          style: AppTypography.sectionTitle.copyWith(
-            letterSpacing: 2,
-            color: scheme.onSurface,
-          ),
-        ),
+        title: const Text('Análisis'),
+        centerTitle: true,
         actions: [
           // Export menu
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            color: scheme.surface,
             onSelected: (value) {
               if (value == 'export_csv') {
                 Navigator.of(context).push(
@@ -86,12 +78,14 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                     Icon(
                       Icons.download_rounded,
                       size: 20,
-                      color: scheme.primary,
+                      color: colors.primary,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Text(
                       'Exportar datos (CSV)',
-                      style: GoogleFonts.montserrat(color: scheme.onSurface),
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: colors.onSurface,
+                      ),
                     ),
                   ],
                 ),
@@ -101,13 +95,14 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorWeight: 3,
-          labelStyle: AppTypography.labelEmphasis,
-          unselectedLabelStyle: AppTypography.label,
+          labelStyle: AppTypography.labelLarge.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: AppTypography.labelLarge,
           onTap: (_) => HapticFeedback.selectionClick(),
           tabs: const [
-            Tab(text: 'HISTORIAL'),
-            Tab(text: 'ESTADÍSTICAS'),
+            Tab(text: 'Historial'),
+            Tab(text: 'Estadísticas'),
           ],
         ),
       ),
@@ -119,14 +114,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
           ? FloatingActionButton.extended(
               heroTag: 'add_external_session',
               onPressed: () => _addExternalSession(context),
-              backgroundColor: scheme.surface,
-              foregroundColor: scheme.primary,
               icon: const Icon(Icons.add),
               label: Text(
-                'SESION EXTERNA',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                'Sesión externa',
+                style: AppTypography.labelLarge.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             )
@@ -165,30 +157,28 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
     dynamic repo,
     ExternalSession session,
   ) {
+    final colors = Theme.of(context).colorScheme;
+    
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 20),
-            const SizedBox(width: 12),
+            Icon(Icons.check_circle, color: colors.primary, size: 20),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                'Sesion externa guardada (${session.exercises.length} ejercicios)',
-                style: GoogleFonts.montserrat(color: Colors.white),
+                'Sesión guardada (${session.exercises.length} ejercicios)',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: colors.onInverseSurface,
+                ),
               ),
             ),
           ],
         ),
-        backgroundColor: AppColors.bgElevated,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.border),
-        ),
         action: SnackBarAction(
           label: 'DESHACER',
-          textColor: AppColors.neonCyan,
           onPressed: () => repo.deleteSesion(session.id),
         ),
         duration: const Duration(seconds: 10),
@@ -317,13 +307,15 @@ class _ViewModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colors.outline.withAlpha((0.5 * 255).round())),
       ),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(AppSpacing.xs),
       child: Row(
         children: [
           _buildOption(
@@ -351,20 +343,17 @@ class _ViewModeSelector extends StatelessWidget {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final scheme = Theme.of(context).colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
           duration: AppDurations.fast,
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
           decoration: BoxDecoration(
-            color: isSelected ? scheme.primary.withValues(alpha: 0.12) : null,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            border: isSelected
-                ? Border.all(color: scheme.primary.withValues(alpha: 0.5))
-                : null,
+            color: isSelected ? colors.primaryContainer : null,
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -372,19 +361,15 @@ class _ViewModeSelector extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: isSelected ? scheme.primary : scheme.onSurfaceVariant,
+                color: isSelected ? colors.onPrimaryContainer : colors.onSurfaceVariant,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.xs),
               Text(
                 label,
-                style: isSelected
-                    ? AppTypography.label.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onSurface,
-                      )
-                    : AppTypography.label.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                style: AppTypography.labelMedium.copyWith(
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? colors.onPrimaryContainer : colors.onSurfaceVariant,
+                ),
               ),
             ],
           ),

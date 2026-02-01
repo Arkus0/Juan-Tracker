@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/providers/database_provider.dart';
-
 import '../../training/database/database.dart';
 import '../models/food_model.dart';
 
@@ -83,52 +85,99 @@ class ScoredFood {
 /// Características:
 /// - Búsqueda FTS5 nativa de SQLite
 /// - Ranking inteligente con múltiples señales
-/// 
-/// Nota: Para búsquedas externas (Open Food Facts), usar FoodSearchRepository
+/// - Búsqueda híbrida: local + Open Food Facts
 class AlimentoRepository {
   final AppDatabase _db;
+  final Dio _dio;
+  CancelToken? _cancelToken;
+  
+  // Rate limiting para OFF API
+  final List<DateTime> _requestTimestamps = [];
+  static const int _maxRequestsPerMinute = 10;
+  static const _uuid = Uuid();
 
-  AlimentoRepository(this._db);
+  AlimentoRepository(this._db) : _dio = Dio(BaseOptions(
+    baseUrl: 'https://world.openfoodfacts.org',
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+    headers: {
+      'User-Agent': 'JuanTracker/1.0 (Flutter; Android; es-ES)',
+      'Accept': 'application/json',
+    },
+  ));
 
   // ============================================================================
   // BÚSQUEDA PRINCIPAL
   // ============================================================================
 
-  /// Búsqueda inteligente: local primero, API después
+  /// Búsqueda LOCAL instantánea (FTS5)
   /// 
-  /// Estrategia:
-  /// 1. Busca localmente con FTS5 (instantáneo)
-  /// 2. Aplica filtros adicionales
-  /// 3. Si hay pocos resultados (<10), busca en API
-  /// 4. Guarda resultados remotos en caché local
-  /// 5. Aplica ranking personalizado combinando múltiples señales
+  /// Solo busca en la base de datos local. Para buscar en internet,
+  /// usar `searchOnline()` por separado (decisión del usuario).
+  /// 
+  /// Esto garantiza respuestas instantáneas sin esperar a la red.
   Future<List<ScoredFood>> search(
     String query, {
     SearchFilters? filters,
     int limit = 50,
-    bool includeRemote = true,
   }) async {
     if (query.trim().isEmpty) return [];
     
     final normalizedQuery = query.toLowerCase().trim();
     
-    // 1. Búsqueda FTS local (instantánea)
+    // 1. Búsqueda FTS local (instantánea, ~1-5ms)
     var localResults = await _db.searchFoodsFTS(normalizedQuery, limit: limit);
+    debugPrint('[AlimentoRepository] Local FTS results: ${localResults.length}');
     
     // 2. Aplicar filtros adicionales
     if (filters != null) {
       localResults = _applyFilters(localResults, filters);
     }
     
-    // Convertir a ScoredFood con score base
-    var scoredResults = localResults.map((f) => ScoredFood(
+    // 3. Convertir a ScoredFood con score base
+    final scoredResults = localResults.map((f) => ScoredFood(
       food: f,
       score: _calculateBaseScore(f, normalizedQuery),
       isFromCache: true,
     )).toList();
     
-    // 3. Aplicar ranking final
+    // 4. Aplicar ranking final
     return _applyRanking(scoredResults, normalizedQuery).take(limit).toList();
+  }
+
+  /// Búsqueda ONLINE en Open Food Facts
+  /// 
+  /// Llamar solo cuando el usuario explícitamente quiere buscar en internet.
+  /// Guarda los resultados en caché local para futuras búsquedas.
+  Future<List<ScoredFood>> searchOnline(
+    String query, {
+    int limit = 30,
+    CancelToken? cancelToken,
+  }) async {
+    if (query.trim().isEmpty) return [];
+    
+    final normalizedQuery = query.toLowerCase().trim();
+    final token = cancelToken ?? CancelToken();
+    
+    debugPrint('[AlimentoRepository] Searching OFF for: "$normalizedQuery"');
+    
+    try {
+      final remoteResults = await _searchOpenFoodFacts(
+        normalizedQuery, 
+        limit: limit, 
+        cancelToken: token,
+      );
+      
+      debugPrint('[AlimentoRepository] OFF results: ${remoteResults.length}');
+      return _applyRanking(remoteResults, normalizedQuery).take(limit).toList();
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        debugPrint('[AlimentoRepository] OFF search cancelled');
+        return [];
+      }
+      debugPrint('[AlimentoRepository] OFF search failed: $e');
+      rethrow;
+    }
   }
 
   /// Búsqueda rápida offline (solo local)
@@ -136,15 +185,13 @@ class AlimentoRepository {
     return _db.searchFoodsOffline(query, limit: limit);
   }
 
-  /// Búsqueda por código de barras (solo local)
-  /// 
-  /// Nota: Para búsqueda externa por barcode, usar FoodSearchRepository
+  /// Búsqueda por código de barras (local + OFF)
   Future<Food?> searchByBarcode(String barcode) async {
     if (barcode.trim().isEmpty) return null;
     
     final cleanBarcode = barcode.trim();
     
-    // Buscar localmente
+    // 1. Buscar localmente primero
     final local = await (_db.select(_db.foods)
       ..where((f) => f.barcode.equals(cleanBarcode)))
       .getSingleOrNull();
@@ -152,6 +199,18 @@ class AlimentoRepository {
     if (local != null) {
       await _db.recordFoodUsage(local.id);
       return local;
+    }
+    
+    // 2. Si no está local, buscar en OFF
+    try {
+      debugPrint('[AlimentoRepository] Barcode not local, searching OFF: $cleanBarcode');
+      final remote = await _searchBarcodeInOFF(cleanBarcode);
+      if (remote != null) {
+        await _db.recordFoodUsage(remote.id);
+        return remote;
+      }
+    } catch (e) {
+      debugPrint('[AlimentoRepository] OFF barcode search failed: $e');
     }
     
     return null;
@@ -360,15 +419,182 @@ class AlimentoRepository {
     return foods;
   }
 
+  // ============================================================================
+  // OPEN FOOD FACTS API
+  // ============================================================================
+
+  /// Busca productos en Open Food Facts
+  Future<List<ScoredFood>> _searchOpenFoodFacts(String query, {int limit = 20, CancelToken? cancelToken}) async {
+    await _waitForRateLimit();
+    
+    _recordRequest();
+    
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/cgi/search.pl',
+      queryParameters: {
+        'search_terms': query,
+        'search_simple': '1',
+        'json': '1',
+        'page': '1',
+        'page_size': limit.toString(),
+        'fields': 'code,product_name,brands,image_url,nutriments,'
+                  'nutriscore_grade,nova_group',
+        'countries_tags': 'en:spain',
+        'lc': 'es',
+        'sort_by': 'unique_scans_n',
+      },
+      cancelToken: cancelToken,
+    );
+    
+    if (response.data == null) return [];
+    
+    final products = response.data!['products'] as List<dynamic>? ?? [];
+    final results = <ScoredFood>[];
+    
+    for (final p in products) {
+      if (p is! Map<String, dynamic>) continue;
+      
+      final food = await _parseAndSaveProduct(p);
+      if (food != null) {
+        results.add(ScoredFood(
+          food: food,
+          score: _calculateBaseScore(food, query),
+          isFromRemote: true,
+        ));
+      }
+    }
+    
+    return results;
+  }
+
+  /// Busca un producto por código de barras en OFF
+  Future<Food?> _searchBarcodeInOFF(String barcode) async {
+    await _waitForRateLimit();
+    _recordRequest();
+    
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v2/product/$barcode',
+      queryParameters: {
+        'fields': 'code,product_name,brands,image_url,nutriments,'
+                  'nutriscore_grade,nova_group',
+      },
+    );
+    
+    if (response.statusCode == 404 || response.data == null) return null;
+    
+    final status = response.data!['status'] as int? ?? 0;
+    if (status == 0) return null;
+    
+    final product = response.data!['product'] as Map<String, dynamic>?;
+    if (product == null) return null;
+    
+    return _parseAndSaveProduct(product);
+  }
+
+  /// Parsea un producto de OFF y lo guarda en la DB local
+  Future<Food?> _parseAndSaveProduct(Map<String, dynamic> product) async {
+    final name = product['product_name'] as String? ?? 
+                 product['generic_name'] as String? ?? '';
+    if (name.isEmpty) return null;
+    
+    final code = product['code']?.toString() ?? '';
+    final nutriments = product['nutriments'] as Map<String, dynamic>? ?? {};
+    
+    // Extraer kcal
+    double kcal = 0;
+    var kcalValue = nutriments['energy-kcal_100g'] ?? nutriments['energy_100g'];
+    if (kcalValue != null) {
+      kcal = (kcalValue is num) ? kcalValue.toDouble() : 0;
+      if (kcal > 500 && nutriments['energy-kcal_100g'] == null) {
+        kcal = kcal / 4.184; // Convertir kJ a kcal
+      }
+    }
+    
+    if (kcal <= 0) return null; // Sin datos nutricionales válidos
+    
+    var brand = product['brands'] as String?;
+    if (brand != null && brand.contains(',')) {
+      brand = brand.split(',').first.trim();
+    }
+    
+    // Verificar si ya existe en DB
+    Food? existing;
+    if (code.isNotEmpty) {
+      existing = await (_db.select(_db.foods)
+        ..where((f) => f.barcode.equals(code)))
+        .getSingleOrNull();
+    }
+    
+    final foodId = existing?.id ?? _uuid.v4();
+    
+    final companion = FoodsCompanion(
+      id: Value(foodId),
+      name: Value(name.trim()),
+      normalizedName: Value(name.toLowerCase().trim()),
+      brand: Value(brand),
+      barcode: Value(code.isNotEmpty ? code : null),
+      kcalPer100g: Value(kcal.round()),
+      proteinPer100g: Value(_parseDouble(nutriments['proteins_100g'])),
+      carbsPer100g: Value(_parseDouble(nutriments['carbohydrates_100g'])),
+      fatPer100g: Value(_parseDouble(nutriments['fat_100g'])),
+      userCreated: const Value(false),
+      verifiedSource: const Value('openfoodfacts'),
+      nutriScore: Value(product['nutriscore_grade'] as String?),
+      novaGroup: Value(product['nova_group'] != null 
+          ? int.tryParse(product['nova_group'].toString()) 
+          : null),
+      createdAt: Value(existing?.createdAt ?? DateTime.now()),
+      updatedAt: Value(DateTime.now()),
+    );
+    
+    await _db.into(_db.foods).insertOnConflictUpdate(companion);
+    
+    // Actualizar índice FTS
+    await _db.insertFoodFts(foodId, name.trim(), brand);
+    
+    // Retornar el alimento guardado
+    return (_db.select(_db.foods)
+      ..where((f) => f.id.equals(foodId)))
+      .getSingle();
+  }
+
+  double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  void _recordRequest() {
+    _requestTimestamps.add(DateTime.now());
+  }
+
+  Future<void> _waitForRateLimit() async {
+    final now = DateTime.now();
+    _requestTimestamps.removeWhere((ts) => now.difference(ts).inMinutes >= 1);
+    
+    if (_requestTimestamps.length >= _maxRequestsPerMinute) {
+      final oldest = _requestTimestamps.first;
+      final waitTime = const Duration(minutes: 1) - now.difference(oldest);
+      if (waitTime > Duration.zero) {
+        await Future.delayed(waitTime);
+      }
+      return _waitForRateLimit();
+    }
+  }
+
+  /// Cancela requests pendientes
+  void cancelPendingRequests() {
+    _cancelToken?.cancel();
+    _cancelToken = null;
+  }
 }
 
 // ============================================================================
 // PROVIDERS
 // ============================================================================
 
-/// Provider del AlimentoRepository (solo búsqueda local)
-/// 
-/// Nota: Para búsquedas externas (Open Food Facts), usar foodSearchRepositoryProvider
+/// Provider del AlimentoRepository (búsqueda híbrida local + OFF)
 final alimentoRepositoryProvider = Provider<AlimentoRepository>((ref) {
   return AlimentoRepository(ref.watch(appDatabaseProvider));
 });

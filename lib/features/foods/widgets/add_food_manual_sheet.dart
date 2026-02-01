@@ -223,24 +223,27 @@ class _AddFoodManualSheetState extends ConsumerState<AddFoodManualSheet> {
                       const SizedBox(height: 16),
                       
                       // Porción por defecto
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                              'Porción por defecto',
-                              style: theme.textTheme.bodyLarge,
-                            ),
+                          Text(
+                            'Porción por defecto',
+                            style: theme.textTheme.bodyLarge,
                           ),
-                          SegmentedButton<double>(
-                            segments: const [
-                              ButtonSegment(value: 100, label: Text('100g')),
-                              ButtonSegment(value: 50, label: Text('50g')),
-                              ButtonSegment(value: 30, label: Text('30g')),
-                            ],
-                            selected: {_defaultPortion},
-                            onSelectionChanged: (value) {
-                              setState(() => _defaultPortion = value.first);
-                            },
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: SegmentedButton<double>(
+                              segments: const [
+                                ButtonSegment(value: 100, label: Text('100g')),
+                                ButtonSegment(value: 50, label: Text('50g')),
+                                ButtonSegment(value: 30, label: Text('30g')),
+                              ],
+                              selected: {_defaultPortion},
+                              onSelectionChanged: (value) {
+                                setState(() => _defaultPortion = value.first);
+                              },
+                            ),
                           ),
                         ],
                       ),

@@ -198,6 +198,9 @@ abstract class AppCurves {
 
 /// Tipografía estandarizada
 abstract class AppTypography {
+  /// Font family para casos donde se necesita crear estilos dinámicos
+  static const String fontFamily = 'Montserrat';
+  
   static TextTheme get textTheme => GoogleFonts.montserratTextTheme();
 
   // Display

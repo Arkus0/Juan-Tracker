@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/widgets/home_button.dart';
 import '../../../diet/providers/coach_providers.dart';
 import '../../../diet/providers/diet_providers.dart';
-import '../../../diet/providers/summary_providers.dart' show weeklyCalorieTrendProvider, DayTrendData;
+import '../../../diet/providers/weekly_insights_provider.dart';
 import '../../../diet/services/day_summary_calculator.dart';
 
 /// Pantalla de resumen tipo "budget" con progreso detallado.
@@ -84,6 +85,15 @@ class _SummaryContent extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const _WeeklyTrendChart(),
+          const SizedBox(height: 24),
+
+          // Weekly Insights: adherencia y comparación
+          Text(
+            'RESUMEN SEMANAL',
+            style: _sectionStyle(context),
+          ),
+          const SizedBox(height: 12),
+          const _WeeklyInsightsCard(),
           const SizedBox(height: 24),
 
           // Si no hay targets ni coach, mostrar CTA
@@ -1048,6 +1058,325 @@ class _LegendItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 10,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// WEEKLY INSIGHTS CARD
+// ============================================================================
+
+/// Card con insights de la semana actual y comparación con anterior
+class _WeeklyInsightsCard extends ConsumerWidget {
+  const _WeeklyInsightsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final insightsAsync = ref.watch(weeklyInsightsProvider);
+    final colors = Theme.of(context).colorScheme;
+
+    return insightsAsync.when(
+      data: (insights) {
+        if (insights.isEmpty) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Text(
+                'Sin datos suficientes para análisis semanal',
+                style: TextStyle(color: colors.onSurfaceVariant),
+              ),
+            ),
+          );
+        }
+
+        final current = insights.first;
+        final previous = insights.length > 1 ? insights[1] : null;
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header con semana actual
+                Row(
+                  children: [
+                    Icon(Icons.insights, color: colors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        current.isCurrentWeek ? 'Esta semana' : current.weekLabel,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    _AdherenceBadge(insight: current),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Métricas principales
+                Row(
+                  children: [
+                    Expanded(
+                      child: _InsightMetric(
+                        icon: Icons.restaurant,
+                        label: 'Días registrados',
+                        value: '${current.daysLogged}/7',
+                        color: colors.primary,
+                      ),
+                    ),
+                    Expanded(
+                      child: _InsightMetric(
+                        icon: Icons.local_fire_department,
+                        label: 'Prom. diario',
+                        value: '${current.avgKcalPerDay} kcal',
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+
+                // Comparación con semana anterior
+                if (previous != null && previous.daysLogged > 0 && current.kcalChangeVsLastWeek != null) ...[
+                  const Divider(height: 24),
+                  _WeekComparison(
+                    change: current.kcalChangeVsLastWeek!,
+                    previousAvg: previous.avgKcalPerDay,
+                  ),
+                ],
+
+                // Macros promedio
+                if (current.daysLogged > 0) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _MacrosSummaryRow(
+                    protein: current.avgProtein,
+                    carbs: current.avgCarbs,
+                    fat: current.avgFat,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const Card(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (e, _) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Text('Error: $e'),
+        ),
+      ),
+    );
+  }
+}
+
+/// Badge de adherencia
+class _AdherenceBadge extends StatelessWidget {
+  final WeeklyInsight insight;
+
+  const _AdherenceBadge({required this.insight});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _getColors(insight.adherenceColorIndex);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: colors.$1.withAlpha((0.15 * 255).round()),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Text(
+        insight.adherenceMessage,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: colors.$1,
+        ),
+      ),
+    );
+  }
+
+  (Color, Color) _getColors(int index) {
+    return switch (index) {
+      0 => (Colors.green, Colors.green.shade100),
+      1 => (Colors.blue, Colors.blue.shade100),
+      2 => (Colors.orange, Colors.orange.shade100),
+      _ => (Colors.red, Colors.red.shade100),
+    };
+  }
+}
+
+/// Métrica individual del insight
+class _InsightMetric extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _InsightMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.montserrat(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: colors.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Comparación con semana anterior
+class _WeekComparison extends StatelessWidget {
+  final int change;
+  final int previousAvg;
+
+  const _WeekComparison({
+    required this.change,
+    required this.previousAvg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final isPositive = change > 0;
+    final changeColor = isPositive ? Colors.orange : Colors.green;
+    final changeIcon = isPositive ? Icons.arrow_upward : Icons.arrow_downward;
+
+    return Row(
+      children: [
+        Icon(
+          changeIcon,
+          size: 16,
+          color: changeColor,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${change.abs()} kcal/día vs semana anterior',
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          'Antes: $previousAvg',
+          style: TextStyle(
+            fontSize: 11,
+            color: colors.onSurfaceVariant.withAlpha((0.7 * 255).round()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Fila de resumen de macros
+class _MacrosSummaryRow extends StatelessWidget {
+  final double protein;
+  final double carbs;
+  final double fat;
+
+  const _MacrosSummaryRow({
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _MacroItem(label: 'Prot', value: protein, unit: 'g', color: Colors.blue),
+          _MacroItem(label: 'Carbs', value: carbs, unit: 'g', color: Colors.orange),
+          _MacroItem(label: 'Grasa', value: fat, unit: 'g', color: Colors.purple),
+        ],
+      ),
+    );
+  }
+}
+
+/// Item de macro individual
+class _MacroItem extends StatelessWidget {
+  final String label;
+  final double value;
+  final String unit;
+  final Color color;
+
+  const _MacroItem({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          '${value.toStringAsFixed(0)}$unit',
+          style: GoogleFonts.montserrat(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-
+import '../../../../core/providers/database_provider.dart';
+import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../diet/models/models.dart';
 import '../../../../diet/providers/food_search_provider.dart';
 import '../../../../diet/repositories/alimento_repository.dart';
 import '../../../../training/database/database.dart';
@@ -87,9 +87,6 @@ class FoodSearchUnifiedScreen extends ConsumerStatefulWidget {
 class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScreen> {
   late final TextEditingController _searchController;
   late final FocusNode _searchFocusNode;
-  Timer? _debounceTimer;
-  
-  static const _debounceDuration = Duration(milliseconds: 400);
   
   // Speech to text
   final SpeechToText _speech = SpeechToText();
@@ -117,7 +114,6 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     _textRecognizer.close();
@@ -414,106 +410,42 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
   // BÚSQUEDA POR TEXTO
   // ============================================================================
 
-  /// Buscar en Open Food Facts cuando la búsqueda local no encuentra resultados
+  /// Buscar en Open Food Facts (acción explícita del usuario)
+  /// 
+  /// Usa el nuevo método searchOnline() del provider que añade los resultados
+  /// de OFF a la lista actual sin bloquear la UI.
   Future<void> _searchOnline(String query) async {
     if (query.trim().isEmpty) return;
 
-    // Mostrar loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      debugPrint('[SearchOnline] Buscando en OFF: $query');
-      final results = await ref.read(onlineTextSearchProvider(query).future);
-
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Cerrar loading
-
-      if (results.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No se encontró "$query" en Open Food Facts'),
-            action: SnackBarAction(
-              label: 'Añadir manual',
-              onPressed: () => _showManualAddSheet(prefillData: _OcrExtractedData(name: query)),
-            ),
-          ),
-        );
-        return;
-      }
-
-      // Mostrar resultados en un bottom sheet
-      if (!mounted) return;
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (ctx) => DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) => Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Resultados de Open Food Facts (${results.length})',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  itemCount: results.length,
-                  itemBuilder: (context, index) {
-                    final food = results[index];
-                    return FoodListItem(
-                      food: food,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        _selectFood(food);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Cerrar loading
-      _showError('Error al buscar en Open Food Facts: $e');
+    debugPrint('[SearchOnline] Buscando en OFF: $query');
+    
+    // Llamar al provider - esto añade los resultados a la lista actual
+    await ref.read(foodSearchProvider.notifier).searchOnline();
+    
+    // Mostrar feedback
+    if (!mounted) return;
+    final state = ref.read(foodSearchProvider);
+    if (state.results.any((r) => r.isFromRemote)) {
+      AppSnackbar.show(context, message: 'Resultados de internet añadidos');
+    } else if (state.status == SearchStatus.error) {
+      AppSnackbar.showError(context, message: state.errorMessage ?? 'Error de conexión');
     }
   }
 
   void _onSearchChanged(String value) {
-    _debounceTimer?.cancel();
+    final trimmed = value.trim();
     
-    if (value.trim().isEmpty) {
+    if (trimmed.isEmpty) {
       ref.read(foodInputModeProvider.notifier).setMode(FoodInputMode.recent);
       ref.read(searchQueryProvider.notifier).setQuery('');
+      ref.read(foodSearchProvider.notifier).search(''); // Resetea el provider
       return;
     }
     
     ref.read(foodInputModeProvider.notifier).setMode(FoodInputMode.search);
-    
-    _debounceTimer = Timer(_debounceDuration, () {
-      ref.read(searchQueryProvider.notifier).setQuery(value.trim());
-    });
+    ref.read(searchQueryProvider.notifier).setQuery(trimmed);
+    // El provider ya tiene debounce interno de 300ms
+    ref.read(foodSearchProvider.notifier).search(trimmed);
   }
 
   // ============================================================================
@@ -521,7 +453,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
   // ============================================================================
   
   Future<void> _selectFood(Food food) async {
-    final result = await showDialog<DiaryEntry>(
+    final result = await showDialog<DiaryEntryModel>(
       context: context,
       builder: (ctx) => AddEntryDialog(
         food: food.toModel(),
@@ -529,7 +461,16 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     );
 
     if (result != null && mounted) {
-      Navigator.of(context).pop(result);
+      try {
+        await ref.read(diaryRepositoryProvider).insert(result);
+        if (!mounted) return;
+        AppSnackbar.show(context, message: '${food.name} añadido al diario');
+        Navigator.of(context).pop();
+      } catch (e) {
+        if (mounted) {
+          AppSnackbar.showError(context, message: 'Error al guardar: $e');
+        }
+      }
     }
   }
 
@@ -786,8 +727,11 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
               onBarcodeScan: _scanBarcode,
             );
           }
-          // Convertir ScoredFood a Food
-          return _buildFoodList(scoredFoods.map((s) => s.food).toList());
+          // Convertir ScoredFood a Food - pasar searchQuery para botón online
+          return _buildFoodList(
+            scoredFoods.map((s) => s.food).toList(),
+            searchQuery: searchQuery,
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => const Center(child: Text('Error al buscar')),
@@ -802,11 +746,46 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     return const SizedBox.shrink();
   }
 
-  Widget _buildFoodList(List<Food> foods) {
+  Widget _buildFoodList(List<Food> foods, {String? searchQuery}) {
+    final hasQuery = searchQuery != null && searchQuery.isNotEmpty;
+    final searchState = ref.watch(foodSearchProvider);
+    final isSearchingOnline = searchState.isLoading && searchState.results.isNotEmpty;
+    
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: foods.length,
+      // +1 para el botón de buscar online
+      itemCount: hasQuery ? foods.length + 1 : foods.length,
       itemBuilder: (context, index) {
+        // Último item: botón de buscar online
+        if (hasQuery && index == foods.length) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: isSearchingOnline
+              ? const Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Buscando en internet...'),
+                    ],
+                  ),
+                )
+              : OutlinedButton.icon(
+                  onPressed: () => _searchOnline(searchQuery),
+                  icon: const Icon(Icons.cloud_download_outlined),
+                  label: const Text('Buscar en internet'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+          );
+        }
+        
         final food = foods[index];
         return FoodListItem(
           food: food,

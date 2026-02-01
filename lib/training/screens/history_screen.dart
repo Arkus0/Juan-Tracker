@@ -3,16 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/design_system/design_system.dart';
+import '../../../core/widgets/widgets.dart';
 import '../models/external_session.dart';
 import '../models/rutina.dart';
 import '../models/sesion.dart';
 import '../providers/training_provider.dart';
-import '../utils/design_system.dart';
-import '../widgets/common/app_widgets.dart';
 import '../widgets/external_session_sheet.dart';
 import 'session_detail_screen.dart';
 
@@ -85,13 +84,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               }
             },
             itemBuilder: (ctx) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export_all',
                 child: Row(
                   children: [
-                    Icon(Icons.file_download, size: 20),
-                    SizedBox(width: 8),
-                    Text('Exportar Todo'),
+                    const Icon(Icons.file_download, size: 20),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text('Exportar todo', style: AppTypography.bodyMedium),
                   ],
                 ),
               ),
@@ -106,19 +105,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         foregroundColor: Theme.of(context).colorScheme.primary,
         icon: const Icon(Icons.add),
         label: Text(
-          'SESIÓN EXTERNA',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+          'Sesión externa',
+          style: AppTypography.labelLarge.copyWith(
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
       body: sessionsAsync.when(
-        loading: () =>
-            const AppLoadingIndicator(message: 'Cargando historial...'),
-        error: (err, stack) => ErrorStateWidget(
-          message: err.toString(),
-          onRetry: () => ref.invalidate(sesionesHistoryPaginatedProvider(currentPage)),
+        loading: () => const Center(child: AppLoading(message: 'Cargando historial...')),
+        error: (err, stack) => Center(
+          child: AppError(
+            message: 'Error al cargar historial',
+            details: err.toString(),
+            onRetry: () => ref.invalidate(sesionesHistoryPaginatedProvider(currentPage)),
+          ),
         ),
         data: (sessions) {
           if (sessions.isEmpty) {
@@ -126,9 +126,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           }
 
           return rutinasAsync.when(
-            loading: () => const AppLoadingIndicator(),
-            error: (err, stack) =>
-                ErrorStateWidget(message: 'Error cargando rutinas: $err'),
+            loading: () => const Center(child: AppLoading()),
+            error: (err, stack) => Center(
+              child: AppError(
+                message: 'Error al cargar rutinas',
+                details: err.toString(),
+              ),
+            ),
             data: (rutinas) {
               final rutinasMap = {for (final r in rutinas) r.id: r};
 
@@ -236,82 +240,75 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   // 🎯 MED-006: Empty state educativo mejorado
   Widget _buildEmptyStateWithHint(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history_toggle_off, size: 80, color: Colors.grey[700]),
-            const SizedBox(height: 24),
+            Icon(Icons.history_toggle_off, size: 80, color: colors.onSurfaceVariant.withAlpha((0.5 * 255).round())),
+            const SizedBox(height: AppSpacing.xl),
             Text(
-              'TU HISTORIA EMPIEZA HOY',
-              style: GoogleFonts.montserrat(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-              ),
+              'Tu historia empieza hoy',
+              style: AppTypography.headlineSmall,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Text(
               'Aquí verás tu progreso a lo largo del tiempo: '
               'PRs, volumen total, y cómo vas mejorando en cada ejercicio.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                color: Colors.white54,
+              style: AppTypography.bodyMedium.copyWith(
+                color: colors.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxl),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.neonCyan.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: colors.primaryContainer,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 border: Border.all(
-                  color: AppColors.neonCyan.withValues(alpha: 0.3),
+                  color: colors.primary.withAlpha((0.3 * 255).round()),
                 ),
               ),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.lightbulb_outline,
-                        color: AppColors.neonCyan,
+                        color: colors.primary,
                         size: 20,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
                           '¿Entrenaste fuera de la app?',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.neonCyan,
+                          style: AppTypography.titleSmall.copyWith(
+                            color: colors.primary,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Puedes agregar sesiones externas usando voz, escáner, texto o entrada manual.',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12,
-                      color: Colors.white54,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () => _showExternalSessionSheet(context, ref),
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('AGREGAR SESIÓN EXTERNA'),
+                      label: const Text('Agregar sesión externa'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.neonCyan,
-                        side: const BorderSide(color: AppColors.neonCyan),
+                        foregroundColor: colors.primary,
                       ),
                     ),
                   ),
@@ -337,40 +334,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.neonCyan,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Sesión externa guardada (${session.exercises.length} ejercicios)',
-                  style: GoogleFonts.montserrat(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.bgElevated,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: AppColors.border),
-          ),
-          action: SnackBarAction(
-            label: 'DESHACER',
-            textColor: AppColors.neonCyan,
-            onPressed: () async {
-              await _undoSaveExternalSession(session, ref);
-            },
-          ),
-          duration: const Duration(seconds: 10),
-        ),
+      AppSnackbar.show(
+        context,
+        message: 'Sesión externa guardada (${session.exercises.length} ejercicios)',
+        actionLabel: 'DESHACER',
+        onAction: () async {
+          await _undoSaveExternalSession(session, ref);
+        },
       );
     }
   }
@@ -405,6 +375,8 @@ class _WeekSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    
     // Calcular estadísticas de la semana
     final totalVolume = sessions.fold(0.0, (sum, s) => sum + s.totalVolume);
     final totalSessions = sessions.length;
@@ -418,10 +390,9 @@ class _WeekSection extends ConsumerWidget {
             children: [
               Text(
                 weekLabel,
-                style: GoogleFonts.montserrat(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                style: AppTypography.labelMedium.copyWith(
+                  color: colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(width: 12),
@@ -449,22 +420,19 @@ class _WeekSection extends ConsumerWidget {
   }
 
   Future<void> _deleteSession(BuildContext context, WidgetRef ref, Sesion session) async {
+    final colors = Theme.of(context).colorScheme;
+    
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgElevated,
         title: Row(
           children: [
-            const Icon(Icons.delete_forever, color: AppColors.error),
-            const SizedBox(width: 12),
+            Icon(Icons.delete_forever, color: colors.error),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                '¿ELIMINAR SESIÓN?',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  fontSize: 18,
-                ),
+                '¿Eliminar sesión?',
+                style: AppTypography.headlineSmall,
               ),
             ),
           ],
@@ -475,40 +443,38 @@ class _WeekSection extends ConsumerWidget {
           children: [
             Text(
               'Esta acción no se puede deshacer.',
-              style: GoogleFonts.montserrat(color: Colors.white70),
+              style: AppTypography.bodyMedium.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.bgDeep,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.border),
+                color: colors.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: colors.outline.withAlpha((0.5 * 255).round())),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     session.dayName ?? 'Sesión',
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: AppTypography.titleSmall,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     DateFormat('EEEE, d MMMM yyyy', 'es_ES').format(session.fecha),
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white54,
-                      fontSize: 12,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     '${session.completedSetsCount} series • ${(session.totalVolume / 1000).toStringAsFixed(1)}t volumen',
-                    style: GoogleFonts.montserrat(
-                      color: AppColors.neonCyan,
-                      fontSize: 12,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: colors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -520,20 +486,19 @@ class _WeekSection extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
-              'CANCELAR',
-              style: GoogleFonts.montserrat(color: Colors.white54),
+              'Cancelar',
+              style: AppTypography.labelLarge.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
             ),
           ),
           ElevatedButton.icon(
             onPressed: () => Navigator.of(ctx).pop(true),
             icon: const Icon(Icons.delete, size: 18),
-            label: Text(
-              'ELIMINAR',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
-            ),
+            label: const Text('Eliminar'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
+              backgroundColor: colors.error,
+              foregroundColor: colors.onError,
             ),
           ),
         ],
@@ -547,28 +512,11 @@ class _WeekSection extends ConsumerWidget {
         
         if (context.mounted) {
           HapticFeedback.mediumImpact();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Sesión eliminada',
-                style: GoogleFonts.montserrat(),
-              ),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppSnackbar.show(context, message: 'Sesión eliminada');
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Error al eliminar: $e',
-                style: GoogleFonts.montserrat(),
-              ),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          AppSnackbar.showError(context, message: 'Error al eliminar: $e');
         }
       }
     }

@@ -1,274 +1,28 @@
+// ============================================================================
+// APP WIDGETS - Training Module
+// ============================================================================
+// Re-exports core widgets for convenience and provides Training-specific
+// widgets that follow the unified design system.
+//
+// MIGRATION: This file now re-exports core widgets instead of duplicating them
+// to ensure consistency across the app.
+// ============================================================================
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../utils/design_system.dart';
+import 'package:flutter/services.dart';
+import '../../../core/design_system/design_system.dart';
 
-/// Reusable empty state widget for consistent UX across screens
-class EmptyStateWidget extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String? actionLabel;
-  final VoidCallback? onAction;
+// Re-export all core widgets for convenience
+export '../../../core/widgets/widgets.dart';
 
-  const EmptyStateWidget({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    this.actionLabel,
-    this.onAction,
-  });
+// ============================================================================
+// Training-Specific Widgets (following unified design system)
+// ============================================================================
 
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 80, color: AppColors.textTertiary),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              // 🎯 REDISEÑO: Usar tipografía del sistema
-              style: AppTypography.sectionTitle.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: AppTypography.label,
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: onAction,
-                icon: const Icon(Icons.add),
-                label: Text(actionLabel!, style: AppTypography.button),
-                // 🎯 REDISEÑO: Botón usa colores del sistema
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Animated loading indicator with branding
-class AppLoadingIndicator extends StatelessWidget {
-  final String? message;
-
-  const AppLoadingIndicator({super.key, this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 48,
-            height: 48,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              // 🎯 REDISEÑO: Verde para loading
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.success),
-            ),
-          ),
-          if (message != null) ...[
-            const SizedBox(height: 16),
-            Text(message!, style: AppTypography.meta),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Shimmer loading placeholder for lists
-class ShimmerLoadingCard extends StatefulWidget {
-  const ShimmerLoadingCard({super.key});
-
-  @override
-  State<ShimmerLoadingCard> createState() => _ShimmerLoadingCardState();
-}
-
-class _ShimmerLoadingCardState extends State<ShimmerLoadingCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Card(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                begin: Alignment(_animation.value - 1, 0),
-                end: Alignment(_animation.value, 0),
-                colors: const [
-                  AppColors.bgElevated,
-                  AppColors.bgDeep,
-                  AppColors.bgElevated,
-                ],
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 20,
-                  width: 150,
-                  decoration: BoxDecoration(
-                    color: AppColors.bgElevated,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  height: 14,
-                  width: 100,
-                  decoration: BoxDecoration(
-                    color: AppColors.bgElevated,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// Reusable error state widget
-class ErrorStateWidget extends StatelessWidget {
-  final String message;
-  final VoidCallback? onRetry;
-
-  const ErrorStateWidget({super.key, required this.message, this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-            const SizedBox(height: 16),
-            Text(
-              'ERROR',
-              style: GoogleFonts.montserrat(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: AppColors.error,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                color: AppColors.textTertiary,
-              ),
-            ),
-            if (onRetry != null) ...[
-              const SizedBox(height: 24),
-              OutlinedButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh),
-                label: const Text('REINTENTAR'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                  side: const BorderSide(color: AppColors.error),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Confirmation dialog builder for destructive actions
-Future<bool> showConfirmDialog(
-  BuildContext context, {
-  required String title,
-  required String message,
-  String confirmLabel = 'CONFIRMAR',
-  String cancelLabel = 'CANCELAR',
-  bool isDestructive = false,
-}) async {
-  final result = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.bgElevated,
-      title: Text(
-        title,
-        style: GoogleFonts.montserrat(
-          color: Colors.white,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      content: Text(message, style: const TextStyle(color: Colors.white70)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: Text(
-            cancelLabel,
-            style: const TextStyle(color: Colors.white54),
-          ),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: Text(
-            confirmLabel,
-            style: TextStyle(
-              color: isDestructive ? Colors.red : Colors.redAccent,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-  return result ?? false;
-}
-
-/// Animated scale button for tactile feedback
+/// Scale button with tactile feedback
+/// 
+/// Provides animated scale feedback on press. Useful for interactive elements
+/// in the training context where tactile response is important.
 class ScaleButton extends StatefulWidget {
   final Widget child;
   final VoidCallback onPressed;
@@ -315,6 +69,7 @@ class _ScaleButtonState extends State<ScaleButton>
       onTapDown: (_) => _controller.forward(),
       onTapUp: (_) {
         _controller.reverse();
+        HapticFeedback.selectionClick();
         widget.onPressed();
       },
       onTapCancel: () => _controller.reverse(),
@@ -324,6 +79,378 @@ class _ScaleButtonState extends State<ScaleButton>
             Transform.scale(scale: _scaleAnimation.value, child: child),
         child: widget.child,
       ),
+    );
+  }
+}
+
+/// Training card with consistent styling
+/// 
+/// Wraps the core AppCard with Training-specific defaults while
+/// maintaining design system consistency.
+class TrainingCard extends StatelessWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  final EdgeInsetsGeometry padding;
+  final Color? backgroundColor;
+
+  const TrainingCard({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.padding = const EdgeInsets.all(AppSpacing.lg),
+    this.backgroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      color: backgroundColor ?? colors.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(color: colors.outline.withAlpha((0.5 * 255).round())),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Padding(
+          padding: padding,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Stat display for training metrics
+/// 
+/// Displays a metric with label, value, and optional unit.
+/// Follows the design system typography and spacing.
+class TrainingStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final String? unit;
+  final IconData? icon;
+  final Color? color;
+
+  const TrainingStat({
+    super.key,
+    required this.label,
+    required this.value,
+    this.unit,
+    this.icon,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final accentColor = color ?? colors.primary;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          Icon(icon, color: accentColor, size: 20),
+          const SizedBox(height: AppSpacing.xs),
+        ],
+        Text(
+          label.toUpperCase(),
+          style: AppTypography.labelSmall.copyWith(
+            color: accentColor,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              value,
+              style: AppTypography.dataMedium.copyWith(
+                color: colors.onSurface,
+              ),
+            ),
+            if (unit != null) ...[
+              const SizedBox(width: 2),
+              Text(
+                unit!,
+                style: AppTypography.bodySmall.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Action chip for training actions
+/// 
+/// Compact button for secondary actions in training context.
+class TrainingActionChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isActive;
+
+  const TrainingActionChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isActive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Material(
+      color: isActive ? colors.primaryContainer : colors.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isActive ? colors.onPrimaryContainer : colors.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                label,
+                style: AppTypography.labelMedium.copyWith(
+                  color: isActive ? colors.onPrimaryContainer : colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Section header for training screens
+/// 
+/// Consistent section header with optional action.
+class TrainingSectionHeader extends StatelessWidget {
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const TrainingSectionHeader({
+    super.key,
+    required this.title,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title.toUpperCase(),
+              style: AppTypography.labelMedium.copyWith(
+                color: colors.onSurfaceVariant,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          if (actionLabel != null && onAction != null)
+            TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                minimumSize: const Size(48, 36),
+              ),
+              child: Text(
+                actionLabel!,
+                style: AppTypography.labelMedium.copyWith(
+                  color: colors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Confirmation dialog for training actions
+/// 
+/// Unified dialog styling for the training module.
+Future<bool> showTrainingConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String confirmLabel = 'CONFIRMAR',
+  String cancelLabel = 'CANCELAR',
+  bool isDestructive = false,
+}) async {
+  final colors = Theme.of(context).colorScheme;
+  
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: colors.surface,
+      title: Text(
+        title,
+        style: AppTypography.headlineSmall.copyWith(
+          color: colors.onSurface,
+        ),
+      ),
+      content: Text(
+        message,
+        style: AppTypography.bodyMedium.copyWith(
+          color: colors.onSurfaceVariant,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(
+            cancelLabel,
+            style: AppTypography.labelLarge.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(
+            confirmLabel,
+            style: AppTypography.labelLarge.copyWith(
+              color: isDestructive ? colors.error : colors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}
+
+/// Info row for training data display
+/// 
+/// Label-value pair with consistent styling.
+class TrainingInfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData? icon;
+
+  const TrainingInfoRow({
+    super.key,
+    required this.label,
+    required this.value,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 16, color: colors.onSurfaceVariant),
+          const SizedBox(width: AppSpacing.sm),
+        ],
+        Text(
+          label,
+          style: AppTypography.bodyMedium.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: AppTypography.bodyMedium.copyWith(
+            color: colors.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Loading overlay for training operations
+/// 
+/// Full-screen or localized loading indicator.
+class TrainingLoadingOverlay extends StatelessWidget {
+  final String? message;
+  final bool isOverlay;
+
+  const TrainingLoadingOverlay({
+    super.key,
+    this.message,
+    this.isOverlay = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    final content = Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: colors.primary,
+            ),
+          ),
+          if (message != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              message!,
+              style: AppTypography.bodyMedium.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (!isOverlay) return content;
+
+    return Container(
+      color: colors.surface.withAlpha((0.8 * 255).round()),
+      child: content,
     );
   }
 }

@@ -708,7 +708,6 @@ class AppDatabase extends _$AppDatabase {
     if (query.trim().isEmpty) return [];
 
     // Normalizar query para FTS
-    // Escapar caracteres especiales de FTS5 y crear patrón de prefijo
     final sanitized = query.trim().toLowerCase()
       .replaceAll(RegExp(r'["\-*()]'), ' ')
       .replaceAll(RegExp(r'\s+'), ' ')
@@ -716,21 +715,16 @@ class AppDatabase extends _$AppDatabase {
 
     if (sanitized.isEmpty) return [];
 
-    // Formato FTS5: cada término con * para búsqueda por prefijo
-    // Ej: "lomo embuchado" -> "lomo"* "embuchado"*
     final terms = sanitized.split(' ').where((t) => t.isNotEmpty).toList();
     if (terms.isEmpty) return [];
 
-    // Construir query: término1* término2* ... (todos deben coincidir)
-    final ftsQuery = terms.map((t) => '$t*').join(' ');
+    // Para FTS5: usar OR entre términos para más flexibilidad
+    // Esto encuentra productos que contengan AL MENOS UN término
+    // Luego ordenamos por rank que favorece los que tienen más coincidencias
+    final ftsQuery = terms.map((t) => '$t*').join(' OR ');
     debugPrint('[searchFoodsFTS] Query: "$query" -> FTS query: "$ftsQuery"');
 
     try {
-      // First check FTS table count for debugging
-      final ftsCountResult = await customSelect('SELECT COUNT(*) as cnt FROM foods_fts').getSingle();
-      debugPrint('[searchFoodsFTS] FTS table has ${ftsCountResult.data['cnt']} rows');
-
-      // Usar SQL directo con JOIN por food_id
       final results = await customSelect(
         'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
         'f.kcal_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, '
@@ -747,7 +741,6 @@ class AppDatabase extends _$AppDatabase {
       debugPrint('[searchFoodsFTS] Found ${results.length} results');
       return results.map((row) => _mapRowToFood(row)).toList();
     } catch (e) {
-      // Si FTS falla, hacer fallback a LIKE
       debugPrint('[searchFoodsFTS] FTS search error: $e, falling back to LIKE');
       return _searchFoodsLike(query, limit: limit);
     }
@@ -756,24 +749,32 @@ class AppDatabase extends _$AppDatabase {
   /// Búsqueda fallback usando LIKE (cuando FTS falla)
   Future<List<Food>> _searchFoodsLike(String query, {int limit = 50}) async {
     final normalized = query.toLowerCase().trim();
-    debugPrint('[_searchFoodsLike] Fallback LIKE search for: $normalized');
+    final terms = normalized.split(' ').where((t) => t.isNotEmpty).toList();
+    
+    if (terms.isEmpty) return [];
+    
+    debugPrint('[_searchFoodsLike] Fallback LIKE search for: $normalized (${terms.length} terms)');
 
-    // Search in both normalizedName and name (LOWER) for robustness
-    final results = await (select(foods)
-      ..where((f) =>
-        f.normalizedName.like('%$normalized%') |
-        f.name.lower().like('%$normalized%') |
-        f.brand.lower().like('%$normalized%')
-      )
-      ..orderBy([
-        (f) => OrderingTerm.desc(f.useCount),
-        (f) => OrderingTerm.desc(f.lastUsedAt),
-      ])
-      ..limit(limit))
-      .get();
+    // Buscar productos donde CADA término aparezca en name O brand
+    // Esto es más flexible que buscar el string completo
+    String whereClause = terms.map((t) => 
+      "(LOWER(name) LIKE '%$t%' OR LOWER(COALESCE(brand, '')) LIKE '%$t%')"
+    ).join(' AND ');
+    
+    final results = await customSelect(
+      'SELECT id, name, normalized_name, brand, barcode, '
+      'kcal_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, '
+      'portion_name, portion_grams, user_created, verified_source, '
+      'source_metadata, use_count, last_used_at, nutri_score, nova_group, '
+      'is_favorite, created_at, updated_at FROM foods '
+      'WHERE $whereClause '
+      'ORDER BY use_count DESC, last_used_at DESC '
+      'LIMIT ?',
+      variables: [Variable(limit)],
+    ).get();
 
     debugPrint('[_searchFoodsLike] Found ${results.length} results');
-    return results;
+    return results.map((row) => _mapRowToFood(row)).toList();
   }
   
   /// Mapea una fila de query a Food

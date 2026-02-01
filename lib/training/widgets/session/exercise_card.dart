@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../../../core/widgets/app_snackbar.dart';
 
 import '../../models/ejercicio.dart';
 import '../../models/library_exercise.dart';
@@ -16,7 +17,8 @@ import '../../providers/training_provider.dart';
 import '../../screens/training_session_screen.dart';
 import '../../services/alternativas_service.dart';
 import '../../services/exercise_library_service.dart';
-import '../../utils/design_system.dart';
+import '../../../core/design_system/design_system.dart' show AppTypography;
+import '../../utils/design_system.dart' show AppColors;
 import '../../widgets/common/alternativas_dialog.dart';
 import 'advanced_options_modal.dart';
 import 'focused_set_row.dart';
@@ -74,51 +76,40 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     if (!context.mounted) return;
 
     final controller = TextEditingController(text: currentNote);
+    final colors = Theme.of(context).colorScheme;
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgElevated,
         title: Text(
           'NOTAS: ${exerciseName.toUpperCase()}',
-          style: AppTypography.sectionTitle,
+          style: AppTypography.titleMedium.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: TextField(
           controller: controller,
           maxLines: 5,
-          style: const TextStyle(color: AppColors.textPrimary),
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText:
                 'Escribe notas importantes para este ejercicio (ej. altura del asiento, agarre...)',
-            hintStyle: TextStyle(color: AppColors.textTertiary),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: AppColors.border),
-            ),
+            border: const OutlineInputBorder(),
             focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: AppColors.techCyan),
+              borderSide: BorderSide(color: colors.primary, width: 2),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'CANCELAR',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
+            child: const Text('CANCELAR'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () async {
               await repo.saveNote(exerciseName, controller.text);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text(
-              'GUARDAR',
-              style: TextStyle(
-                color: AppColors.techCyan,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: const Text('GUARDAR'),
           ),
         ],
       ),
@@ -150,7 +141,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
               children: [
                 Text(
                   exercise.nombre.toUpperCase(),
-                  style: AppTypography.sectionTitle,
+                  style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 16),
                 ListTile(
@@ -201,12 +192,9 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                         .getExerciseById(libId);
 
                     if (libraryExercise == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Error: No se encontró información del ejercicio en la biblioteca',
-                          ),
-                        ),
+                      AppSnackbar.showError(
+                        context,
+                        message: 'No se encontró información del ejercicio en la biblioteca',
                       );
                       return;
                     }
@@ -226,17 +214,9 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                           HapticFeedback.selectionClick();
                         } catch (_) {}
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Alternativa: ${alternativa.name} (edita la rutina para cambiar permanentemente)',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            backgroundColor: Colors.grey[800],
-                            behavior: SnackBarBehavior.floating,
-                          ),
+                        AppSnackbar.show(
+                          context,
+                          message: 'Alternativa: ${alternativa.name} (edita la rutina para cambiar)',
                         );
                       },
                     );
@@ -269,32 +249,35 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     String name,
     List<SerieLog>? logs,
   ) {
+    final colors = Theme.of(context).colorScheme;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgElevated,
-        title: Text('HISTORIAL: $name', style: AppTypography.sectionTitle),
+        title: Text(
+          'HISTORIAL: $name',
+          style: AppTypography.titleMedium.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: logs == null || logs.isEmpty
-            ? const Text(
-                'No hay datos previos.',
-                style: TextStyle(color: AppColors.textSecondary),
-              )
+            ? const Text('No hay datos previos.')
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'ÚLTIMA SESIÓN:',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.bold,
+                    style: AppTypography.labelLarge.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colors.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   ...logs.map(
                     (l) => Text(
                       '• ${l.peso}kg x ${l.reps}',
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: AppTypography.bodyMedium,
                     ),
                   ),
                 ],
@@ -302,10 +285,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'CERRAR',
-              style: TextStyle(color: AppColors.techCyan),
-            ),
+            child: const Text('CERRAR'),
           ),
         ],
       ),
@@ -345,18 +325,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
       if (improved) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                '¡HAS SUPERADO LA SESIÓN ANTERIOR! 🔥',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textOnAccent,
-                ),
-              ),
-              backgroundColor: AppColors.goldAccent, // Oro para PR
-              behavior: SnackBarBehavior.floating,
-            ),
+          AppSnackbar.show(
+            context,
+            message: '¡HAS SUPERADO LA SESIÓN ANTERIOR! 🔥',
+            duration: AppSnackbar.shortDuration,
           );
         }
       }
@@ -519,29 +491,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
       HapticFeedback.mediumImpact();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(
-                  Icons.repeat_rounded,
-                  color: AppColors.textOnAccent,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'REPITE: ${prevLog.peso}kg × ${prevLog.reps}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textOnAccent,
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.bloodRed,
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppSnackbar.show(
+          context,
+          message: 'REPITE: ${prevLog.peso}kg × ${prevLog.reps}',
+          duration: AppSnackbar.shortDuration,
         );
       }
     }
@@ -602,9 +555,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
               ),
             ],
           ),
-          backgroundColor: AppColors.techCyan,
           duration: const Duration(milliseconds: 1500),
-          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -623,38 +574,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     HapticFeedback.mediumImpact();
     if (mounted) {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.delete_outline,
-                color: AppColors.textOnAccent,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Serie ${setIndex + 1} eliminada (solo esta sesión)',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textOnAccent,
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.bloodRed,
-          duration: const Duration(milliseconds: 1500),
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'DESHACER',
-            textColor: Colors.white,
-            onPressed: () {
-              // Añadir serie de vuelta
-              notifier.addSetToExercise(widget.exerciseIndex);
-            },
-          ),
-        ),
+      AppSnackbar.showWithUndo(
+        context,
+        message: 'Serie ${setIndex + 1} eliminada (solo esta sesión)',
+        onUndo: () => notifier.addSetToExercise(widget.exerciseIndex),
       );
     }
   }
@@ -797,7 +720,7 @@ class ExerciseCard extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             exercise.nombre.toUpperCase(),
-                            style: AppTypography.sectionTitle.copyWith(
+                            style: AppTypography.titleMedium.copyWith(
                               fontSize: (isCollapsed ? 16 : 17) + densityValues.fontSizeOffset,
                               fontWeight: FontWeight.w700,
                               color: allSetsCompleted
@@ -981,9 +904,8 @@ class ExerciseCard extends ConsumerWidget {
             ),
             child: Text(
               'SUPERSET',
-              style: GoogleFonts.montserrat(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
+              style: AppTypography.labelSmall.copyWith(
+                fontWeight: FontWeight.w800,
                 color: Colors.white,
               ),
             ),
@@ -1194,8 +1116,7 @@ class _SeriesIndicator extends StatelessWidget {
         ),
         child: Text(
           '$completedSets/$totalSets',
-          style: GoogleFonts.montserrat(
-            fontSize: 11,
+          style: AppTypography.labelMedium.copyWith(
             fontWeight: FontWeight.w700,
             color: textColor,
           ),
@@ -1220,8 +1141,7 @@ class _SeriesIndicator extends StatelessWidget {
           // Texto principal
           Text(
             isLastSet ? '¡ÚLTIMA!' : 'Serie $currentSet',
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
+            style: AppTypography.labelMedium.copyWith(
               fontWeight: FontWeight.w800,
               color: textColor,
               letterSpacing: 0.5,
@@ -1231,20 +1151,18 @@ class _SeriesIndicator extends StatelessWidget {
           // Separador
           Text(
             '/',
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
+            style: AppTypography.labelMedium.copyWith(
               fontWeight: FontWeight.w500,
-              color: textColor.withValues(alpha: 0.6),
+              color: textColor.withAlpha((0.6 * 255).round()),
             ),
           ),
           const SizedBox(width: 4),
           // Total de series
           Text(
             '$totalSets',
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
+            style: AppTypography.labelMedium.copyWith(
               fontWeight: FontWeight.w600,
-              color: textColor.withValues(alpha: 0.8),
+              color: textColor.withAlpha((0.8 * 255).round()),
             ),
           ),
           const SizedBox(width: 6),
@@ -1291,7 +1209,7 @@ class _HistorySheetContent extends ConsumerWidget {
       error: (e, _) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('HISTORIAL', style: AppTypography.sectionTitle),
+          Text('HISTORIAL', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           Text(
             'Error al cargar: $e',
@@ -1304,7 +1222,7 @@ class _HistorySheetContent extends ConsumerWidget {
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('HISTORIAL', style: AppTypography.sectionTitle),
+              Text('HISTORIAL', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
               const Text(
                 'No hay datos previos.',
@@ -1320,7 +1238,7 @@ class _HistorySheetContent extends ConsumerWidget {
           children: [
             Text(
               exerciseName.toUpperCase(),
-              style: AppTypography.sectionTitle,
+              style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             const Text(

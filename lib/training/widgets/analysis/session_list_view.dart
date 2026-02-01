@@ -7,11 +7,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
+
+import '../../../core/widgets/widgets.dart';
 import '../../models/rutina.dart';
 import '../../models/sesion.dart';
 import '../../providers/training_provider.dart';
 import '../../screens/session_detail_screen.dart';
-import '../../widgets/common/app_widgets.dart';
 
 /// Session history list grouped by week - refactored from HistoryScreen
 class SessionListView extends ConsumerWidget {
@@ -24,20 +25,21 @@ class SessionListView extends ConsumerWidget {
 
     return sessionsAsync.when(
       loading: () => const SliverToBoxAdapter(
-        child: AppLoadingIndicator(message: 'Cargando historial...'),
+        child: AppLoading(message: 'Cargando historial...'),
       ),
       error: (err, stack) => SliverToBoxAdapter(
-        child: ErrorStateWidget(
-          message: err.toString(),
+        child: AppError(
+          message: 'Error al cargar historial',
+          details: err.toString(),
           onRetry: () => ref.invalidate(sesionesHistoryStreamProvider),
         ),
       ),
       data: (sessions) {
         if (sessions.isEmpty) {
           return const SliverToBoxAdapter(
-            child: EmptyStateWidget(
+            child: AppEmpty(
               icon: Icons.history_toggle_off,
-              title: 'SIN ENTRENAMIENTOS',
+              title: 'Sin entrenamientos',
               subtitle:
                   'Completa tu primer entrenamiento para ver el historial.',
             ),
@@ -45,9 +47,12 @@ class SessionListView extends ConsumerWidget {
         }
 
         return rutinasAsync.when(
-          loading: () => const SliverToBoxAdapter(child: AppLoadingIndicator()),
+          loading: () => const SliverToBoxAdapter(child: AppLoading()),
           error: (err, stack) => SliverToBoxAdapter(
-            child: ErrorStateWidget(message: 'Error: $err'),
+            child: AppError(
+              message: 'Error al cargar rutinas',
+              details: err.toString(),
+            ),
           ),
           data: (rutinas) {
             final rutinasMap = {for (final r in rutinas) r.id: r};

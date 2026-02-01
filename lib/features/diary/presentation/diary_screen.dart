@@ -9,6 +9,7 @@ import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
+import 'package:juan_tracker/diet/providers/quick_actions_provider.dart';
 import 'package:juan_tracker/diet/services/day_summary_calculator.dart';
 import 'package:juan_tracker/core/widgets/home_button.dart';
 import 'package:juan_tracker/features/diary/presentation/edit_entry_dialog.dart';
@@ -140,6 +141,15 @@ class DiaryScreen extends ConsumerWidget {
               ),
             ),
           ),
+
+          // Quick Actions: Repetir ayer + Recientes
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _QuickActionsCard(),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
 
           // Secciones de comidas - siempre visibles
           entriesAsync.when(
@@ -1141,5 +1151,208 @@ class _ToggleButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ============================================================================
+// QUICK ACTIONS CARD (Repetir ayer + Recientes)
+// ============================================================================
+
+/// Card con acciones rápidas: Repetir ayer + chips de alimentos recientes
+class _QuickActionsCard extends ConsumerWidget {
+  const _QuickActionsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final yesterdayAsync = ref.watch(yesterdayMealsProvider);
+    final recentsAsync = ref.watch(quickRecentFoodsProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Botón Repetir ayer
+        yesterdayAsync.when(
+          data: (yesterday) {
+            if (yesterday.isEmpty) return const SizedBox.shrink();
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _RepeatYesterdayButton(
+                entryCount: yesterday.entryCount,
+                totalKcal: yesterday.totalKcal,
+              ),
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
+        ),
+
+        // Chips de alimentos recientes
+        recentsAsync.when(
+          data: (recents) {
+            if (recents.isEmpty) return const SizedBox.shrink();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.history,
+                      size: 14,
+                      color: colors.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Recientes',
+                      style: AppTypography.labelSmall.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: recents.take(6).map((food) {
+                    return _RecentFoodChip(food: food);
+                  }).toList(),
+                ),
+              ],
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+}
+
+/// Botón para repetir todas las comidas de ayer
+class _RepeatYesterdayButton extends ConsumerWidget {
+  final int entryCount;
+  final int totalKcal;
+
+  const _RepeatYesterdayButton({
+    required this.entryCount,
+    required this.totalKcal,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colors.secondaryContainer.withAlpha((0.5 * 255).round()),
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: () => _repeatYesterday(context, ref),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.replay,
+                size: 18,
+                color: colors.onSecondaryContainer,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Repetir ayer',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: colors.onSecondaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '$entryCount items · $totalKcal kcal',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: colors.onSecondaryContainer.withAlpha((0.7 * 255).round()),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _repeatYesterday(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Repetir comidas de ayer'),
+        content: Text(
+          '¿Añadir $entryCount alimentos ($totalKcal kcal) al día actual?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Añadir'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final repeatFn = ref.read(repeatYesterdayProvider);
+      final count = await repeatFn();
+      
+      if (context.mounted) {
+        AppSnackbar.show(context, message: '$count alimentos añadidos');
+      }
+    }
+  }
+}
+
+/// Chip para un alimento reciente
+class _RecentFoodChip extends ConsumerWidget {
+  final QuickRecentFood food;
+
+  const _RecentFoodChip({required this.food});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+
+    return ActionChip(
+      avatar: Icon(
+        Icons.restaurant,
+        size: 14,
+        color: colors.onSurfaceVariant,
+      ),
+      label: Text(
+        food.name.length > 15 ? '${food.name.substring(0, 15)}...' : food.name,
+        style: AppTypography.labelSmall,
+      ),
+      onPressed: () => _addToToday(context, ref),
+      backgroundColor: colors.surfaceContainerHighest,
+      side: BorderSide.none,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
+  void _addToToday(BuildContext context, WidgetRef ref) {
+    // Navegar a búsqueda de alimentos con el término pre-llenado
+    // Para simplificar, vamos a la pantalla de búsqueda
+    context.pushTo(AppRouter.nutritionFoodSearch);
   }
 }

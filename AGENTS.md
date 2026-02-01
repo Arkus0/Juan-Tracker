@@ -8,7 +8,7 @@
 
 **Juan Tracker** es una aplicación Flutter multi-módulo para tracking personal que combina:
 
-1. **Nutrición/Dieta**: Diario de alimentos, gestión de peso, resumen calórico (TDEE)
+1. **Nutrición/Dieta**: Diario de alimentos, gestión de peso, resumen calórico (TDEE), coach adaptativo
 2. **Entrenamiento**: Sesiones de gym, rutinas, biblioteca de ejercicios, análisis de progreso
 
 La app está diseñada **Android-first** pero también soporta web. Usa arquitectura limpia con Riverpod 3 para state management y Drift para persistencia local SQLite.
@@ -18,14 +18,16 @@ La app está diseñada **Android-first** pero también soporta web. Usa arquitec
 - **Framework**: Flutter ^3.10.7
 - **State Management**: `flutter_riverpod` ^3.0.0 (Notifier/AsyncNotifier)
 - **Base de datos**: `drift` ^2.22.0 (SQLite con codegen)
-- **UI**: Material 3 + `google_fonts` (Montserrat/Oswald)
+- **UI**: Material 3 + `google_fonts` (Montserrat)
 - **Charts**: `fl_chart` ^1.1.1
 - **Calendario**: `table_calendar` ^3.2.0
 - **Notificaciones**: `flutter_local_notifications` ^20.0.0
-- **Audio**: `just_audio` ^0.9.34
+- **Audio**: Beeps nativos via ToneGenerator (no usa just_audio para timer)
 - **OCR**: `google_mlkit_text_recognition` ^0.15.0
 - **Voz**: `speech_to_text` ^7.0.0
-- **Navegación**: `go_router` ^14.8.1
+- **Navegación**: `go_router` ^14.6.3
+- **HTTP**: `dio` ^5.8.0 + `http` ^1.3.0
+- **Barcode**: `mobile_scanner` ^6.0.7
 
 ---
 
@@ -33,33 +35,46 @@ La app está diseñada **Android-first** pero también soporta web. Usa arquitec
 
 ```
 lib/
-├── main.dart                    # Entry point, inicializa locale 'es'
-├── app.dart                     # MaterialApp con tema personalizado
+├── main.dart                    # Entry point, inicializa locale 'es', SharedPreferences
+├── app.dart                     # MaterialApp.router con tema personalizado + DatabaseLoadingScreen
 ├── core/                        # Código compartido entre features
-│   ├── design_system/           # Tokens, colores, tipografía
-│   ├── router/                  # GoRouter configuration
-│   ├── providers/               # Providers globales (database, diary)
-│   └── widgets/                 # Widgets reutilizables
-├── features/                    # Features de NUTRICIÓN
-│   ├── diary/                   # Diario de alimentos
-│   ├── foods/                   # Gestión de alimentos
-│   ├── home/                    # Entry point dieta (EntryScreen)
-│   ├── targets/                 # Objetivos diarios
-│   ├── weight/                  # Tracking de peso
-│   └── today/                   # Pantalla HOY unificada
+│   ├── design_system/           # Tokens (AppColors, AppSpacing, AppRadius, AppTypography)
+│   ├── router/                  # GoRouter configuration (app_router.dart)
+│   ├── navigation/              # Router legacy (no usado actualmente)
+│   ├── providers/               # Providers globales (database, diary, training, etc.)
+│   ├── repositories/            # Interfaces + implementaciones de repositorios
+│   ├── services/                # Interfaces de servicios (timer, voice - stubs)
+│   ├── models/                  # Modelos compartidos (training_ejercicio, user_profile, etc.)
+│   ├── widgets/                 # Widgets reutilizables (AppCard, AppButton, etc.)
+│   ├── onboarding/              # SplashWrapper, OnboardingScreen
+│   ├── tdee/                    # Cálculos TDEE
+│   ├── feedback/                # Sistema de feedback
+│   ├── settings/                # Theme provider
+│   └── local_db/seeds/          # Seed data
+├── features/                    # Features de NUTRICIÓN (presentation layer)
+│   ├── diary/presentation/      # DiaryScreen
+│   ├── foods/                   # FoodSearchUnifiedScreen, providers de búsqueda
+│   ├── home/presentation/       # EntryScreen, HomeScreen, TodayScreen
+│   ├── settings/presentation/   # SettingsScreen (nutrición)
+│   ├── summary/presentation/    # SummaryScreen (resumen calórico)
+│   ├── training/presentation/   # HistoryScreen, TrainingLibraryScreen, etc.
+│   └── weight/presentation/     # WeightScreen
 ├── diet/                        # Capa de datos de nutrición
-│   ├── models/                  # Modelos de dominio puros
-│   ├── repositories/            # Interfaces + Implementaciones Drift
-│   ├── providers/               # Riverpod providers
-│   └── services/                # Servicios de cálculo puros
+│   ├── models/                  # Modelos de dominio (FoodModel, DiaryEntryModel, etc.)
+│   ├── repositories/            # AlimentoRepository, CoachRepository, etc.
+│   ├── providers/               # FoodSearchNotifier, weight_trend_providers, etc.
+│   ├── screens/coach/           # CoachScreen, PlanSetupScreen, WeeklyCheckInScreen
+│   ├── services/                # WeightTrendCalculator, AdaptiveCoachService, OCR
+│   └── presentation/providers/  # Providers alternativos de búsqueda
 └── training/                    # Feature de ENTRENAMIENTO
-    ├── database/                # Drift database + tablas
-    ├── models/                  # Modelos del dominio
-    ├── providers/               # Riverpod providers
+    ├── database/                # AppDatabase (Drift) - TODAS las tablas aquí
+    ├── models/                  # Modelos del dominio (Ejercicio, Serie, etc.)
+    ├── providers/               # Training providers
     ├── repositories/            # Repositorios especializados
-    ├── screens/                 # UI screens
-    ├── services/                # Servicios nativos (timer, voz, OCR)
-    └── widgets/                 # Widgets reutilizables
+    ├── screens/                 # UI screens (TrainingSessionScreen, AnalysisScreen, etc.)
+    ├── services/                # TimerAudioService, NativeBeepService, OCR, voz
+    ├── training_shell.dart      # Shell de navegación de entrenamiento
+    └── widgets/                 # Widgets reutilizables (ExerciseCard, RestTimerBar, etc.)
 ```
 
 ---
@@ -133,6 +148,106 @@ if (context.mounted) {
 
 ---
 
+## Design System Conventions (PR1-PR3 Alignment)
+
+> Resultado del esfuerzo de alineación visual entre secciones Diet y Training.
+
+### Principios
+
+1. **Theme First**: Siempre usar `Theme.of(context).colorScheme` primero
+2. **Tokens Second**: `AppTypography`, `AppSpacing`, `AppRadius` del core
+3. **NO hardcoded**: Evitar `Colors.grey[800]`, `Colors.white`, etc.
+4. **NO GoogleFonts directo**: Usar `AppTypography` en lugar de `GoogleFonts.montserrat()`
+
+### Jerarquía de Imports
+
+```dart
+// 1. Core design system (preferido)
+import '../../../core/design_system/design_system.dart' show AppTypography;
+
+// 2. Training-specific colors (cuando sea necesario)
+import '../../utils/design_system.dart' show AppColors;
+
+// ❌ NUNCA importar ambos sin 'show' (conflicto de nombres)
+// import '../../../core/design_system/design_system.dart';
+// import '../../utils/design_system.dart'; // ¡Conflicto! Ambos definen AppColors
+```
+
+### Patrones de UI Consistentes
+
+**Dialogs (Material 3):**
+```dart
+// ✅ Correcto - Usar Material 3 theme
+showDialog(
+  context: context,
+  builder: (ctx) => AlertDialog(
+    title: Text('Título', style: AppTypography.titleMedium),
+    content: Text('Contenido'),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(ctx), child: Text('CANCELAR')),
+      FilledButton(onPressed: () {}, child: Text('GUARDAR')),
+    ],
+  ),
+);
+
+// ❌ Incorrecto - Colores hardcodeados
+AlertDialog(
+  backgroundColor: AppColors.bgElevated, // No usar en nuevos dialogs
+  title: Text('Título', style: GoogleFonts.montserrat(...)), // Nunca
+)
+```
+
+**Snackbars:**
+```dart
+// ✅ Correcto - Usar AppSnackbar
+AppSnackbar.show(context, message: 'Guardado');
+AppSnackbar.showError(context, message: 'Error');
+AppSnackbar.showWithUndo(context, message: 'Eliminado', onUndo: () => restore());
+
+// ❌ Incorrecto - ScaffoldMessenger directo
+ScaffoldMessenger.of(context).showSnackBar(SnackBar(...))
+```
+
+**Cards:**
+```dart
+// ✅ Correcto - AppCard o Card con theme
+AppCard(child: ...)
+
+// o
+Card(
+  child: Padding(
+    padding: const EdgeInsets.all(AppSpacing.lg),
+    child: ...,
+  ),
+)
+```
+
+### Estado de Migración (Febrero 2026)
+
+| Área | Estado | Notas |
+|------|--------|-------|
+| `core/widgets/` | ✅ Completo | AppCard, AppButton, AppEmpty, AppLoading, AppError, AppSnackbar |
+| `core/design_system/` | ✅ Completo | AppTypography, AppColors, AppSpacing, AppRadius |
+| `training/widgets/session/exercise_card.dart` | ✅ Migrado | PR2 |
+| `training/widgets/session/rest_timer_bar.dart` | ✅ Migrado | PR2 |
+| `training/screens/history_screen.dart` | ✅ Migrado | PR1 |
+| Otros archivos Training | ⏳ Pendiente | ~100 archivos con deuda técnica |
+
+### Deuda Técnica Conocida
+
+Archivos con `GoogleFonts.montserrat()` directo (requieren migración gradual):
+- `training/utils/design_system.dart` - Tiene su propio `AppTypography` (legacy)
+- `training/widgets/smart_import_sheet*.dart`
+- `training/screens/settings_screen.dart`
+- `training/screens/session_detail_screen.dart`
+- `training/widgets/voice/*.dart`
+- `training/widgets/routine/*.dart`
+- ~50 archivos más
+
+**Estrategia:** En nuevos features usar el core design system. En archivos existentes, migrar solo cuando se modifiquen.
+
+---
+
 ## Features Implementadas (Enero 2026)
 
 ### 1. Smart Food Suggestions (HIGH-003) ✅
@@ -166,47 +281,125 @@ Búsqueda híbrida local + Open Food Facts con debounce y cancelación.
 - **Providers**: `FoodSearchNotifier`, `predictiveFoodsProvider`, `recentSearchesProvider`
 - **UI**: `FoodSearchBar` con autocompletado, `FoodSearchResults` con estados (loading, empty, offline, error)
 
+### 7. Goal Projection / ETA (Febrero 2026) ✅
+Proyección de peso hacia objetivo estilo Libra.
+- **ETA**: Fecha estimada para alcanzar peso objetivo
+- **Cálculo**: Basado en `hwTrend` (Holt-Winters) de WeightTrendResult
+- **Progress**: Barra de progreso + porcentaje
+- **On-Track**: Badge indicando si el ritmo actual lleva al objetivo
+- **Model**: `GoalProjection` con métodos de predicción
+- **Providers**: `goalProjectionProvider`, `goalEtaDaysProvider`, `isOnTrackProvider`
+- **UI**: `_GoalProjectionCard` en WeightScreen
+- **Docs**: `docs/feature_goal_projection.md`
+
+### 8. Goal Line in Weight Chart (Febrero 2026) ✅
+Línea horizontal punteada mostrando peso objetivo en gráfico.
+- **Visual**: Línea verde punteada (`dashArray: [8, 4]`) a la altura del objetivo
+- **Integración**: Usa `effectiveGoalWeightProvider` existente
+- **Y-Axis**: Bounds ajustados automáticamente para incluir goal
+- **UI**: Modificado `_WeightLineChart` en WeightScreen
+
+### 9. Quick Actions / Repeat Yesterday (Febrero 2026) ✅
+Acceso rápido para registro de alimentos frecuentes.
+- **Repeat Yesterday**: Botón para copiar todas las comidas del día anterior
+- **Repeat Meal**: Copiar comidas de una sola comida (desayuno, almuerzo, etc.)
+- **Recent Foods**: Chips con los 6 alimentos más recientes (últimos 7 días)
+- **Providers**: `yesterdayMealsProvider`, `repeatYesterdayProvider`, `repeatMealFromYesterdayProvider`, `quickRecentFoodsProvider`
+- **UI**: `_QuickActionsCard` en DiaryScreen con chips interactivos
+
+### 10. Weekly History Insights (Febrero 2026) ✅
+Resumen semanal con métricas de adherencia y tendencias.
+- **Adherence**: Porcentaje de días dentro del ±10% del objetivo calórico
+- **Averages**: Promedio de kcal, proteínas, carbohidratos, grasas
+- **Week Comparison**: Diferencia vs semana anterior (↑/↓ con color)
+- **Visual**: Badge de adherencia (Excelente >80%, Buena 60-80%, Mejorable <60%)
+- **Model**: `WeeklyInsight` con weekLabel, adherencePercentage, avgKcal, macros
+- **Providers**: `weeklyInsightsProvider` (últimas 4 semanas), `currentWeekInsightProvider`
+- **UI**: `_WeeklyInsightsCard` en SummaryScreen
+
 ---
 
 ## Database (Drift)
 
-### Schema v7
+### Schema v11 (Actual)
 
 **Training:**
-- `Routines`, `RoutineDays`, `RoutineExercises`
-- `Sessions`, `SessionExercises`, `WorkoutSets`
+- `Routines` - Rutinas con `schedulingMode` y `schedulingConfig` (v9)
+- `RoutineDays` - Días con `weekdays` y `minRestHours` (v9)
+- `RoutineExercises` - Ejercicios con progresión
+- `Sessions` - Sesiones con `isBadDay` flag (v4)
+- `SessionExercises` - Ejercicios de sesión
+- `WorkoutSets` - Series registradas
+- `ExerciseNotes` - Notas por ejercicio
+
+**User:**
+- `UserProfiles` - Perfil de usuario para TDEE (v6)
 
 **Diet:**
-- `Foods`, `DiaryEntries`, `WeighIns`, `Targets`, `Recipes`, `RecipeItems`
-- `FoodsFts` - Tabla FTS5 para búsqueda de texto (sincronización manual)
+- `Foods` - Alimentos con `isFavorite`, `useCount`, `lastUsedAt`, `nutriScore`, `novaGroup` (v7+)
+- `DiaryEntries` - Entradas del diario
+- `WeighIns` - Registros de peso
+- `Targets` - Objetivos calóricos versionados
+- `Recipes`, `RecipeItems` - Recetas compuestas
+
+**Search System (v7+):**
+- `FoodsFts` - Tabla FTS5 virtual (food_id UNINDEXED, name, brand)
 - `SearchHistory` - Historial de búsquedas
 - `ConsumptionPatterns` - Patrones de consumo para ML
 
 **Nota importante sobre FTS5:**
-Los triggers automáticos para sincronizar `foods` con `foods_fts` fueron eliminados porque FTS5 requiere `rowid` INTEGER pero usamos UUIDs TEXT. La sincronización debe hacerse manualmente mediante los métodos `insertFoodFts()`, `updateFoodFts()`, `deleteFoodFts()` en `AppDatabase`.
+La tabla `foods_fts` usa una estructura personalizada con `food_id` como columna UNINDEXED (no rowid). 
+La sincronización es manual mediante `insertFoodFts()`, `rebuildFtsIndex()` en `AppDatabase`.
 
 ### Providers Clave
 
 ```dart
-// Core
-appDatabaseProvider
-diaryRepositoryProvider
-foodRepositoryProvider
+// Core Database
+appDatabaseProvider              // AppDatabase singleton
+diaryRepositoryProvider          // IDiaryRepository (Drift)
+foodRepositoryProvider           // IFoodRepository (Drift)
+weighInRepositoryProvider        // IWeighInRepository (Drift)
+targetsRepositoryProvider        // ITargetsRepository (Drift)
+alimentoRepositoryProvider       // AlimentoRepository (búsqueda avanzada)
 
-// Diary
-selectedDateProvider
-dayEntriesStreamProvider
-daySummaryProvider
-calendarEntryDaysProvider  // Días con registros (para calendario)
-smartFoodSuggestionsProvider  // Sugerencias basadas en historial
+// UI State
+selectedDateProvider             // Fecha seleccionada en diario
+
+// Diary Streams
+dayEntriesStreamProvider         // Stream de entradas del día
+dailyTotalsProvider              // Stream de totales diarios
+calendarEntryDaysProvider        // Set<DateTime> días con registros
+
+// Food Search
+foodSearchProvider               // FoodSearchNotifier (búsqueda híbrida)
+foodSearchResultsProvider        // Resultados de búsqueda
+predictiveFoodsProvider          // Alimentos predictivos
+recentSearchesProvider           // Historial de búsquedas
+
+// Smart Suggestions
+smartFoodSuggestionsProvider     // Sugerencias basadas en historial
+
+// Quick Actions
+yesterdayMealsProvider           // Comidas de ayer por tipo
+repeatYesterdayProvider          // Copiar todas las comidas de ayer
+quickRecentFoodsProvider         // 6 alimentos recientes para chips
+
+// Weekly Insights
+weeklyInsightsProvider           // Últimas 4 semanas de insights
+currentWeekInsightProvider       // Insight de la semana actual
 
 // Weight
-weightStreamProvider
-weightTrendProvider
+weightStreamProvider             // Stream de pesos (90 días)
+weightTrendProvider              // Tendencia calculada (EMA, Kalman, etc.)
+latestWeightProvider             // Último peso registrado
+goalProjectionProvider           // Proyección hacia peso objetivo
 
 // Training
-trainingSessionProvider
-deloadAlertsProvider
+trainingSessionProvider          // Estado de sesión activa
+trainingSettingsProvider         // Configuración de entrenamiento
+
+// Coach
+coachRepositoryProvider          // CoachRepository (SharedPreferences)
 ```
 
 ---
@@ -261,8 +454,10 @@ flutter test
 ```
 
 **Cobertura:**
-- 242 tests pasando
-- Tests de servicios puros, repositorios, UI
+- 33+ archivos de test
+- Tests de servicios puros, repositorios, UI, providers
+- Áreas cubiertas: WeightTrendCalculator, DaySummaryCalculator, AdaptiveCoachService, 
+  FTS search, OCR parsing, voice input, router, providers
 
 **Patrones:**
 ```dart
@@ -276,12 +471,34 @@ const model = MyModel(id: '1'); // ❌
 
 ---
 
+## CI/CD
+
+**GitHub Actions:**
+- `android-ci.yml` - Build APK + tests en emulador Android
+- `preview-web.yml` - Deploy a Vercel en PRs
+
+**Scripts:**
+- `wait-for-emulator.sh` - Script para CI (espera boot del emulador)
+
+---
+
+## Known Pitfalls
+
+1. **FTS5 sync**: Después de insertar alimentos, llamar `rebuildFtsIndex()` o `insertFoodFts()` manualmente.
+2. **Timer audio**: Usar `TimerAudioService` que delega a `NativeBeepService` (ToneGenerator), NO just_audio.
+3. **BuildContext async**: Siempre verificar `context.mounted` después de `await`.
+4. **Drift codegen**: Ejecutar `dart run build_runner build` después de modificar tablas.
+5. **GoRouter vs Navigator**: Usar extensiones de `context.goTo*()`, no `Navigator.push()`.
+6. **Búsqueda de alimentos**: Sistema unificado en `AlimentoRepository` (local FTS5 + Open Food Facts). NO existe ya el sistema en `diet/data/` ni `diet/domain/`.
+
+---
+
 ## Checklist para Nuevos Features
 
 - [ ] ¿A qué modo pertenece (Nutrición/Entrenamiento/Ambos)?
-- [ ] ¿Requiere cambios en schema de DB?
+- [ ] ¿Requiere cambios en schema de DB? → Incrementar `schemaVersion` en `database.dart`
 - [ ] ¿Funciona offline?
-- [ ] ¿Usa el Design System unificado?
+- [ ] ¿Usa el Design System unificado? (`AppColors`, `AppSpacing`, `AppRadius`)
 - [ ] ¿Maneja `mounted` después de async?
 - [ ] ¿Tiene tests unitarios para lógica pura?
 - [ ] `flutter analyze` sin errores
@@ -289,4 +506,4 @@ const model = MyModel(id: '1'); // ❌
 
 ---
 
-*Última actualización: Enero 2026 - Sistema de búsqueda inteligente implementado, 242 tests*
+*Última actualización: Febrero 2026 - Schema v11, estructura actualizada*

@@ -2,38 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/design_system/design_system.dart' show AppTypography;
 import '../../providers/settings_provider.dart';
-import '../../services/haptics_controller.dart';
+import '../../services/haptics_controller.dart' show HapticEvent, HapticsController;
 import '../../services/rest_timer_controller.dart';
 import '../../services/timer_audio_service.dart';
 import '../../services/timer_notification_service.dart';
 import '../../services/timer_platform_service.dart';
-import '../../utils/design_system.dart';
-import '../../utils/performance_utils.dart';
+import '../../utils/design_system.dart' show AppColors;
+import '../../utils/performance_utils.dart' show PerformanceMode, Throttler;
 
 /// Callback cuando el timer termina, incluye info para auto-focus
 typedef TimerFinishedCallback =
     void Function({int? lastExerciseIndex, int? lastSetIndex});
-
-// ============================================================================
-// PRE-COMPUTED CONST STYLES (Avoid GoogleFonts in build methods)
-// ============================================================================
-
-class _TimerStyles {
-  static final labelSmall = GoogleFonts.montserrat(
-    fontSize: 10,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 1.0,
-  );
-
-  static final durationDisplay = GoogleFonts.montserrat(
-    fontSize: 18,
-    fontWeight: FontWeight.w900,
-    color: AppColors.textPrimary,
-  );
-}
 
 /// Barra de timer de descanso no invasiva (estilo Hevy/Strong)
 ///
@@ -499,26 +481,19 @@ class _InactiveTimerBar extends StatelessWidget {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgElevated,
-        title: const Text(
-          '¿Descartar sesión?',
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 18),
-        ),
-        content: const Text(
-          'Se perderán los datos.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
+        title: const Text('¿Descartar sesión?'),
+        content: const Text('Se perderán los datos.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('NO'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'SÍ',
-              style: TextStyle(color: AppColors.bloodRed),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
+            child: const Text('SÍ'),
           ),
         ],
       ),
@@ -746,26 +721,19 @@ class _ActiveTimerBar extends StatelessWidget {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgElevated,
-        title: const Text(
-          '¿Descartar sesión?',
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 18),
-        ),
-        content: const Text(
-          'Se perderán los datos.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
+        title: const Text('¿Descartar sesión?'),
+        content: const Text('Se perderán los datos.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('NO'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'SÍ',
-              style: TextStyle(color: AppColors.bloodRed),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
+            child: const Text('SÍ'),
           ),
         ],
       ),
@@ -795,8 +763,7 @@ class _TimerStateLabel extends StatelessWidget {
       children: [
         Text(
           isPaused ? 'PAUSADO' : 'DESCANSANDO',
-          style: GoogleFonts.montserrat(
-            fontSize: 12, // Aumentado de 10
+          style: AppTypography.labelLarge.copyWith(
             fontWeight: FontWeight.w800,
             letterSpacing: 1.5,
             color: isPaused ? AppColors.warning : activeColor,
@@ -805,11 +772,9 @@ class _TimerStateLabel extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           isPaused ? 'Toca para reanudar' : 'Toca para pausar',
-          style: GoogleFonts.montserrat(
-            fontSize: 10, // Aumentado de 9
-            fontWeight: FontWeight.w500,
+          style: AppTypography.bodySmall.copyWith(
             color: isPaused
-                ? AppColors.warning.withValues(alpha: 0.7)
+                ? AppColors.warning.withAlpha((0.7 * 255).round())
                 : AppColors.textSecondary,
           ),
         ),
@@ -837,7 +802,9 @@ class _TimeDurationSelector extends StatelessWidget {
       children: [
         Text(
           'DESCANSO',
-          style: _TimerStyles.labelSmall.copyWith(
+          style: AppTypography.labelSmall.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
             color: AppColors.textTertiary,
           ),
         ),
@@ -852,7 +819,13 @@ class _TimeDurationSelector extends StatelessWidget {
         SizedBox(
           width: 48, // Ancho fijo para evitar saltos
           child: Center(
-            child: Text('${seconds}s', style: _TimerStyles.durationDisplay),
+            child: Text(
+              '${seconds}s',
+              style: AppTypography.titleMedium.copyWith(
+                fontWeight: FontWeight.w800,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
           ),
         ),
         const SizedBox(width: _gap),
@@ -1038,7 +1011,8 @@ class _CircularTimerProgressState extends State<_CircularTimerProgress>
                 // Texto proporcional al tamaño del widget
                 Text(
                   '${widget.seconds}',
-                  style: GoogleFonts.montserrat(
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
                     fontSize: size * 0.4, // Proporcional al tamaño
                     fontWeight: FontWeight.w900,
                     color: timerColor,

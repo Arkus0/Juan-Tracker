@@ -6,3 +6,4 @@ export 'weighin_model.dart';
 export 'targets_model.dart';
 export 'recipe_model.dart';
 export 'open_food_facts_model.dart';
+export 'goal_projection_model.dart';

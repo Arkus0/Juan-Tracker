@@ -7,7 +7,10 @@ import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/home_button.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
+import 'package:juan_tracker/diet/providers/goal_projection_providers.dart';
 import 'package:juan_tracker/diet/models/weighin_model.dart';
+import 'package:juan_tracker/diet/models/goal_projection_model.dart';
+import 'package:juan_tracker/diet/services/adaptive_coach_service.dart';
 
 import 'package:intl/intl.dart';
 
@@ -35,6 +38,14 @@ class WeightScreen extends ConsumerWidget {
               child: _MainStatsSection(),
             ),
           ),
+          // Card de proyección de objetivo (Goal ETA)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _GoalProjectionCard(),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
           // Gráfica de evolución
           const SliverToBoxAdapter(
             child: Padding(
@@ -327,6 +338,7 @@ class _WeightChartCard extends ConsumerWidget {
 
 /// Gráfica de línea para evolución de peso
 /// PERF: Uses memoized stats from weightChartStatsProvider
+/// FEATURE: Muestra línea de objetivo si hay CoachPlan activo
 class _WeightLineChart extends ConsumerWidget {
   final List<WeighInModel> weighIns;
 
@@ -337,20 +349,22 @@ class _WeightLineChart extends ConsumerWidget {
     final theme = Theme.of(context);
     // PERF: Use memoized stats instead of calculating in build()
     final statsAsync = ref.watch(weightChartStatsProvider);
+    // Goal line: peso objetivo desde GoalProjection
+    final goalWeight = ref.watch(effectiveGoalWeightProvider);
 
     return statsAsync.when(
       data: (stats) {
         if (stats == null) {
           return const Center(child: Text('Se necesitan más datos'));
         }
-        return _buildChart(context, theme, stats);
+        return _buildChart(context, theme, stats, goalWeight);
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (_, _) => const Center(child: Text('Error al cargar datos')),
     );
   }
 
-  Widget _buildChart(BuildContext context, ThemeData theme, WeightChartStats stats) {
+  Widget _buildChart(BuildContext context, ThemeData theme, WeightChartStats stats, double? goalWeight) {
     // Filter to last 30 days for display
     final cutoffDate = DateTime.now().subtract(const Duration(days: 30));
     final filteredWeighIns = weighIns
@@ -368,9 +382,26 @@ class _WeightLineChart extends ConsumerWidget {
     final weightRange = stats.weightRange;
     final padding = stats.padding;
 
+    // Ajustar límites para incluir el peso objetivo si existe
+    final adjustedMinWeight = goalWeight != null 
+        ? (minWeight < goalWeight ? minWeight : goalWeight)
+        : minWeight;
+    final adjustedMaxWeight = goalWeight != null 
+        ? (maxWeight > goalWeight ? maxWeight : goalWeight)
+        : maxWeight;
+    final adjustedPadding = padding;
+
     final spots = filteredWeighIns.asMap().entries.map((entry) {
       return FlSpot(entry.key.toDouble(), entry.value.weightKg);
     }).toList();
+
+    // Línea de objetivo (horizontal punteada)
+    final goalSpots = goalWeight != null
+        ? [
+            FlSpot(0, goalWeight),
+            FlSpot((filteredWeighIns.length - 1).toDouble(), goalWeight),
+          ]
+        : <FlSpot>[];
 
     return LineChart(
       LineChartData(
@@ -408,9 +439,10 @@ class _WeightLineChart extends ConsumerWidget {
         borderData: FlBorderData(show: false),
         minX: 0,
         maxX: (filteredWeighIns.length - 1).toDouble(),
-        minY: minWeight - padding,
-        maxY: maxWeight + padding,
+        minY: adjustedMinWeight - adjustedPadding,
+        maxY: adjustedMaxWeight + adjustedPadding,
         lineBarsData: [
+          // Línea principal de peso
           LineChartBarData(
             spots: spots,
             isCurved: true,
@@ -433,12 +465,26 @@ class _WeightLineChart extends ConsumerWidget {
               color: theme.colorScheme.primary.withAlpha((0.1 * 255).round()),
             ),
           ),
+          // Línea de objetivo (punteada)
+          if (goalSpots.isNotEmpty)
+            LineChartBarData(
+              spots: goalSpots,
+              isCurved: false,
+              color: AppColors.success.withAlpha((0.7 * 255).round()),
+              barWidth: 2,
+              isStrokeCapRound: true,
+              dashArray: [8, 4], // Línea punteada
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(show: false),
+            ),
         ],
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
             getTooltipColor: (touchedSpot) => theme.colorScheme.surfaceContainerHighest,
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
+                // Solo mostrar tooltip para la línea principal (no para goal line)
+                if (spot.barIndex != 0) return null;
                 final weighIn = filteredWeighIns[spot.x.toInt()];
                 return LineTooltipItem(
                   '${weighIn.weightKg.toStringAsFixed(1)} kg\n',
@@ -456,11 +502,312 @@ class _WeightLineChart extends ConsumerWidget {
                     ),
                   ],
                 );
-              }).toList();
+              }).whereType<LineTooltipItem>().toList();
             },
           ),
         ),
       ),
+    );
+  }
+}
+
+// ============================================================================
+// GOAL PROJECTION CARD (NEW - Libra-style ETA)
+// ============================================================================
+
+/// Card que muestra la proyección hacia el objetivo de peso
+/// Estilo Libra: muestra ETA, progreso, y ritmo actual vs objetivo
+class _GoalProjectionCard extends ConsumerWidget {
+  const _GoalProjectionCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectionAsync = ref.watch(goalProjectionProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return projectionAsync.when(
+      data: (projection) {
+        // Si no hay proyección (sin plan o sin datos), no mostrar
+        if (projection == null) return const SizedBox.shrink();
+
+        return Card(
+          elevation: 0,
+          color: colorScheme.primaryContainer.withAlpha((0.4 * 255).round()),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Icon(
+                      _getGoalIcon(projection.goal),
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Proyección de objetivo',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    // Badge de estado
+                    _StatusBadge(
+                      isOnTrack: projection.isOnTrack,
+                      goalReached: projection.goalReached,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Goal Weight & ETA
+                Row(
+                  children: [
+                    Expanded(
+                      child: _GoalMetric(
+                        label: 'Meta',
+                        value: '${projection.goalWeightKg.toStringAsFixed(1)} kg',
+                        icon: Icons.flag_outlined,
+                      ),
+                    ),
+                    Expanded(
+                      child: _GoalMetric(
+                        label: 'ETA',
+                        value: _formatEta(projection),
+                        icon: Icons.schedule,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Progress bar
+                _ProgressBar(
+                  progress: projection.progressPercentage / 100,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(height: 8),
+
+                // Progress message
+                Text(
+                  projection.progressMessage,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+
+                // Pace message (ritmo actual)
+                Text(
+                  projection.paceMessage,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onPrimaryContainer.withAlpha(179),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  IconData _getGoalIcon(WeightGoal goal) {
+    switch (goal) {
+      case WeightGoal.lose:
+        return Icons.trending_down;
+      case WeightGoal.gain:
+        return Icons.trending_up;
+      case WeightGoal.maintain:
+        return Icons.balance;
+    }
+  }
+
+  String _formatEta(GoalProjection projection) {
+    if (projection.goalReached) return '¡Logrado!';
+    
+    final date = projection.estimatedGoalDate;
+    if (date == null) return '—';
+    
+    final days = projection.estimatedDaysToGoal;
+    if (days != null && days < 14) {
+      return '$days días';
+    }
+    
+    return DateFormat('MMM yyyy', 'es').format(date);
+  }
+}
+
+/// Badge que indica si está on track o no
+class _StatusBadge extends StatelessWidget {
+  final bool isOnTrack;
+  final bool goalReached;
+
+  const _StatusBadge({
+    required this.isOnTrack,
+    required this.goalReached,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (goalReached) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.success.withAlpha(51),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, size: 14, color: AppColors.success),
+            const SizedBox(width: 4),
+            Text(
+              'Meta',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.success,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: (isOnTrack ? AppColors.success : Colors.orange).withAlpha(51),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isOnTrack ? Icons.check : Icons.warning_amber,
+            size: 14,
+            color: isOnTrack ? AppColors.success : Colors.orange,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            isOnTrack ? 'En camino' : 'Ajustar',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isOnTrack ? AppColors.success : Colors.orange,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Métrica de objetivo individual
+class _GoalMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _GoalMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: colorScheme.onPrimaryContainer.withAlpha(153)),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onPrimaryContainer.withAlpha(153),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.montserrat(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onPrimaryContainer,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Barra de progreso hacia el objetivo
+class _ProgressBar extends StatelessWidget {
+  final double progress; // 0.0 - 1.0+
+  final ColorScheme colorScheme;
+
+  const _ProgressBar({
+    required this.progress,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final clampedProgress = progress.clamp(0.0, 1.0);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Progreso',
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onPrimaryContainer.withAlpha(153),
+              ),
+            ),
+            Text(
+              '${(progress * 100).toStringAsFixed(0)}%',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: clampedProgress,
+            minHeight: 8,
+            backgroundColor: colorScheme.onPrimaryContainer.withAlpha(26),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              progress >= 1.0 ? AppColors.success : colorScheme.primary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

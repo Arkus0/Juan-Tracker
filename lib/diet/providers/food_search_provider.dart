@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 
 import '../../core/providers/database_provider.dart';
@@ -108,8 +109,11 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
     return const FoodSearchState();
   }
 
-  /// Inicia una búsqueda con debounce
-  void search(String query, {bool forceOffline = false}) {
+  /// Inicia una búsqueda LOCAL con debounce
+  /// 
+  /// Búsqueda instantánea en base de datos local (FTS5).
+  /// Para buscar en internet, usar `searchOnline()` después.
+  void search(String query) {
     // Cancelar timer y request previos
     _debounceTimer?.cancel();
     _cancelToken?.cancel();
@@ -134,23 +138,17 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
     // Debounce de 300ms con check de mounted para evitar crash si provider disposed
     _debounceTimer = Timer(_debounceDuration, () async {
       if (!ref.mounted) return; // Evitar acceso a provider disposed
-      await _performSearch(query.trim(), forceOffline: forceOffline);
+      await _performSearch(query.trim());
     });
   }
 
-  /// Ejecuta la búsqueda real
-  Future<void> _performSearch(String query, {bool forceOffline = false}) async {
-    _cancelToken = CancelToken();
-    
+  /// Ejecuta la búsqueda real (solo LOCAL - instantánea)
+  Future<void> _performSearch(String query) async {
     try {
       final repository = ref.read(alimentoRepositoryProvider);
       
-      // Realizar búsqueda híbrida
-      final results = await repository.search(
-        query,
-        limit: 50,
-        includeRemote: !forceOffline,
-      );
+      // Búsqueda LOCAL instantánea (FTS5)
+      final results = await repository.search(query, limit: 50);
 
       if (results.isEmpty) {
         // Sin resultados - generar sugerencias inteligentes
@@ -167,73 +165,104 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
         );
       }
 
-      // Guardar en historial
-      await repository.recordSearch(query, hasResults: results.isNotEmpty);
+      // Guardar en historial (fire-and-forget, no afecta la búsqueda)
+      repository.recordSearch(query, hasResults: results.isNotEmpty).catchError((e) {
+        debugPrint('[FoodSearch] Error recording search: $e');
+      });
       
-    } on DioException catch (e) {
-      if (CancelToken.isCancel(e)) {
-        // Fue cancelado, no hacer nada
-        return;
-      }
-      
-      // Error de red - intentar offline
-      await _tryOfflineFallback(query);
     } catch (e) {
-      // Error general - intentar offline
-      await _tryOfflineFallback(query);
+      debugPrint('[FoodSearch] Search error: $e');
+      state = state.copyWith(
+        status: SearchStatus.error,
+        errorMessage: 'Error de búsqueda: $e',
+        showCreateCustom: true,
+      );
+    }
+  }
+  
+  /// Búsqueda ONLINE en Open Food Facts (acción explícita del usuario)
+  /// 
+  /// Llamar cuando el usuario pulsa "Buscar en internet"
+  Future<void> searchOnline() async {
+    final query = state.query;
+    if (query.isEmpty) return;
+    
+    // Cancelar búsqueda anterior
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
+    
+    // Marcar como cargando pero mantener resultados actuales
+    state = state.copyWith(status: SearchStatus.loading);
+    
+    try {
+      final repository = ref.read(alimentoRepositoryProvider);
+      
+      // Búsqueda en Open Food Facts
+      final onlineResults = await repository.searchOnline(
+        query,
+        limit: 30,
+        cancelToken: _cancelToken,
+      );
+      
+      if (onlineResults.isEmpty) {
+        // No encontró nada en OFF
+        state = state.copyWith(
+          status: state.results.isEmpty ? SearchStatus.empty : SearchStatus.success,
+          showCreateCustom: true,
+        );
+      } else {
+        // Combinar con resultados existentes (sin duplicados)
+        final existingIds = state.results.map((r) => r.food.id).toSet();
+        final newResults = onlineResults.where((r) => !existingIds.contains(r.food.id)).toList();
+        
+        state = state.copyWith(
+          status: SearchStatus.success,
+          results: [...state.results, ...newResults],
+          hasMore: false,
+        );
+      }
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) return;
+      
+      state = state.copyWith(
+        status: state.results.isEmpty ? SearchStatus.error : SearchStatus.success,
+        errorMessage: 'Error de conexión',
+      );
+    } catch (e) {
+      debugPrint('[FoodSearch] Online search error: $e');
+      state = state.copyWith(
+        status: state.results.isEmpty ? SearchStatus.error : SearchStatus.success,
+        errorMessage: 'Error al buscar en internet',
+      );
     }
   }
 
   /// Maneja el caso de búsqueda sin resultados
   Future<void> _handleEmptyResults(String query) async {
-    final repository = ref.read(alimentoRepositoryProvider);
-    
-    // Generar sugerencias basadas en términos similares
-    final suggestions = await _generateSuggestions(query);
-    
-    // Buscar alternativas populares
-    final alternatives = await repository.getHabitualFoods(limit: 5);
-
-    state = state.copyWith(
-      status: SearchStatus.empty,
-      results: const [],
-      hasMore: false,
-      suggestions: suggestions,
-      popularAlternatives: alternatives,
-      showCreateCustom: true,
-    );
-  }
-
-  /// Intenta fallback offline cuando falla la búsqueda online
-  Future<void> _tryOfflineFallback(String query) async {
     try {
       final repository = ref.read(alimentoRepositoryProvider);
-      final offlineResults = await repository.searchOffline(query, limit: 50);
       
-      if (offlineResults.isNotEmpty) {
-        final scored = offlineResults.map((f) => ScoredFood(
-          food: f, 
-          score: 0,
-          isFromCache: true,
-        )).toList();
-        
-        state = state.copyWith(
-          status: SearchStatus.offline,
-          results: scored,
-          errorMessage: 'Sin conexión. Mostrando resultados guardados.',
-          showCreateCustom: true,
-        );
-      } else {
-        state = state.copyWith(
-          status: SearchStatus.error,
-          errorMessage: 'Error de búsqueda. Sin resultados guardados.',
-          showCreateCustom: true,
-        );
-      }
-    } catch (e) {
+      // Generar sugerencias basadas en términos similares
+      final suggestions = await _generateSuggestions(query);
+      
+      // Buscar alternativas populares
+      final alternatives = await repository.getHabitualFoods(limit: 5);
+
       state = state.copyWith(
-        status: SearchStatus.error,
-        errorMessage: 'Error de búsqueda: $e',
+        status: SearchStatus.empty,
+        results: const [],
+        hasMore: false,
+        suggestions: suggestions,
+        popularAlternatives: alternatives,
+        showCreateCustom: true,
+      );
+    } catch (e) {
+      debugPrint('[FoodSearch] Error handling empty results: $e');
+      // Simplemente mostrar vacío sin sugerencias
+      state = state.copyWith(
+        status: SearchStatus.empty,
+        results: const [],
+        hasMore: false,
         showCreateCustom: true,
       );
     }
@@ -258,7 +287,7 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
     return suggestions.take(3).toList();
   }
 
-  /// Carga más resultados (paginación)
+  /// Carga más resultados (paginación local)
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore || state.query.isEmpty) {
       return;
@@ -271,11 +300,7 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
       
       // Nota: La paginación real requeriría offset en el repository
       // Por ahora simplemente indicamos que no hay más
-      final moreResults = await repository.search(
-        state.query,
-        limit: 50,
-        includeRemote: state.isOnline,
-      );
+      final moreResults = await repository.search(state.query, limit: 50);
 
       // Filtrar solo nuevos resultados
       final existingIds = state.results.map((r) => r.food.id).toSet();

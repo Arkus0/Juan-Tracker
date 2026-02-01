@@ -86,8 +86,9 @@ dart format lib/ test/
 Lee `CONTRIBUTING.md` para el flujo de contribución, checklist y buenas prácticas. 🙌
 
 ## Documentación
-- Documentación de diseño y porting: `docs/PORTING_SPEC.md` y `docs/TRAINING_MVP_NOTES.md`.
 - Información técnica y pautas para agentes: `AGENTS.md`.
+- Corpus de algoritmos de búsqueda: `docs/corpus_algoritmos_busqueda_nutricion.md`.
+- Documentación del subset de alimentos: `scripts/README_FOOD_SUBSET.md`.
 
 ---
 
@@ -110,4 +111,4 @@ Este proyecto está bajo la licencia **MIT** — ver el archivo `LICENSE` en la 
 
 ---
 
-*Última actualización: Enero 2026*
+*Última actualización: Febrero 2026*

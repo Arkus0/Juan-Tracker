@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../diet/models/models.dart' as diet;
 import '../../diet/repositories/repositories.dart';
 import '../../diet/repositories/drift_diet_repositories.dart';
-import '../../diet/repositories/user_profile_repository.dart';
 import '../../training/database/database.dart';
 import '../models/user_profile_model.dart';
 import '../repositories/i_training_repository.dart';

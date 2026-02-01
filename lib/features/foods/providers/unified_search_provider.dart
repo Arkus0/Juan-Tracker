@@ -1,18 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../diet/presentation/providers/food_search_provider.dart' as presentation;
-import '../../../../diet/providers/food_search_provider.dart';
-import '../../../../diet/repositories/alimento_repository.dart';
-import '../../../../training/database/database.dart';
+import '../../../diet/providers/food_search_provider.dart';
+import '../../../diet/repositories/alimento_repository.dart';
+import '../../../training/database/database.dart';
 
 /// Provider unificado para la búsqueda de alimentos en la pantalla unificada
 ///
-/// Este provider adapta el FoodSearchState del provider local (FTS5) a una lista
-/// de ScoredFood para la UI unificada.
-///
-/// NOTA: Usa AlimentoRepository (FTS5 local) como fuente principal.
-/// Para búsqueda híbrida (local + OFF API), usar el foodSearchProvider
-/// de diet/presentation/providers/ en lugar de este.
+/// Usa AlimentoRepository con búsqueda híbrida (FTS5 local + Open Food Facts).
 final unifiedSearchProvider = Provider<AsyncValue<List<ScoredFood>>>((ref) {
   final searchState = ref.watch(foodSearchProvider);
 
@@ -20,7 +14,8 @@ final unifiedSearchProvider = Provider<AsyncValue<List<ScoredFood>>>((ref) {
     return const AsyncValue.loading();
   }
 
-  if (searchState.errorMessage != null) {
+  // Solo error si no hay resultados Y hay mensaje de error
+  if (searchState.status == SearchStatus.error && searchState.results.isEmpty) {
     return AsyncValue.error(
       searchState.errorMessage ?? 'Error de búsqueda',
       StackTrace.current,
@@ -36,64 +31,25 @@ final recentFoodsForUnifiedProvider = FutureProvider<List<Food>>((ref) async {
   return repository.getRecentlyUsed(limit: 20);
 });
 
-/// Provider para buscar por código de barras (local)
+/// Provider para buscar por código de barras (local + OFF)
 /// 
-/// Busca solo en la base de datos local.
+/// Busca primero en local, si no encuentra busca en Open Food Facts.
 final barcodeSearchProvider = FutureProvider.family<Food?, String>((ref, barcode) async {
   final repository = ref.read(alimentoRepositoryProvider);
   return repository.searchByBarcode(barcode);
 });
 
-/// Provider para búsqueda online por código de barras (Open Food Facts)
-///
-/// Realiza búsqueda híbrida: primero local, si no encuentra busca en Open Food Facts
-/// y guarda el resultado en la base de datos local.
+/// Provider para búsqueda online por código de barras
+/// 
+/// Ahora es un alias de barcodeSearchProvider ya que AlimentoRepository
+/// incluye búsqueda en OFF automáticamente.
 final onlineBarcodeSearchProvider = FutureProvider.family<Food?, String>((ref, barcode) async {
-  // Primero intentar búsqueda local
-  final alimentoRepo = ref.read(alimentoRepositoryProvider);
-  final localResult = await alimentoRepo.searchByBarcode(barcode);
-  if (localResult != null) return localResult;
-
-  // Si no está en local, buscar en Open Food Facts via FoodSearchRepository
-  final searchRepo = ref.read(presentation.foodSearchRepositoryProvider);
-  final scoredFood = await searchRepo.searchByBarcode(barcode);
-
-  if (scoredFood == null) return null;
-
-  // Buscar el alimento recién guardado en la base de datos local
-  // (el repositorio remoto guarda automáticamente en cache)
-  final cachedFood = await alimentoRepo.getById(scoredFood.food.id);
-  return cachedFood;
+  final repository = ref.read(alimentoRepositoryProvider);
+  return repository.searchByBarcode(barcode);
 });
 
-/// Provider para búsqueda online por texto (Open Food Facts)
-///
-/// Busca productos por nombre en Open Food Facts.
-/// Retorna lista de Food ya convertidos para uso directo en UI.
-final onlineTextSearchProvider = FutureProvider.family<List<Food>, String>((ref, query) async {
-  if (query.trim().isEmpty) return [];
-
-  // Buscar en Open Food Facts via FoodSearchRepository
-  final searchRepo = ref.read(presentation.foodSearchRepositoryProvider);
-  final result = await searchRepo.search(query, pageSize: 30);
-
-  // Filtrar solo los resultados que vienen de remoto (no locales)
-  // y convertir a Food (usando metadata para determinar source)
-  final remoteItems = result.items
-      .where((sf) => sf.food.metadata['source'] != 'local')
-      .toList();
-
-  // Convertir ScoredFood a Food (del database)
-  final alimentoRepo = ref.read(alimentoRepositoryProvider);
-  final foods = <Food>[];
-
-  for (final scoredFood in remoteItems) {
-    // El repositorio de búsqueda guarda automáticamente en cache
-    final food = await alimentoRepo.getById(scoredFood.food.id);
-    if (food != null) {
-      foods.add(food);
-    }
-  }
-
-  return foods;
+/// Provider de alimentos favoritos
+final favoriteFoodsForUnifiedProvider = FutureProvider<List<Food>>((ref) async {
+  final repository = ref.read(alimentoRepositoryProvider);
+  return repository.getFavorites(limit: 50);
 });
