@@ -43,7 +43,34 @@ class FoodDatabaseLoader {
       'SELECT COUNT(*) as count FROM foods WHERE user_created = 0 LIMIT 1'
     ).getSingle();
     
-    return (count.data['count'] as int) > 10000; // Mínimo 10k productos
+    final hasFoods = (count.data['count'] as int) > 10000;
+    
+    // Verificar integridad: si hay alimentos pero el índice FTS está vacío o no existe
+    if (hasFoods) {
+      try {
+        final ftsCount = await _db.customSelect(
+          'SELECT COUNT(*) as count FROM foods_fts LIMIT 1'
+        ).getSingle();
+        if ((ftsCount.data['count'] as int) == 0) {
+          // El índice FTS está vacío, necesita reconstrucción
+          return false;
+        }
+      } catch (e) {
+        // La tabla foods_fts no existe o está corrupta
+        debugPrint('FTS table check failed: $e');
+        return false;
+      }
+    }
+    
+    return hasFoods;
+  }
+
+  /// Reconstruye solo el índice FTS5 (útil cuando la base de datos ya está cargada pero el índice está corrupto)
+  Future<void> rebuildIndexOnly({void Function(double progress)? onProgress}) async {
+    onProgress?.call(0.0);
+    await _db.rebuildFtsIndex();
+    onProgress?.call(1.0);
+    await _markDatabaseAsLoaded();
   }
 
   /// Carga la base de datos desde el asset de forma optimizada
@@ -51,6 +78,25 @@ class FoodDatabaseLoader {
   /// Retorna el número de alimentos cargados
   Future<int> loadDatabase({void Function(double progress, int loaded)? onProgress}) async {
     try {
+      // Verificar si la base de datos ya está cargada pero el índice necesita reconstrucción
+      final foodsCount = await _db.customSelect(
+        'SELECT COUNT(*) as count FROM foods WHERE user_created = 0 LIMIT 1'
+      ).getSingle();
+      final hasFoods = (foodsCount.data['count'] as int) > 10000;
+      
+      final ftsCount = await _db.customSelect(
+        'SELECT COUNT(*) as count FROM foods_fts LIMIT 1'
+      ).getSingle();
+      final hasFts = (ftsCount.data['count'] as int) > 0;
+      
+      if (hasFoods && !hasFts) {
+        // La base de datos está cargada pero el índice FTS está vacío
+        // Solo reconstruir el índice sin recargar todo
+        onProgress?.call(0.5, foodsCount.data['count'] as int);
+        await rebuildIndexOnly(onProgress: (p) => onProgress?.call(0.5 + p * 0.5, foodsCount.data['count'] as int));
+        return foodsCount.data['count'] as int;
+      }
+      
       // 1. Cargar y descomprimir en isolate
       onProgress?.call(0.0, 0);
       
@@ -88,7 +134,11 @@ class FoodDatabaseLoader {
         onProgress?.call(progress, loadedCount);
       }
       
-      // 4. Marcar como cargada
+      // 4. Reconstruir índice FTS5 para búsqueda
+      onProgress?.call(0.98, loadedCount);
+      await _db.rebuildFtsIndex();
+      
+      // 5. Marcar como cargada
       await _markDatabaseAsLoaded();
       
       return loadedCount;

@@ -1,3 +1,5 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 import '../../data/datasources/food_search_local_datasource.dart';
 import '../../data/datasources/food_search_remote_datasource.dart';
 import '../../data/models/cached_search_result.dart';
@@ -292,8 +294,9 @@ class FoodSearchRepositoryImpl implements FoodSearchRepository {
 
   @override
   Future<bool> get isOnline async {
-    // TODO: Integrar con connectivity_plus para verificación real
-    // Por ahora asumimos online, el fallback maneja errores de red
-    return true;
+    final connectivity = Connectivity();
+    final results = await connectivity.checkConnectivity();
+    // Consideramos online si hay al menos una conexión y no es 'none'
+    return results.isNotEmpty && !results.contains(ConnectivityResult.none);
   }
 }

@@ -197,6 +197,35 @@ class AlimentoRepository {
       .get();
   }
 
+  /// Alimentos favoritos del usuario
+  Future<List<Food>> getFavorites({int limit = 50}) async {
+    return (_db.select(_db.foods)
+      ..where((f) => f.isFavorite.equals(true))
+      ..orderBy([(f) => OrderingTerm.desc(f.lastUsedAt)])
+      ..limit(limit))
+      .get();
+  }
+
+  /// Marcar/desmarcar alimento como favorito
+  Future<void> setFavorite(String foodId, bool isFavorite) async {
+    await (_db.update(_db.foods)
+      ..where((f) => f.id.equals(foodId)))
+      .write(FoodsCompanion(
+        isFavorite: Value(isFavorite),
+        updatedAt: Value(DateTime.now()),
+      ));
+  }
+
+  /// Alternar estado de favorito
+  Future<bool> toggleFavorite(String foodId) async {
+    final food = await getById(foodId);
+    if (food == null) return false;
+    
+    final newState = !food.isFavorite;
+    await setFavorite(foodId, newState);
+    return newState;
+  }
+
   // ============================================================================
   // CRUD OPERATIONS
   // ============================================================================
@@ -223,6 +252,13 @@ class AlimentoRepository {
     );
     
     await _db.into(_db.foods).insertOnConflictUpdate(companion);
+    
+    // Sincronizar con índice FTS5
+    await _db.insertFoodFts(
+      model.id,
+      model.name,
+      model.brand,
+    );
   }
 
   /// Obtener un alimento por ID

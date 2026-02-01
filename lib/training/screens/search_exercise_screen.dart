@@ -5,6 +5,7 @@ import '../models/library_exercise.dart';
 import '../providers/exercise_search_providers.dart';
 import '../providers/training_provider.dart';
 import '../widgets/common/create_exercise_dialog.dart';
+import '../widgets/smart_import_sheet_v2.dart';
 
 class SearchExerciseScreen extends ConsumerStatefulWidget {
   const SearchExerciseScreen({super.key});
@@ -280,11 +281,16 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
 
   void _showOcrImportDialog() {
     setState(() => _isFabMenuOpen = false);
-    // TODO: Implementar OCR para importar desde imagen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('OCR: escanea una imagen de rutina para importar'),
-        duration: Duration(seconds: 2),
+    // Navegar al flujo de Smart Import unificado que incluye OCR
+    // El OCR completo está implementado en SmartImportSheetV2
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SmartImportSheetV2(
+        onConfirm: (exercises) {
+          Navigator.of(context).pop();
+          // Procesar ejercicios importados si es necesario
+        },
       ),
     );
   }
@@ -645,7 +651,7 @@ class _HighlightedText extends StatelessWidget {
   }
 }
 
-/// 🎯 FASE 8 / TODO-2: Diálogo de Smart Import desde rutinas
+/// Diálogo de Smart Import desde rutinas existentes
 class _SmartImportDialog extends ConsumerStatefulWidget {
   const _SmartImportDialog();
 

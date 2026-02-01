@@ -4716,6 +4716,21 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isFavoriteMeta = const VerificationMeta(
+    'isFavorite',
+  );
+  @override
+  late final GeneratedColumn<bool> isFavorite = GeneratedColumn<bool>(
+    'is_favorite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favorite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -4758,6 +4773,7 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
     lastUsedAt,
     nutriScore,
     novaGroup,
+    isFavorite,
     createdAt,
     updatedAt,
   ];
@@ -4905,6 +4921,12 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
         novaGroup.isAcceptableOrUnknown(data['nova_group']!, _novaGroupMeta),
       );
     }
+    if (data.containsKey('is_favorite')) {
+      context.handle(
+        _isFavoriteMeta,
+        isFavorite.isAcceptableOrUnknown(data['is_favorite']!, _isFavoriteMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -5004,6 +5026,10 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
         DriftSqlType.int,
         data['${effectivePrefix}nova_group'],
       ),
+      isFavorite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favorite'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -5047,6 +5073,7 @@ class Food extends DataClass implements Insertable<Food> {
   final DateTime? lastUsedAt;
   final String? nutriScore;
   final int? novaGroup;
+  final bool isFavorite;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Food({
@@ -5068,6 +5095,7 @@ class Food extends DataClass implements Insertable<Food> {
     this.lastUsedAt,
     this.nutriScore,
     this.novaGroup,
+    required this.isFavorite,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -5120,6 +5148,7 @@ class Food extends DataClass implements Insertable<Food> {
     if (!nullToAbsent || novaGroup != null) {
       map['nova_group'] = Variable<int>(novaGroup);
     }
+    map['is_favorite'] = Variable<bool>(isFavorite);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -5171,6 +5200,7 @@ class Food extends DataClass implements Insertable<Food> {
       novaGroup: novaGroup == null && nullToAbsent
           ? const Value.absent()
           : Value(novaGroup),
+      isFavorite: Value(isFavorite),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -5202,6 +5232,7 @@ class Food extends DataClass implements Insertable<Food> {
       lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
       nutriScore: serializer.fromJson<String?>(json['nutriScore']),
       novaGroup: serializer.fromJson<int?>(json['novaGroup']),
+      isFavorite: serializer.fromJson<bool>(json['isFavorite']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -5230,6 +5261,7 @@ class Food extends DataClass implements Insertable<Food> {
       'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
       'nutriScore': serializer.toJson<String?>(nutriScore),
       'novaGroup': serializer.toJson<int?>(novaGroup),
+      'isFavorite': serializer.toJson<bool>(isFavorite),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -5254,6 +5286,7 @@ class Food extends DataClass implements Insertable<Food> {
     Value<DateTime?> lastUsedAt = const Value.absent(),
     Value<String?> nutriScore = const Value.absent(),
     Value<int?> novaGroup = const Value.absent(),
+    bool? isFavorite,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Food(
@@ -5283,6 +5316,7 @@ class Food extends DataClass implements Insertable<Food> {
     lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
     nutriScore: nutriScore.present ? nutriScore.value : this.nutriScore,
     novaGroup: novaGroup.present ? novaGroup.value : this.novaGroup,
+    isFavorite: isFavorite ?? this.isFavorite,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -5330,6 +5364,9 @@ class Food extends DataClass implements Insertable<Food> {
           ? data.nutriScore.value
           : this.nutriScore,
       novaGroup: data.novaGroup.present ? data.novaGroup.value : this.novaGroup,
+      isFavorite: data.isFavorite.present
+          ? data.isFavorite.value
+          : this.isFavorite,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -5356,6 +5393,7 @@ class Food extends DataClass implements Insertable<Food> {
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('nutriScore: $nutriScore, ')
           ..write('novaGroup: $novaGroup, ')
+          ..write('isFavorite: $isFavorite, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -5363,7 +5401,7 @@ class Food extends DataClass implements Insertable<Food> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     brand,
@@ -5382,9 +5420,10 @@ class Food extends DataClass implements Insertable<Food> {
     lastUsedAt,
     nutriScore,
     novaGroup,
+    isFavorite,
     createdAt,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5407,6 +5446,7 @@ class Food extends DataClass implements Insertable<Food> {
           other.lastUsedAt == this.lastUsedAt &&
           other.nutriScore == this.nutriScore &&
           other.novaGroup == this.novaGroup &&
+          other.isFavorite == this.isFavorite &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -5430,6 +5470,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
   final Value<DateTime?> lastUsedAt;
   final Value<String?> nutriScore;
   final Value<int?> novaGroup;
+  final Value<bool> isFavorite;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -5452,6 +5493,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     this.lastUsedAt = const Value.absent(),
     this.nutriScore = const Value.absent(),
     this.novaGroup = const Value.absent(),
+    this.isFavorite = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5475,6 +5517,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     this.lastUsedAt = const Value.absent(),
     this.nutriScore = const Value.absent(),
     this.novaGroup = const Value.absent(),
+    this.isFavorite = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -5502,6 +5545,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     Expression<DateTime>? lastUsedAt,
     Expression<String>? nutriScore,
     Expression<int>? novaGroup,
+    Expression<bool>? isFavorite,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -5525,6 +5569,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       if (lastUsedAt != null) 'last_used_at': lastUsedAt,
       if (nutriScore != null) 'nutri_score': nutriScore,
       if (novaGroup != null) 'nova_group': novaGroup,
+      if (isFavorite != null) 'is_favorite': isFavorite,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -5550,6 +5595,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     Value<DateTime?>? lastUsedAt,
     Value<String?>? nutriScore,
     Value<int?>? novaGroup,
+    Value<bool>? isFavorite,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -5573,6 +5619,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
       nutriScore: nutriScore ?? this.nutriScore,
       novaGroup: novaGroup ?? this.novaGroup,
+      isFavorite: isFavorite ?? this.isFavorite,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -5638,6 +5685,9 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     if (novaGroup.present) {
       map['nova_group'] = Variable<int>(novaGroup.value);
     }
+    if (isFavorite.present) {
+      map['is_favorite'] = Variable<bool>(isFavorite.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -5671,6 +5721,7 @@ class FoodsCompanion extends UpdateCompanion<Food> {
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('nutriScore: $nutriScore, ')
           ..write('novaGroup: $novaGroup, ')
+          ..write('isFavorite: $isFavorite, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -13309,6 +13360,7 @@ typedef $$FoodsTableCreateCompanionBuilder =
       Value<DateTime?> lastUsedAt,
       Value<String?> nutriScore,
       Value<int?> novaGroup,
+      Value<bool> isFavorite,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -13333,6 +13385,7 @@ typedef $$FoodsTableUpdateCompanionBuilder =
       Value<DateTime?> lastUsedAt,
       Value<String?> nutriScore,
       Value<int?> novaGroup,
+      Value<bool> isFavorite,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -13506,6 +13559,11 @@ class $$FoodsTableFilterComposer extends Composer<_$AppDatabase, $FoodsTable> {
 
   ColumnFilters<int> get novaGroup => $composableBuilder(
     column: $table.novaGroup,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13694,6 +13752,11 @@ class $$FoodsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -13792,6 +13855,11 @@ class $$FoodsTableAnnotationComposer
 
   GeneratedColumn<int> get novaGroup =>
       $composableBuilder(column: $table.novaGroup, builder: (column) => column);
+
+  GeneratedColumn<bool> get isFavorite => $composableBuilder(
+    column: $table.isFavorite,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -13927,6 +13995,7 @@ class $$FoodsTableTableManager
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<String?> nutriScore = const Value.absent(),
                 Value<int?> novaGroup = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -13949,6 +14018,7 @@ class $$FoodsTableTableManager
                 lastUsedAt: lastUsedAt,
                 nutriScore: nutriScore,
                 novaGroup: novaGroup,
+                isFavorite: isFavorite,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -13974,6 +14044,7 @@ class $$FoodsTableTableManager
                 Value<DateTime?> lastUsedAt = const Value.absent(),
                 Value<String?> nutriScore = const Value.absent(),
                 Value<int?> novaGroup = const Value.absent(),
+                Value<bool> isFavorite = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -13996,6 +14067,7 @@ class $$FoodsTableTableManager
                 lastUsedAt: lastUsedAt,
                 nutriScore: nutriScore,
                 novaGroup: novaGroup,
+                isFavorite: isFavorite,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

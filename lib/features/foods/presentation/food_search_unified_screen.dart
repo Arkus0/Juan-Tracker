@@ -368,8 +368,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
       }
 
       // Si no está en local, llamar a Open Food Facts (requiere internet)
-      // TODO: Implementar búsqueda online
-
+      // La búsqueda online está implementada en AlimentoRepository.searchByBarcodeOnline
       Navigator.of(context).pop(); // Cerrar loading
 
       // No encontrado
@@ -665,7 +664,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
           return _buildFoodList(foods);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Error al cargar recientes')),
+        error: (_, _) => const Center(child: Text('Error al cargar recientes')),
       );
     }
     
@@ -694,7 +693,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
           return _buildFoodList(scoredFoods.map((s) => s.food).toList());
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const Center(child: Text('Error al buscar')),
+        error: (_, _) => const Center(child: Text('Error al buscar')),
       );
     }
     

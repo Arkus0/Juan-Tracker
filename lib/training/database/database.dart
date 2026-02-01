@@ -307,6 +307,9 @@ class Foods extends Table {
   DateTimeColumn get lastUsedAt => dateTime().nullable()(); // última vez usado
   TextColumn get nutriScore => text().nullable()(); // Nutri-Score (a-e)
   IntColumn get novaGroup => integer().nullable()(); // Grupo NOVA (1-4)
+  
+  // 🆕 NUEVO: Campo para favoritos
+  BoolColumn get isFavorite => boolean().withDefault(const Constant(false))(); // marcado como favorito
 
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -612,16 +615,44 @@ class AppDatabase extends _$AppDatabase {
           debugPrint('Migration v9 scheduling columns error: $e');
         }
       }
+      // 🆕 Migration path to version 10: Fix FTS5 table and add isFavorite column
+      if (from < 10) {
+        try {
+          // Añadir columna isFavorite a foods
+          await m.addColumn(foods, foods.isFavorite);
+          
+          // Recrear tabla FTS5 con estructura correcta
+          await customStatement('DROP TABLE IF EXISTS foods_fts');
+          await _createFts5Tables(m);
+        } catch (e) {
+          debugPrint('Migration v10 FTS fix error: $e');
+        }
+      }
+      // 🆕 Migration path to version 11: Recreate FTS5 with fixes
+      if (from < 11) {
+        try {
+          // Forzar recreación completa de FTS5 con el nuevo formato de búsqueda
+          await customStatement('DROP TABLE IF EXISTS foods_fts');
+          await _createFts5Tables(m);
+          debugPrint('Migration v11: FTS5 table recreated successfully');
+        } catch (e) {
+          debugPrint('Migration v11 FTS recreate error: $e');
+        }
+      }
     },
   );
 
   /// 🆕 Crea tabla FTS5 virtual para búsqueda de alimentos
   /// Usa un enfoque external content con sincronización manual
   Future<void> _createFts5Tables(Migrator m) async {
+    // Eliminar tabla si existe para asegurar estructura correcta
+    // ( FTS5 no permite ALTER TABLE, así que recreamos siempre )
+    await customStatement('DROP TABLE IF EXISTS foods_fts');
+    
     // Crear tabla virtual FTS5 sin content_rowid
-    // Usamos 'id' como columna UNINDEXED para almacenar el UUID
+    // Usamos 'food_id' como columna UNINDEXED para almacenar el UUID
     await customStatement('''
-      CREATE VIRTUAL TABLE IF NOT EXISTS foods_fts USING fts5(
+      CREATE VIRTUAL TABLE foods_fts USING fts5(
         food_id UNINDEXED,
         name,
         brand
@@ -629,19 +660,21 @@ class AppDatabase extends _$AppDatabase {
     ''');
 
     // Poblar índice FTS con datos existentes
-    await _rebuildFtsIndex();
+    await rebuildFtsIndex();
   }
   
-  /// 🆕 Inserta entrada en FTS5 para un alimento manualmente
+  /// 🆕 Inserta o actualiza entrada en FTS5 para un alimento
   Future<void> insertFoodFts(String foodId, String name, String? brand) async {
     await customStatement('''
-      INSERT INTO foods_fts(food_id, name, brand)
+      INSERT OR REPLACE INTO foods_fts(food_id, name, brand)
       VALUES (?, ?, ?)
     ''', [foodId, name, brand ?? '']);
   }
 
   /// Reconstruye el índice FTS desde la tabla foods
-  Future<void> _rebuildFtsIndex() async {
+  /// 
+  /// Público para poder llamarlo desde FoodDatabaseLoader después de la carga inicial
+  Future<void> rebuildFtsIndex() async {
     await customStatement('DELETE FROM foods_fts');
     await customStatement('''
       INSERT INTO foods_fts(food_id, name, brand)
@@ -650,7 +683,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   // ============================================================================
   // 🆕 NUEVO: MÉTODOS DE BÚSQUEDA FTS5
@@ -660,27 +693,60 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Food>> searchFoodsFTS(String query, {int limit = 50}) async {
     if (query.trim().isEmpty) return [];
 
-    // Normalizar query para FTS (agregar wildcard para búsqueda por prefijo)
-    // Escapar caracteres especiales de FTS5
-    final sanitized = query.trim().replaceAll(RegExp(r'["\-*()]'), ' ');
-    if (sanitized.trim().isEmpty) return [];
-    final ftsQuery = '"${sanitized.trim()}"*';
+    // Normalizar query para FTS
+    // Escapar caracteres especiales de FTS5 y crear patrón de prefijo
+    final sanitized = query.trim().toLowerCase()
+      .replaceAll(RegExp(r'["\-*()]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+    
+    if (sanitized.isEmpty) return [];
+    
+    // Formato FTS5: cada término con * para búsqueda por prefijo
+    // Ej: "lomo embuchado" -> "lomo"* "embuchado"*
+    final terms = sanitized.split(' ').where((t) => t.isNotEmpty).toList();
+    if (terms.isEmpty) return [];
+    
+    // Construir query: término1* término2* ... (todos deben coincidir)
+    final ftsQuery = terms.map((t) => '$t*').join(' ');
 
-    // Usar SQL directo con JOIN por food_id
-    final results = await customSelect(
-      'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
-      'f.kcal_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, '
-      'f.portion_name, f.portion_grams, f.user_created, f.verified_source, '
-      'f.source_metadata, f.use_count, f.last_used_at, f.nutri_score, f.nova_group, '
-      'f.created_at, f.updated_at FROM foods f '
-      'INNER JOIN foods_fts fts ON f.id = fts.food_id '
-      'WHERE foods_fts MATCH ? '
-      'ORDER BY bm25(foods_fts) '
-      'LIMIT ?',
-      variables: [Variable(ftsQuery), Variable(limit)],
-    ).get();
+    try {
+      // Usar SQL directo con JOIN por food_id
+      final results = await customSelect(
+        'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
+        'f.kcal_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, '
+        'f.portion_name, f.portion_grams, f.user_created, f.verified_source, '
+        'f.source_metadata, f.use_count, f.last_used_at, f.nutri_score, f.nova_group, '
+        'f.is_favorite, f.created_at, f.updated_at FROM foods f '
+        'INNER JOIN foods_fts fts ON f.id = fts.food_id '
+        'WHERE fts MATCH ? '
+        'ORDER BY rank '
+        'LIMIT ?',
+        variables: [Variable(ftsQuery), Variable(limit)],
+      ).get();
 
-    return results.map((row) => _mapRowToFood(row)).toList();
+      return results.map((row) => _mapRowToFood(row)).toList();
+    } catch (e) {
+      // Si FTS falla, hacer fallback a LIKE
+      debugPrint('FTS search error: $e, falling back to LIKE');
+      return _searchFoodsLike(query, limit: limit);
+    }
+  }
+  
+  /// Búsqueda fallback usando LIKE (cuando FTS falla)
+  Future<List<Food>> _searchFoodsLike(String query, {int limit = 50}) async {
+    final normalized = query.toLowerCase().trim();
+    return (select(foods)
+      ..where((f) => 
+        f.normalizedName.like('%$normalized%') | 
+        f.brand.like('%$normalized%')
+      )
+      ..orderBy([
+        (f) => OrderingTerm.desc(f.useCount),
+        (f) => OrderingTerm.desc(f.lastUsedAt),
+      ])
+      ..limit(limit))
+      .get();
   }
   
   /// Mapea una fila de query a Food
@@ -704,6 +770,7 @@ class AppDatabase extends _$AppDatabase {
       lastUsedAt: _dateTimeFromString(row.read<String?>('last_used_at')),
       nutriScore: row.read<String?>('nutri_score'),
       novaGroup: row.read<int?>('nova_group'),
+      isFavorite: row.read<bool>('is_favorite'),
       createdAt: DateTime.parse(row.read<String>('created_at')),
       updatedAt: DateTime.parse(row.read<String>('updated_at')),
     );

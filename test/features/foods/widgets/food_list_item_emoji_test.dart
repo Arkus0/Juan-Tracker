@@ -26,6 +26,7 @@ void main() {
         fatPer100g: 5,
         userCreated: false,
         useCount: 0,
+        isFavorite: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         sourceMetadata: metadata,

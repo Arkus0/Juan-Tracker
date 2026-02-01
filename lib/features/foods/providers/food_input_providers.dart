@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../diet/repositories/alimento_repository.dart';
 import '../../../../training/database/database.dart';
 
 /// Modos de entrada de alimentos
@@ -35,21 +36,28 @@ final voiceInputAmountProvider = NotifierProvider<VoiceInputAmountNotifier, doub
 
 /// Provider de alimentos recientes (usados por el usuario)
 final recentFoodsProvider = FutureProvider<List<Food>>((ref) async {
-  // TODO: Implementar método getRecentFoods en el repositorio o database
-  // Por ahora retornamos lista vacía
-  return [];
+  final repository = ref.read(alimentoRepositoryProvider);
+  return repository.getRecentlyUsed(limit: 20);
 });
 
 /// Provider de alimentos favoritos del usuario
 final favoriteFoodsProvider = FutureProvider<List<Food>>((ref) async {
-  // TODO: Implementar favoritos en la base de datos
-  return [];
+  final repository = ref.read(alimentoRepositoryProvider);
+  return repository.getFavorites(limit: 50);
+});
+
+/// Provider para alternar favorito
+final toggleFavoriteProvider = Provider<Future<bool> Function(String)>((ref) {
+  return (String foodId) async {
+    final repository = ref.read(alimentoRepositoryProvider);
+    return repository.toggleFavorite(foodId);
+  };
 });
 
 /// Provider para guardar un alimento como reciente
 final saveRecentFoodProvider = Provider<Future<void> Function(Food)>((ref) {
   return (Food food) async {
-    // TODO: Actualizar timestamp de último uso
-    // await db.updateFoodUsage(food.id);
+    final repository = ref.read(alimentoRepositoryProvider);
+    await repository.recordSelection(food.id);
   };
 });

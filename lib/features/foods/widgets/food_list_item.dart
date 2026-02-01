@@ -99,7 +99,7 @@ void _cacheEmoji(String foodId, String emoji) {
       _emojiCache.remove(key);
     }
   }
-  _emojiCache[food.id] = emoji;
+  _emojiCache[foodId] = emoji;
 }
 
 // ============================================================================
@@ -204,7 +204,7 @@ class FoodListItem extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${food.kcalPer100g.toStringAsFixed(0)}',
+                      food.kcalPer100g.toStringAsFixed(0),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: kcalColor,

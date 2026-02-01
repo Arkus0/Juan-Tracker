@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../diet/presentation/providers/food_search_provider.dart' as presentation;
 import '../../../../diet/providers/food_search_provider.dart';
 import '../../../../diet/repositories/alimento_repository.dart';
 import '../../../../training/database/database.dart';
@@ -27,18 +28,36 @@ final unifiedSearchProvider = Provider<AsyncValue<List<ScoredFood>>>((ref) {
 
 /// Provider de alimentos recientes (usados por el usuario)
 final recentFoodsForUnifiedProvider = FutureProvider<List<Food>>((ref) async {
-  // TODO: Implementar getRecentFoods en el repositorio
-  return [];
+  final repository = ref.read(alimentoRepositoryProvider);
+  return repository.getRecentlyUsed(limit: 20);
 });
 
-/// Provider para buscar por código de barras
+/// Provider para buscar por código de barras (local)
+/// 
+/// Busca solo en la base de datos local.
 final barcodeSearchProvider = FutureProvider.family<Food?, String>((ref, barcode) async {
-  // TODO: Implementar búsqueda por barcode
-  return null;
+  final repository = ref.read(alimentoRepositoryProvider);
+  return repository.searchByBarcode(barcode);
 });
 
-/// Provider para búsqueda online por código de barras
+/// Provider para búsqueda online por código de barras (Open Food Facts)
+/// 
+/// Realiza búsqueda híbrida: primero local, si no encuentra busca en Open Food Facts
+/// y guarda el resultado en la base de datos local.
 final onlineBarcodeSearchProvider = FutureProvider.family<Food?, String>((ref, barcode) async {
-  // TODO: Implementar búsqueda online por barcode
-  return null;
+  // Primero intentar búsqueda local
+  final alimentoRepo = ref.read(alimentoRepositoryProvider);
+  final localResult = await alimentoRepo.searchByBarcode(barcode);
+  if (localResult != null) return localResult;
+  
+  // Si no está en local, buscar en Open Food Facts via FoodSearchRepository
+  final searchRepo = ref.read(presentation.foodSearchRepositoryProvider);
+  final scoredFood = await searchRepo.searchByBarcode(barcode);
+  
+  if (scoredFood == null) return null;
+  
+  // Buscar el alimento recién guardado en la base de datos local
+  // (el repositorio remoto guarda automáticamente en cache)
+  final cachedFood = await alimentoRepo.getById(scoredFood.food.id);
+  return cachedFood;
 });

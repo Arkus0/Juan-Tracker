@@ -7,8 +7,6 @@ import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/home_button.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
-import 'package:juan_tracker/diet/providers/weight_trend_providers.dart'
-    show weightChartStatsProvider, WeightChartStats;
 import 'package:juan_tracker/diet/models/weighin_model.dart';
 
 import 'package:intl/intl.dart';
