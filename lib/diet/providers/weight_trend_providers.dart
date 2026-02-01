@@ -160,6 +160,91 @@ final weightStatsProvider = Provider<AsyncValue<WeightStats?>>((ref) {
 });
 
 // ============================================================================
+// CHART STATS (PERF: Memoized to avoid recalculation in build())
+// ============================================================================
+
+/// Pre-computed chart statistics for weight screen
+/// PERF: Calculated once per data change, not per widget rebuild
+class WeightChartStats {
+  final double minWeight;
+  final double maxWeight;
+  final double? weeklyAverage;
+  final int daysTracking;
+  final double totalChange;
+
+  const WeightChartStats({
+    required this.minWeight,
+    required this.maxWeight,
+    this.weeklyAverage,
+    required this.daysTracking,
+    required this.totalChange,
+  });
+
+  double get weightRange => maxWeight - minWeight;
+  double get padding => weightRange > 0 ? weightRange * 0.1 : 1.0;
+}
+
+/// Memoized provider for weight chart statistics.
+/// Calculates min/max/weeklyAvg once when data changes, not on every rebuild.
+final weightChartStatsProvider = Provider<AsyncValue<WeightChartStats?>>((ref) {
+  final weighInsAsync = ref.watch(recentWeighInsProvider);
+
+  return weighInsAsync.when(
+    data: (weighIns) {
+      if (weighIns.isEmpty) {
+        return const AsyncValue.data(null);
+      }
+
+      // Filter to last 30 days for chart
+      final cutoffDate = DateTime.now().subtract(const Duration(days: 30));
+      final filtered = weighIns
+          .where((w) => w.dateTime.isAfter(cutoffDate))
+          .toList()
+        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+      if (filtered.length < 2) {
+        return const AsyncValue.data(null);
+      }
+
+      // PERF: Single pass for min/max instead of two separate reduce() calls
+      var minWeight = filtered.first.weightKg;
+      var maxWeight = filtered.first.weightKg;
+      for (final w in filtered) {
+        if (w.weightKg < minWeight) minWeight = w.weightKg;
+        if (w.weightKg > maxWeight) maxWeight = w.weightKg;
+      }
+
+      // Calculate weekly average from most recent 7 entries
+      double? weeklyAverage;
+      if (weighIns.length >= 7) {
+        var sum = 0.0;
+        for (var i = 0; i < 7; i++) {
+          sum += weighIns[i].weightKg;
+        }
+        weeklyAverage = sum / 7;
+      }
+
+      // Progress stats
+      final firstWeight = weighIns.last.weightKg;
+      final latestWeight = weighIns.first.weightKg;
+      final totalChange = latestWeight - firstWeight;
+      final daysTracking =
+          DateTime.now().difference(weighIns.last.dateTime).inDays + 1;
+
+      return AsyncValue.data(WeightChartStats(
+        minWeight: minWeight,
+        maxWeight: maxWeight,
+        weeklyAverage: weeklyAverage,
+        daysTracking: daysTracking,
+        totalChange: totalChange,
+      ));
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (e, st) => AsyncValue.error(e, st),
+  );
+});
+
+// ============================================================================
 // PREDICTION PROVIDERS
 // ============================================================================
 

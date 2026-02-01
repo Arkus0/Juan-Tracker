@@ -2,8 +2,110 @@ import 'package:flutter/material.dart';
 
 import '../../../../training/database/database.dart';
 
+// ============================================================================
+// PERF: Emoji lookup optimization - O(1) instead of O(27) per item
+// ============================================================================
+
+/// Pre-compiled keyword-to-emoji map for instant lookup.
+/// Keys are lowercase keywords that map to emoji.
+const _kEmojiKeywords = <String, String>{
+  // Lácteos
+  'leche': '🥛', 'yogur': '🥛', 'dairy': '🥛', 'milk': '🥛',
+  'queso': '🧀', 'cheese': '🧀',
+  // Carnes
+  'pollo': '🍗', 'chicken': '🍗',
+  'carne': '🥩', 'beef': '🥩', 'steak': '🥩', 'ternera': '🥩',
+  'jamón': '🥓', 'jamon': '🥓', 'ham': '🥓',
+  'pescado': '🐟', 'fish': '🐟', 'salmon': '🐟', 'atún': '🐟', 'atun': '🐟',
+  // Frutas
+  'manzana': '🍎', 'apple': '🍎',
+  'plátano': '🍌', 'platano': '🍌', 'banana': '🍌',
+  'naranja': '🍊', 'orange': '🍊',
+  'fruit': '🍎', 'fruta': '🍎',
+  // Verduras
+  'vegetable': '🥬', 'verdura': '🥬', 'vegetal': '🥬',
+  // Cereales y pan
+  'pan': '🍞', 'bread': '🍞',
+  'pasta': '🍝',
+  'arroz': '🍚', 'rice': '🍚',
+  'cereal': '🥣',
+  // Bebidas
+  'agua': '💧', 'water': '💧',
+  'zumo': '🧃', 'jugo': '🧃', 'juice': '🧃',
+  'refresco': '🥤', 'soda': '🥤', 'beverage': '🥤', 'bebida': '🥤',
+  'cerveza': '🍺', 'beer': '🍺',
+  'vino': '🍷', 'wine': '🍷',
+  'café': '☕', 'cafe': '☕', 'coffee': '☕',
+  // Snacks y dulces
+  'chocolate': '🍫',
+  'galleta': '🍪', 'cookie': '🍪', 'cracker': '🍪',
+  'helado': '🍦', 'ice cream': '🍦',
+  'chips': '🥔', 'patatas': '🥔', 'snack': '🥔',
+  // Huevos
+  'huevo': '🥚', 'egg': '🥚',
+  // Aceites
+  'aceite': '🫒', 'oil': '🫒',
+};
+
+/// Cached emoji results by food ID to avoid re-scanning.
+/// Using a simple LRU-style cache with max 200 entries.
+final _emojiCache = <String, String>{};
+const _maxCacheSize = 200;
+
+/// Fast emoji lookup using keyword map + caching.
+/// O(words_in_name) instead of O(27 comparisons) per call.
+String _getEmojiForFoodFast(Food food) {
+  // Check cache first
+  final cached = _emojiCache[food.id];
+  if (cached != null) return cached;
+
+  // Parse name into words for keyword matching
+  final nameLower = food.name.toLowerCase();
+  final words = nameLower.split(RegExp(r'[\s,.\-_]+'));
+
+  // Check each word against keyword map - O(n) where n = words in name
+  for (final word in words) {
+    final emoji = _kEmojiKeywords[word];
+    if (emoji != null) {
+      _cacheEmoji(food.id, emoji);
+      return emoji;
+    }
+  }
+
+  // Check categories from metadata if available
+  final metadata = food.sourceMetadata;
+  if (metadata != null && metadata['categories'] is List) {
+    final categories = (metadata['categories'] as List).join(' ').toLowerCase();
+    for (final keyword in _kEmojiKeywords.keys) {
+      if (categories.contains(keyword)) {
+        final emoji = _kEmojiKeywords[keyword]!;
+        _cacheEmoji(food.id, emoji);
+        return emoji;
+      }
+    }
+  }
+
+  // Default
+  _cacheEmoji(food.id, '🍽️');
+  return '🍽️';
+}
+
+void _cacheEmoji(String foodId, String emoji) {
+  // Simple cache eviction when full
+  if (_emojiCache.length >= _maxCacheSize) {
+    // Remove oldest 20% of entries
+    final keysToRemove = _emojiCache.keys.take(_maxCacheSize ~/ 5).toList();
+    for (final key in keysToRemove) {
+      _emojiCache.remove(key);
+    }
+  }
+  _emojiCache[food.id] = emoji;
+}
+
+// ============================================================================
+
 /// Item de lista de alimentos con información nutricional
-/// 
+///
 /// Muestra:
 /// - Icono/emoji según categoría
 /// - Nombre + marca
@@ -25,9 +127,9 @@ class FoodListItem extends StatelessWidget {
     
     // Determinar color de calorías
     final kcalColor = _getKcalColor(food.kcalPer100g.toDouble());
-    
-    // Emoji/icono según categoría
-    final emoji = _getEmojiForFood(food);
+
+    // PERF: Use optimized emoji lookup with caching
+    final emoji = _getEmojiForFoodFast(food);
     
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -165,113 +267,6 @@ class FoodListItem extends StatelessWidget {
     return Colors.green;
   }
 
-  String _getEmojiForFood(Food food) {
-    final name = food.name.toLowerCase();
-    // Usar sourceMetadata para obtener categorías si existen
-    final metadata = food.sourceMetadata;
-    final categories = metadata != null && metadata['categories'] is List
-        ? (metadata['categories'] as List).join(' ').toLowerCase()
-        : '';
-    
-    // Lácteos
-    if (name.contains('leche') || name.contains('yogur') || 
-        categories.contains('dairy') || categories.contains('milk')) {
-      return '🥛';
-    }
-    if (name.contains('queso') || categories.contains('cheese')) {
-      return '🧀';
-    }
-    
-    // Carnes
-    if (name.contains('pollo') || name.contains('chicken')) {
-      return '🍗';
-    }
-    if (name.contains('carne') || name.contains('beef') || name.contains('steak')) {
-      return '🥩';
-    }
-    if (name.contains('jamón') || name.contains('jamon') || name.contains('ham')) {
-      return '🥓';
-    }
-    if (name.contains('pescado') || name.contains('fish') || name.contains('salmon')) {
-      return '🐟';
-    }
-    
-    // Frutas y verduras
-    if (name.contains('manzana') || name.contains('apple')) {
-      return '🍎';
-    }
-    if (name.contains('plátano') || name.contains('platano') || name.contains('banana')) {
-      return '🍌';
-    }
-    if (name.contains('naranja') || name.contains('orange')) {
-      return '🍊';
-    }
-    if (categories.contains('fruit') || categories.contains('fruta')) {
-      return '🍎';
-    }
-    if (categories.contains('vegetable') || categories.contains('verdura')) {
-      return '🥬';
-    }
-    
-    // Cereales y pan
-    if (name.contains('pan') || name.contains('bread')) {
-      return '🍞';
-    }
-    if (name.contains('pasta') || categories.contains('pasta')) {
-      return '🍝';
-    }
-    if (name.contains('arroz') || name.contains('rice')) {
-      return '🍚';
-    }
-    if (categories.contains('cereal')) {
-      return '🥣';
-    }
-    
-    // Bebidas
-    if (name.contains('agua') || name.contains('water')) {
-      return '💧';
-    }
-    if (name.contains('zumo') || name.contains('jugo') || name.contains('juice')) {
-      return '🧃';
-    }
-    if (name.contains('refresco') || name.contains('soda') || categories.contains('beverage')) {
-      return '🥤';
-    }
-    if (name.contains('cerveza') || name.contains('beer')) {
-      return '🍺';
-    }
-    if (name.contains('vino') || name.contains('wine')) {
-      return '🍷';
-    }
-    if (name.contains('café') || name.contains('cafe') || name.contains('coffee')) {
-      return '☕';
-    }
-    
-    // Snacks y dulces
-    if (name.contains('chocolate')) {
-      return '🍫';
-    }
-    if (name.contains('galleta') || name.contains('cookie') || name.contains('cracker')) {
-      return '🍪';
-    }
-    if (name.contains('helado') || name.contains('ice cream')) {
-      return '🍦';
-    }
-    if (name.contains('chips') || name.contains('patatas') || categories.contains('snack')) {
-      return '🥔';
-    }
-    
-    // Huevos
-    if (name.contains('huevo') || name.contains('egg')) {
-      return '🥚';
-    }
-    
-    // Aceites
-    if (name.contains('aceite') || name.contains('oil')) {
-      return '🫒';
-    }
-    
-    // Default
-    return '🍽️';
-  }
+  // NOTE: _getEmojiForFood moved to top-level _getEmojiForFoodFast() with
+  // hash map lookup + caching for O(1) vs O(27) performance improvement
 }
