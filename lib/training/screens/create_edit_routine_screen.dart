@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
 import 'package:juan_tracker/training/models/rutina.dart';
 import 'package:juan_tracker/training/models/sesion.dart';
@@ -21,6 +20,7 @@ import 'package:juan_tracker/training/widgets/routine_import_dialog.dart';
 import 'package:juan_tracker/training/widgets/smart_import_sheet.dart';
 import 'package:juan_tracker/training/widgets/voice/voice_input_sheet.dart';
 import 'package:logger/logger.dart';
+import '../../core/design_system/design_system.dart' as core show AppTypography;
 
 class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   final Rutina? rutina; // Null for Create, existing for Edit
@@ -139,24 +139,27 @@ class _CreateEditRoutineScreenState
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Theme.of(ctx).colorScheme.surfaceContainerHighest,
         title: Text(
           '¿Salir sin guardar?',
-          style: GoogleFonts.montserrat(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+          style: core.AppTypography.titleLarge.copyWith(
+            color: Theme.of(ctx).colorScheme.onSurface,
           ),
         ),
         content: Text(
           'Tienes cambios sin guardar. Si sales ahora, se perderán.',
-          style: GoogleFonts.montserrat(color: Colors.white70),
+          style: core.AppTypography.bodyMedium.copyWith(
+            color: Theme.of(ctx).colorScheme.onSurface.withAlpha(178),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               'SEGUIR EDITANDO',
-              style: GoogleFonts.montserrat(color: AppColors.neonPrimary),
+              style: core.AppTypography.labelLarge.copyWith(
+                color: AppColors.neonPrimary,
+              ),
             ),
           ),
           TextButton(
@@ -164,7 +167,9 @@ class _CreateEditRoutineScreenState
             style: TextButton.styleFrom(foregroundColor: Colors.red[400]),
             child: Text(
               'SALIR',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+              style: core.AppTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -220,7 +225,7 @@ class _CreateEditRoutineScreenState
       if (error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(error, style: const TextStyle(color: Colors.white)),
+            content: Text(error, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
             backgroundColor: AppColors.neonPrimary,
           ),
         );
@@ -255,9 +260,8 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             '¡RUTINA FORJADA!',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
+            style: core.AppTypography.headlineMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           backgroundColor: AppColors.neonPrimaryPressed,
@@ -277,7 +281,7 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Error inesperado al guardar: ${e.toString()}',
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           ),
           backgroundColor: AppColors.neonPrimary,
         ),
@@ -406,7 +410,9 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Ponle nombre a tu rutina antes de compartir',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
@@ -421,7 +427,9 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Añade ejercicios antes de compartir',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
@@ -445,7 +453,9 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Primero añade un día a tu rutina',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
@@ -483,7 +493,7 @@ class _CreateEditRoutineScreenState
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -495,10 +505,8 @@ class _CreateEditRoutineScreenState
           children: [
             Text(
               '¿A qué día importar?',
-              style: GoogleFonts.montserrat(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              style: core.AppTypography.titleLarge.copyWith(
+                color: Theme.of(ctx).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -510,21 +518,21 @@ class _CreateEditRoutineScreenState
                   backgroundColor: AppColors.neonPrimary,
                   child: Text(
                     '${index + 1}',
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    style: core.AppTypography.titleLarge.copyWith(
+                      color: Theme.of(ctx).colorScheme.onSurface,
                     ),
                   ),
                 ),
                 title: Text(
                   dia.nombre,
-                  style: GoogleFonts.montserrat(color: Colors.white),
+                  style: core.AppTypography.bodyMedium.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurface,
+                  ),
                 ),
                 subtitle: Text(
                   '${dia.ejercicios.length} ejercicio${dia.ejercicios.length == 1 ? '' : 's'}',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white54,
-                    fontSize: 12,
+                  style: core.AppTypography.bodySmall.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
                 onTap: () {
@@ -583,9 +591,8 @@ class _CreateEditRoutineScreenState
           SnackBar(
             content: Text(
               '¡${exercises.length} ejercicio${exercises.length == 1 ? '' : 's'} importado${exercises.length == 1 ? '' : 's'}!',
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              style: core.AppTypography.labelLarge.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             backgroundColor: Colors.green[700],
@@ -611,7 +618,9 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Primero añade un día a tu rutina',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
@@ -643,7 +652,7 @@ class _CreateEditRoutineScreenState
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -659,10 +668,8 @@ class _CreateEditRoutineScreenState
                 const SizedBox(width: 8),
                 Text(
                   '¿A qué día añadir?',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  style: core.AppTypography.titleLarge.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -676,21 +683,21 @@ class _CreateEditRoutineScreenState
                   backgroundColor: AppColors.neonPrimary,
                   child: Text(
                     '${index + 1}',
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    style: core.AppTypography.titleLarge.copyWith(
+                      color: Theme.of(ctx).colorScheme.onSurface,
                     ),
                   ),
                 ),
                 title: Text(
                   dia.nombre,
-                  style: GoogleFonts.montserrat(color: Colors.white),
+                  style: core.AppTypography.bodyMedium.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurface,
+                  ),
                 ),
                 subtitle: Text(
                   '${dia.ejercicios.length} ejercicio${dia.ejercicios.length == 1 ? '' : 's'}',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white54,
-                    fontSize: 12,
+                  style: core.AppTypography.bodySmall.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
                 onTap: () {
@@ -757,9 +764,8 @@ class _CreateEditRoutineScreenState
                 const SizedBox(width: 8),
                 Text(
                   '¡${exercises.length} ejercicio${exercises.length == 1 ? '' : 's'} añadido${exercises.length == 1 ? '' : 's'}!',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  style: core.AppTypography.labelLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -785,7 +791,9 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Primero añade un día a tu rutina',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
@@ -798,7 +806,7 @@ class _CreateEditRoutineScreenState
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -814,7 +822,7 @@ class _CreateEditRoutineScreenState
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[700],
+                    color: Theme.of(ctx).colorScheme.onSurface.withAlpha(138),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -822,10 +830,8 @@ class _CreateEditRoutineScreenState
               const SizedBox(height: 20),
               Text(
                 'AÑADIR EJERCICIOS',
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                style: core.AppTypography.headlineMedium.copyWith(
+                  color: Theme.of(ctx).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 20),
@@ -883,7 +889,7 @@ class _CreateEditRoutineScreenState
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -893,10 +899,8 @@ class _CreateEditRoutineScreenState
           const SizedBox(height: 16),
           Text(
             '¿A qué día añadir?',
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+            style: core.AppTypography.titleLarge.copyWith(
+              color: Theme.of(ctx).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -907,12 +911,14 @@ class _CreateEditRoutineScreenState
                 backgroundColor: AppColors.neonPrimary,
                 child: Text(
                   '${index + 1}',
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface),
                 ),
               ),
               title: Text(
                 dia.nombre,
-                style: GoogleFonts.montserrat(color: Colors.white),
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(ctx).colorScheme.onSurface,
+                ),
               ),
               onTap: () {
                 Navigator.of(ctx).pop();
@@ -936,7 +942,9 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Primero añade un día a tu rutina',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
@@ -968,7 +976,7 @@ class _CreateEditRoutineScreenState
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -978,10 +986,8 @@ class _CreateEditRoutineScreenState
           const SizedBox(height: 16),
           Text(
             '¿A qué día añadir ejercicios?',
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+            style: core.AppTypography.titleLarge.copyWith(
+              color: Theme.of(ctx).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -992,18 +998,19 @@ class _CreateEditRoutineScreenState
                 backgroundColor: AppColors.neonPrimary,
                 child: Text(
                   '${index + 1}',
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface),
                 ),
               ),
               title: Text(
                 dia.nombre,
-                style: GoogleFonts.montserrat(color: Colors.white),
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(ctx).colorScheme.onSurface,
+                ),
               ),
               subtitle: Text(
                 '${dia.ejercicios.length} ejercicios',
-                style: GoogleFonts.montserrat(
-                  color: Colors.white54,
-                  fontSize: 12,
+                style: core.AppTypography.bodySmall.copyWith(
+                  color: Theme.of(ctx).colorScheme.onSurface.withAlpha(138),
                 ),
               ),
               onTap: () {
@@ -1068,7 +1075,9 @@ class _CreateEditRoutineScreenState
                 const SizedBox(width: 8),
                 Text(
                   '${exercises.length} ejercicio${exercises.length == 1 ? '' : 's'} importado${exercises.length == 1 ? '' : 's'}',
-                  style: GoogleFonts.montserrat(color: Colors.white),
+                  style: core.AppTypography.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
@@ -1130,7 +1139,7 @@ class _CreateEditRoutineScreenState
             SnackBar(
               content: Text(
                 'Error: ${e.toString()}',
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               ),
               backgroundColor: AppColors.neonPrimary,
             ),
@@ -1165,7 +1174,7 @@ class _CreateEditRoutineScreenState
             SnackBar(
               content: Text(
                 'Error: ${e.toString()}',
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               ),
               backgroundColor: AppColors.neonPrimary,
             ),
@@ -1206,10 +1215,7 @@ class _CreateEditRoutineScreenState
             widget.rutina == null
                 ? 'CREA TU RUTINA'
                 : 'EDITAR: ${routineState.nombre.toUpperCase()}',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.w900,
-              fontSize: 22,
-            ),
+            style: core.AppTypography.headlineSmall,
           ),
           actions: [
             // 🎯 UX ALTO: Un solo botón Smart Import (consolida voz + OCR + smart)
@@ -1276,14 +1282,12 @@ class _CreateEditRoutineScreenState
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
                   controller: _nameController,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                  style: core.AppTypography.headlineMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Nombre que motive miedo',
-                    hintStyle: GoogleFonts.montserrat(
+                    hintStyle: core.AppTypography.bodyMedium.copyWith(
                       color: AppColors.neonPrimaryPressed.withValues(
                         alpha: 0.5,
                       ),
@@ -1341,10 +1345,8 @@ class _CreateEditRoutineScreenState
                   child: Center(
                     child: Text(
                       'AÑADE TU PRIMER DÍA',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white24,
+                      style: core.AppTypography.titleLarge.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha(61),
                       ),
                     ),
                   ),
@@ -1470,9 +1472,8 @@ class _CreateEditRoutineScreenState
                   icon: const Icon(Icons.add, size: 32),
                   label: Text(
                     'AÑADIR DÍA',
-                    style: GoogleFonts.montserrat(
+                    style: core.AppTypography.labelLarge.copyWith(
                       fontWeight: FontWeight.w900,
-                      fontSize: 16,
                     ),
                   ),
                   backgroundColor: Theme.of(context).colorScheme.surface,
@@ -1506,9 +1507,7 @@ class _CreateEditRoutineScreenState
             ),
             child: Text(
               'GUARDAR RUTINA',
-              style: GoogleFonts.montserrat(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
+              style: core.AppTypography.headlineSmall.copyWith(
                 letterSpacing: 1,
               ),
             ),
@@ -1559,7 +1558,7 @@ class _CreateEditRoutineScreenState
             Text(
               'Sugerencias:',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
               ),
             ),
             const SizedBox(height: 8),
@@ -1614,7 +1613,7 @@ class _ImportOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.grey[850],
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -1638,24 +1637,21 @@ class _ImportOptionTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                      style: core.AppTypography.labelLarge.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.grey[400],
-                        fontSize: 12,
+                      style: core.AppTypography.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey[600]),
+              Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface.withAlpha(153)),
             ],
           ),
         ),

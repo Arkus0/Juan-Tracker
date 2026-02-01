@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../../core/providers/information_density_provider.dart';
 import '../../models/progression_type.dart';
 import '../../models/serie_log.dart';
@@ -18,51 +18,39 @@ import 'log_input.dart';
 typedef NullableBoolChanged = void Function({required bool? value});
 
 class _SetRowStyles {
-  static final setNumberText = GoogleFonts.montserrat(
-    fontSize: 11,
+  static final setNumberText = core.AppTypography.labelMedium.copyWith(
     fontWeight: FontWeight.w800,
     color: Colors.white,
   );
 
-  static final prevLabel = GoogleFonts.montserrat(
-    fontSize: 7,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 0.5,
-  );
-
-  static final prevValue = GoogleFonts.montserrat(
-    fontSize: 10,
+  // 🆕 Estilos para botón de copia (PREV/SUG)
+  static final prevValue = core.AppTypography.labelSmall.copyWith(
+    fontSize: 11,
     fontWeight: FontWeight.w600,
   );
 
-  static final prevReps = GoogleFonts.montserrat(
-    fontSize: 9,
+  static final prevReps = core.AppTypography.labelSmall.copyWith(
+    fontSize: 10,
     fontWeight: FontWeight.w500,
   );
 
-  static final sugLabel = GoogleFonts.montserrat(
-    fontSize: 7,
-    fontWeight: FontWeight.w800,
-    letterSpacing: 0.5,
-  );
-
-  static final sugValue = GoogleFonts.montserrat(
-    fontSize: 10,
+  static final sugValue = core.AppTypography.labelSmall.copyWith(
+    fontSize: 11,
     fontWeight: FontWeight.w700,
   );
 
-  static final sugReps = GoogleFonts.montserrat(
-    fontSize: 9,
+  static final sugReps = core.AppTypography.labelSmall.copyWith(
+    fontSize: 10,
     fontWeight: FontWeight.w600,
   );
 
-  static final tagText = GoogleFonts.montserrat(
+  static final tagText = core.AppTypography.labelSmall.copyWith(
     fontSize: 8,
     fontWeight: FontWeight.w700,
     letterSpacing: 0.3,
   );
 
-  static final noteText = GoogleFonts.montserrat(
+  static final noteText = core.AppTypography.labelSmall.copyWith(
     fontSize: 9,
     fontStyle: FontStyle.italic,
   );
@@ -76,6 +64,10 @@ class _SetRowStyles {
 /// - RepaintBoundary para inputs
 /// - Widgets const donde posible
 /// - Minimizado número de setState
+/// 
+/// 🆕 Fast Logging Parity:
+/// - Swipe left to delete con undo
+/// - Botón de copia visible en columna PREV
 class SessionSetRow extends ConsumerStatefulWidget {
   final int index;
   final SerieLog log;
@@ -89,6 +81,9 @@ class SessionSetRow extends ConsumerStatefulWidget {
   final bool showAdvanced;
   final bool shouldFocus; // Auto-focus cuando timer termina
   final bool shouldFocusReps; // Focus específico en reps
+  // 🆕 Fast Logging: Swipe to delete
+  final bool canDelete; // Si se puede eliminar (>1 serie en ejercicio)
+  final VoidCallback? onDelete; // Callback para eliminar serie
 
   const SessionSetRow({
     super.key,
@@ -104,6 +99,8 @@ class SessionSetRow extends ConsumerStatefulWidget {
     required this.showAdvanced,
     this.shouldFocus = false,
     this.shouldFocusReps = false,
+    this.canDelete = false,
+    this.onDelete,
   });
 
   @override
@@ -233,7 +230,8 @@ class _SessionSetRowState extends ConsumerState<SessionSetRow> {
         ? AppColors.success.withValues(alpha: 0.12)
         : Colors.transparent;
 
-    return GestureDetector(
+    // 🆕 Fast Logging: Contenido base de la fila
+    final rowContent = GestureDetector(
       onLongPress: widget.onLongPress,
       child: Container(
         padding: EdgeInsets.symmetric(
@@ -366,6 +364,49 @@ class _SessionSetRowState extends ConsumerState<SessionSetRow> {
         ),
       ),
     );
+
+    // 🆕 Fast Logging: Swipe-to-delete envolviendo el contenido
+    if (widget.canDelete && widget.onDelete != null) {
+      return Dismissible(
+        key: Key('dismissible_set_${widget.log.id}'),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (direction) async {
+          // Feedback háptico inmediato - sin diálogo para gimnasio
+          HapticFeedback.mediumImpact();
+          return true;
+        },
+        onDismissed: (direction) {
+          widget.onDelete!();
+        },
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                'ELIMINAR',
+                style: core.AppTypography.labelMedium.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.delete_outline, color: Colors.white, size: 20),
+            ],
+          ),
+        ),
+        child: rowContent,
+      );
+    }
+
+    return rowContent;
   }
 }
 
@@ -385,11 +426,12 @@ class _SetNumber extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var bgColor = Colors.grey[800]!;
+    final colorScheme = Theme.of(context).colorScheme;
+    var bgColor = colorScheme.surfaceContainerHighest;
     var label = '${index + 1}';
 
     if (isWarmup) {
-      bgColor = Colors.blue[700]!;
+      bgColor = colorScheme.tertiary;
       label = 'W';
     } else if (isDropset) {
       bgColor = Colors.purple[700]!;
@@ -431,68 +473,56 @@ class _PrevValueColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     if (suggestion != null) {
       final isImprovement = suggestion!.isImprovement;
+      final buttonColor = isImprovement ? AppColors.success : AppColors.neonCyan;
+      
+      // 🆕 Fast Logging: Botón de sugerencia OBVIO
       return Tooltip(
-        message: 'Copiar sugerencia',
+        message: 'Toca para aplicar ${suggestion!.suggestedWeight}kg × ${suggestion!.suggestedReps}',
         child: Material(
-          color: isImprovement
-              ? AppColors.success.withValues(alpha: 0.15)
-              : Colors.grey[850],
+          color: buttonColor.withValues(alpha: 0.15),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             side: BorderSide(
-              color: isImprovement
-                  ? AppColors.success.withValues(alpha: 0.5)
-                  : Colors.grey[700]!,
+              color: buttonColor.withValues(alpha: 0.5),
+              width: 1.5,
             ),
           ),
           child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(6),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onTap();
+            },
+            borderRadius: BorderRadius.circular(8),
+            splashColor: buttonColor.withValues(alpha: 0.3),
             child: Container(
-              width: 52,
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              width: 56,
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 🎯 P0: Indicador TAP prominente
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.touch_app,
-                        size: 8,
-                        color: isImprovement
-                            ? AppColors.success
-                            : Colors.grey[500],
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        'SUG',
-                        style: _SetRowStyles.sugLabel.copyWith(
-                          color: isImprovement
-                              ? AppColors.success
-                              : Colors.grey[400],
-                        ),
-                      ),
-                    ],
+                  // Icono prominente según tipo
+                  Icon(
+                    isImprovement ? Icons.trending_up_rounded : Icons.content_copy_rounded,
+                    size: 14,
+                    color: buttonColor,
                   ),
-                  const SizedBox(height: 1),
+                  const SizedBox(height: 2),
                   Text(
                     '${suggestion!.suggestedWeight}',
                     style: _SetRowStyles.sugValue.copyWith(
-                      color: isImprovement
-                          ? AppColors.neonCyanBright
-                          : Colors.grey[300],
+                      color: buttonColor,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   Text(
-                    'x${suggestion!.suggestedReps}',
+                    '×${suggestion!.suggestedReps}',
                     style: _SetRowStyles.sugReps.copyWith(
-                      color: isImprovement
-                          ? AppColors.success
-                          : Colors.grey[400],
+                      color: buttonColor.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -504,48 +534,51 @@ class _PrevValueColumn extends StatelessWidget {
     }
 
     if (prevLog != null) {
+      // 🆕 Fast Logging: Botón de copia OBVIO - el usuario debe entender que es clickable
       return Tooltip(
-        message: 'Copiar anterior',
+        message: 'Toca para copiar ${prevLog!.peso}kg × ${prevLog!.reps}',
         child: Material(
-          color: Colors.grey[850],
+          color: AppColors.neonCyan.withValues(alpha: 0.15),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-            side: BorderSide(color: Colors.grey[800]!),
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: AppColors.neonCyan.withValues(alpha: 0.4),
+              width: 1.5,
+            ),
           ),
           child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(6),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onTap();
+            },
+            borderRadius: BorderRadius.circular(8),
+            splashColor: AppColors.neonCyan.withValues(alpha: 0.3),
             child: Container(
-              width: 52,
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              width: 56,
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 🎯 P0: Indicador TAP prominente
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.touch_app, size: 8, color: Colors.grey[500]),
-                      const SizedBox(width: 2),
-                      Text(
-                        'PREV',
-                        style: _SetRowStyles.prevLabel.copyWith(
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
+                  // Icono de copia prominente
+                  Icon(
+                    Icons.content_copy_rounded,
+                    size: 14,
+                    color: AppColors.neonCyan,
                   ),
-                  const SizedBox(height: 1),
+                  const SizedBox(height: 2),
+                  // Valores a copiar
                   Text(
                     '${prevLog!.peso}',
                     style: _SetRowStyles.prevValue.copyWith(
-                      color: Colors.grey[400],
+                      color: AppColors.neonCyan,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   Text(
-                    'x${prevLog!.reps}',
+                    '×${prevLog!.reps}',
                     style: _SetRowStyles.prevReps.copyWith(
-                      color: Colors.grey[500],
+                      color: AppColors.neonCyan.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -557,9 +590,9 @@ class _PrevValueColumn extends StatelessWidget {
     }
 
     return SizedBox(
-      width: 52,
+      width: 56,
       child: Center(
-        child: Text('-', style: TextStyle(color: Colors.grey[700])),
+        child: Text('-', style: TextStyle(color: colorScheme.onSurface.withAlpha(150))),
       ),
     );
   }
@@ -613,6 +646,8 @@ class _CompletedCheckboxState extends State<_CompletedCheckbox>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
@@ -629,10 +664,10 @@ class _CompletedCheckboxState extends State<_CompletedCheckbox>
           child: Checkbox(
             value: widget.isCompleted,
             activeColor: AppColors.success,
-            checkColor: Colors.white,
+            checkColor: colorScheme.onSurface,
             onChanged: (value) => widget.onChanged(value: value),
             side: BorderSide(
-              color: widget.isCompleted ? AppColors.success : Colors.grey[600]!,
+              color: widget.isCompleted ? AppColors.success : colorScheme.onSurface.withAlpha(150),
               width: 2,
             ),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -657,6 +692,7 @@ class _TagsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final hasContent =
         showAdvanced ||
         log.rpe != null ||
@@ -694,7 +730,7 @@ class _TagsRow extends StatelessWidget {
             Expanded(
               child: Text(
                 log.notas!,
-                style: _SetRowStyles.noteText.copyWith(color: Colors.grey[500]),
+                style: _SetRowStyles.noteText.copyWith(color: colorScheme.onSurfaceVariant),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),

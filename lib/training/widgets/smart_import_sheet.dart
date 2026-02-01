@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../providers/voice_input_provider.dart';
 import '../services/routine_ocr_service.dart';
 import '../services/voice_input_service.dart';
@@ -263,7 +263,9 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         SnackBar(
           content: Text(
             'No hay ejercicios válidos para añadir',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           backgroundColor: AppColors.error,
         ),
@@ -349,7 +351,10 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
                 if (_mode != SmartImportMode.selection) ...[
                   IconButton(
                     onPressed: _backToSelection,
-                    icon: const Icon(Icons.arrow_back, color: Colors.white70),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+                    ),
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
                   ),
@@ -358,10 +363,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
                 Expanded(
                   child: Text(
                     _getTitle(),
-                    style: GoogleFonts.montserrat(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                    style: core.AppTypography.headlineSmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     textAlign: _mode == SmartImportMode.selection
                         ? TextAlign.center
@@ -375,9 +378,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
             const SizedBox(height: 8),
             Text(
               _getSubtitle(),
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                color: Colors.white54,
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
               ),
               textAlign: TextAlign.center,
             ),
@@ -514,9 +516,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
                 Expanded(
                   child: Text(
                     _errorMessage!,
-                    style: GoogleFonts.montserrat(
+                    style: core.AppTypography.bodyMedium.copyWith(
                       color: AppColors.neonPrimary,
-                      fontSize: 13,
                     ),
                   ),
                 ),
@@ -579,11 +580,15 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         TextField(
           controller: _textController,
           maxLines: 5,
-          style: GoogleFonts.montserrat(color: Colors.white),
+          style: core.AppTypography.bodyLarge.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           decoration: InputDecoration(
             hintText:
                 'Pega o escribe tu entrenamiento...\n\nEj: Press banca 4x8 80kg, Sentadilla 3x5 100kg',
-            hintStyle: GoogleFonts.montserrat(color: Colors.white30),
+            hintStyle: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(77),
+            ),
             filled: true,
             fillColor: AppColors.bgElevated,
             border: OutlineInputBorder(
@@ -639,10 +644,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
               children: [
                 Text(
                   'Ejemplos de formato:',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white54,
+                  style: core.AppTypography.labelLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -668,12 +671,16 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         const SizedBox(height: 24),
         Text(
           'Analizando imagen...',
-          style: GoogleFonts.montserrat(color: Colors.white70, fontSize: 16),
+          style: core.AppTypography.bodyLarge.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           'Detectando ejercicios con OCR',
-          style: GoogleFonts.montserrat(color: Colors.white38, fontSize: 14),
+          style: core.AppTypography.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
+          ),
         ),
         const SizedBox(height: 40),
       ],
@@ -690,12 +697,16 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
           const SizedBox(height: 16),
           Text(
             'No se detectaron ejercicios',
-            style: GoogleFonts.montserrat(color: Colors.white70, fontSize: 16),
+            style: core.AppTypography.bodyLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Intenta con otra imagen o usa dictado por voz',
-            style: GoogleFonts.montserrat(color: Colors.white38, fontSize: 14),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -704,8 +715,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
             icon: const Icon(Icons.arrow_back),
             label: const Text('VOLVER'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white70,
-              side: const BorderSide(color: Colors.white30),
+              foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+              side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withAlpha(77)),
             ),
           ),
           const SizedBox(height: 40),
@@ -734,9 +745,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
               const SizedBox(width: 8),
               Text(
                 '${_importedExercises.where((e) => e.isValid).length} ejercicios detectados',
-                style: GoogleFonts.montserrat(
+                style: core.AppTypography.bodyMedium.copyWith(
                   color: AppColors.neonCyan,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -783,13 +793,13 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
               widget.onCancel?.call();
             },
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white70,
-              side: const BorderSide(color: Colors.white30),
+              foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+              side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withAlpha(77)),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             child: Text(
               'CANCELAR',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+              style: core.AppTypography.titleLarge,
             ),
           ),
         ),
@@ -806,7 +816,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
             ),
             child: Text(
               'AÑADIR $validCount EJERCICIO${validCount == 1 ? '' : 'S'}',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+              style: core.AppTypography.headlineSmall,
             ),
           ),
         ),
@@ -835,10 +845,9 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
               const SizedBox(width: 8),
               Text(
                 'Ejemplos de comandos:',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white70,
+                style: core.AppTypography.titleLarge.copyWith(
                   fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                 ),
               ),
             ],
@@ -867,9 +876,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
           Flexible(
             child: Text(
               '"$text"',
-              style: GoogleFonts.montserrat(
-                color: Colors.white54,
-                fontSize: 12,
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -927,18 +935,15 @@ class _ImportOptionCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      style: core.AppTypography.titleLarge.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        color: Colors.white54,
+                      style: core.AppTypography.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                       ),
                     ),
                   ],
@@ -1015,26 +1020,23 @@ class _SmartExerciseCard extends StatelessWidget {
                     if (isValid)
                       Text(
                         exercise.matchedName!,
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        style: core.AppTypography.titleLarge.copyWith(
                           fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       )
                     else
                       Text(
                         'No encontrado',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.neonPrimary,
+                        style: core.AppTypography.titleLarge.copyWith(
                           fontSize: 14,
+                          color: AppColors.neonPrimary,
                         ),
                       ),
                     Text(
                       '"${exercise.rawText}"',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white38,
-                        fontSize: 11,
+                      style: core.AppTypography.labelSmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                         fontStyle: FontStyle.italic,
                       ),
                       maxLines: 1,
@@ -1058,9 +1060,8 @@ class _SmartExerciseCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${(exercise.confidence * 100).toInt()}%',
-                    style: GoogleFonts.montserrat(
+                    style: core.AppTypography.labelSmall.copyWith(
                       color: _getConfidenceColor(exercise.confidence),
-                      fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -1111,9 +1112,8 @@ class _SmartExerciseCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${exercise.weight!.toStringAsFixed(1)} kg',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white70,
-                      fontSize: 12,
+                    style: core.AppTypography.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                     ),
                   ),
                 ),
@@ -1154,10 +1154,8 @@ class _CompactField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.montserrat(
-            color: Colors.white38,
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
+          style: core.AppTypography.labelSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
           ),
         ),
         const SizedBox(height: 4),
@@ -1170,7 +1168,10 @@ class _CompactField extends StatelessWidget {
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
-            style: GoogleFonts.montserrat(color: Colors.white, fontSize: 13),
+            style: core.AppTypography.bodyMedium.copyWith(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             textAlign: TextAlign.center,
             decoration: const InputDecoration(
               border: InputBorder.none,

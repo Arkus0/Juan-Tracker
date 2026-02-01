@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../services/routine_ocr_service.dart';
 import '../utils/design_system.dart';
 
@@ -219,22 +219,26 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                 Expanded(
                   child: Text(
                     'IMPORTAR RUTINA',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                    style: core.AppTypography.headlineSmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white54),
+                  icon: Icon(
+                    Icons.close,
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
           ),
 
-          const Divider(color: Colors.white12, height: 1),
+          Divider(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(30),
+            height: 1,
+          ),
 
           // Content
           Flexible(child: _buildContent()),
@@ -260,17 +264,15 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             const SizedBox(height: 24),
             Text(
               'Analizando imagen...',
-              style: GoogleFonts.montserrat(
-                fontSize: 16,
-                color: Colors.white70,
+              style: core.AppTypography.bodyLarge.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Detectando ejercicios con IA',
-              style: GoogleFonts.montserrat(
-                fontSize: 13,
-                color: Colors.white38,
+              style: core.AppTypography.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
               ),
             ),
           ],
@@ -292,9 +294,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                color: Colors.white70,
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
               textAlign: TextAlign.center,
             ),
@@ -306,9 +307,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'CANCELAR',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white54,
-                      fontWeight: FontWeight.bold,
+                    style: core.AppTypography.labelLarge.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                   ),
                 ),
@@ -328,7 +328,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   icon: const Icon(Icons.refresh, size: 18),
                   label: Text(
                     'REINTENTAR',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                    style: core.AppTypography.labelLarge,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
@@ -358,9 +358,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
               const SizedBox(width: 8),
               Text(
                 '${_candidates.length} ejercicio${_candidates.length == 1 ? '' : 's'} detectado${_candidates.length == 1 ? '' : 's'}',
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
-                  color: Colors.white70,
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                 ),
               ),
             ],
@@ -393,9 +392,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   ),
                   child: Text(
                     'CANCELAR',
-                    style: GoogleFonts.montserrat(
+                    style: core.AppTypography.labelLarge.copyWith(
                       color: AppColors.neonPrimary,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -408,10 +406,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   icon: const Icon(Icons.add, size: 20),
                   label: Text(
                     'AÑADIR ${_candidates.length}',
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                    ),
+                    style: core.AppTypography.titleMedium,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
@@ -447,27 +442,24 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                     children: [
                       Text(
                         candidate.matchedExerciseName ?? 'Desconocido',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        style: core.AppTypography.titleMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.visibility,
                             size: 12,
-                            color: Colors.white38,
+                            color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               '${candidate.rawText}${candidate.cleanedText.isNotEmpty ? ' → "${candidate.cleanedText}"' : ''}',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 11,
-                                color: Colors.white38,
+                              style: core.AppTypography.bodySmall.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -481,17 +473,15 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                             ),
                             decoration: BoxDecoration(
                               color: confidence >= 70
-                                  ? Colors.green.withValues(alpha: 0.2)
+                                  ? Colors.green.withAlpha((0.2 * 255).round())
                                   : confidence >= 50
-                                  ? Colors.orange.withValues(alpha: 0.2)
-                                  : Colors.red.withValues(alpha: 0.2),
+                                  ? Colors.orange.withAlpha((0.2 * 255).round())
+                                  : Colors.red.withAlpha((0.2 * 255).round()),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               '$confidence%',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                              style: core.AppTypography.labelSmall.copyWith(
                                 color: confidence >= 70
                                     ? AppColors.neonCyan
                                     : confidence >= 50
@@ -506,7 +496,11 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.close, color: Colors.red[300], size: 20),
+                  icon: Icon(
+                    Icons.close,
+                    color: Theme.of(context).colorScheme.error.withAlpha(200),
+                    size: 20,
+                  ),
                   onPressed: () => _removeCandidate(index),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(
@@ -532,10 +526,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     '×',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white54,
+                    style: core.AppTypography.headlineSmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                   ),
                 ),
@@ -554,15 +546,14 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.15),
+                      color: Colors.red.withAlpha((0.15 * 255).round()),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '${candidate.weight!.toStringAsFixed(candidate.weight! % 1 == 0 ? 0 : 1)} kg',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
+                      style: core.AppTypography.bodyMedium.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.red[300],
+                        color: Theme.of(context).colorScheme.error.withAlpha(200),
                       ),
                     ),
                   ),
@@ -587,10 +578,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             controller: controller,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+            style: core.AppTypography.titleLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
               filled: true,
@@ -610,10 +599,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
         const SizedBox(height: 4),
         Text(
           label,
-          style: GoogleFonts.montserrat(
-            fontSize: 10,
-            color: Colors.white38,
-            fontWeight: FontWeight.w600,
+          style: core.AppTypography.labelSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
           ),
         ),
       ],
@@ -649,16 +636,16 @@ class _SourceSelectorSheet extends StatelessWidget {
 
           Text(
             'IMPORTAR RUTINA',
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
+            style: core.AppTypography.headlineSmall.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Escanea una rutina escrita a mano o una captura de pantalla',
-            style: GoogleFonts.montserrat(fontSize: 13, color: Colors.white54),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -730,18 +717,15 @@ class _SourceOption extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 label,
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                style: core.AppTypography.labelLarge.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
-                  color: Colors.white54,
+                style: core.AppTypography.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 ),
               ),
             ],

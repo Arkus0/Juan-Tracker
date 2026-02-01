@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../../core/providers/information_density_provider.dart';
 import '../../models/serie_log.dart';
 import '../../screens/plate_calculator_dialog.dart';
@@ -47,39 +47,27 @@ class TrainingColors {
 
 // ⚡ OPTIMIZACIÓN: Estilos pre-computados para evitar GoogleFonts en build
 class _SetRowStyles {
-  static final badgeLabel = GoogleFonts.montserrat(
-    fontSize: 13,
+  static final badgeLabel = core.AppTypography.labelLarge.copyWith(
     fontWeight: FontWeight.w800,
     color: AppColors.textOnAccent,
   );
 
-  static final badgeLabelDisabled = GoogleFonts.montserrat(
-    fontSize: 13,
+  static final badgeLabelDisabled = core.AppTypography.labelLarge.copyWith(
     fontWeight: FontWeight.w800,
     color: TrainingColors.textDisabled,
   );
 
   // Serie activa: números grandes pero no exagerados
-  static final valueActiveText = GoogleFonts.montserrat(
-    fontSize: 24,
-    fontWeight: FontWeight.w800,
-  );
+  static final valueActiveText = core.AppTypography.dataMedium;
 
-  static final valueNormalText = GoogleFonts.montserrat(
-    fontSize: 16,
-    fontWeight: FontWeight.w700,
-  );
+  static final valueNormalText = core.AppTypography.titleLarge;
 
   // Labels muy sutiles para no competir con datos
-  static final labelActiveText = GoogleFonts.montserrat(
-    fontSize: 9,
-    fontWeight: FontWeight.w500,
+  static final labelActiveText = core.AppTypography.labelSmall.copyWith(
     color: AppColors.textTertiary,
   );
 
-  static final labelNormalText = GoogleFonts.montserrat(
-    fontSize: 8,
-    fontWeight: FontWeight.w500,
+  static final labelNormalText = core.AppTypography.labelSmall.copyWith(
     color: AppColors.textTertiary,
   );
 }
@@ -403,15 +391,14 @@ class _FocusedSetRowState extends ConsumerState<FocusedSetRow>
             children: [
               Text(
                 'ELIMINAR',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
+                style: core.AppTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.delete_outline, color: Colors.white, size: 20),
+              Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onSurface, size: 20),
             ],
           ),
         ),
@@ -565,11 +552,11 @@ class _SetNumberBadge extends StatelessWidget {
       decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
       child: Center(
         child: isCompleted && !isWarmup && !isDropset
-            ? const Icon(Icons.check, color: Colors.white, size: 18)
+            ? const Icon(Icons.check, color: AppColors.textOnAccent, size: 18)
             : Text(
                 label,
                 // ⚡ OPTIMIZACIÓN: Usar estilo pre-computado
-                style: textColor == Colors.white
+                style: textColor == AppColors.textOnAccent
                     ? _SetRowStyles.badgeLabel
                     : _SetRowStyles.badgeLabelDisabled,
               ),
@@ -735,18 +722,17 @@ class _WeightSuggestionBadge extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.touch_app_rounded,
                 size: 12,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               const SizedBox(width: 4),
               Text(
                 _displaySuggestion,
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
+                style: core.AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],

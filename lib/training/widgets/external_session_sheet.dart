@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../models/external_session.dart';
 import '../models/library_exercise.dart';
 import '../providers/voice_input_provider.dart';
@@ -224,11 +224,12 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
 
   void _onSave() {
     if (_exercises.isEmpty) {
+      final onSurface = Theme.of(context).colorScheme.onSurface;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'Agrega al menos un ejercicio',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(color: onSurface),
           ),
           backgroundColor: AppColors.error,
         ),
@@ -254,6 +255,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return Container(
       constraints: BoxConstraints(
@@ -289,10 +291,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                 Expanded(
                   child: Text(
                     'AGREGAR SESIÓN EXTERNA',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                    style: core.AppTypography.headlineSmall.copyWith(
+                      color: onSurface,
                     ),
                   ),
                 ),
@@ -358,6 +358,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
       'es_ES',
     ).format(_sessionDate);
     final isToday = DateUtils.isSameDay(_sessionDate, DateTime.now());
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceWithAlpha = onSurface.withAlpha(178);
 
     return GestureDetector(
       onTap: _selectDate,
@@ -372,7 +374,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
           children: [
             Icon(
               Icons.calendar_today,
-              color: isToday ? AppColors.neonCyan : Colors.white70,
+              color: isToday ? AppColors.neonCyan : onSurfaceWithAlpha,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -381,9 +383,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                 children: [
                   Text(
                     'FECHA DE LA SESIÓN',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
+                    style: core.AppTypography.labelSmall.copyWith(
                       color: AppColors.textTertiary,
                       letterSpacing: 1,
                     ),
@@ -391,10 +391,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                   const SizedBox(height: 4),
                   Text(
                     isToday ? 'Hoy - ${dateStr.split(',')[1].trim()}' : dateStr,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                    style: core.AppTypography.bodyLarge.copyWith(
+                      color: onSurface,
                     ),
                   ),
                 ],
@@ -408,15 +406,15 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildSourceSelector() {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '¿Cómo quieres agregar los ejercicios?',
-          style: GoogleFonts.montserrat(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+          style: core.AppTypography.bodyLarge.copyWith(
+            color: onSurface,
           ),
         ),
         const SizedBox(height: 16),
@@ -466,6 +464,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildLimitsInfo() {
+    final onSurfaceWithAlpha = Theme.of(context).colorScheme.onSurface.withAlpha(138);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -480,9 +480,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
           Expanded(
             child: Text(
               'La voz captura ejercicios básicos: nombre, series, reps y peso. Detalles avanzados se editan después.',
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                color: Colors.white54,
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: onSurfaceWithAlpha,
               ),
             ),
           ),
@@ -561,6 +560,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildVoiceExamples() {
+    final onSurfaceWithAlpha = Theme.of(context).colorScheme.onSurface.withAlpha(138);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -572,10 +573,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
         children: [
           Text(
             'Ejemplos de lo que puedes decir:',
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.white54,
+            style: core.AppTypography.labelLarge.copyWith(
+              color: onSurfaceWithAlpha,
             ),
           ),
           const SizedBox(height: 8),
@@ -588,6 +587,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildExampleChip(String text) {
+    final onSurfaceWithAlpha = Theme.of(context).colorScheme.onSurface.withAlpha(97);
+
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(
@@ -601,10 +602,9 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
           Flexible(
             child: Text(
               text,
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
+              style: core.AppTypography.bodyMedium.copyWith(
                 fontStyle: FontStyle.italic,
-                color: Colors.white38,
+                color: onSurfaceWithAlpha,
               ),
             ),
           ),
@@ -614,6 +614,9 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildOcrInput() {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceWithAlpha = onSurface.withAlpha(138);
+
     return Column(
       children: [
         Row(
@@ -647,18 +650,15 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
               const SizedBox(height: 16),
               Text(
                 'Escanear log de entrenamiento',
-                style: GoogleFonts.montserrat(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                style: core.AppTypography.bodyLarge.copyWith(
+                  color: onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Toma una foto de tu log escrito o impreso',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
-                  color: Colors.white54,
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: onSurfaceWithAlpha,
                 ),
               ),
               const SizedBox(height: 16),
@@ -701,9 +701,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
               Expanded(
                 child: Text(
                   'OCR funciona mejor con texto claro y legible. Usa voz o texto si falla.',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
-                    color: Colors.white54,
+                  style: core.AppTypography.bodyMedium.copyWith(
+                    color: onSurfaceWithAlpha,
                   ),
                 ),
               ),
@@ -715,6 +714,9 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildTextInput() {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceWithAlpha = onSurface.withAlpha(97);
+
     return Column(
       children: [
         Row(
@@ -734,11 +736,13 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
         TextField(
           controller: _textController,
           maxLines: 4,
-          style: GoogleFonts.montserrat(color: Colors.white),
+          style: core.AppTypography.bodyLarge.copyWith(color: onSurface),
           decoration: InputDecoration(
             hintText:
                 'Escribe tu entrenamiento...\n\nEj: Press banca 4x8 80kg, Sentadilla 3x5 100kg',
-            hintStyle: GoogleFonts.montserrat(color: Colors.white30),
+            hintStyle: core.AppTypography.bodyMedium.copyWith(
+              color: onSurfaceWithAlpha,
+            ),
             filled: true,
             fillColor: AppColors.bgElevated,
             border: OutlineInputBorder(
@@ -801,6 +805,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildExercisesList() {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -809,9 +815,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
           children: [
             Text(
               'EJERCICIOS (${_exercises.length})',
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
+              style: core.AppTypography.labelSmall.copyWith(
                 color: AppColors.textSecondary,
                 letterSpacing: 1,
               ),
@@ -819,8 +823,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
             if (_exercises.isNotEmpty)
               Text(
                 '~${(_exercises.fold(0.0, (sum, e) => sum + (e.weight ?? 0) * _parseReps(e.repsRange) * e.series) / 1000).toStringAsFixed(1)}t volumen',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
+                style: core.AppTypography.labelSmall.copyWith(
                   color: AppColors.neonCyan,
                 ),
               ),
@@ -851,6 +854,9 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildOptions() {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceWithAlpha = onSurface.withAlpha(138);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -874,18 +880,15 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                   children: [
                     Text(
                       'Incluir en métricas de progresión',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                      style: core.AppTypography.labelLarge.copyWith(
+                        color: onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Afecta sugerencias automáticas de peso',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        color: Colors.white54,
+                      style: core.AppTypography.bodyMedium.copyWith(
+                        color: onSurfaceWithAlpha,
                       ),
                     ),
                   ],
@@ -904,12 +907,11 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
         // Notas opcionales
         TextField(
           onChanged: (v) => _sessionNotes = v.isEmpty ? null : v,
-          style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
+          style: core.AppTypography.bodyMedium.copyWith(color: onSurface),
           decoration: InputDecoration(
             hintText: 'Notas de la sesión (opcional)',
-            hintStyle: GoogleFonts.montserrat(
-              color: Colors.white30,
-              fontSize: 14,
+            hintStyle: core.AppTypography.bodyMedium.copyWith(
+              color: onSurface.withAlpha(97),
             ),
             prefixIcon: const Icon(
               Icons.note,
@@ -937,6 +939,10 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildActions() {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceWithAlpha = onSurface.withAlpha(178);
+    final onSurfaceWithAlphaLow = onSurface.withAlpha(97);
+
     return Row(
       children: [
         Expanded(
@@ -945,13 +951,13 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
               widget.onCancel?.call();
             },
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white70,
-              side: const BorderSide(color: Colors.white30),
+              foregroundColor: onSurfaceWithAlpha,
+              side: BorderSide(color: onSurfaceWithAlphaLow),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             child: Text(
               'CANCELAR',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+              style: core.AppTypography.titleLarge,
             ),
           ),
         ),
@@ -963,13 +969,13 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
             icon: const Icon(Icons.save),
             label: Text(
               'GUARDAR SESIÓN',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+              style: core.AppTypography.headlineSmall,
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.neonCyan,
               foregroundColor: Colors.black,
               disabledBackgroundColor: AppColors.bgDeep,
-              disabledForegroundColor: Colors.white38,
+              disabledForegroundColor: onSurfaceWithAlphaLow,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
           ),
@@ -1011,9 +1017,7 @@ class _SourceButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: GoogleFonts.montserrat(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
+              style: core.AppTypography.labelSmall.copyWith(
                 color: color,
               ),
             ),
@@ -1053,8 +1057,7 @@ class _MethodChip extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: GoogleFonts.montserrat(
-                fontSize: 11,
+              style: core.AppTypography.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
@@ -1091,6 +1094,9 @@ class _ExerciseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceWithAlpha = onSurface.withAlpha(97);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -1110,20 +1116,17 @@ class _ExerciseCard extends StatelessWidget {
                   children: [
                     Text(
                       exercise.name,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      style: core.AppTypography.titleLarge.copyWith(
+                        color: onSurface,
                       ),
                     ),
                     if (exercise.rawInput != exercise.name) ...[
                       const SizedBox(height: 2),
                       Text(
                         '"${exercise.rawInput}"',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 11,
+                        style: core.AppTypography.bodyMedium.copyWith(
                           fontStyle: FontStyle.italic,
-                          color: Colors.white38,
+                          color: onSurfaceWithAlpha,
                         ),
                       ),
                     ],
@@ -1138,9 +1141,7 @@ class _ExerciseCard extends StatelessWidget {
                 ),
                 child: Text(
                   '${(exercise.confidence * 100).toInt()}%',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                  style: core.AppTypography.labelSmall.copyWith(
                     color: _getConfidenceColor(),
                   ),
                 ),
@@ -1208,10 +1209,9 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Nota: ${exercise.notes}',
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
+              style: core.AppTypography.bodyMedium.copyWith(
                 fontStyle: FontStyle.italic,
-                color: Colors.white38,
+                color: onSurfaceWithAlpha,
               ),
             ),
           ],
@@ -1234,6 +1234,9 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceWithAlpha = onSurface.withAlpha(138);
+
     return GestureDetector(
       onTap: () async {
         final controller = TextEditingController(
@@ -1245,7 +1248,7 @@ class _InfoChip extends StatelessWidget {
             backgroundColor: AppColors.bgElevated,
             title: Text(
               'Editar $label',
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: onSurface),
             ),
             content: TextField(
               controller: controller,
@@ -1253,10 +1256,10 @@ class _InfoChip extends StatelessWidget {
               keyboardType: label == 'Reps'
                   ? TextInputType.text
                   : TextInputType.number,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: onSurface),
               decoration: InputDecoration(
                 hintText: label,
-                hintStyle: const TextStyle(color: Colors.white38),
+                hintStyle: TextStyle(color: onSurfaceWithAlpha),
               ),
             ),
             actions: [
@@ -1286,17 +1289,14 @@ class _InfoChip extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.montserrat(
-                fontSize: 10,
-                color: Colors.white54,
+              style: core.AppTypography.labelSmall.copyWith(
+                color: onSurfaceWithAlpha,
               ),
             ),
             Text(
               value,
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              style: core.AppTypography.titleLarge.copyWith(
+                color: onSurface,
               ),
             ),
           ],
@@ -1397,6 +1397,10 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceWithAlpha = onSurface.withAlpha(138);
+    final onSurfaceWithAlphaLow = onSurface.withAlpha(97);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1409,10 +1413,8 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
         children: [
           Text(
             'Añadir ejercicio',
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+            style: core.AppTypography.labelLarge.copyWith(
+              color: onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -1420,10 +1422,12 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
           // Nombre del ejercicio
           TextField(
             controller: _nameController,
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyLarge.copyWith(color: onSurface),
             decoration: InputDecoration(
               labelText: 'Nombre del ejercicio',
-              labelStyle: GoogleFonts.montserrat(color: Colors.white54),
+              labelStyle: core.AppTypography.bodyMedium.copyWith(
+                color: onSurfaceWithAlpha,
+              ),
               suffixIcon: IconButton(
                 onPressed: _searchExercise,
                 icon: const Icon(Icons.search, color: AppColors.textSecondary),
@@ -1453,8 +1457,7 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                   const SizedBox(width: 6),
                   Text(
                     'Encontrado en biblioteca',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
+                    style: core.AppTypography.labelSmall.copyWith(
                       color: AppColors.neonCyan,
                     ),
                   ),
@@ -1473,15 +1476,13 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                   controller: _seriesController,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                  style: core.AppTypography.titleLarge.copyWith(
+                    color: onSurface,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Series',
-                    labelStyle: GoogleFonts.montserrat(
-                      color: Colors.white54,
-                      fontSize: 12,
+                    labelStyle: core.AppTypography.labelSmall.copyWith(
+                      color: onSurfaceWithAlpha,
                     ),
                     filled: true,
                     fillColor: AppColors.bgDeep,
@@ -1498,18 +1499,18 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                   controller: _repsController,
                   keyboardType: TextInputType.text,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                  style: core.AppTypography.titleLarge.copyWith(
+                    color: onSurface,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Reps',
-                    labelStyle: GoogleFonts.montserrat(
-                      color: Colors.white54,
-                      fontSize: 12,
+                    labelStyle: core.AppTypography.labelSmall.copyWith(
+                      color: onSurfaceWithAlpha,
                     ),
                     hintText: '8-12',
-                    hintStyle: GoogleFonts.montserrat(color: Colors.white24),
+                    hintStyle: core.AppTypography.bodyMedium.copyWith(
+                      color: onSurfaceWithAlphaLow,
+                    ),
                     filled: true,
                     fillColor: AppColors.bgDeep,
                     border: OutlineInputBorder(
@@ -1527,15 +1528,13 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                     decimal: true,
                   ),
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                  style: core.AppTypography.titleLarge.copyWith(
+                    color: onSurface,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Peso (kg)',
-                    labelStyle: GoogleFonts.montserrat(
-                      color: Colors.white54,
-                      fontSize: 12,
+                    labelStyle: core.AppTypography.labelSmall.copyWith(
+                      color: onSurfaceWithAlpha,
                     ),
                     filled: true,
                     fillColor: AppColors.bgDeep,
@@ -1618,6 +1617,10 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceWithAlpha = onSurface.withAlpha(138);
+    final onSurfaceWithAlphaLow = onSurface.withAlpha(97);
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -1631,10 +1634,8 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
         children: [
           Text(
             'Seleccionar ejercicio',
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+            style: core.AppTypography.headlineSmall.copyWith(
+              color: onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -1642,11 +1643,13 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
             controller: _searchController,
             onChanged: _search,
             autofocus: true,
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyLarge.copyWith(color: onSurface),
             decoration: InputDecoration(
               hintText: 'Buscar ejercicio...',
-              hintStyle: GoogleFonts.montserrat(color: Colors.white38),
-              prefixIcon: const Icon(Icons.search, color: Colors.white54),
+              hintStyle: core.AppTypography.bodyMedium.copyWith(
+                color: onSurfaceWithAlphaLow,
+              ),
+              prefixIcon: Icon(Icons.search, color: onSurfaceWithAlpha),
               filled: true,
               fillColor: AppColors.bgDeep,
               border: OutlineInputBorder(
@@ -1672,24 +1675,21 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
                       backgroundColor: AppColors.error.withValues(alpha: 0.3),
                       child: Text(
                         exercise.name[0].toUpperCase(),
-                        style: GoogleFonts.montserrat(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                        style: core.AppTypography.titleLarge.copyWith(
+                          color: onSurface,
                         ),
                       ),
                     ),
                     title: Text(
                       exercise.name,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
+                      style: core.AppTypography.bodyLarge.copyWith(
+                        color: onSurface,
                       ),
                     ),
                     subtitle: Text(
                       exercise.muscleGroup,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white54,
-                        fontSize: 12,
+                      style: core.AppTypography.bodyMedium.copyWith(
+                        color: onSurfaceWithAlpha,
                       ),
                     ),
                     onTap: () {

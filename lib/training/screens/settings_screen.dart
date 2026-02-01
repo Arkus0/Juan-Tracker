@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../core/design_system/design_system.dart' as core show AppTypography, AppSpacing, AppRadius;
 import '../../core/providers/information_density_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/media_control_service.dart';
@@ -22,11 +22,11 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           'AJUSTES',
-          style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+          style: core.AppTypography.headlineMedium,
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(core.AppSpacing.lg),
         children: [
           // Sección Timer
           const _SectionHeader(title: 'TIMER DE DESCANSO'),
@@ -80,9 +80,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 Text(
                   '${settings.defaultRestSeconds}s',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
+                  style: core.AppTypography.headlineSmall.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -110,9 +108,8 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(
               'Controla la música de Spotify u otras apps sin salir del entrenamiento. '
               'Requiere permiso de acceso a notificaciones.',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
-                fontSize: 11,
               ),
             ),
           ),
@@ -151,9 +148,8 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               'Optimizado para gimnasio: botones grandes, contexto visible, auto-completado. Desactiva autofocus si prefieres control manual.',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
-                fontSize: 11,
               ),
             ),
           ),
@@ -170,9 +166,8 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               'Modo compacto: más ejercicios visibles en pantalla. Ideal para gimnasio con poca luz.',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
-                fontSize: 11,
               ),
             ),
           ),
@@ -199,9 +194,8 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: Text(
               'En superseries, el timer solo inicia después del último ejercicio del grupo.',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
-                fontSize: 12,
               ),
             ),
           ),
@@ -254,9 +248,8 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(
               'El modo debug de VS Code es ~10x más lento que release. '
               'Para probar rendimiento real: flutter run --release',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.bodySmall.copyWith(
                 color: AppColors.copperOrange,
-                fontSize: 11,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -387,9 +380,8 @@ class SettingsScreen extends ConsumerWidget {
           Center(
             child: Text(
               '💪 Hecho para el gym',
-              style: GoogleFonts.montserrat(
-                color: Colors.grey[700],
-                fontSize: 12,
+              style: core.AppTypography.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
               ),
             ),
           ),
@@ -410,10 +402,8 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, top: 8),
       child: Text(
         title,
-        style: GoogleFonts.montserrat(
+        style: core.AppTypography.labelLarge.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
           letterSpacing: 1.5,
         ),
       ),
@@ -436,24 +426,26 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(core.AppRadius.md),
       ),
       child: ListTile(
-        leading: Icon(icon, color: Colors.white70),
+        leading: Icon(icon, color: colorScheme.onSurface.withAlpha(178)),
         title: Text(
           title,
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+          style: core.AppTypography.titleLarge.copyWith(
+            color: colorScheme.onSurface,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.montserrat(fontSize: 12, color: Colors.grey[500]),
+          style: core.AppTypography.bodySmall.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
         ),
         trailing: trailing,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -481,32 +473,33 @@ class _StorageTileState extends State<_StorageTile> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(core.AppRadius.md),
       ),
       child: ListTile(
-        leading: Icon(Icons.storage, color: Colors.white70),
+        leading: Icon(Icons.storage, color: colorScheme.onSurface.withAlpha(178)),
         title: Text(
           'Caché de imágenes',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+          style: core.AppTypography.titleLarge.copyWith(
+            color: colorScheme.onSurface,
           ),
         ),
         subtitle: Text(
           _storageInfo,
-          style: GoogleFonts.montserrat(fontSize: 12, color: Colors.grey[500]),
+          style: core.AppTypography.bodySmall.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
         ),
         trailing: TextButton(
           onPressed: null,
           child: Text(
             'Limpiar',
-            style: GoogleFonts.montserrat(
-              color: Colors.grey[700],
-              fontWeight: FontWeight.w700,
+            style: core.AppTypography.titleLarge.copyWith(
+              color: colorScheme.onSurface.withAlpha(100),
             ),
           ),
         ),
@@ -578,19 +571,19 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
   }
 
   void _showPermissionDeniedDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: colorScheme.surfaceContainerHighest,
         title: Row(
           children: [
             Icon(Icons.notifications_off, color: Colors.orange[400]),
             const SizedBox(width: 12),
             Text(
               'Permiso necesario',
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
+              style: core.AppTypography.titleLarge.copyWith(
+                color: colorScheme.onSurface,
               ),
             ),
           ],
@@ -598,14 +591,18 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
         content: Text(
           'Para ver el timer en la pantalla de bloqueo, la app necesita permiso para mostrar notificaciones.\n\n'
           'Ve a Ajustes del sistema > Apps > Juan Training > Notificaciones y actívalas.',
-          style: GoogleFonts.montserrat(color: Colors.grey[400]),
+          style: core.AppTypography.bodyMedium.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Entendido',
-              style: GoogleFonts.montserrat(color: Colors.grey[500]),
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -615,13 +612,14 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(core.AppRadius.md),
         border: !_hasPermission && widget.isEnabled
-            ? Border.all(color: Colors.orange.withValues(alpha: 0.5))
+            ? Border.all(color: Colors.orange.withAlpha(128))
             : null,
       ),
       child: Column(
@@ -631,24 +629,22 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
               Icons.lock_clock,
               color: !_hasPermission && widget.isEnabled
                   ? Colors.orange[400]
-                  : Colors.white70,
+                  : colorScheme.onSurface.withAlpha(178),
             ),
             title: Text(
               'Mostrar en pantalla de bloqueo',
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+              style: core.AppTypography.titleLarge.copyWith(
+                color: colorScheme.onSurface,
               ),
             ),
             subtitle: Text(
               _hasPermission || !widget.isEnabled
                   ? 'Ver y controlar el timer sin desbloquear'
                   : '⚠️ Permiso de notificaciones requerido',
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
+              style: core.AppTypography.bodySmall.copyWith(
                 color: !_hasPermission && widget.isEnabled
                     ? Colors.orange[400]
-                    : Colors.grey[500],
+                    : colorScheme.onSurfaceVariant,
               ),
             ),
             trailing: _isChecking
@@ -685,7 +681,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
                           SnackBar(
                             content: Text(
                               '✓ Notificaciones activadas',
-                              style: GoogleFonts.montserrat(),
+                              style: core.AppTypography.bodyMedium,
                             ),
                             backgroundColor: Colors.green[700],
                           ),
@@ -698,7 +694,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
                   icon: const Icon(Icons.notifications_active, size: 18),
                   label: Text(
                     'Activar notificaciones',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                    style: core.AppTypography.labelLarge,
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.orange[400],
@@ -758,10 +754,11 @@ class _MusicControlTileState extends State<_MusicControlTile> {
   }
 
   void _showInstructionsDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: colorScheme.surfaceContainerHighest,
         title: Row(
           children: [
             Icon(Icons.music_note, color: Colors.cyan[400]),
@@ -769,10 +766,8 @@ class _MusicControlTileState extends State<_MusicControlTile> {
             Expanded(
               child: Text(
                 'Habilitar control de música',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  fontSize: 16,
+                style: core.AppTypography.titleLarge.copyWith(
+                  color: colorScheme.onSurface,
                 ),
               ),
             ),
@@ -784,9 +779,8 @@ class _MusicControlTileState extends State<_MusicControlTile> {
           children: [
             Text(
               'Para controlar la música desde la app:',
-              style: GoogleFonts.montserrat(
-                color: Colors.grey[300],
-                fontWeight: FontWeight.w600,
+              style: core.AppTypography.labelLarge.copyWith(
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -807,9 +801,9 @@ class _MusicControlTileState extends State<_MusicControlTile> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.cyan.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.cyan.withValues(alpha: 0.3)),
+                color: Colors.cyan.withAlpha(26),
+                borderRadius: BorderRadius.circular(core.AppRadius.sm),
+                border: Border.all(color: Colors.cyan.withAlpha(77)),
               ),
               child: Row(
                 children: [
@@ -818,9 +812,8 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                   Expanded(
                     child: Text(
                       'Esto permite ver qué canción suena y controlala.',
-                      style: GoogleFonts.montserrat(
+                      style: core.AppTypography.bodySmall.copyWith(
                         color: Colors.cyan[300],
-                        fontSize: 11,
                       ),
                     ),
                   ),
@@ -834,9 +827,8 @@ class _MusicControlTileState extends State<_MusicControlTile> {
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Entendido',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.labelLarge.copyWith(
                 color: Colors.cyan[400],
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -847,24 +839,24 @@ class _MusicControlTileState extends State<_MusicControlTile> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(core.AppRadius.md),
       ),
       child: Column(
         children: [
           ListTile(
             leading: Icon(
               _hasAccess ? Icons.music_note : Icons.music_off,
-              color: _hasAccess ? Colors.cyan[400] : Colors.grey[600],
+              color: _hasAccess ? Colors.cyan[400] : colorScheme.onSurface.withAlpha(150),
             ),
             title: Text(
               'Control de música',
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+              style: core.AppTypography.titleLarge.copyWith(
+                color: colorScheme.onSurface,
               ),
             ),
             subtitle: Text(
@@ -873,9 +865,8 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                   : _hasAccess
                   ? '✓ Acceso habilitado${_isMusicActive ? " • Música detectada" : ""}'
                   : 'Acceso no configurado',
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                color: _hasAccess ? Colors.cyan[400] : Colors.grey[500],
+              style: core.AppTypography.bodySmall.copyWith(
+                color: _hasAccess ? Colors.cyan[400] : colorScheme.onSurfaceVariant,
               ),
             ),
             trailing: _isChecking
@@ -903,7 +894,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                   icon: const Icon(Icons.settings, size: 18),
                   label: Text(
                     'Ver instrucciones',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                    style: core.AppTypography.labelLarge,
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.cyan[400],
@@ -923,10 +914,10 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                       icon: const Icon(Icons.refresh, size: 18),
                       label: Text(
                         'Actualizar',
-                        style: GoogleFonts.montserrat(fontSize: 12),
+                        style: core.AppTypography.bodySmall,
                       ),
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey[500],
+                        foregroundColor: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -939,7 +930,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                       icon: const Icon(Icons.open_in_new, size: 18),
                       label: Text(
                         'Abrir Spotify',
-                        style: GoogleFonts.montserrat(fontSize: 12),
+                        style: core.AppTypography.bodySmall,
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.green[400],
@@ -964,6 +955,7 @@ class _InstructionStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -973,16 +965,14 @@ class _InstructionStep extends StatelessWidget {
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: Colors.grey[800],
+              color: colorScheme.onSurface.withAlpha(50),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 number,
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
+                style: core.AppTypography.labelLarge.copyWith(
+                  color: colorScheme.onSurface,
                 ),
               ),
             ),
@@ -993,9 +983,8 @@ class _InstructionStep extends StatelessWidget {
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 text,
-                style: GoogleFonts.montserrat(
-                  color: Colors.grey[400],
-                  fontSize: 13,
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -1026,26 +1015,28 @@ class _GuideTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(core.AppRadius.md),
       ),
       child: ListTile(
-        leading: Icon(icon, color: Colors.white70),
+        leading: Icon(icon, color: colorScheme.onSurface.withAlpha(178)),
         title: Text(
           title,
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+          style: core.AppTypography.titleLarge.copyWith(
+            color: colorScheme.onSurface,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: GoogleFonts.montserrat(fontSize: 12, color: Colors.grey[500]),
+          style: core.AppTypography.bodySmall.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
         ),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey[600]),
+        trailing: Icon(Icons.chevron_right, color: colorScheme.onSurface.withAlpha(150)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         onTap: onTap,
       ),
@@ -1061,12 +1052,13 @@ class _DensityModeTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final density = ref.watch(informationDensityProvider);
     final notifier = ref.read(informationDensityProvider.notifier);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(core.AppRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1077,7 +1069,7 @@ class _DensityModeTile extends ConsumerWidget {
               children: [
                 Icon(
                   Icons.view_compact,
-                  color: Colors.white70,
+                  color: colorScheme.onSurface.withAlpha(178),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1086,16 +1078,14 @@ class _DensityModeTile extends ConsumerWidget {
                     children: [
                       Text(
                         'Densidad de información',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                        style: core.AppTypography.titleLarge.copyWith(
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         '${DensityValues.modeName(density)}: ${DensityValues.modeDescription(density)}',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 12,
-                          color: Colors.grey[500],
+                        style: core.AppTypography.bodySmall.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -1112,7 +1102,7 @@ class _DensityModeTile extends ConsumerWidget {
                   value: DensityMode.compact,
                   label: Text(
                     'Compacta',
-                    style: GoogleFonts.montserrat(fontSize: 11),
+                    style: core.AppTypography.bodySmall,
                   ),
                   icon: Icon(Icons.view_compact, size: 18),
                 ),
@@ -1120,7 +1110,7 @@ class _DensityModeTile extends ConsumerWidget {
                   value: DensityMode.comfortable,
                   label: Text(
                     'Cómoda',
-                    style: GoogleFonts.montserrat(fontSize: 11),
+                    style: core.AppTypography.bodySmall,
                   ),
                   icon: Icon(Icons.view_comfy, size: 18),
                 ),
@@ -1128,7 +1118,7 @@ class _DensityModeTile extends ConsumerWidget {
                   value: DensityMode.detailed,
                   label: Text(
                     'Detallada',
-                    style: GoogleFonts.montserrat(fontSize: 11),
+                    style: core.AppTypography.bodySmall,
                   ),
                   icon: Icon(Icons.view_agenda, size: 18),
                 ),
@@ -1149,9 +1139,9 @@ class _DensityModeTile extends ConsumerWidget {
                 foregroundColor: WidgetStateProperty.resolveWith<Color>(
                   (states) {
                     if (states.contains(WidgetState.selected)) {
-                      return Colors.white;
+                      return colorScheme.onSurface;
                     }
-                    return Colors.grey[400]!;
+                    return colorScheme.onSurfaceVariant;
                   },
                 ),
               ),
@@ -1170,18 +1160,19 @@ void _showGuideDialog(
   required String title,
   required List<String> bullets,
 }) {
+  final colorScheme = Theme.of(context).colorScheme;
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: Colors.grey[900],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(core.AppRadius.lg)),
       title: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.bloodRed.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.bloodRed.withAlpha(38),
+              borderRadius: BorderRadius.circular(core.AppRadius.sm),
             ),
             child: Icon(icon, color: AppColors.bloodRed, size: 24),
           ),
@@ -1189,10 +1180,8 @@ void _showGuideDialog(
           Expanded(
             child: Text(
               title,
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                fontSize: 18,
+              style: core.AppTypography.headlineSmall.copyWith(
+                color: colorScheme.onSurface,
               ),
             ),
           ),
@@ -1212,7 +1201,7 @@ void _showGuideDialog(
                       margin: const EdgeInsets.only(top: 6),
                       width: 6,
                       height: 6,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.bloodRed,
                         shape: BoxShape.circle,
                       ),
@@ -1221,9 +1210,8 @@ void _showGuideDialog(
                     Expanded(
                       child: Text(
                         bullet,
-                        style: GoogleFonts.montserrat(
-                          color: Colors.grey[300],
-                          fontSize: 14,
+                        style: core.AppTypography.bodyMedium.copyWith(
+                          color: colorScheme.onSurface,
                           height: 1.4,
                         ),
                       ),
@@ -1239,9 +1227,8 @@ void _showGuideDialog(
           onPressed: () => Navigator.pop(ctx),
           child: Text(
             'ENTENDIDO',
-            style: GoogleFonts.montserrat(
+            style: core.AppTypography.labelLarge.copyWith(
               color: AppColors.bloodRed,
-              fontWeight: FontWeight.w700,
             ),
           ),
         ),

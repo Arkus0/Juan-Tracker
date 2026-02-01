@@ -118,15 +118,27 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
     _debounceTimer?.cancel();
     _cancelToken?.cancel();
 
-    if (query.trim().isEmpty) {
+    final trimmed = query.trim();
+    
+    if (trimmed.isEmpty) {
       state = const FoodSearchState();
+      return;
+    }
+    
+    // Mínimo 2 caracteres para buscar (evita búsquedas inútiles)
+    if (trimmed.length < 2) {
+      state = state.copyWith(
+        query: trimmed,
+        status: SearchStatus.idle,
+        results: const [],
+      );
       return;
     }
 
     // Estado de "escribiendo" inmediato
     state = state.copyWith(
       status: SearchStatus.loading,
-      query: query.trim(),
+      query: trimmed,
       results: const [],
       suggestions: const [],
       popularAlternatives: const [],
@@ -138,7 +150,7 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
     // Debounce de 300ms con check de mounted para evitar crash si provider disposed
     _debounceTimer = Timer(_debounceDuration, () async {
       if (!ref.mounted) return; // Evitar acceso a provider disposed
-      await _performSearch(query.trim());
+      await _performSearch(trimmed);
     });
   }
 

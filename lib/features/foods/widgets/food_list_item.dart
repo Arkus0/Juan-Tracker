@@ -172,16 +172,46 @@ class FoodListItem extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    // Marca (si existe)
+                    // Marca (si existe) + indicador OFF
                     if (food.brand != null && food.brand!.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      Text(
-                        food.brand!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              food.brand!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          // Indicador de fuente verificada (OFF)
+                          if (food.verifiedSource == 'openfoodfacts') ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.verified_outlined,
+                              size: 14,
+                              color: Colors.green[600],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ] else if (food.verifiedSource == 'openfoodfacts') ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.cloud_done_outlined, size: 12, color: Colors.grey[500]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Open Food Facts',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[500],
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                     

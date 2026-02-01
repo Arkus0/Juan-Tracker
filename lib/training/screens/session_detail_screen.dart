@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/design_system/design_system.dart' as core show AppTypography;
 import '../models/ejercicio.dart';
 import '../models/sesion.dart';
 import '../providers/training_provider.dart';
@@ -80,13 +80,13 @@ class SessionDetailScreen extends ConsumerWidget {
                                 Icon(
                                   Icons.calendar_today,
                                   size: 16,
-                                  color: Colors.grey[400],
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
                                   dateFormat.format(sesion.fecha).toUpperCase(),
                                   style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.grey[400]),
+                                      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -96,13 +96,13 @@ class SessionDetailScreen extends ConsumerWidget {
                                 Icon(
                                   Icons.timer,
                                   size: 16,
-                                  color: Colors.grey[400],
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'DURACIÓN: $durationText',
                                   style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.grey[400]),
+                                      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                                 ),
                               ],
                             ),
@@ -205,7 +205,7 @@ class SessionDetailScreen extends ConsumerWidget {
               real.nombre.toUpperCase(),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w900,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -247,7 +247,7 @@ class SessionDetailScreen extends ConsumerWidget {
                 for (int i = 0; i < maxSets; i++)
                   TableRow(
                     children: [
-                      _buildCell('${i + 1}'),
+                      _buildCell(context, '${i + 1}'),
                       // Target
                       _buildDataCell(context, target, i),
                       // Real
@@ -278,12 +278,14 @@ class SessionDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCell(String text) {
+  Widget _buildCell(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 13, color: Colors.white),
+        style: core.AppTypography.bodyMedium.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
         textAlign: TextAlign.center,
       ),
     );
@@ -297,7 +299,7 @@ class SessionDetailScreen extends ConsumerWidget {
     bool isPrev = false,
   }) {
     if (ejercicio == null || setIndex >= ejercicio.series) {
-      return _buildCell('-');
+      return _buildCell(context, '-');
     }
 
     final logs = ejercicio.logs;
@@ -318,10 +320,9 @@ class SessionDetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Text(
           text,
-          style: const TextStyle(
-            fontSize: 13,
+          style: core.AppTypography.bodyMedium.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           textAlign: TextAlign.center,
         ),
@@ -332,7 +333,9 @@ class SessionDetailScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Text(
         text,
-        style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+        style: core.AppTypography.bodySmall.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         textAlign: TextAlign.center,
       ),
     );
@@ -350,11 +353,7 @@ class SessionDetailScreen extends ConsumerWidget {
             Expanded(
               child: Text(
                 '¿ELIMINAR SESIÓN?',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  fontSize: 18,
-                ),
+                style: core.AppTypography.headlineSmall,
               ),
             ),
           ],
@@ -365,7 +364,9 @@ class SessionDetailScreen extends ConsumerWidget {
           children: [
             Text(
               'Esta acción no se puede deshacer.',
-              style: GoogleFonts.montserrat(color: Colors.white70),
+              style: core.AppTypography.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+              ),
             ),
             const SizedBox(height: 12),
             Container(
@@ -380,25 +381,20 @@ class SessionDetailScreen extends ConsumerWidget {
                 children: [
                   Text(
                     sesion.dayName ?? 'Sesión',
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: core.AppTypography.titleMedium,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     DateFormat('EEEE, d MMMM yyyy', 'es_ES').format(sesion.fecha),
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white54,
-                      fontSize: 12,
+                    style: core.AppTypography.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${sesion.completedSetsCount} series • ${(sesion.totalVolume / 1000).toStringAsFixed(1)}t volumen',
-                    style: GoogleFonts.montserrat(
+                    style: core.AppTypography.bodySmall.copyWith(
                       color: AppColors.neonCyan,
-                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -411,7 +407,9 @@ class SessionDetailScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               'CANCELAR',
-              style: GoogleFonts.montserrat(color: Colors.white54),
+              style: core.AppTypography.labelMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+              ),
             ),
           ),
           ElevatedButton.icon(
@@ -419,7 +417,7 @@ class SessionDetailScreen extends ConsumerWidget {
             icon: const Icon(Icons.delete, size: 18),
             label: Text(
               'ELIMINAR',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+              style: core.AppTypography.labelLarge,
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
@@ -442,7 +440,7 @@ class SessionDetailScreen extends ConsumerWidget {
             SnackBar(
               content: Text(
                 'Sesión eliminada',
-                style: GoogleFonts.montserrat(),
+                style: core.AppTypography.bodyMedium,
               ),
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
@@ -455,7 +453,7 @@ class SessionDetailScreen extends ConsumerWidget {
             SnackBar(
               content: Text(
                 'Error al eliminar: $e',
-                style: GoogleFonts.montserrat(),
+                style: core.AppTypography.bodyMedium,
               ),
               backgroundColor: AppColors.error,
             ),

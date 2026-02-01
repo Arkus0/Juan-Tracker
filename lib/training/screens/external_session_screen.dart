@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/design_system/design_system.dart' as core
+    show AppTypography;
 import '../models/external_session.dart';
 import '../providers/training_provider.dart';
 import '../providers/voice_input_provider.dart';
@@ -45,10 +46,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
       appBar: AppBar(
         title: Text(
           'AGREGAR SESIÓN EXTERNA',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-          ),
+          style: core.AppTypography.titleLarge,
         ),
         actions: [
           if (_exercises.isNotEmpty)
@@ -56,8 +54,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               onPressed: _onSaveSession,
               child: Text(
                 'GUARDAR',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
+                style: core.AppTypography.labelLarge.copyWith(
                   color: AppColors.success,
                 ),
               ),
@@ -131,19 +128,16 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               children: [
                 Text(
                   'Sesión Externa',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.bold,
+                  style: core.AppTypography.labelLarge.copyWith(
                     color: AppColors.neonCyan,
-                    fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Registra entrenamientos hechos fuera de la app. '
                   'Se marcarán como "externos" en tu historial.',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white70,
-                    fontSize: 12,
+                  style: core.AppTypography.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                   ),
                 ),
               ],
@@ -166,7 +160,11 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today, color: Colors.white54, size: 20),
+            Icon(
+              Icons.calendar_today,
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+              size: 20,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -174,24 +172,25 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                 children: [
                   Text(
                     'Fecha de la sesión',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white54,
-                      fontSize: 12,
+                    style: core.AppTypography.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _formatDate(_selectedDate),
-                    style: GoogleFonts.montserrat(
+                    style: core.AppTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.white38),
+            Icon(
+              Icons.chevron_right,
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
+            ),
           ],
         ),
       ),
@@ -244,10 +243,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               children: [
                 Text(
                   'Dicta los ejercicios de tu sesión:',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white70,
-                    fontSize: 13,
+                  style: core.AppTypography.labelLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -287,9 +284,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Text(
         text,
-        style: GoogleFonts.montserrat(
-          color: Colors.white38,
-          fontSize: 12,
+        style: core.AppTypography.bodySmall.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
           fontStyle: FontStyle.italic,
         ),
       ),
@@ -312,10 +308,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           const SizedBox(width: 8),
           Text(
             'ESCUCHANDO...',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.bold,
+            style: core.AppTypography.labelLarge.copyWith(
               color: AppColors.neonPrimary,
-              fontSize: 14,
             ),
           ),
         ],
@@ -325,13 +319,17 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
     if (state.isProcessing) {
       return Text(
         'Procesando...',
-        style: GoogleFonts.montserrat(color: Colors.white54, fontSize: 14),
+        style: core.AppTypography.bodyMedium.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+        ),
       );
     }
 
     return Text(
       'Mantén pulsado para hablar',
-      style: GoogleFonts.montserrat(color: Colors.white38, fontSize: 13),
+      style: core.AppTypography.bodyMedium.copyWith(
+        color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
+      ),
     );
   }
 
@@ -341,10 +339,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
       children: [
         Text(
           'Ejercicios detectados:',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w600,
-            color: Colors.white70,
-            fontSize: 13,
+          style: core.AppTypography.labelLarge.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
           ),
         ),
         const SizedBox(height: 8),
@@ -361,11 +357,11 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
             onPressed: () => _addAllExercisesFromVoice(exercises),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
             ),
             child: Text(
               'AÑADIR ${exercises.length} EJERCICIO${exercises.length == 1 ? '' : 'S'}',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+              style: core.AppTypography.labelLarge,
             ),
           ),
         ),
@@ -392,9 +388,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           Expanded(
             child: Text(
               message ?? 'No entendido. Intenta de nuevo.',
-              style: GoogleFonts.montserrat(
-                color: Colors.white70,
-                fontSize: 12,
+              style: core.AppTypography.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
             ),
           ),
@@ -415,10 +410,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
         children: [
           Text(
             'Añade ejercicios manualmente',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.w600,
-              color: Colors.white70,
-              fontSize: 14,
+            style: core.AppTypography.labelLarge.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
             ),
           ),
           const SizedBox(height: 16),
@@ -446,14 +439,16 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.fitness_center, color: Colors.white54, size: 18),
+            Icon(
+              Icons.fitness_center,
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Text(
               'EJERCICIOS (${_exercises.length})',
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.bold,
-                color: Colors.white70,
-                fontSize: 13,
+              style: core.AppTypography.labelMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                 letterSpacing: 1,
               ),
             ),
@@ -475,12 +470,18 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
     return TextField(
       maxLines: 3,
       onChanged: (value) => _sessionNotes = value,
-      style: GoogleFonts.montserrat(color: Colors.white),
+      style: core.AppTypography.bodyMedium.copyWith(
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
       decoration: InputDecoration(
         labelText: 'Notas de la sesión (opcional)',
-        labelStyle: GoogleFonts.montserrat(color: Colors.white54),
+        labelStyle: core.AppTypography.bodyMedium.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+        ),
         hintText: 'Cómo te sentiste, condiciones, etc.',
-        hintStyle: GoogleFonts.montserrat(color: Colors.white30),
+        hintStyle: core.AppTypography.bodyMedium.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withAlpha(77),
+        ),
         filled: true,
         fillColor: AppColors.bgElevated,
         border: OutlineInputBorder(
@@ -515,18 +516,15 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               children: [
                 Text(
                   'Incluir en estadísticas',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    fontSize: 14,
+                  style: core.AppTypography.labelLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Si activas esto, los pesos contarán para tu progresión',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white54,
-                    fontSize: 12,
+                  style: core.AppTypography.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
               ],
@@ -660,9 +658,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           backgroundColor: AppColors.bgElevated,
           title: Text(
             editIndex == null ? 'Añadir ejercicio' : 'Editar ejercicio',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+            style: core.AppTypography.titleMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           content: SingleChildScrollView(
@@ -673,7 +670,9 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                   controller: nameController,
                   decoration: InputDecoration(
                     labelText: 'Nombre del ejercicio',
-                    labelStyle: GoogleFonts.montserrat(color: Colors.white54),
+                    labelStyle: core.AppTypography.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+                    ),
                     filled: true,
                     fillColor: AppColors.bgDeep,
                     border: OutlineInputBorder(
@@ -690,8 +689,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: 'Series',
-                          labelStyle: GoogleFonts.montserrat(
-                            color: Colors.white54,
+                          labelStyle: core.AppTypography.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                           ),
                           filled: true,
                           fillColor: AppColors.bgDeep,
@@ -707,8 +706,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                         controller: repsController,
                         decoration: InputDecoration(
                           labelText: 'Reps (ej. 8 o 6-8)',
-                          labelStyle: GoogleFonts.montserrat(
-                            color: Colors.white54,
+                          labelStyle: core.AppTypography.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                           ),
                           filled: true,
                           fillColor: AppColors.bgDeep,
@@ -728,7 +727,9 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                   ),
                   decoration: InputDecoration(
                     labelText: 'Peso (kg) - opcional',
-                    labelStyle: GoogleFonts.montserrat(color: Colors.white54),
+                    labelStyle: core.AppTypography.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+                    ),
                     filled: true,
                     fillColor: AppColors.bgDeep,
                     border: OutlineInputBorder(
@@ -742,7 +743,9 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                   maxLines: 2,
                   decoration: InputDecoration(
                     labelText: 'Notas - opcional',
-                    labelStyle: GoogleFonts.montserrat(color: Colors.white54),
+                    labelStyle: core.AppTypography.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+                    ),
                     filled: true,
                     fillColor: AppColors.bgDeep,
                     border: OutlineInputBorder(
@@ -758,7 +761,9 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               onPressed: () => Navigator.of(ctx).pop(),
               child: Text(
                 'CANCELAR',
-                style: GoogleFonts.montserrat(color: Colors.white54),
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
+                ),
               ),
             ),
             ElevatedButton(
@@ -818,7 +823,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               ),
               child: Text(
                 editIndex == null ? 'AÑADIR' : 'GUARDAR',
-                style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                style: core.AppTypography.labelLarge,
               ),
             ),
           ],
@@ -902,9 +907,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               Expanded(
                 child: Text(
                   '¡Sesión guardada!',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  style: core.AppTypography.titleMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -916,15 +920,21 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
             children: [
               Text(
                 'Fecha: ${_formatDate(_selectedDate)}',
-                style: GoogleFonts.montserrat(color: Colors.white70),
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+                ),
               ),
               Text(
                 'Ejercicios: ${_exercises.length}',
-                style: GoogleFonts.montserrat(color: Colors.white70),
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+                ),
               ),
               Text(
                 'En estadísticas: ${_includeInStats ? "Sí" : "No"}',
-                style: GoogleFonts.montserrat(color: Colors.white70),
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
+                ),
               ),
               const SizedBox(height: 12),
               Container(
@@ -944,9 +954,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                     Expanded(
                       child: Text(
                         'Guardada en tu historial como sesión externa',
-                        style: GoogleFonts.montserrat(
+                        style: core.AppTypography.bodySmall.copyWith(
                           color: AppColors.neonCyan,
-                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -963,8 +972,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               },
               child: Text(
                 'ACEPTAR',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
+                style: core.AppTypography.labelLarge.copyWith(
                   color: AppColors.success,
                 ),
               ),
@@ -1054,15 +1062,19 @@ class _ModeButton extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.neonCyan : Colors.white54,
+              color: isSelected
+                  ? AppColors.neonCyan
+                  : Theme.of(context).colorScheme.onSurface.withAlpha(138),
               size: 28,
             ),
             const SizedBox(height: 8),
             Text(
               label,
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.bodyMedium.copyWith(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppColors.neonCyan : Colors.white54,
+                color: isSelected
+                    ? AppColors.neonCyan
+                    : Theme.of(context).colorScheme.onSurface.withAlpha(138),
               ),
             ),
           ],
@@ -1104,18 +1116,17 @@ class _ParsedExerciseTile extends StatelessWidget {
               children: [
                 Text(
                   isValid ? exercise.matchedName! : 'No encontrado',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.bold,
-                    color: isValid ? Colors.white : Colors.orange,
-                    fontSize: 14,
+                  style: core.AppTypography.labelLarge.copyWith(
+                    color: isValid
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Colors.orange,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${exercise.series}x${exercise.repsRange}${exercise.weight != null ? ' • ${exercise.weight}kg' : ''}',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white54,
-                    fontSize: 12,
+                  style: core.AppTypography.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
               ],
@@ -1162,27 +1173,23 @@ class _ExerciseTile extends StatelessWidget {
               children: [
                 Text(
                   exercise.name,
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 15,
+                  style: core.AppTypography.labelLarge.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${exercise.sets} series × ${exercise.reps} reps${exercise.weight != null ? ' • ${exercise.weight!.toStringAsFixed(1)} kg' : ''}',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white54,
-                    fontSize: 13,
+                  style: core.AppTypography.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
                 if (exercise.notes != null && exercise.notes!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     'Nota: ${exercise.notes}',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white38,
-                      fontSize: 12,
+                    style: core.AppTypography.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -1192,7 +1199,11 @@ class _ExerciseTile extends StatelessWidget {
           ),
           IconButton(
             onPressed: onEdit,
-            icon: const Icon(Icons.edit, color: Colors.white38, size: 20),
+            icon: Icon(
+              Icons.edit,
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
+              size: 20,
+            ),
             tooltip: 'Editar',
           ),
           IconButton(

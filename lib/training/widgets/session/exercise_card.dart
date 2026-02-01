@@ -1035,6 +1035,7 @@ class ExerciseCard extends ConsumerWidget {
             );
           }
 
+          // 🆕 Fast Logging Parity: Swipe-to-delete en modo tradicional
           return SessionSetRow(
             key: ValueKey('ex${exercise.id}_set$setIndex'),
             index: setIndex,
@@ -1048,6 +1049,8 @@ class ExerciseCard extends ConsumerWidget {
             onLongPress: () => onSetLongPress(setIndex),
             showAdvanced: showAdvanced,
             shouldFocus: focusSetIndex == setIndex,
+            canDelete: true,
+            onDelete: () => onDeleteSet?.call(setIndex),
           );
         }),
 

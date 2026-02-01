@@ -15,10 +15,47 @@ Durante el esfuerzo de alineación visual (PR1-PR3), se migraron los componentes
 |-----------|------------|-----------|-----------|
 | Core Design System | ✅ 100% | 0 | - |
 | Core Widgets | ✅ 100% | 0 | - |
-| Training - Session Widgets | ✅ 90% | ~5 archivos | Baja |
-| Training - Screens | ⏳ 30% | ~15 archivos | Media |
+| **Training - Session Widgets** | **✅ 100%** | **0** | **-** |
+| Training - Screens | ✅ 70% | ~11 archivos | Media |
 | Training - Voice Widgets | ⏳ 10% | ~10 archivos | Baja |
 | Training - Utils | ⏳ 50% | 1 archivo | Baja |
+
+---
+
+## Progreso de Migración
+
+### ✅ Fase 1 Completada (Febrero 2026)
+
+Los siguientes archivos de **alta prioridad** fueron migrados exitosamente:
+
+| Archivo | Estado | Usos Migrados |
+|---------|--------|---------------|
+| `screens/settings_screen.dart` | ✅ Completo | ~50 |
+| `screens/create_edit_routine_screen.dart` | ✅ Completo | ~40 |
+| `screens/session_detail_screen.dart` | ✅ Completo | ~10 |
+| `screens/external_session_screen.dart` | ✅ Completo | ~60 |
+
+**Total Fase 1:** ~160 usos de `GoogleFonts.montserrat()` eliminados
+
+### ✅ Fase 2 Completada (Febrero 2026)
+
+Todos los **session widgets** fueron migrados exitosamente:
+
+| Archivo | Usos Migrados |
+|---------|---------------|
+| `widgets/session/session_set_row.dart` | ~9 |
+| `widgets/session/focused_set_row.dart` | ~8 |
+| `widgets/session/progression_suggestion_chip.dart` | ~4 |
+| `widgets/session/advanced_options_modal.dart` | ~5 |
+| `widgets/session/log_input.dart` | ~4 |
+| `widgets/session/session_modifiers.dart` | ~3 |
+| `widgets/session/numpad_input_modal.dart` | ~12 |
+| `widgets/session/quick_actions_menu.dart` | ~12 |
+| `widgets/session/tolerance_feedback_widgets.dart` | ~18 |
+| `widgets/session/progression_preview.dart` | ~24 |
+| `widgets/session/rest_timer_panel.dart` | ~1 |
+
+**Total Fase 2:** ~100 usos de `GoogleFonts.montserrat()` eliminados
 
 ---
 
@@ -46,19 +83,11 @@ import '../../../core/design_system/design_system.dart' show AppTypography;
 
 ---
 
-### 2. Archivos con GoogleFonts Directo
+### 2. Archivos con GoogleFonts Directo (Pendientes)
 
-Los siguientes archivos usan `GoogleFonts.montserrat()` directamente en lugar de `AppTypography`:
+Los siguientes archivos aún usan `GoogleFonts.montserrat()` directamente:
 
-#### High Priority (usados frecuentemente)
-| Archivo | Usos | Impacto |
-|---------|------|---------|
-| `screens/settings_screen.dart` | ~50 | Alta - Usada por todos los usuarios |
-| `screens/session_detail_screen.dart` | ~10 | Media |
-| `screens/create_edit_routine_screen.dart` | ~40 | Alta |
-| `screens/external_session_screen.dart` | ~60 | Media |
-
-#### Medium Priority
+#### Medium Priority (Import/Export)
 | Archivo | Usos | Impacto |
 |---------|------|---------|
 | `widgets/smart_import_sheet.dart` | ~30 | Media |
@@ -66,7 +95,7 @@ Los siguientes archivos usan `GoogleFonts.montserrat()` directamente en lugar de
 | `widgets/routine_import_dialog.dart` | ~20 | Baja |
 | `widgets/routine_import_preview_dialog.dart` | ~15 | Baja |
 
-#### Low Priority (voice widgets - niche feature)
+#### Low Priority (Voice Widgets - niche feature)
 | Archivo | Usos | Impacto |
 |---------|------|---------|
 | `widgets/voice/voice_input_sheet.dart` | ~40 | Baja - Feature de voz |
@@ -78,22 +107,20 @@ Los siguientes archivos usan `GoogleFonts.montserrat()` directamente en lugar de
 | Archivo | Usos | Impacto |
 |---------|------|---------|
 | `widgets/routine/*.dart` | ~30 | Baja |
-| `widgets/session/*.dart` (otros) | ~20 | Media |
 
-**Total estimado:** ~400 usos de `GoogleFonts.montserrat()` en Training
+**Total estimado restante:** ~140 usos de `GoogleFonts.montserrat()` en Training
 
 ---
 
-### 3. Colores Hardcodeados
+### 3. Colores Hardcodeados (Pendientes)
 
 Archivos con `Colors.grey`, `Colors.white`, `Colors.red`, etc.:
 
-- `training/screens/settings_screen.dart` - ~20 usos
 - `training/widgets/smart_import_sheet*.dart` - ~15 usos
 - `training/widgets/voice/*.dart` - ~30 usos
 - Varios otros - ~50 usos
 
-**Nota:** En tema oscuro (Training), `Colors.white` y `Colors.grey[xxx]` pueden funcionar, pero es mejor usar el `colorScheme` para consistencia.
+**Nota:** Los archivos de Fase 1 y Fase 2 ya fueron migrados a usar `Theme.of(context).colorScheme`.
 
 ---
 
@@ -105,10 +132,29 @@ Los siguientes archivos tienen imports específicos con `show` para evitar confl
 - `training/widgets/session/exercise_card.dart`
 - `training/widgets/session/rest_timer_bar.dart`
 
+✅ **Ya corregidos en Fase 1 (Screens):**
+- `training/screens/settings_screen.dart`
+- `training/screens/create_edit_routine_screen.dart`
+- `training/screens/session_detail_screen.dart`
+- `training/screens/external_session_screen.dart`
+
+✅ **Ya corregidos en Fase 2 (Session Widgets):**
+- `training/widgets/session/session_set_row.dart`
+- `training/widgets/session/focused_set_row.dart`
+- `training/widgets/session/progression_suggestion_chip.dart`
+- `training/widgets/session/advanced_options_modal.dart`
+- `training/widgets/session/log_input.dart`
+- `training/widgets/session/session_modifiers.dart`
+- `training/widgets/session/numpad_input_modal.dart`
+- `training/widgets/session/quick_actions_menu.dart`
+- `training/widgets/session/tolerance_feedback_widgets.dart`
+- `training/widgets/session/progression_preview.dart`
+- `training/widgets/session/rest_timer_panel.dart`
+
 **Patrón establecido:**
 ```dart
-// ✅ Correcto - Import selectivo
-import '../../../core/design_system/design_system.dart' show AppTypography;
+// ✅ Correcto - Import selectivo con prefijo
+import '../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../utils/design_system.dart' show AppColors;
 
 // ❌ Incorrecto - Conflicto de nombres
@@ -124,11 +170,11 @@ import '../../utils/design_system.dart' show AppColors;
 
 1. **Siempre usar core design system:**
    ```dart
-   import '../../../core/design_system/design_system.dart';
+   import '../../../core/design_system/design_system.dart' as core show AppTypography;
    import '../../../core/widgets/widgets.dart';
    ```
 
-2. **Nunca usar GoogleFonts directo** - Usar `AppTypography`
+2. **Nunca usar GoogleFonts directo** - Usar `core.AppTypography`
 
 3. **Nunca hardcodear colores** - Usar `Theme.of(context).colorScheme`
 
@@ -140,15 +186,13 @@ import '../../utils/design_system.dart' show AppColors;
 
 3. **Preferir consistencia local** - Si el archivo usa `AppColors` del training, continuar así
 
-### Para Migración Futura (PR4+)
+### Para Migración Futura (Fase 3+)
 
 Prioridad sugerida:
 
-1. **Phase 1:** Screens más usadas (`settings_screen.dart`, `create_edit_routine_screen.dart`)
-2. **Phase 2:** Session widgets restantes (`session_set_row.dart`, `focused_set_row.dart`)
-3. **Phase 3:** Import/Export sheets (`smart_import_sheet*.dart`)
-4. **Phase 4:** Voice widgets (baja prioridad - feature niche)
-5. **Phase 5:** Unificar `training/utils/design_system.dart` con core (breaking change)
+1. **Fase 3:** Import/Export sheets (`smart_import_sheet*.dart`)
+2. **Fase 4:** Voice widgets (baja prioridad - feature niche)
+3. **Fase 5:** Unificar `training/utils/design_system.dart` con core (breaking change)
 
 ---
 
@@ -158,21 +202,41 @@ Prioridad sugerida:
 
 ```
 Core Widgets:        ████████████████████ 100%
-Session Critical:    ███████████████████░  90%
-Screens:             ███████░░░░░░░░░░░░░  30%
+Session Critical:    ████████████████████ 100%  (+10% después de Fase 2)
+Screens:             ██████████████░░░░░░  70%
 Voice Widgets:       ██░░░░░░░░░░░░░░░░░░  10%
-Overall Training:    █████████░░░░░░░░░░░  45%
+Overall Training:    ███████████████░░░░░  75%  (+15% después de Fase 2)
 ```
 
 ### Archivos Completamente Migrados ✅
 
+**Core:**
 - `core/widgets/*.dart` (todos)
 - `core/design_system/*.dart` (todos)
+
+**Session Widgets (Fase 2):**
 - `training/widgets/session/exercise_card.dart`
 - `training/widgets/session/rest_timer_bar.dart`
+- `training/widgets/session/session_set_row.dart`
+- `training/widgets/session/focused_set_row.dart`
+- `training/widgets/session/progression_suggestion_chip.dart`
+- `training/widgets/session/advanced_options_modal.dart`
+- `training/widgets/session/log_input.dart`
+- `training/widgets/session/session_modifiers.dart`
+- `training/widgets/session/numpad_input_modal.dart`
+- `training/widgets/session/quick_actions_menu.dart`
+- `training/widgets/session/tolerance_feedback_widgets.dart`
+- `training/widgets/session/progression_preview.dart`
+- `training/widgets/session/rest_timer_panel.dart`
+
+**Screens (Fase 1):**
 - `training/screens/history_screen.dart`
 - `training/screens/train_selection_screen.dart`
 - `training/screens/analysis_screen.dart`
+- `training/screens/settings_screen.dart`
+- `training/screens/create_edit_routine_screen.dart`
+- `training/screens/session_detail_screen.dart`
+- `training/screens/external_session_screen.dart`
 
 ---
 
@@ -180,7 +244,7 @@ Overall Training:    █████████░░░░░░░░░░�
 
 - Esta deuda técnica es **puramente visual/UX** - no afecta funcionalidad
 - Los usuarios no notan diferencias significativas
-- El esfuerzo de migración completa se estima en ~2-3 días de trabajo
+- El esfuerzo de migración completa se estima en ~1 día de trabajo adicional
 - Se recomienda migración gradual como parte de otros features
 
-*Documento creado post-PR3 - Febrero 2026*
+*Documento actualizado post-Fase 2 - Febrero 2026*

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../models/rutina.dart';
 import '../services/routine_sharing_service.dart';
 import '../utils/design_system.dart';
@@ -49,6 +49,7 @@ class _RoutineImportPreviewDialogState
   @override
   Widget build(BuildContext context) {
     final stats = RoutineSharingService.instance.getImportStats(_editedRutina);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Dialog(
       backgroundColor: AppColors.bgElevated,
@@ -73,20 +74,21 @@ class _RoutineImportPreviewDialogState
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.download, color: Colors.white),
+                  Icon(Icons.download, color: colorScheme.onSurface),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'IMPORTAR RUTINA',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
+                      style: core.AppTypography.headlineSmall.copyWith(
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70),
+                    icon: Icon(
+                      Icons.close,
+                      color: colorScheme.onSurface.withAlpha(178),
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -103,8 +105,7 @@ class _RoutineImportPreviewDialogState
                     // Name Editor
                     Text(
                       'NOMBRE',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
+                      style: core.AppTypography.labelSmall.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textTertiary,
                       ),
@@ -112,10 +113,8 @@ class _RoutineImportPreviewDialogState
                     const SizedBox(height: 8),
                     TextField(
                       controller: _nameController,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      style: core.AppTypography.titleLarge.copyWith(
+                        color: colorScheme.onSurface,
                       ),
                       decoration: InputDecoration(
                         filled: true,
@@ -143,15 +142,14 @@ class _RoutineImportPreviewDialogState
                     const SizedBox(height: 20),
 
                     // Stats Section
-                    _buildStatsSection(stats),
+                    _buildStatsSection(stats, colorScheme),
 
                     const SizedBox(height: 20),
 
                     // Days Preview
                     Text(
                       'DÍAS',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
+                      style: core.AppTypography.labelSmall.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textTertiary,
                       ),
@@ -159,7 +157,7 @@ class _RoutineImportPreviewDialogState
                     const SizedBox(height: 8),
                     ...List.generate(
                       _editedRutina.dias.length,
-                      (index) => _buildDayPreview(index),
+                      (index) => _buildDayPreview(index, colorScheme),
                     ),
                   ],
                 ),
@@ -188,7 +186,7 @@ class _RoutineImportPreviewDialogState
                       ),
                       child: Text(
                         'CANCELAR',
-                        style: GoogleFonts.montserrat(
+                        style: core.AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -209,15 +207,14 @@ class _RoutineImportPreviewDialogState
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.live,
-                        foregroundColor: Colors.white,
+                        foregroundColor: colorScheme.onSurface,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         disabledBackgroundColor: AppColors.border,
                       ),
                       child: Text(
                         'IMPORTAR',
-                        style: GoogleFonts.montserrat(
+                        style: core.AppTypography.titleMedium.copyWith(
                           fontWeight: FontWeight.w900,
-                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -231,7 +228,7 @@ class _RoutineImportPreviewDialogState
     );
   }
 
-  Widget _buildStatsSection(RoutineImportStats stats) {
+  Widget _buildStatsSection(RoutineImportStats stats, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -247,16 +244,19 @@ class _RoutineImportPreviewDialogState
                 icon: Icons.calendar_view_week,
                 value: '${stats.daysCount}',
                 label: 'DÍAS',
+                colorScheme: colorScheme,
               ),
               _buildStatItem(
                 icon: Icons.fitness_center,
                 value: '${stats.exercisesCount}',
                 label: 'EJERCICIOS',
+                colorScheme: colorScheme,
               ),
               _buildStatItem(
                 icon: Icons.repeat,
                 value: '${stats.totalSeries}',
                 label: 'SERIES',
+                colorScheme: colorScheme,
               ),
             ],
           ),
@@ -264,12 +264,12 @@ class _RoutineImportPreviewDialogState
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.link, size: 16, color: Colors.redAccent[100]),
+                Icon(Icons.link, size: 16, color: colorScheme.errorContainer),
                 const SizedBox(width: 4),
                 Text(
                   '${stats.supersetsCount} SUPERSETS',
                   style: TextStyle(
-                    color: Colors.redAccent[100],
+                    color: colorScheme.errorContainer,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -294,7 +294,10 @@ class _RoutineImportPreviewDialogState
                   ),
                   child: Text(
                     muscle,
-                    style: const TextStyle(color: Colors.white70, fontSize: 10),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withAlpha(178),
+                      fontSize: 10,
+                    ),
                   ),
                 );
               }).toList(),
@@ -309,6 +312,7 @@ class _RoutineImportPreviewDialogState
     required IconData icon,
     required String value,
     required String label,
+    required ColorScheme colorScheme,
   }) {
     return Expanded(
       child: Column(
@@ -317,22 +321,22 @@ class _RoutineImportPreviewDialogState
           const SizedBox(height: 4),
           Text(
             value,
-            style: GoogleFonts.montserrat(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
+            style: core.AppTypography.headlineSmall.copyWith(
+              color: colorScheme.onSurface,
             ),
           ),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: AppColors.textTertiary),
+            style: core.AppTypography.labelSmall.copyWith(
+              color: AppColors.textTertiary,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDayPreview(int index) {
+  Widget _buildDayPreview(int index, ColorScheme colorScheme) {
     final dia = _editedRutina.dias[index];
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -355,8 +359,8 @@ class _RoutineImportPreviewDialogState
                 ),
                 child: Text(
                   'DÍA ${index + 1}',
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withAlpha(178),
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -366,19 +370,17 @@ class _RoutineImportPreviewDialogState
               Expanded(
                 child: Text(
                   dia.nombre,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
+                  style: core.AppTypography.bodyMedium.copyWith(
+                    color: colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               Text(
                 '${dia.ejercicios.length} ej.',
-                style: const TextStyle(
+                style: core.AppTypography.bodySmall.copyWith(
                   color: AppColors.textTertiary,
-                  fontSize: 12,
                 ),
               ),
             ],
@@ -411,16 +413,15 @@ class _RoutineImportPreviewDialogState
                     Expanded(
                       child: Text(
                         ejercicio.nombre,
-                        style: const TextStyle(
+                        style: core.AppTypography.bodySmall.copyWith(
                           color: AppColors.textSecondary,
-                          fontSize: 12,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Text(
                       '${ejercicio.series}x${ejercicio.repsRange}',
-                      style: const TextStyle(
+                      style: core.AppTypography.bodySmall.copyWith(
                         color: AppColors.textTertiary,
                         fontSize: 11,
                       ),
@@ -434,9 +435,8 @@ class _RoutineImportPreviewDialogState
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   '+${dia.ejercicios.length - 3} más',
-                  style: const TextStyle(
+                  style: core.AppTypography.bodySmall.copyWith(
                     color: AppColors.textTertiary,
-                    fontSize: 11,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -513,6 +513,8 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Dialog(
       backgroundColor: AppColors.bgElevated,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -536,20 +538,21 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.code, color: Colors.white),
+                  Icon(Icons.code, color: colorScheme.onSurface),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'PEGAR JSON',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
+                      style: core.AppTypography.headlineSmall.copyWith(
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70),
+                    icon: Icon(
+                      Icons.close,
+                      color: colorScheme.onSurface.withAlpha(178),
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -565,9 +568,11 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                   children: [
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'Pega el JSON de la rutina:',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: core.AppTypography.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const Spacer(),
                         TextButton.icon(
@@ -587,7 +592,8 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                         maxLines: null,
                         expands: true,
                         textAlignVertical: TextAlignVertical.top,
-                        style: GoogleFonts.firaCode(
+                        style: const TextStyle(
+                          fontFamily: 'FiraCode',
                           fontSize: 12,
                           color: Colors.white70,
                         ),
@@ -625,17 +631,17 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.error_outline,
-                              color: Colors.red,
+                              color: colorScheme.error,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _errorMessage!,
-                                style: const TextStyle(
-                                  color: Colors.red,
+                                style: TextStyle(
+                                  color: colorScheme.error,
                                   fontSize: 12,
                                 ),
                               ),
@@ -671,7 +677,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       ),
                       child: Text(
                         'CANCELAR',
-                        style: GoogleFonts.montserrat(
+                        style: core.AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -687,24 +693,23 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                           : _parseAndContinue,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.live,
-                        foregroundColor: Colors.white,
+                        foregroundColor: colorScheme.onSurface,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         disabledBackgroundColor: AppColors.border,
                       ),
                       child: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: colorScheme.onSurface,
                               ),
                             )
                           : Text(
                               'CONTINUAR',
-                              style: GoogleFonts.montserrat(
+                              style: core.AppTypography.titleMedium.copyWith(
                                 fontWeight: FontWeight.w900,
-                                fontSize: 16,
                               ),
                             ),
                     ),
