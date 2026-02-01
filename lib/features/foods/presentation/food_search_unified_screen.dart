@@ -367,16 +367,26 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
         return;
       }
 
-      // Si no está en local, llamar a Open Food Facts (requiere internet)
-      // La búsqueda online está implementada en AlimentoRepository.searchByBarcodeOnline
+      // Si no está en local, buscar online via el provider híbrido
+      debugPrint('[Barcode] No encontrado local, buscando online: $barcode');
+      final onlineResult = await ref.read(onlineBarcodeSearchProvider(barcode).future);
+
+      if (!mounted) return;
+
+      if (onlineResult != null) {
+        Navigator.of(context).pop(); // Cerrar loading
+        _selectFood(onlineResult);
+        return;
+      }
+
+      // No encontrado ni local ni online
       Navigator.of(context).pop(); // Cerrar loading
 
-      // No encontrado
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Producto no encontrado'),
-          content: Text('No se encontró información para el código: $barcode'),
+          content: Text('No se encontró información para el código: $barcode\n\nNo está en la base local ni en Open Food Facts.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),

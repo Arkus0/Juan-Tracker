@@ -6,23 +6,27 @@ import '../../../../diet/repositories/alimento_repository.dart';
 import '../../../../training/database/database.dart';
 
 /// Provider unificado para la búsqueda de alimentos en la pantalla unificada
-/// 
-/// Este provider adapta el FoodSearchState del provider original a una lista
+///
+/// Este provider adapta el FoodSearchState del provider local (FTS5) a una lista
 /// de ScoredFood para la UI unificada.
+///
+/// NOTA: Usa AlimentoRepository (FTS5 local) como fuente principal.
+/// Para búsqueda híbrida (local + OFF API), usar el foodSearchProvider
+/// de diet/presentation/providers/ en lugar de este.
 final unifiedSearchProvider = Provider<AsyncValue<List<ScoredFood>>>((ref) {
   final searchState = ref.watch(foodSearchProvider);
-  
+
   if (searchState.isLoading && searchState.results.isEmpty) {
     return const AsyncValue.loading();
   }
-  
+
   if (searchState.errorMessage != null) {
     return AsyncValue.error(
       searchState.errorMessage ?? 'Error de búsqueda',
       StackTrace.current,
     );
   }
-  
+
   return AsyncValue.data(searchState.results);
 });
 
