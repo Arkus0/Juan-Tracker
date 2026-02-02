@@ -58,8 +58,8 @@ final dayTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
 ///
 /// Convierte CoachPlan a TargetsModel para mantener compatibilidad con UI existente.
 final activeTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
-  // Solo usar CoachPlan - el sistema de Targets manuales está deprecado
-  final coachPlan = ref.read(coachPlanProvider);
+  // Usar watch para que se re-ejecute cuando cambie el plan
+  final coachPlan = ref.watch(coachPlanProvider);
   if (coachPlan == null) {
     return null;
   }
@@ -168,7 +168,8 @@ class DayTrendData {
 /// Retorna datos de calorías consumidas por día para mostrar en gráficos.
 final weeklyCalorieTrendProvider = FutureProvider<List<DayTrendData>>((ref) async {
   final diaryRepo = ref.watch(diaryRepositoryProvider);
-  final coachPlan = ref.read(coachPlanProvider);
+  // Usar watch para reaccionar a cambios en el plan
+  final coachPlan = ref.watch(coachPlanProvider);
 
   final today = DateTime.now();
   final startOfToday = DateTime(today.year, today.month, today.day);
@@ -179,7 +180,7 @@ final weeklyCalorieTrendProvider = FutureProvider<List<DayTrendData>>((ref) asyn
 
   // Calcular target desde CoachPlan si existe
   if (coachPlan != null) {
-    final calculator = ref.read(daySummaryCalculatorProvider);
+    final calculator = ref.watch(daySummaryCalculatorProvider);
     targetKcal = calculator.calculateTDEEFromCoachPlan(coachPlan).round();
   }
 

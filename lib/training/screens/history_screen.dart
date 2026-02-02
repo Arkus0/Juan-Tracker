@@ -72,6 +72,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: HomeButton(),
+        ),
         title: const Text('HISTORIAL'),
         actions: [
           PopupMenuButton<String>(
@@ -593,16 +597,16 @@ class _SessionTileState extends State<_SessionTile> {
                     width: 55,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.black,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[800]!),
+                      border: Border.all(color: Theme.of(context).colorScheme.outline),
                     ),
                     child: Column(
                       children: [
                         Text(
                           dateStr.split(' ')[0],
                           style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(color: Colors.white, height: 1),
+                              ?.copyWith(color: Theme.of(context).colorScheme.onSurface, height: 1),
                         ),
                         Text(
                           dateStr.split(' ').length > 1
@@ -630,7 +634,6 @@ class _SessionTileState extends State<_SessionTile> {
                                 rutinaName.toUpperCase(),
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
-                                      color: Colors.white,
                                       fontWeight: FontWeight.w900,
                                     ),
                                 maxLines: 1,
@@ -668,7 +671,7 @@ class _SessionTileState extends State<_SessionTile> {
                             Icon(
                               Icons.access_time,
                               size: 14,
-                              color: Colors.grey[500],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -679,7 +682,7 @@ class _SessionTileState extends State<_SessionTile> {
                             Icon(
                               Icons.timer,
                               size: 14,
-                              color: Colors.grey[500],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -690,7 +693,7 @@ class _SessionTileState extends State<_SessionTile> {
                             Icon(
                               Icons.fitness_center,
                               size: 14,
-                              color: Colors.grey[500],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -730,7 +733,7 @@ class _SessionTileState extends State<_SessionTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Divider(color: Colors.grey[800]),
+          Divider(color: Theme.of(context).colorScheme.outlineVariant),
           const SizedBox(height: 8),
           // Lista de ejercicios resumida
           ...widget.session.ejerciciosCompletados.take(5).map((ejercicio) {
@@ -747,8 +750,8 @@ class _SessionTileState extends State<_SessionTile> {
                   Expanded(
                     child: Text(
                       ejercicio.nombre,
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 13,
                       ),
                       maxLines: 1,
@@ -757,7 +760,10 @@ class _SessionTileState extends State<_SessionTile> {
                   ),
                   Text(
                     '$completedSets series',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -777,7 +783,10 @@ class _SessionTileState extends State<_SessionTile> {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 '+${widget.session.ejerciciosCompletados.length - 5} ejercicios más',
-                style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                ),
               ),
             ),
           const SizedBox(height: 12),

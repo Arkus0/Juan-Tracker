@@ -111,14 +111,23 @@ void _cacheEmoji(String foodId, String emoji) {
 /// - Nombre + marca
 /// - Kcal/100g (rojo si es alto)
 /// - Macros clave (P/C/G)
+/// - Opcionalmente: toggle de favorito y checkbox para batch add
 class FoodListItem extends StatelessWidget {
   final Food food;
   final VoidCallback onTap;
+  final VoidCallback? onFavoriteToggle;
+  final bool showFavoriteButton;
+  final bool isSelected;
+  final VoidCallback? onSelectionToggle;
 
   const FoodListItem({
     super.key,
     required this.food,
     required this.onTap,
+    this.onFavoriteToggle,
+    this.showFavoriteButton = false,
+    this.isSelected = false,
+    this.onSelectionToggle,
   });
 
   @override
@@ -131,30 +140,53 @@ class FoodListItem extends StatelessWidget {
     // PERF: Use optimized emoji lookup with caching
     final emoji = _getEmojiForFoodFast(food);
     
+    // Check if batch selection mode is active
+    final isBatchMode = onSelectionToggle != null;
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      // Highlight selected items
+      color: isSelected ? theme.colorScheme.primaryContainer : null,
       child: InkWell(
-        onTap: onTap,
+        onTap: isBatchMode ? onSelectionToggle : onTap,
+        onLongPress: isBatchMode ? null : onSelectionToggle, // Long-press to enter batch mode
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Icono/Emoji
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 24),
+              // Checkbox for batch mode OR Emoji icon
+              if (isBatchMode) ...
+                [
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Checkbox(
+                      value: isSelected,
+                      onChanged: (_) => onSelectionToggle?.call(),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                ]
+              else ...
+                [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        emoji,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                    ),
+                  ),
+                ],
               const SizedBox(width: 16),
               
               // Información principal
@@ -222,6 +254,19 @@ class FoodListItem extends StatelessWidget {
                   ],
                 ),
               ),
+              
+              // Favorito toggle (si está habilitado)
+              if (showFavoriteButton && onFavoriteToggle != null) ...
+                [
+                  IconButton(
+                    icon: Icon(
+                      food.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: food.isFavorite ? Colors.red : Colors.grey,
+                    ),
+                    onPressed: onFavoriteToggle,
+                    tooltip: food.isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos',
+                  ),
+                ],
               
               // Calorías
               Container(

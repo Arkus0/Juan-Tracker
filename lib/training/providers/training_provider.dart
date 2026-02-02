@@ -512,6 +512,79 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     _saveState();
   }
 
+  /// 🆕 QUICK SWAP: Reemplaza un ejercicio en la sesión activa por una alternativa.
+  ///
+  /// CRÍTICO: Este método solo modifica la sesión activa (state.exercises),
+  /// NO modifica la rutina base (targets se preserva intacto).
+  ///
+  /// [exerciseIndex] - Índice del ejercicio a reemplazar en state.exercises
+  /// [newExercise] - Nuevo ejercicio de la biblioteca
+  /// [preserveCompletedSets] - Si es true, intenta transferir series completadas
+  ///                           del ejercicio original al nuevo (misma cantidad)
+  void swapExerciseInSession({
+    required int exerciseIndex,
+    required LibraryExercise newExercise,
+    bool preserveCompletedSets = true,
+  }) {
+    if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) return;
+
+    final originalExercise = state.exercises[exerciseIndex];
+    final originalLogs = originalExercise.logs;
+
+    // Calcular cuántas series preservar (las completadas, hasta un máximo razonable)
+    final completedSetsCount = originalLogs.where((l) => l.completed).length;
+    final targetSets = preserveCompletedSets && completedSetsCount > 0
+        ? originalLogs.length  // Mantener misma cantidad de series
+        : originalExercise.series;  // O usar el default del ejercicio
+
+    // Crear logs para el nuevo ejercicio
+    // Si preservamos, copiamos peso/reps de las series completadas como sugerencia
+    final newLogs = List<SerieLog>.generate(targetSets, (index) {
+      if (preserveCompletedSets &&
+          index < completedSetsCount &&
+          index < originalLogs.length) {
+        // Copiar datos de la serie completada como "sugerencia" (no completada)
+        final originalLog = originalLogs[index];
+        return SerieLog(
+          peso: originalLog.peso,
+          reps: originalLog.reps,
+          completed: false,  // Resetear estado de completado
+          rpe: originalLog.rpe,
+          notas: index == 0
+              ? 'Sustituido desde: ${originalExercise.nombre}'
+              : null,
+        );
+      }
+      return SerieLog(peso: 0.0, reps: 0, completed: false);
+    });
+
+    // Crear el nuevo ejercicio con los logs preparados
+    final swappedExercise = Ejercicio(
+      id: const Uuid().v4(),  // Nuevo ID de instancia
+      libraryId: newExercise.id.toString(),
+      nombre: newExercise.name,
+      musculosPrincipales: newExercise.muscles,
+      musculosSecundarios: newExercise.secondaryMuscles,
+      series: targetSets,
+      reps: originalExercise.reps,  // Preservar target de reps
+      notas: 'Sustituido desde: ${originalExercise.nombre}',
+      logs: newLogs,
+    );
+
+    // Reemplazar en la lista de ejercicios activos
+    final exercises = [...state.exercises];
+    exercises[exerciseIndex] = swappedExercise;
+
+    // NOTA: Los targets NO se modifican - la rutina base permanece intacta
+    state = state.copyWith(exercises: exercises);
+    _saveState();
+
+    _logger.d(
+      'QuickSwap: ${originalExercise.nombre} → ${newExercise.name} '
+      '(preservados $completedSetsCount sets)',
+    );
+  }
+
   void toggleAdvancedOptions(bool show) {
     state = state.copyWith(showAdvancedOptions: show);
     _saveState();

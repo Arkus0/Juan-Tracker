@@ -582,7 +582,7 @@ class _WeekCalendar extends StatelessWidget {
                 border: (isToday && !isSelected) ? Border.all(color: colors.primary) : null,
               ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 44),
+                constraints: const BoxConstraints(maxHeight: 52),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -596,7 +596,7 @@ class _WeekCalendar extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
@@ -606,7 +606,7 @@ class _WeekCalendar extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     if (isToday)
                       Container(
                         width: 4,
@@ -968,22 +968,13 @@ class _MacroDonut extends StatelessWidget {
               clampedProgress > 1.0 ? AppColors.error : colors.primary,
             ),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${(clampedProgress * 100).toInt()}%',
-                style: AppTypography.labelLarge.copyWith(
-                  color: colors.onSurface,
-                ),
-              ),
-              Text(
-                '${remaining ?? '--'}',
-                style: AppTypography.labelSmall.copyWith(
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
-            ],
+          // Solo el % centrado
+          Text(
+            '${(clampedProgress * 100).toInt()}%',
+            style: AppTypography.titleMedium.copyWith(
+              color: colors.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -1165,6 +1156,7 @@ class _QuickActionsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final selectedDate = ref.watch(selectedDateProvider);
     final yesterdayAsync = ref.watch(yesterdayMealsProvider);
     final recentsAsync = ref.watch(quickRecentFoodsProvider);
 
@@ -1176,11 +1168,19 @@ class _QuickActionsCard extends ConsumerWidget {
           data: (yesterday) {
             if (yesterday.isEmpty) return const SizedBox.shrink();
 
+            // Calcular la fecha del "ayer" relativo a la fecha seleccionada
+            final yesterdayDate = DateTime(
+              selectedDate.year,
+              selectedDate.month,
+              selectedDate.day - 1,
+            );
+
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: _RepeatYesterdayButton(
                 entryCount: yesterday.entryCount,
                 totalKcal: yesterday.totalKcal,
+                sourceDate: yesterdayDate,
               ),
             );
           },
@@ -1231,19 +1231,23 @@ class _QuickActionsCard extends ConsumerWidget {
   }
 }
 
-/// Botón para repetir todas las comidas de ayer
+/// Botón para repetir todas las comidas del día anterior
 class _RepeatYesterdayButton extends ConsumerWidget {
   final int entryCount;
   final int totalKcal;
+  final DateTime sourceDate;
 
   const _RepeatYesterdayButton({
     required this.entryCount,
     required this.totalKcal,
+    required this.sourceDate,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    // Formato corto para la fecha: "Lun 27"
+    final dayLabel = DateFormat('E d', 'es').format(sourceDate);
 
     return Material(
       color: colors.secondaryContainer.withAlpha((0.5 * 255).round()),
@@ -1260,7 +1264,7 @@ class _RepeatYesterdayButton extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.replay,
+                Icons.content_copy_rounded,
                 size: 18,
                 color: colors.onSecondaryContainer,
               ),
@@ -1269,14 +1273,14 @@ class _RepeatYesterdayButton extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Repetir ayer',
+                    'Copiar del $dayLabel',
                     style: AppTypography.labelMedium.copyWith(
                       color: colors.onSecondaryContainer,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
-                    '$entryCount items · $totalKcal kcal',
+                    '$entryCount alimentos · $totalKcal kcal',
                     style: AppTypography.labelSmall.copyWith(
                       color: colors.onSecondaryContainer.withAlpha((0.7 * 255).round()),
                     ),
@@ -1291,12 +1295,15 @@ class _RepeatYesterdayButton extends ConsumerWidget {
   }
 
   Future<void> _repeatYesterday(BuildContext context, WidgetRef ref) async {
+    final selectedDate = ref.read(selectedDateProvider);
+    final targetDateLabel = DateFormat('EEEE d', 'es').format(selectedDate);
+    
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Repetir comidas de ayer'),
+        title: const Text('Copiar comidas'),
         content: Text(
-          '¿Añadir $entryCount alimentos ($totalKcal kcal) al día actual?',
+          '¿Añadir $entryCount alimentos ($totalKcal kcal) al $targetDateLabel?',
         ),
         actions: [
           TextButton(

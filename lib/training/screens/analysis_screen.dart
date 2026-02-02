@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/design_system.dart';
+import '../../../core/widgets/home_button.dart';
 import '../models/external_session.dart';
 import '../providers/analysis_provider.dart';
 import '../providers/training_provider.dart';
@@ -57,6 +58,10 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
 
     return Scaffold(
       appBar: AppBar(
+        leading: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: HomeButton(),
+        ),
         title: const Text('Análisis'),
         centerTitle: true,
         actions: [

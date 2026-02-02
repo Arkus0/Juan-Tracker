@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../utils/design_system.dart';
 
 /// Tipo de captura para entrada de datos.
@@ -9,40 +10,28 @@ enum CaptureType { voice, ocr, text, manual }
 extension CaptureTypeExtension on CaptureType {
   IconData get icon {
     switch (this) {
-      case CaptureType.voice:
-        return Icons.mic;
-      case CaptureType.ocr:
-        return Icons.photo_camera;
-      case CaptureType.text:
-        return Icons.keyboard;
-      case CaptureType.manual:
-        return Icons.touch_app;
+      case CaptureType.voice: return Icons.mic;
+      case CaptureType.ocr: return Icons.photo_camera;
+      case CaptureType.text: return Icons.keyboard;
+      case CaptureType.manual: return Icons.touch_app;
     }
   }
 
   String get label {
     switch (this) {
-      case CaptureType.voice:
-        return 'Voz';
-      case CaptureType.ocr:
-        return 'Escanear';
-      case CaptureType.text:
-        return 'Texto';
-      case CaptureType.manual:
-        return 'Manual';
+      case CaptureType.voice: return 'Voz';
+      case CaptureType.ocr: return 'Escanear';
+      case CaptureType.text: return 'Texto';
+      case CaptureType.manual: return 'Manual';
     }
   }
 
   Color get color {
     switch (this) {
-      case CaptureType.voice:
-        return AppColors.error;
-      case CaptureType.ocr:
-        return Colors.blue;
-      case CaptureType.text:
-        return Colors.purple;
-      case CaptureType.manual:
-        return Colors.green;
+      case CaptureType.voice: return AppColors.error;
+      case CaptureType.ocr: return Colors.blue;
+      case CaptureType.text: return Colors.purple;
+      case CaptureType.manual: return Colors.green;
     }
   }
 }
@@ -81,10 +70,7 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
   void initState() {
     super.initState();
     _currentType = widget.initialType;
-    _expandController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
+    _expandController = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
   }
 
   @override
@@ -96,61 +82,43 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
   void _toggleExpand() {
     setState(() {
       _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _expandController.forward();
-      } else {
-        _expandController.reverse();
-      }
+      if (_isExpanded) { _expandController.forward(); } else { _expandController.reverse(); }
     });
-    try {
-      HapticFeedback.selectionClick();
-    } catch (_) {}
+    try { HapticFeedback.selectionClick(); } catch (_) {}
   }
 
   void _selectType(CaptureType type) {
-    setState(() {
-      _currentType = type;
-      _isExpanded = false;
-    });
+    setState(() { _currentType = type; _isExpanded = false; });
     _expandController.reverse();
-    try {
-      HapticFeedback.mediumImpact();
-    } catch (_) {}
+    try { HapticFeedback.mediumImpact(); } catch (_) {}
     widget.onCapture(type);
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     if (widget.disabled) {
-      return _buildDisabledButton();
+      return _buildDisabledButton(onSurface);
     }
 
     return AnimatedBuilder(
       animation: _expandController,
-      builder: (context, child) {
-        return _isExpanded ? _buildExpandedView() : _buildCollapsedButton();
-      },
+      builder: (context, child) => _isExpanded ? _buildExpandedView(onSurface) : _buildCollapsedButton(onSurface),
     );
   }
 
-  Widget _buildDisabledButton() {
+  Widget _buildDisabledButton(Color onSurface) {
     return Container(
       width: widget.size,
       height: widget.size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.bgDeep,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Icon(
-        _currentType.icon,
-        color: Colors.white38,
-        size: widget.size * 0.4,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.bgDeep, border: Border.all(color: AppColors.border)),
+      child: Icon(_currentType.icon, color: onSurface.withAlpha(97), size: widget.size * 0.4),
     );
   }
 
-  Widget _buildCollapsedButton() {
+  Widget _buildCollapsedButton(Color onSurface) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -160,38 +128,19 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
           child: Container(
             width: widget.size,
             height: widget.size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _currentType.color.withValues(alpha: 0.15),
-              border: Border.all(
-                color: _currentType.color.withValues(alpha: 0.5),
-              ),
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: _currentType.color.withValues(alpha: 0.15), border: Border.all(color: _currentType.color.withValues(alpha: 0.5))),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Icon(
-                  _currentType.icon,
-                  color: _currentType.color,
-                  size: widget.size * 0.45,
-                ),
-                // Indicador de más opciones
+                Icon(_currentType.icon, color: _currentType.color, size: widget.size * 0.45),
                 Positioned(
                   bottom: 4,
                   right: 4,
                   child: Container(
                     width: 14,
                     height: 14,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.bgDeep,
-                      border: Border.all(color: _currentType.color, width: 1.5),
-                    ),
-                    child: Icon(
-                      Icons.expand_more,
-                      size: 10,
-                      color: _currentType.color,
-                    ),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.bgDeep, border: Border.all(color: _currentType.color, width: 1.5)),
+                    child: Icon(Icons.expand_more, size: 10, color: _currentType.color),
                   ),
                 ),
               ],
@@ -200,34 +149,16 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
         ),
         if (widget.showLabels) ...[
           const SizedBox(height: 6),
-          Text(
-            _currentType.label,
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: _currentType.color,
-            ),
-          ),
+          Text(_currentType.label, style: core.AppTypography.labelSmall.copyWith(color: _currentType.color)),
         ],
       ],
     );
   }
 
-  Widget _buildExpandedView() {
+  Widget _buildExpandedView(Color onSurface) {
     return Container(
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: AppColors.bgElevated,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: AppColors.bgElevated, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))]),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -243,21 +174,8 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
                     duration: const Duration(milliseconds: 150),
                     width: widget.size * 0.9,
                     height: widget.size * 0.9,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected
-                          ? type.color.withValues(alpha: 0.3)
-                          : AppColors.bgDeep,
-                      border: Border.all(
-                        color: isSelected ? type.color : AppColors.border,
-                        width: isSelected ? 2 : 1,
-                      ),
-                    ),
-                    child: Icon(
-                      type.icon,
-                      color: isSelected ? type.color : Colors.white54,
-                      size: widget.size * 0.4,
-                    ),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: isSelected ? type.color.withValues(alpha: 0.3) : AppColors.bgDeep, border: Border.all(color: isSelected ? type.color : AppColors.border, width: isSelected ? 2 : 1)),
+                    child: Icon(type.icon, color: isSelected ? type.color : onSurface.withAlpha(138), size: widget.size * 0.4),
                   ),
                 ),
               );
@@ -268,22 +186,13 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
             onTap: _toggleExpand,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.bgDeep,
-                borderRadius: BorderRadius.circular(12),
-              ),
+              decoration: BoxDecoration(color: AppColors.bgDeep, borderRadius: BorderRadius.circular(12)),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.close, size: 12, color: Colors.white54),
+                  Icon(Icons.close, size: 12, color: onSurface.withAlpha(138)),
                   const SizedBox(width: 4),
-                  Text(
-                    'Cerrar',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 10,
-                      color: Colors.white54,
-                    ),
-                  ),
+                  Text('Cerrar', style: core.AppTypography.labelSmall.copyWith(color: onSurface.withAlpha(138))),
                 ],
               ),
             ),
@@ -311,6 +220,9 @@ class CaptureMethodSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: CaptureType.values.map((type) {
@@ -319,49 +231,24 @@ class CaptureMethodSelector extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 8),
           child: GestureDetector(
             onTap: () {
-              try {
-                HapticFeedback.selectionClick();
-              } catch (_) {}
+              try { HapticFeedback.selectionClick(); } catch (_) {}
               onSelect(type);
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 12 : 16,
-                vertical: compact ? 8 : 12,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16, vertical: compact ? 8 : 12),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? type.color.withValues(alpha: 0.2)
-                    : AppColors.bgDeep,
+                color: isSelected ? type.color.withValues(alpha: 0.2) : AppColors.bgDeep,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected
-                      ? type.color.withValues(alpha: 0.6)
-                      : AppColors.border,
-                  width: isSelected ? 2 : 1,
-                ),
+                border: Border.all(color: isSelected ? type.color.withValues(alpha: 0.6) : AppColors.border, width: isSelected ? 2 : 1),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    type.icon,
-                    color: isSelected ? type.color : Colors.white54,
-                    size: compact ? 20 : 24,
-                  ),
+                  Icon(type.icon, color: isSelected ? type.color : onSurface.withAlpha(138), size: compact ? 20 : 24),
                   if (!compact) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      type.label,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 10,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                        color: isSelected ? type.color : Colors.white54,
-                      ),
-                    ),
+                    Text(type.label, style: core.AppTypography.labelSmall.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? type.color : onSurface.withAlpha(138))),
                   ],
                 ],
               ),
@@ -385,8 +272,7 @@ class MultiCaptureFloatingButton extends StatefulWidget {
   });
 
   @override
-  State<MultiCaptureFloatingButton> createState() =>
-      _MultiCaptureFloatingButtonState();
+  State<MultiCaptureFloatingButton> createState() => _MultiCaptureFloatingButtonState();
 }
 
 class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
@@ -397,10 +283,7 @@ class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 250));
   }
 
   @override
@@ -412,15 +295,9 @@ class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
   void _toggle() {
     setState(() {
       _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
+      if (_isExpanded) { _controller.forward(); } else { _controller.reverse(); }
     });
-    try {
-      HapticFeedback.selectionClick();
-    } catch (_) {}
+    try { HapticFeedback.selectionClick(); } catch (_) {}
   }
 
   void _select(CaptureType type) {
@@ -430,86 +307,57 @@ class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Opciones expandidas
         AnimatedBuilder(
           animation: _controller,
-          builder: (context, child) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: CaptureType.values.reversed.map((type) {
-                if (type == widget.defaultType) return const SizedBox.shrink();
-
-                return SlideTransition(
-                  position:
-                      Tween<Offset>(
-                        begin: const Offset(0, 0.5),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: _controller,
-                          curve: Curves.easeOut,
+          builder: (context, child) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: CaptureType.values.reversed.map((type) {
+              if (type == widget.defaultType) return const SizedBox.shrink();
+              return SlideTransition(
+                position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut)),
+                child: FadeTransition(
+                  opacity: _controller,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(color: AppColors.bgElevated, borderRadius: BorderRadius.circular(8)),
+                          child: Text(type.label, style: core.AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(178))),
                         ),
-                      ),
-                  child: FadeTransition(
-                    opacity: _controller,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.bgElevated,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              type.label,
-                              style: GoogleFonts.montserrat(
-                                fontSize: 12,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          FloatingActionButton.small(
-                            heroTag: 'fab_${type.name}',
-                            backgroundColor: type.color,
-                            onPressed: () => _select(type),
-                            child: Icon(type.icon, color: Colors.white),
-                          ),
-                        ],
-                      ),
+                        const SizedBox(width: 8),
+                        FloatingActionButton.small(
+                          heroTag: 'fab_${type.name}',
+                          backgroundColor: type.color,
+                          onPressed: () => _select(type),
+                          child: Icon(type.icon, color: onSurface),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              }).toList(),
-            );
-          },
+                ),
+              );
+            }).toList(),
+          ),
         ),
-
-        // FAB principal
         FloatingActionButton(
           heroTag: 'fab_main_capture',
-          backgroundColor: _isExpanded
-              ? AppColors.bgElevated
-              : widget.defaultType.color,
+          backgroundColor: _isExpanded ? AppColors.bgElevated : widget.defaultType.color,
           onPressed: _toggle,
           child: AnimatedRotation(
             turns: _isExpanded ? 0.125 : 0,
             duration: const Duration(milliseconds: 200),
-            child: Icon(
-              _isExpanded ? Icons.close : widget.defaultType.icon,
-              color: Colors.white,
-            ),
+            child: Icon(_isExpanded ? Icons.close : widget.defaultType.icon, color: onSurface),
           ),
         ),
       ],

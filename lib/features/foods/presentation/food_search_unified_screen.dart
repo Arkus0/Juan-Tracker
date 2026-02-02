@@ -5,13 +5,15 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../core/providers/database_provider.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../diet/models/models.dart';
-import '../../../../diet/providers/food_search_provider.dart';
+// Hide MealType from database.dart - we use the one from diet/models
+import '../../../../diet/providers/food_search_provider.dart' hide favoriteFoodsProvider;
 import '../../../../diet/repositories/alimento_repository.dart';
-import '../../../../training/database/database.dart';
+import '../../../../training/database/database.dart' hide MealType, ServingUnit;
 import '../../diary/presentation/add_entry_dialog.dart';
 import '../providers/food_input_providers.dart';
 import '../providers/unified_search_provider.dart';
@@ -117,6 +119,11 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     _searchController.dispose();
     _searchFocusNode.dispose();
     _textRecognizer.close();
+    // Limpiar estado de batch al salir para evitar que persista
+    // en futuras visitas a esta pantalla
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(batchSelectionProvider.notifier).cancelBatch();
+    });
     super.dispose();
   }
 
@@ -179,19 +186,35 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
         ref.read(voiceInputAmountProvider.notifier).setAmount(parsed.amount);
       }
       
-      // Mostrar snackbar con opción rápida
+      // Mostrar snackbar con opción de añadir rápido
+      final hasAmount = parsed.amount != null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Buscando: ${parsed.foodName}'),
-          action: parsed.amount != null
-              ? SnackBarAction(
-                  label: 'Añadir ${parsed.amount}g',
-                  onPressed: () => _quickAddFromVoice(parsed),
-                )
-              : null,
-          duration: const Duration(seconds: 3),
+          content: Row(
+            children: [
+              const Icon(Icons.mic, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  hasAmount 
+                    ? '${parsed.foodName} (${parsed.amount!.toStringAsFixed(0)}g)'
+                    : parsed.foodName,
+                ),
+              ),
+            ],
+          ),
+          action: SnackBarAction(
+            label: hasAmount ? '✓ AÑADIR' : 'BUSCAR',
+            textColor: Colors.amber,
+            onPressed: () => _quickAddFromVoice(parsed),
+          ),
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
         ),
       );
+    } else {
+      // No se pudo parsear el texto
+      AppSnackbar.showError(context, message: 'No se entendió. Intenta de nuevo.');
     }
   }
 
@@ -219,8 +242,164 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
 
   Future<void> _quickAddFromVoice(_ParsedVoiceInput parsed) async {
     // Buscar alimentos con el query parseado
-    ref.read(searchQueryProvider.notifier).setQuery(parsed.foodName);
-    ref.read(foodSearchProvider.notifier).search(parsed.foodName);
+    final repository = ref.read(alimentoRepositoryProvider);
+    final results = await repository.search(parsed.foodName, limit: 5);
+    
+    if (!mounted) return;
+    
+    if (results.isEmpty) {
+      // Sin resultados: abrir formulario manual
+      AppSnackbar.show(context, message: 'No encontrado. Añade manualmente.');
+      _showManualAddSheet(prefillData: _OcrExtractedData(name: parsed.foodName));
+      return;
+    }
+    
+    // Si hay un resultado muy bueno (score alto), usarlo directamente
+    final bestMatch = results.first;
+    
+    if (results.length == 1 || bestMatch.score > 150) {
+      // Match único o muy bueno: abrir diálogo con cantidad pre-rellenada
+      final result = await showDialog<DiaryEntryModel>(
+        context: context,
+        builder: (ctx) => AddEntryDialog(
+          food: bestMatch.food.toModel(),
+          initialAmount: parsed.amount,
+        ),
+      );
+      
+      if (result != null && mounted) {
+        try {
+          await ref.read(diaryRepositoryProvider).insert(result);
+          if (!mounted) return;
+          AppSnackbar.show(context, message: '${bestMatch.food.name} añadido');
+          Navigator.of(context).pop();
+        } catch (e) {
+          if (mounted) {
+            AppSnackbar.showError(context, message: 'Error al guardar: $e');
+          }
+        }
+      }
+    } else {
+      // Múltiples resultados: mostrar sheet para elegir
+      _showVoiceResultsSheet(parsed, results.map((r) => r.food).toList());
+    }
+  }
+  
+  /// Sheet para elegir entre varios resultados de voz
+  void _showVoiceResultsSheet(_ParsedVoiceInput parsed, List<Food> results) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (context, scrollController) {
+          final theme = Theme.of(context);
+          return Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outline,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.mic, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Selecciona el alimento',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (parsed.amount != null)
+                      Chip(
+                        label: Text('${parsed.amount!.toStringAsFixed(0)}g'),
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                      ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Results list
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: results.length,
+                  itemBuilder: (context, index) {
+                    final food = results[index];
+                    return ListTile(
+                      title: Text(food.name),
+                      subtitle: Text(
+                        '${food.kcalPer100g} kcal/100g${food.brand != null ? ' • ${food.brand}' : ''}',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        
+                        final result = await showDialog<DiaryEntryModel>(
+                          context: this.context,
+                          builder: (ctx) => AddEntryDialog(
+                            food: food.toModel(),
+                            initialAmount: parsed.amount,
+                          ),
+                        );
+                        
+                        if (result != null && mounted) {
+                          try {
+                            await ref.read(diaryRepositoryProvider).insert(result);
+                            if (!mounted) return;
+                            AppSnackbar.show(this.context, message: '${food.name} añadido');
+                            Navigator.of(this.context).pop();
+                          } catch (e) {
+                            if (mounted) {
+                              AppSnackbar.showError(this.context, message: 'Error: $e');
+                            }
+                          }
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+              
+              // Add manual option
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _showManualAddSheet(prefillData: _OcrExtractedData(name: parsed.foodName));
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('Añadir manualmente'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   // ============================================================================
@@ -453,6 +632,41 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
   // ============================================================================
   
   Future<void> _selectFood(Food food) async {
+    // Si el alimento no tiene datos nutricionales, ofrecer editar primero
+    if (food.kcalPer100g <= 0) {
+      final shouldEdit = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Datos incompletos'),
+          content: Text(
+            '${food.name} no tiene información nutricional. '
+            '¿Quieres añadir los datos manualmente?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('CANCELAR'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('EDITAR'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldEdit == true && mounted) {
+        _showManualAddSheet(prefillData: _OcrExtractedData(
+          name: food.name,
+          kcal: null,
+          proteins: food.proteinPer100g,
+          carbs: food.carbsPer100g,
+          fat: food.fatPer100g,
+        ));
+      }
+      return;
+    }
+    
     final result = await showDialog<DiaryEntryModel>(
       context: context,
       builder: (ctx) => AddEntryDialog(
@@ -463,6 +677,11 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     if (result != null && mounted) {
       try {
         await ref.read(diaryRepositoryProvider).insert(result);
+        // Registrar uso del alimento para que aparezca en recientes
+        // Nota: No pasamos mealType por conflicto de tipos entre diet/models y database
+        await ref.read(alimentoRepositoryProvider).recordSelection(food.id);
+        // Invalidar recientes para que se actualice la UI
+        ref.invalidate(recentFoodsForUnifiedProvider);
         if (!mounted) return;
         AppSnackbar.show(context, message: '${food.name} añadido al diario');
         Navigator.of(context).pop();
@@ -504,17 +723,30 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     final searchResults = ref.watch(unifiedSearchProvider);
     final inputMode = ref.watch(foodInputModeProvider);
     final recentFoods = ref.watch(recentFoodsForUnifiedProvider);
+    final batchState = ref.watch(batchSelectionProvider);
+    final favoriteFoods = ref.watch(favoriteFoodsForUnifiedProvider);
     
     return Scaffold(
+      resizeToAvoidBottomInset: true, // Asegurar que el body se ajuste al teclado
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Editar Alimento' : 'Alimentos'),
+        title: batchState.isActive 
+          ? Text('${batchState.count} seleccionados')
+          : Text(widget.isEditing ? 'Editar Alimento' : 'Alimentos'),
         centerTitle: true,
+        leading: batchState.isActive
+          ? IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => ref.read(batchSelectionProvider.notifier).cancelBatch(),
+              tooltip: 'Cancelar selección',
+            )
+          : null,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => _showSettingsMenu(),
-            tooltip: 'Ajustes',
-          ),
+          if (!batchState.isActive)
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () => _showSettingsMenu(),
+              tooltip: 'Ajustes',
+            ),
         ],
       ),
       body: Column(
@@ -537,17 +769,28 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
               searchResults: searchResults,
               inputMode: inputMode,
               recentFoods: recentFoods,
+              favoriteFoods: favoriteFoods,
               searchQuery: searchQuery,
+              batchState: batchState,
             ),
           ),
         ],
       ),
-      floatingActionButton: InputMethodFab(
-        onManualAdd: () => _showManualAddSheet(),
-        onVoiceInput: _startListening,
-        onOcrScan: () => _scanLabel(),
-        onBarcodeScan: _scanBarcode,
-      ),
+      // Show batch add FAB when items selected, otherwise normal FAB
+      floatingActionButton: batchState.isActive
+        ? FloatingActionButton.extended(
+            onPressed: () => _addBatchSelection(),
+            icon: const Icon(Icons.add_circle),
+            label: Text('Añadir ${batchState.count}'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          )
+        : InputMethodFab(
+            onManualAdd: () => _showManualAddSheet(),
+            onVoiceInput: _startListening,
+            onOcrScan: () => _scanLabel(),
+            onBarcodeScan: _scanBarcode,
+          ),
     );
   }
 
@@ -684,7 +927,9 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     required AsyncValue<List<ScoredFood>> searchResults,
     required FoodInputMode inputMode,
     required AsyncValue<List<Food>> recentFoods,
+    required AsyncValue<List<Food>> favoriteFoods,
     required String searchQuery,
+    required BatchSelectionState batchState,
   }) {
     // Modo recientes
     if (inputMode == FoodInputMode.recent) {
@@ -698,7 +943,7 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
               onBarcodeScan: _scanBarcode,
             );
           }
-          return _buildFoodList(foods);
+          return _buildFoodList(foods, batchState: batchState, showFavorites: true);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => const Center(child: Text('Error al cargar recientes')),
@@ -738,6 +983,8 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
           return _buildFoodList(
             scoredFoods.map((s) => s.food).toList(),
             searchQuery: searchQuery,
+            batchState: batchState,
+            showFavorites: true,
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -747,10 +994,54 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
 
     // Modo favoritos
     if (inputMode == FoodInputMode.favorites) {
-      return const Center(child: Text('Favoritos - Próximamente'));
+      return favoriteFoods.when(
+        data: (foods) {
+          if (foods.isEmpty) {
+            return _buildEmptyFavoritesView();
+          }
+          return _buildFoodList(foods, batchState: batchState, showFavorites: true);
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) => const Center(child: Text('Error al cargar favoritos')),
+      );
     }
 
     return const SizedBox.shrink();
+  }
+  
+  /// Vista cuando no hay favoritos
+  Widget _buildEmptyFavoritesView() {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.favorite_border,
+              size: 64,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Sin favoritos',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Mantén pulsado un alimento para añadirlo a favoritos',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Builds view for short queries (<3 chars)
@@ -816,10 +1107,16 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
     );
   }
 
-  Widget _buildFoodList(List<Food> foods, {String? searchQuery}) {
+  Widget _buildFoodList(
+    List<Food> foods, {
+    String? searchQuery,
+    BatchSelectionState? batchState,
+    bool showFavorites = false,
+  }) {
     final hasQuery = searchQuery != null && searchQuery.isNotEmpty;
     final searchState = ref.watch(foodSearchProvider);
     final isSearchingOnline = searchState.isLoading && searchState.results.isNotEmpty;
+    final isBatchMode = batchState?.isActive ?? false;
     
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -860,9 +1157,102 @@ class _FoodSearchUnifiedScreenState extends ConsumerState<FoodSearchUnifiedScree
         return FoodListItem(
           food: food,
           onTap: () => _selectFood(food),
+          isSelected: batchState?.isSelected(food.id) ?? false,
+          onSelectionToggle: isBatchMode || showFavorites
+            ? () => ref.read(batchSelectionProvider.notifier).toggleSelection(food.id)
+            : null,
+          showFavoriteButton: showFavorites && !isBatchMode,
+          onFavoriteToggle: showFavorites && !isBatchMode
+            ? () => _toggleFavorite(food)
+            : null,
         );
       },
     );
+  }
+  
+  /// Toggle favorite status de un alimento
+  Future<void> _toggleFavorite(Food food) async {
+    try {
+      final toggleFavorite = ref.read(toggleFavoriteProvider);
+      final newState = await toggleFavorite(food.id);
+      if (mounted) {
+        AppSnackbar.show(
+          context, 
+          message: newState ? 'Añadido a favoritos' : 'Eliminado de favoritos',
+        );
+        // Refrescar providers
+        ref.invalidate(favoriteFoodsForUnifiedProvider);
+        ref.invalidate(favoriteFoodsProvider);
+        ref.invalidate(recentFoodsForUnifiedProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.showError(context, message: 'Error al actualizar favorito');
+      }
+    }
+  }
+  
+  /// Añadir todos los alimentos seleccionados en batch
+  Future<void> _addBatchSelection() async {
+    final selectedIds = ref.read(batchSelectionProvider.notifier).consumeSelection();
+    if (selectedIds.isEmpty) return;
+    
+    // Obtener los alimentos por ID usando AlimentoRepository
+    final repository = ref.read(alimentoRepositoryProvider);
+    final foods = <Food>[];
+    for (final id in selectedIds) {
+      final food = await repository.getById(id);
+      if (food != null) foods.add(food);
+    }
+    
+    if (foods.isEmpty || !mounted) return;
+    
+    // Mostrar diálogo de batch add
+    await _showBatchAddDialog(foods);
+  }
+  
+  /// Diálogo para añadir múltiples alimentos con cantidades
+  Future<void> _showBatchAddDialog(List<Food> foods) async {
+    final date = widget.selectedDate ?? DateTime.now();
+    
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (ctx) => _BatchAddSheet(
+        foods: foods,
+        selectedDate: date,
+        onConfirm: (entries) async {
+          Navigator.of(ctx).pop();
+          await _saveBatchEntries(entries);
+        },
+      ),
+    );
+  }
+  
+  /// Guardar entradas en batch
+  Future<void> _saveBatchEntries(List<DiaryEntryModel> entries) async {
+    if (entries.isEmpty) return;
+    
+    final diaryRepo = ref.read(diaryRepositoryProvider);
+    var successCount = 0;
+    
+    for (final entry in entries) {
+      try {
+        await diaryRepo.insert(entry);
+        successCount++;
+      } catch (e) {
+        debugPrint('[BatchAdd] Error saving entry: $e');
+      }
+    }
+    
+    if (mounted) {
+      AppSnackbar.show(
+        context,
+        message: 'Añadidos $successCount alimentos',
+      );
+      Navigator.of(context).pop(); // Volver a diary
+    }
   }
 
   void _showSettingsMenu() {
@@ -943,7 +1333,7 @@ class _OcrExtractedData {
 // WIDGETS INTERNOS
 // ============================================================================
 
-class _OcrResultsSheet extends StatelessWidget {
+class _OcrResultsSheet extends ConsumerStatefulWidget {
   final _OcrExtractedData extractedData;
   final String fullText;
   final Function(String) onSearch;
@@ -957,11 +1347,65 @@ class _OcrResultsSheet extends StatelessWidget {
   });
 
   @override
+  ConsumerState<_OcrResultsSheet> createState() => _OcrResultsSheetState();
+}
+
+class _OcrResultsSheetState extends ConsumerState<_OcrResultsSheet> {
+  late TextEditingController _nameController;
+  List<Food> _searchResults = [];
+  bool _isSearching = false;
+  bool _showFullText = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.extractedData.name);
+    // Buscar automáticamente si tenemos nombre
+    if (widget.extractedData.name.isNotEmpty) {
+      _searchForMatches();
+    }
+  }
+  
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _searchForMatches() async {
+    final query = _nameController.text.trim();
+    if (query.isEmpty) return;
+    
+    setState(() => _isSearching = true);
+    
+    try {
+      final repository = ref.read(alimentoRepositoryProvider);
+      final results = await repository.search(query, limit: 5);
+      
+      if (mounted) {
+        setState(() {
+          _searchResults = results.map((r) => r.food).toList();
+          _isSearching = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSearching = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final data = widget.extractedData;
+    final hasNutrition = data.kcal != null || data.proteins != null || 
+                         data.carbs != null || data.fat != null;
+    
     return DraggableScrollableSheet(
-      initialChildSize: 0.6,
+      initialChildSize: 0.7,
       minChildSize: 0.4,
-      maxChildSize: 0.9,
+      maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
         return Column(
@@ -972,102 +1416,202 @@ class _OcrResultsSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: theme.colorScheme.outline,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             
+            // Header
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
                 children: [
-                  const Text(
-                    'Texto detectado',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Icon(Icons.document_scanner, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Etiqueta escaneada',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const Spacer(),
+                  if (hasNutrition)
+                    Icon(Icons.check_circle, color: Colors.green, size: 20),
+                ],
+              ),
+            ),
+            
+            const Divider(),
+            
+            // Content
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // Nombre editable
+                  TextField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nombre del producto',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.search),
+                        onPressed: _searchForMatches,
+                      ),
+                    ),
+                    onSubmitted: (_) => _searchForMatches(),
+                  ),
                   
-                  // Nombre extraído
-                  if (extractedData.name.isNotEmpty) ...[
-                    const Text(
-                      'Nombre detectado:',
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(extractedData.name, style: const TextStyle(fontSize: 16)),
-                    const SizedBox(height: 8),
-                    FilledButton.tonal(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        onSearch(extractedData.name);
-                      },
-                      child: const Text('Buscar este producto'),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                  const SizedBox(height: 16),
                   
                   // Valores nutricionales detectados
-                  if (extractedData.kcal != null || 
-                      extractedData.proteins != null || 
-                      extractedData.carbs != null || 
-                      extractedData.fat != null) ...[
-                    const Text(
-                      'Valores nutricionales detectados:',
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        if (extractedData.kcal != null)
-                          Chip(label: Text('${extractedData.kcal} kcal')),
-                        if (extractedData.proteins != null)
-                          Chip(label: Text('P: ${extractedData.proteins}g')),
-                        if (extractedData.carbs != null)
-                          Chip(label: Text('C: ${extractedData.carbs}g')),
-                        if (extractedData.fat != null)
-                          Chip(label: Text('G: ${extractedData.fat}g')),
-                      ],
+                  if (hasNutrition) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer.withAlpha(50),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: theme.colorScheme.primary.withAlpha(100),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.restaurant_menu, 
+                                size: 16, 
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Por 100g',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _NutritionChip(
+                                label: 'kcal',
+                                value: data.kcal?.toStringAsFixed(0),
+                                color: Colors.orange,
+                              ),
+                              _NutritionChip(
+                                label: 'Prot',
+                                value: data.proteins?.toStringAsFixed(1),
+                                color: Colors.red,
+                              ),
+                              _NutritionChip(
+                                label: 'Carbs',
+                                value: data.carbs?.toStringAsFixed(1),
+                                color: Colors.blue,
+                              ),
+                              _NutritionChip(
+                                label: 'Grasa',
+                                value: data.fat?.toStringAsFixed(1),
+                                color: Colors.amber,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                   ],
                   
-                  // Texto completo
-                  ExpansionTile(
-                    title: const Text('Ver texto completo'),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(fullText, style: TextStyle(color: Colors.grey[600])),
+                  // Resultados de búsqueda
+                  if (_isSearching)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
                       ),
-                    ],
+                    )
+                  else if (_searchResults.isNotEmpty) ...[
+                    Text(
+                      'Coincidencias encontradas:',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    ...List.generate(_searchResults.length, (index) {
+                      final food = _searchResults[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          title: Text(food.name),
+                          subtitle: Text('${food.kcalPer100g} kcal/100g'),
+                          trailing: FilledButton.tonal(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              widget.onSearch(food.name);
+                            },
+                            child: const Text('Usar'),
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                  ],
+                  
+                  // Mostrar texto completo
+                  TextButton.icon(
+                    onPressed: () => setState(() => _showFullText = !_showFullText),
+                    icon: Icon(_showFullText ? Icons.expand_less : Icons.expand_more),
+                    label: Text(_showFullText ? 'Ocultar texto' : 'Ver texto completo'),
                   ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Acciones
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Cerrar'),
+                  if (_showFullText)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        widget.fullText,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFamily: 'monospace',
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            onManualAdd();
-                          },
-                          child: const Text('Añadir manual'),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
                 ],
+              ),
+            ),
+            
+            // Actions
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Cerrar'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          widget.onManualAdd();
+                        },
+                        icon: const Icon(Icons.add),
+                        label: Text(
+                          hasNutrition ? 'Crear alimento' : 'Añadir manual',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1077,32 +1621,495 @@ class _OcrResultsSheet extends StatelessWidget {
   }
 }
 
-class _BarcodeScannerScreen extends StatelessWidget {
+/// Chip para mostrar valor nutricional
+class _NutritionChip extends StatelessWidget {
+  final String label;
+  final String? value;
+  final Color color;
+  
+  const _NutritionChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    if (value == null) return const SizedBox.shrink();
+    
+    return Column(
+      children: [
+        Text(
+          value!,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BarcodeScannerScreen extends StatefulWidget {
   const _BarcodeScannerScreen();
 
   @override
+  State<_BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
+}
+
+class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
+  MobileScannerController? _controller;
+  bool _hasScanned = false;
+  bool _flashOn = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+      torchEnabled: false,
+    );
+  }
+  
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+  
+  void _toggleFlash() {
+    _controller?.toggleTorch();
+    setState(() => _flashOn = !_flashOn);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         title: const Text('Escanear código'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.flash_on),
-            onPressed: () {}, // Toggle flash
+            icon: Icon(_flashOn ? Icons.flash_on : Icons.flash_off),
+            color: _flashOn ? Colors.amber : Colors.white,
+            onPressed: _toggleFlash,
           ),
         ],
       ),
-      body: MobileScanner(
-        onDetect: (capture) {
-          final barcodes = capture.barcodes;
-          if (barcodes.isNotEmpty) {
-            final barcode = barcodes.first.rawValue;
-            if (barcode != null && barcode.isNotEmpty) {
-              Navigator.of(context).pop(barcode);
-            }
-          }
-        },
+      body: Stack(
+        children: [
+          // Scanner
+          MobileScanner(
+            controller: _controller,
+            onDetect: (capture) {
+              if (_hasScanned) return; // Evitar múltiples detecciones
+              
+              final barcodes = capture.barcodes;
+              if (barcodes.isNotEmpty) {
+                final barcode = barcodes.first.rawValue;
+                if (barcode != null && barcode.isNotEmpty) {
+                  _hasScanned = true;
+                  HapticFeedback.mediumImpact();
+                  Navigator.of(context).pop(barcode);
+                }
+              }
+            },
+          ),
+          
+          // Overlay con marco de escaneo
+          Center(
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: theme.colorScheme.primary,
+                  width: 3,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Stack(
+                children: [
+                  // Esquinas decorativas
+                  ..._buildCorners(theme.colorScheme.primary),
+                ],
+              ),
+            ),
+          ),
+          
+          // Instrucciones
+          Positioned(
+            bottom: 100,
+            left: 0,
+            right: 0,
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: const Text(
+                    'Apunta al código de barras',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'EAN-13, EAN-8, UPC-A, UPC-E',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
+  }
+  
+  List<Widget> _buildCorners(Color color) {
+    const size = 24.0;
+    const thickness = 4.0;
+    
+    return [
+      // Top-left
+      Positioned(
+        top: 0,
+        left: 0,
+        child: Container(
+          width: size,
+          height: thickness,
+          color: color,
+        ),
+      ),
+      Positioned(
+        top: 0,
+        left: 0,
+        child: Container(
+          width: thickness,
+          height: size,
+          color: color,
+        ),
+      ),
+      // Top-right
+      Positioned(
+        top: 0,
+        right: 0,
+        child: Container(
+          width: size,
+          height: thickness,
+          color: color,
+        ),
+      ),
+      Positioned(
+        top: 0,
+        right: 0,
+        child: Container(
+          width: thickness,
+          height: size,
+          color: color,
+        ),
+      ),
+      // Bottom-left
+      Positioned(
+        bottom: 0,
+        left: 0,
+        child: Container(
+          width: size,
+          height: thickness,
+          color: color,
+        ),
+      ),
+      Positioned(
+        bottom: 0,
+        left: 0,
+        child: Container(
+          width: thickness,
+          height: size,
+          color: color,
+        ),
+      ),
+      // Bottom-right
+      Positioned(
+        bottom: 0,
+        right: 0,
+        child: Container(
+          width: size,
+          height: thickness,
+          color: color,
+        ),
+      ),
+      Positioned(
+        bottom: 0,
+        right: 0,
+        child: Container(
+          width: thickness,
+          height: size,
+          color: color,
+        ),
+      ),
+    ];
+  }
+}
+
+/// Sheet para añadir múltiples alimentos con cantidades
+class _BatchAddSheet extends StatefulWidget {
+  final List<Food> foods;
+  final DateTime selectedDate;
+  final Future<void> Function(List<DiaryEntryModel>) onConfirm;
+
+  const _BatchAddSheet({
+    required this.foods,
+    required this.selectedDate,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_BatchAddSheet> createState() => _BatchAddSheetState();
+}
+
+class _BatchAddSheetState extends State<_BatchAddSheet> {
+  late final List<TextEditingController> _controllers;
+  late final List<MealType> _mealTypes;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Default 100g para cada alimento
+    _controllers = List.generate(
+      widget.foods.length,
+      (_) => TextEditingController(text: '100'),
+    );
+    // Default meal type basado en hora
+    final defaultMeal = _getMealTypeForHour(DateTime.now().hour);
+    _mealTypes = List.filled(widget.foods.length, defaultMeal);
+  }
+  
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+  
+  MealType _getMealTypeForHour(int hour) {
+    if (hour < 11) return MealType.breakfast;
+    if (hour < 15) return MealType.lunch;
+    if (hour < 18) return MealType.snack;
+    return MealType.dinner;
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outline.withAlpha(100),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Añadir ${widget.foods.length} alimentos',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancelar'),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const Divider(height: 1),
+              
+              // Lista de alimentos con campos de cantidad
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: widget.foods.length,
+                  itemBuilder: (context, index) {
+                    final food = widget.foods[index];
+                    return _buildFoodEntryRow(food, index);
+                  },
+                ),
+              ),
+              
+              const Divider(height: 1),
+              
+              // Botón confirmar
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: FilledButton(
+                  onPressed: _onConfirm,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                  child: Text('Añadir ${widget.foods.length} alimentos'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  
+  Widget _buildFoodEntryRow(Food food, int index) {
+    final theme = Theme.of(context);
+    
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Nombre del alimento
+            Text(
+              food.name,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (food.brand != null)
+              Text(
+                food.brand!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            
+            const SizedBox(height: 12),
+            
+            // Cantidad y tipo de comida
+            Row(
+              children: [
+                // Campo de cantidad
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _controllers[index],
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Cantidad (g)',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(width: 12),
+                
+                // Selector de tipo de comida
+                Expanded(
+                  flex: 3,
+                  child: DropdownButtonFormField<MealType>(
+                    initialValue: _mealTypes[index],
+                    decoration: const InputDecoration(
+                      labelText: 'Comida',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    items: MealType.values.map((type) => DropdownMenuItem(
+                      value: type,
+                      child: Text(type.displayName),
+                    )).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => _mealTypes[index] = val);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 8),
+            
+            // Preview de kcal
+            Builder(
+              builder: (context) {
+                final grams = double.tryParse(_controllers[index].text) ?? 100;
+                final kcal = (food.kcalPer100g * grams / 100).round();
+                return Text(
+                  '$kcal kcal',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _onConfirm() async {
+    const uuid = Uuid();
+    final entries = <DiaryEntryModel>[];
+    
+    for (var i = 0; i < widget.foods.length; i++) {
+      final food = widget.foods[i];
+      final grams = double.tryParse(_controllers[i].text) ?? 100;
+      final mealType = _mealTypes[i];
+      
+      entries.add(DiaryEntryModel.fromFood(
+        id: uuid.v4(),
+        food: food.toModel(),
+        amount: grams,
+        unit: ServingUnit.grams,
+        date: widget.selectedDate,
+        mealType: mealType,
+      ));
+    }
+    
+    await widget.onConfirm(entries);
   }
 }

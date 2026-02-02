@@ -21,6 +21,10 @@ class RutinasScreen extends ConsumerWidget {
           SliverAppBar(
             floating: true,
             snap: true,
+            leading: const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: HomeButton(),
+            ),
             title: const Text('Mis Rutinas'),
             centerTitle: true,
             actions: [

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design_system/design_system.dart' as core show AppTypography, AppSpacing, AppRadius;
+import '../../core/widgets/app_snackbar.dart';
+import '../../core/widgets/home_button.dart';
 import '../../core/providers/information_density_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/media_control_service.dart';
@@ -20,6 +22,10 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: HomeButton(),
+        ),
         title: Text(
           'AJUSTES',
           style: core.AppTypography.headlineMedium,
@@ -677,14 +683,9 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
                     if (granted) {
                       setState(() => _hasPermission = true);
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '✓ Notificaciones activadas',
-                              style: core.AppTypography.bodyMedium,
-                            ),
-                            backgroundColor: Colors.green[700],
-                          ),
+                        AppSnackbar.show(
+                          context,
+                          message: '✓ Notificaciones activadas',
                         );
                       }
                     } else {

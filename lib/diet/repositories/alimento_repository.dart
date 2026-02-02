@@ -391,6 +391,14 @@ class AlimentoRepository {
   static const _kScoreCompleteDataBoost = 5.0;   // Has all macros
   static const _kScoreFavoriteBoost = 25.0;      // User-favorited items
   static const _kScoreUsedTodayBoost = 15.0;     // Used within last 24h
+  static const _kScoreGenericBoost = 40.0;       // Generic/natural products (sin marca)
+  static const _kScoreProcessedPenalty = -30.0;  // Processed products (zumos, salsas, etc.)
+  
+  /// Keywords que indican producto procesado (zumos, bebidas, etc.)
+  static const _processedKeywords = [
+    'zumo', 'néctar', 'nectar', 'bebida', 'batido', 'refresco',
+    'salsa', 'sirope', 'jarabe', 'concentrado',
+  ];
 
   double _calculateBaseScore(Food food, String query) {
     var score = 0.0;
@@ -441,6 +449,21 @@ class AlimentoRepository {
                            food.fatPer100g != null;
     if (hasCompleteData) {
       score += _kScoreCompleteDataBoost;
+    }
+    
+    // 6. Generic/natural product boost (sin marca = producto natural)
+    final brandLower = food.brand?.toLowerCase() ?? '';
+    final isGeneric = brandLower.isEmpty || 
+                      brandLower == 'generic' || 
+                      brandLower == 'genérico';
+    if (isGeneric) {
+      score += _kScoreGenericBoost;
+    }
+    
+    // 7. Processed product penalty (zumos, bebidas procesadas)
+    final isProcessed = _processedKeywords.any((kw) => nameLower.contains(kw));
+    if (isProcessed) {
+      score += _kScoreProcessedPenalty;
     }
     
     return score;
@@ -549,7 +572,8 @@ class AlimentoRepository {
       }
     }
     
-    if (kcal <= 0) return null; // Sin datos nutricionales válidos
+    // Permitir productos sin kcal (se pueden editar después)
+    // if (kcal <= 0) return null; // DESACTIVADO: permitir edición manual
     
     var brand = product['brands'] as String?;
     if (brand != null && brand.contains(',')) {

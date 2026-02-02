@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../providers/voice_input_provider.dart';
 import '../../utils/design_system.dart';
 import 'voice_training_fab.dart';
 
 /// Estados explícitos del botón Push To Talk
 enum PttState {
-  idle, // Esperando - Gris neutro - "Pulsa para hablar"
-  listening, // Escuchando activamente - Rojo vivo - "Escuchando..."
-  processing, // Procesando transcripción - Amarillo - "Procesando..."
-  success, // Éxito - Verde - "Detectado: [preview]"
-  error, // Error - Naranja - "No entendido"
+  idle,
+  listening,
+  processing,
+  success,
+  error,
 }
 
 /// Botón Push To Talk con comportamiento explícito.
@@ -67,22 +67,10 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
   @override
   void initState() {
     super.initState();
-
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _glowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
+    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
+    _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _glowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
   }
 
   @override
@@ -107,85 +95,43 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
   Future<void> _onTapDown(TapDownDetails details) async {
     if (_displayState == PttState.processing) return;
 
-    setState(() {
-      _isPressed = true;
-      _displayState = PttState.listening;
-      _successPreview = null;
-    });
-
+    setState(() { _isPressed = true; _displayState = PttState.listening; _successPreview = null; });
     _startAnimations();
-
-    try {
-      HapticFeedback.mediumImpact();
-    } catch (_) {}
-
+    try { HapticFeedback.mediumImpact(); } catch (_) {}
     widget.onListeningStart?.call();
-
-    final notifier = ref.read(voiceInputProvider.notifier);
-    await notifier.startListening();
+    await ref.read(voiceInputProvider.notifier).startListening();
   }
 
   Future<void> _onTapUp(TapUpDetails details) async {
     if (!_isPressed) return;
 
-    setState(() {
-      _isPressed = false;
-      _displayState = PttState.processing;
-    });
-
+    setState(() { _isPressed = false; _displayState = PttState.processing; });
     _stopAnimations();
-
-    try {
-      HapticFeedback.heavyImpact();
-    } catch (_) {}
+    try { HapticFeedback.heavyImpact(); } catch (_) {}
 
     final notifier = ref.read(voiceInputProvider.notifier);
     final exercises = await notifier.stopListening();
-
     final transcript = ref.read(voiceInputProvider).transcript;
     widget.onListeningEnd?.call(transcript);
 
     if (exercises.isNotEmpty && exercises.any((e) => e.isValid)) {
-      setState(() {
-        _displayState = PttState.success;
-        _successPreview = exercises
-            .where((e) => e.isValid)
-            .map((e) => e.matchedName)
-            .join(', ');
-      });
-
-      // Volver a idle después de mostrar éxito
+      setState(() { _displayState = PttState.success; _successPreview = exercises.where((e) => e.isValid).map((e) => e.matchedName).join(', '); });
       await Future.delayed(const Duration(seconds: 2));
-      if (mounted) {
-        setState(() => _displayState = PttState.idle);
-      }
+      if (mounted) setState(() => _displayState = PttState.idle);
     } else if (transcript.isEmpty) {
       setState(() => _displayState = PttState.idle);
     } else {
       setState(() => _displayState = PttState.error);
-
-      // Volver a idle después de mostrar error
       await Future.delayed(const Duration(seconds: 2));
-      if (mounted) {
-        setState(() => _displayState = PttState.idle);
-      }
+      if (mounted) setState(() => _displayState = PttState.idle);
     }
   }
 
   void _onTapCancel() {
     if (!_isPressed) return;
-
-    setState(() {
-      _isPressed = false;
-      _displayState = PttState.idle;
-    });
-
+    setState(() { _isPressed = false; _displayState = PttState.idle; });
     _stopAnimations();
-
-    try {
-      HapticFeedback.lightImpact();
-    } catch (_) {}
-
+    try { HapticFeedback.lightImpact(); } catch (_) {}
     widget.onCancel?.call();
     ref.read(voiceInputProvider.notifier).cancelListening();
   }
@@ -193,71 +139,53 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
   @override
   Widget build(BuildContext context) {
     final voiceState = ref.watch(voiceInputProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
 
-    // Sincronizar con estado del provider si está procesando externamente
     if (voiceState.isProcessing && _displayState != PttState.processing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() => _displayState = PttState.processing);
-        }
+        if (mounted) setState(() => _displayState = PttState.processing);
       });
     }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Hint contextual
         if (widget.showHint && _displayState == PttState.idle) ...[
-          _buildHintText(),
+          _buildHintText(onSurface),
           const SizedBox(height: 12),
         ],
-
-        // Botón principal
         GestureDetector(
           onTapDown: _onTapDown,
           onTapUp: _onTapUp,
           onTapCancel: _onTapCancel,
           child: AnimatedBuilder(
             animation: Listenable.merge([_pulseAnimation, _glowAnimation]),
-            builder: (context, child) {
-              return _buildButton();
-            },
+            builder: (context, child) => _buildButton(),
           ),
         ),
-
-        // Label de estado
         if (widget.showLabel) ...[
           const SizedBox(height: 12),
-          _buildStateLabel(),
+          _buildStateLabel(onSurface),
         ],
-
-        // Transcripción en tiempo real
-        if (_displayState == PttState.listening &&
-            voiceState.partialTranscript.isNotEmpty) ...[
+        if (_displayState == PttState.listening && voiceState.partialTranscript.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _buildTranscriptPreview(voiceState.partialTranscript),
+          _buildTranscriptPreview(voiceState.partialTranscript, onSurface),
         ],
       ],
     );
   }
 
-  Widget _buildHintText() {
+  Widget _buildHintText(Color onSurface) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.bgDeep.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-      ),
+      decoration: BoxDecoration(color: AppColors.bgDeep.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.border)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.touch_app, size: 16, color: Colors.white54),
+          Icon(Icons.touch_app, size: 16, color: onSurface.withAlpha(138)),
           const SizedBox(width: 8),
-          Text(
-            'Mantén pulsado para hablar',
-            style: GoogleFonts.montserrat(fontSize: 12, color: Colors.white54),
-          ),
+          Text('Mantén pulsado para hablar', style: core.AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(138))),
         ],
       ),
     );
@@ -265,12 +193,8 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
 
   Widget _buildButton() {
     final config = _getStateConfig();
-    final scale = _displayState == PttState.listening
-        ? _pulseAnimation.value
-        : 1.0;
-    final glowOpacity = _displayState == PttState.listening
-        ? _glowAnimation.value
-        : 0.0;
+    final scale = _displayState == PttState.listening ? _pulseAnimation.value : 1.0;
+    final glowOpacity = _displayState == PttState.listening ? _glowAnimation.value : 0.0;
 
     return Transform.scale(
       scale: scale,
@@ -281,60 +205,30 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
           shape: BoxShape.circle,
           color: config.backgroundColor,
           boxShadow: [
-            // Glow para estado listening
             if (_displayState == PttState.listening)
-              BoxShadow(
-                color: config.glowColor.withValues(alpha: glowOpacity),
-                blurRadius: 30,
-                spreadRadius: 8,
-              ),
-            // Sombra normal
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
+              BoxShadow(color: config.glowColor.withValues(alpha: glowOpacity), blurRadius: 30, spreadRadius: 8),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
           ],
-          border: Border.all(
-            color: config.borderColor,
-            width: _displayState == PttState.listening ? 3 : 2,
-          ),
+          border: Border.all(color: config.borderColor, width: _displayState == PttState.listening ? 3 : 2),
         ),
         child: Center(
           child: _displayState == PttState.processing
-              ? SizedBox(
-                  width: widget.size * 0.4,
-                  height: widget.size * 0.4,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(config.iconColor),
-                  ),
-                )
-              : Icon(
-                  config.icon,
-                  color: config.iconColor,
-                  size: widget.size * 0.45,
-                ),
+              ? SizedBox(width: widget.size * 0.4, height: widget.size * 0.4, child: CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(config.iconColor)))
+              : Icon(config.icon, color: config.iconColor, size: widget.size * 0.45),
         ),
       ),
     );
   }
 
-  Widget _buildStateLabel() {
+  Widget _buildStateLabel(Color onSurface) {
     final config = _getStateConfig();
-
     String labelText;
     switch (_displayState) {
-      case PttState.idle:
-        labelText = 'Pulsa para hablar';
-      case PttState.listening:
-        labelText = 'Escuchando...';
-      case PttState.processing:
-        labelText = 'Procesando...';
-      case PttState.success:
-        labelText = 'Detectado';
-      case PttState.error:
-        labelText = 'No entendido';
+      case PttState.idle: labelText = 'Pulsa para hablar';
+      case PttState.listening: labelText = 'Escuchando...';
+      case PttState.processing: labelText = 'Procesando...';
+      case PttState.success: labelText = 'Detectado';
+      case PttState.error: labelText = 'No entendido';
     }
 
     return AnimatedSwitcher(
@@ -342,56 +236,27 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
       child: Column(
         key: ValueKey(_displayState),
         children: [
-          Text(
-            labelText,
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: config.labelColor,
-            ),
-          ),
+          Text(labelText, style: core.AppTypography.labelLarge.copyWith(color: config.labelColor)),
           if (_displayState == PttState.success && _successPreview != null) ...[
             const SizedBox(height: 4),
-            Text(
-              _successPreview!,
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                color: Colors.white54,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(_successPreview!, style: core.AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(138)), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildTranscriptPreview(String text) {
+  Widget _buildTranscriptPreview(String text, Color onSurface) {
     return Container(
       padding: const EdgeInsets.all(12),
       constraints: const BoxConstraints(maxWidth: 300),
-      decoration: BoxDecoration(
-        color: AppColors.bgElevated,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.5)),
-      ),
+      decoration: BoxDecoration(color: AppColors.bgElevated, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.error.withValues(alpha: 0.5))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const _PulsingDot(color: AppColors.error),
           const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              text,
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          Flexible(child: Text(text, style: core.AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(178)), maxLines: 2, overflow: TextOverflow.ellipsis)),
         ],
       ),
     );
@@ -399,51 +264,11 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
 
   _PttStateConfig _getStateConfig() {
     switch (_displayState) {
-      case PttState.idle:
-        return const _PttStateConfig(
-          backgroundColor: AppColors.bgElevated,
-          borderColor: AppColors.border,
-          iconColor: Colors.white70,
-          labelColor: Colors.white54,
-          glowColor: Colors.transparent,
-          icon: Icons.mic_none,
-        );
-      case PttState.listening:
-        return _PttStateConfig(
-          backgroundColor: AppColors.error,
-          borderColor: Colors.red[400]!,
-          iconColor: Colors.white,
-          labelColor: AppColors.error,
-          glowColor: Colors.red,
-          icon: Icons.mic,
-        );
-      case PttState.processing:
-        return _PttStateConfig(
-          backgroundColor: Colors.amber[700]!,
-          borderColor: Colors.amber[400]!,
-          iconColor: Colors.white,
-          labelColor: Colors.amber[600]!,
-          glowColor: Colors.amber,
-          icon: Icons.hourglass_empty,
-        );
-      case PttState.success:
-        return _PttStateConfig(
-          backgroundColor: Colors.green[600]!,
-          borderColor: Colors.green[400]!,
-          iconColor: Colors.white,
-          labelColor: Colors.green[500]!,
-          glowColor: Colors.green,
-          icon: Icons.check,
-        );
-      case PttState.error:
-        return _PttStateConfig(
-          backgroundColor: Colors.orange[700]!,
-          borderColor: Colors.orange[400]!,
-          iconColor: Colors.white,
-          labelColor: Colors.orange[500]!,
-          glowColor: Colors.orange,
-          icon: Icons.error_outline,
-        );
+      case PttState.idle: return const _PttStateConfig(backgroundColor: AppColors.bgElevated, borderColor: AppColors.border, iconColor: Colors.white70, labelColor: Colors.white54, glowColor: Colors.transparent, icon: Icons.mic_none);
+      case PttState.listening: return _PttStateConfig(backgroundColor: AppColors.error, borderColor: Colors.red[400]!, iconColor: Colors.white, labelColor: AppColors.error, glowColor: Colors.red, icon: Icons.mic);
+      case PttState.processing: return _PttStateConfig(backgroundColor: Colors.amber[700]!, borderColor: Colors.amber[400]!, iconColor: Colors.white, labelColor: Colors.amber[600]!, glowColor: Colors.amber, icon: Icons.hourglass_empty);
+      case PttState.success: return _PttStateConfig(backgroundColor: Colors.green[600]!, borderColor: Colors.green[400]!, iconColor: Colors.white, labelColor: Colors.green[500]!, glowColor: Colors.green, icon: Icons.check);
+      case PttState.error: return _PttStateConfig(backgroundColor: Colors.orange[700]!, borderColor: Colors.orange[400]!, iconColor: Colors.white, labelColor: Colors.orange[500]!, glowColor: Colors.orange, icon: Icons.error_outline);
     }
   }
 }
@@ -469,7 +294,6 @@ class _PttStateConfig {
 /// Punto pulsante para indicador de escucha
 class _PulsingDot extends StatefulWidget {
   final Color color;
-
   const _PulsingDot({required this.color});
 
   @override
@@ -483,10 +307,7 @@ class _PulsingDotState extends State<_PulsingDot>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat(reverse: true);
   }
 
   @override
@@ -499,19 +320,11 @@ class _PulsingDotState extends State<_PulsingDot>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) {
-        const size = 6.0;
-        return Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: widget.color.withValues(
-              alpha: 0.5 + _controller.value * 0.5,
-            ),
-          ),
-        );
-      },
+      builder: (context, child) => Container(
+        width: 6.0,
+        height: 6.0,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color.withValues(alpha: 0.5 + _controller.value * 0.5)),
+      ),
     );
   }
 }
@@ -534,10 +347,7 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
+    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
   }
 
   @override
@@ -550,6 +360,8 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
   Widget build(BuildContext context) {
     final voiceState = ref.watch(voiceInputProvider);
     final isListening = voiceState.isListening;
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
 
     if (isListening && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
@@ -560,20 +372,14 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
 
     return GestureDetector(
       onTapDown: (_) async {
-        try {
-          HapticFeedback.mediumImpact();
-        } catch (_) {}
+        try { HapticFeedback.mediumImpact(); } catch (_) {}
         await ref.read(voiceInputProvider.notifier).startListening();
       },
       onTapUp: (_) async {
-        try {
-          HapticFeedback.heavyImpact();
-        } catch (_) {}
+        try { HapticFeedback.heavyImpact(); } catch (_) {}
         await ref.read(voiceInputProvider.notifier).stopListening();
       },
-      onTapCancel: () {
-        ref.read(voiceInputProvider.notifier).cancelListening();
-      },
+      onTapCancel: () => ref.read(voiceInputProvider.notifier).cancelListening(),
       child: AnimatedBuilder(
         animation: _pulseController,
         builder: (context, child) {
@@ -586,25 +392,10 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isListening ? AppColors.error : AppColors.bgElevated,
-                border: Border.all(
-                  color: isListening ? Colors.red[400]! : AppColors.border,
-                  width: isListening ? 2 : 1,
-                ),
-                boxShadow: isListening
-                    ? [
-                        BoxShadow(
-                          color: Colors.red.withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        ),
-                      ]
-                    : null,
+                border: Border.all(color: isListening ? Colors.red[400]! : AppColors.border, width: isListening ? 2 : 1),
+                boxShadow: isListening ? [BoxShadow(color: Colors.red.withValues(alpha: 0.4), blurRadius: 12, spreadRadius: 2)] : null,
               ),
-              child: Icon(
-                isListening ? Icons.mic : Icons.mic_none,
-                color: Colors.white,
-                size: widget.size * 0.5,
-              ),
+              child: Icon(isListening ? Icons.mic : Icons.mic_none, color: onSurface, size: widget.size * 0.5),
             ),
           );
         },
@@ -612,6 +403,3 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
     );
   }
 }
-
-// VoiceTrainingCommand definition is provided in `voice_training_fab.dart` to avoid duplicate exports.
-// If you need to reference it here, import it explicitly from that file.

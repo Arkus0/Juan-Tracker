@@ -8,8 +8,17 @@ import '../../../diet/providers/diet_providers.dart';
 /// Diálogo para añadir una entrada desde un alimento existente
 class AddEntryDialog extends ConsumerStatefulWidget {
   final FoodModel food;
+  /// Cantidad inicial en gramos (para pre-rellenar desde voz/OCR)
+  final double? initialAmount;
+  /// Unidad inicial
+  final ServingUnit? initialUnit;
 
-  const AddEntryDialog({super.key, required this.food});
+  const AddEntryDialog({
+    super.key, 
+    required this.food,
+    this.initialAmount,
+    this.initialUnit,
+  });
 
   @override
   ConsumerState<AddEntryDialog> createState() => _AddEntryDialogState();
@@ -22,7 +31,10 @@ class _AddEntryDialogState extends ConsumerState<AddEntryDialog> {
   @override
   void initState() {
     super.initState();
-    _amountController = TextEditingController(text: '100');
+    // Usar cantidad inicial si se proporciona
+    final initialValue = widget.initialAmount?.toStringAsFixed(0) ?? '100';
+    _amountController = TextEditingController(text: initialValue);
+    _selectedUnit = widget.initialUnit ?? ServingUnit.grams;
   }
 
   @override

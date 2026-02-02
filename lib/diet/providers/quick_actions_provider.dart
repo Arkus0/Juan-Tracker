@@ -49,12 +49,17 @@ class YesterdayMeals {
   }
 }
 
-/// Provider que obtiene las comidas de ayer
+/// Provider que obtiene las comidas del día anterior al día seleccionado.
+/// 
+/// Si el usuario está viendo el día 5 en el calendario, "ayer" es el día 4,
+/// no el día anterior a "hoy".
 final yesterdayMealsProvider = FutureProvider<YesterdayMeals>((ref) async {
   final diaryRepo = ref.watch(diaryRepositoryProvider);
-  final now = DateTime.now();
-  final yesterday = DateTime(now.year, now.month, now.day - 1);
-  final yesterdayEnd = DateTime(now.year, now.month, now.day);
+  // Usar la fecha seleccionada, no DateTime.now()
+  final selectedDate = ref.watch(selectedDateProvider);
+  // "Ayer" es el día anterior a la fecha seleccionada
+  final yesterday = DateTime(selectedDate.year, selectedDate.month, selectedDate.day - 1);
+  final yesterdayEnd = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
 
   final entries = await diaryRepo.getByDateRange(yesterday, yesterdayEnd);
 

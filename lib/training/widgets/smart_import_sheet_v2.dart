@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../models/detected_exercise_draft.dart';
 import '../models/library_exercise.dart';
 import '../providers/smart_import_provider.dart';
@@ -80,11 +80,12 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
     final validDrafts = notifier.getValidDraftsForImport();
 
     if (validDrafts.isEmpty) {
+      final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'No hay ejercicios válidos para añadir',
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: core.AppTypography.bodyMedium.copyWith(color: onSurfaceColor),
           ),
           backgroundColor: AppColors.error,
         ),
@@ -151,6 +152,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
     final notifier = ref.read(smartImportProvider.notifier);
     final showBackButton =
         state.isEditing || state.isListening || state.isProcessing;
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
 
     return Row(
       children: [
@@ -164,7 +166,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                 notifier.backToIdle();
               }
             },
-            icon: const Icon(Icons.arrow_back, color: Colors.white70),
+            icon: Icon(Icons.arrow_back, color: onSurfaceColor.withAlpha(178)),
             constraints: const BoxConstraints(),
             padding: EdgeInsets.zero,
           ),
@@ -180,18 +182,15 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
             children: [
               Text(
                 _getTitle(state),
-                style: GoogleFonts.montserrat(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                style: core.AppTypography.headlineSmall.copyWith(
+                  color: onSurfaceColor,
                 ),
               ),
               if (state.isEditing && state.drafts.isNotEmpty)
                 Text(
                   '${state.validCount} válidos, ${state.editedCount} editados',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
-                    color: Colors.white54,
+                  style: core.AppTypography.bodySmall.copyWith(
+                    color: onSurfaceColor.withAlpha(138),
                   ),
                 ),
             ],
@@ -204,7 +203,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
           if (state.canUndo)
             IconButton(
               onPressed: notifier.undo,
-              icon: const Icon(Icons.undo, color: Colors.white54, size: 22),
+              icon: Icon(Icons.undo, color: onSurfaceColor.withAlpha(138), size: 22),
               tooltip: 'Deshacer',
             ),
         ],
@@ -248,6 +247,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
 
   Widget _buildSelectionView() {
     final notifier = ref.read(smartImportProvider.notifier);
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
 
     return SingleChildScrollView(
       child: Column(
@@ -269,7 +269,9 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
           const SizedBox(height: 8),
           Text(
             'Elige cómo añadir ejercicios',
-            style: GoogleFonts.montserrat(fontSize: 14, color: Colors.white54),
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: onSurfaceColor.withAlpha(138),
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -307,6 +309,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
   // ============================================
 
   Widget _buildProcessingView(SmartImportState state) {
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -318,7 +322,9 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
         const SizedBox(height: 24),
         Text(
           state.processingMessage ?? 'Procesando...',
-          style: GoogleFonts.montserrat(color: Colors.white70, fontSize: 16),
+          style: core.AppTypography.bodyLarge.copyWith(
+            color: onSurfaceColor.withAlpha(178),
+          ),
         ),
         const SizedBox(height: 40),
       ],
@@ -331,6 +337,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
 
   Widget _buildVoiceListeningView(SmartImportState state) {
     final notifier = ref.read(smartImportProvider.notifier);
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -371,14 +378,13 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.format_quote, color: Colors.white38, size: 18),
+                Icon(Icons.format_quote, color: onSurfaceColor.withAlpha(97), size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     state.partialTranscript,
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white70,
-                      fontSize: 14,
+                    style: core.AppTypography.bodyMedium.copyWith(
+                      color: onSurfaceColor.withAlpha(178),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -398,10 +404,9 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
             ),
             child: Text(
               '${state.validCount} ejercicios detectados',
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.bodySmall.copyWith(
                 color: AppColors.neonCyan,
                 fontWeight: FontWeight.w500,
-                fontSize: 13,
               ),
             ),
           ),
@@ -416,6 +421,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
   }
 
   Widget _buildVoiceSuggestions() {
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -436,10 +443,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
               const SizedBox(width: 6),
               Text(
                 'Ejemplos:',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white70,
-                  fontSize: 12,
+                style: core.AppTypography.labelLarge.copyWith(
+                  color: onSurfaceColor.withAlpha(178),
                 ),
               ),
             ],
@@ -454,13 +459,14 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
   }
 
   Widget _buildSuggestionChip(String text) {
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Text(
         '"$text"',
-        style: GoogleFonts.montserrat(
-          color: Colors.white38,
-          fontSize: 11,
+        style: core.AppTypography.bodySmall.copyWith(
+          color: onSurfaceColor.withAlpha(97),
           fontStyle: FontStyle.italic,
         ),
       ),
@@ -473,6 +479,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
 
   Widget _buildEditingView(SmartImportState state) {
     final notifier = ref.read(smartImportProvider.notifier);
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
 
     return Column(
       children: [
@@ -500,9 +507,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                   state.validCount == state.drafts.length
                       ? 'Todos los ejercicios tienen match'
                       : '${state.drafts.length - state.validCount} sin match - toca para corregir',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white70,
-                    fontSize: 12,
+                  style: core.AppTypography.bodySmall.copyWith(
+                    color: onSurfaceColor.withAlpha(178),
                   ),
                 ),
               ),
@@ -512,9 +518,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                 icon: const Icon(Icons.add, size: 16),
                 label: Text(
                   'MÁS',
-                  style: GoogleFonts.montserrat(
+                  style: core.AppTypography.labelLarge.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 11,
                   ),
                 ),
                 style: TextButton.styleFrom(
@@ -585,19 +590,23 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
   }
 
   Widget _buildActionButtons(SmartImportState state) {
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
             onPressed: _onCancel,
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white70,
-              side: const BorderSide(color: Colors.white30),
+              foregroundColor: onSurfaceColor.withAlpha(178),
+              side: BorderSide(color: onSurfaceColor.withAlpha(76)),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             child: Text(
               'CANCELAR',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+              style: core.AppTypography.labelLarge.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
@@ -608,13 +617,15 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
             onPressed: state.validCount > 0 ? _onConfirm : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
+              foregroundColor: onSurfaceColor,
               disabledBackgroundColor: AppColors.bgDeep,
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             child: Text(
               'AÑADIR ${state.validCount} EJERCICIO${state.validCount == 1 ? '' : 'S'}',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+              style: core.AppTypography.headlineSmall.copyWith(
+                color: onSurfaceColor,
+              ),
             ),
           ),
         ),
@@ -628,6 +639,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
 
   Widget _buildErrorView(SmartImportState state) {
     final notifier = ref.read(smartImportProvider.notifier);
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -638,7 +650,9 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
         const SizedBox(height: 16),
         Text(
           state.errorMessage ?? 'Error desconocido',
-          style: GoogleFonts.montserrat(color: Colors.white70, fontSize: 14),
+          style: core.AppTypography.bodyMedium.copyWith(
+            color: onSurfaceColor.withAlpha(178),
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -647,8 +661,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
           icon: const Icon(Icons.refresh),
           label: const Text('REINTENTAR'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.white70,
-            side: const BorderSide(color: Colors.white30),
+            foregroundColor: onSurfaceColor.withAlpha(178),
+            side: BorderSide(color: onSurfaceColor.withAlpha(76)),
           ),
         ),
         const SizedBox(height: 40),
@@ -718,6 +732,8 @@ class _ImportOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -747,18 +763,15 @@ class _ImportOptionCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      style: core.AppTypography.titleMedium.copyWith(
+                        color: onSurfaceColor,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 11,
-                        color: Colors.white54,
+                      style: core.AppTypography.bodySmall.copyWith(
+                        color: onSurfaceColor.withAlpha(138),
                       ),
                     ),
                   ],
@@ -811,6 +824,7 @@ class _DraftExerciseCard extends StatelessWidget {
     final sourceColor = draft.source == DetectionSource.voice
         ? Colors.blue
         : Colors.green;
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -839,9 +853,9 @@ class _DraftExerciseCard extends StatelessWidget {
                 // Handle de reordenación
                 ReorderableDragStartListener(
                   index: index,
-                  child: const Icon(
+                  child: Icon(
                     Icons.drag_handle,
-                    color: Colors.white30,
+                    color: onSurfaceColor.withAlpha(76),
                     size: 20,
                   ),
                 ),
@@ -870,29 +884,27 @@ class _DraftExerciseCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 draft.currentMatchedName ?? 'Sin match',
-                                style: GoogleFonts.montserrat(
+                                style: core.AppTypography.bodyMedium.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: isValid
-                                      ? Colors.white
+                                      ? onSurfaceColor
                                       : AppColors.neonPrimary,
-                                  fontSize: 14,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(
+                            Icon(
                               Icons.edit,
                               size: 12,
-                              color: Colors.white38,
+                              color: onSurfaceColor.withAlpha(97),
                             ),
                           ],
                         ),
                         Text(
                           '"${draft.originalRawText}"',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white30,
-                            fontSize: 10,
+                          style: core.AppTypography.bodySmall.copyWith(
+                            color: onSurfaceColor.withAlpha(76),
                             fontStyle: FontStyle.italic,
                           ),
                           maxLines: 1,
@@ -922,9 +934,9 @@ class _DraftExerciseCard extends StatelessWidget {
                         break;
                     }
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.more_vert,
-                    color: Colors.white54,
+                    color: onSurfaceColor.withAlpha(138),
                     size: 20,
                   ),
                   color: AppColors.bgElevated,
@@ -933,15 +945,17 @@ class _DraftExerciseCard extends StatelessWidget {
                       value: 'duplicate',
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.copy,
                             size: 18,
-                            color: Colors.white70,
+                            color: onSurfaceColor.withAlpha(178),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'Duplicar',
-                            style: GoogleFonts.montserrat(color: Colors.white),
+                            style: core.AppTypography.bodyMedium.copyWith(
+                              color: onSurfaceColor,
+                            ),
                           ),
                         ],
                       ),
@@ -951,16 +965,16 @@ class _DraftExerciseCard extends StatelessWidget {
                         value: 'reset',
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.restore,
                               size: 18,
-                              color: Colors.white70,
+                              color: onSurfaceColor.withAlpha(178),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               'Restaurar original',
-                              style: GoogleFonts.montserrat(
-                                color: Colors.white,
+                              style: core.AppTypography.bodyMedium.copyWith(
+                                color: onSurfaceColor,
                               ),
                             ),
                           ],
@@ -978,7 +992,7 @@ class _DraftExerciseCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             'Eliminar',
-                            style: GoogleFonts.montserrat(
+                            style: core.AppTypography.bodyMedium.copyWith(
                               color: AppColors.error,
                             ),
                           ),
@@ -1032,16 +1046,14 @@ class _DraftExerciseCard extends StatelessWidget {
                       children: [
                         Text(
                           'Peso',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white38,
-                            fontSize: 9,
+                          style: core.AppTypography.labelSmall.copyWith(
+                            color: onSurfaceColor.withAlpha(97),
                           ),
                         ),
                         Text(
                           '${draft.weight!.toStringAsFixed(0)}kg',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white70,
-                            fontSize: 14,
+                          style: core.AppTypography.bodyMedium.copyWith(
+                            color: onSurfaceColor.withAlpha(178),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1116,9 +1128,8 @@ class _ConfidenceBadge extends StatelessWidget {
             ],
             Text(
               draft.confidenceLabel,
-              style: GoogleFonts.montserrat(
+              style: core.AppTypography.labelSmall.copyWith(
                 color: textColor,
-                fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1145,14 +1156,15 @@ class _CompactField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: GoogleFonts.montserrat(
-            color: Colors.white38,
-            fontSize: 9,
+          style: core.AppTypography.labelSmall.copyWith(
+            color: onSurfaceColor.withAlpha(97),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -1166,9 +1178,8 @@ class _CompactField extends StatelessWidget {
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontSize: 14,
+            style: core.AppTypography.bodyMedium.copyWith(
+              color: onSurfaceColor,
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
@@ -1230,8 +1241,7 @@ class _ModeToggleChip extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
+              style: core.AppTypography.bodySmall.copyWith(
                 fontWeight: FontWeight.w500,
                 color: isActive ? activeColor : AppColors.textTertiary,
               ),
@@ -1292,6 +1302,8 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
@@ -1323,10 +1335,8 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
 
               Text(
                 'Seleccionar ejercicio',
-                style: GoogleFonts.montserrat(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                style: core.AppTypography.titleLarge.copyWith(
+                  color: onSurfaceColor,
                 ),
               ),
               const SizedBox(height: 12),
@@ -1336,11 +1346,15 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
                 controller: _searchController,
                 onChanged: _search,
                 autofocus: true,
-                style: GoogleFonts.montserrat(color: Colors.white),
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: onSurfaceColor,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Buscar ejercicio...',
-                  hintStyle: GoogleFonts.montserrat(color: Colors.white38),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                  hintStyle: core.AppTypography.bodyMedium.copyWith(
+                    color: onSurfaceColor.withAlpha(97),
+                  ),
+                  prefixIcon: Icon(Icons.search, color: onSurfaceColor.withAlpha(138)),
                   suffixIcon: _isSearching
                       ? const Padding(
                           padding: EdgeInsets.all(12),
@@ -1367,7 +1381,9 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
                     ? Center(
                         child: Text(
                           'No se encontraron ejercicios',
-                          style: GoogleFonts.montserrat(color: Colors.white54),
+                          style: core.AppTypography.bodyMedium.copyWith(
+                            color: onSurfaceColor.withAlpha(138),
+                          ),
                         ),
                       )
                     : ListView.builder(
@@ -1382,31 +1398,28 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
                               radius: 18,
                               child: Text(
                                 exercise.name[0].toUpperCase(),
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white,
+                                style: core.AppTypography.bodyMedium.copyWith(
+                                  color: onSurfaceColor,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
                                 ),
                               ),
                             ),
                             title: Text(
                               exercise.name,
-                              style: GoogleFonts.montserrat(
-                                color: Colors.white,
+                              style: core.AppTypography.bodyMedium.copyWith(
+                                color: onSurfaceColor,
                                 fontWeight: FontWeight.w500,
-                                fontSize: 14,
                               ),
                             ),
                             subtitle: Text(
                               exercise.muscleGroup,
-                              style: GoogleFonts.montserrat(
-                                color: Colors.white54,
-                                fontSize: 11,
+                              style: core.AppTypography.bodySmall.copyWith(
+                                color: onSurfaceColor.withAlpha(138),
                               ),
                             ),
-                            trailing: const Icon(
+                            trailing: Icon(
                               Icons.chevron_right,
-                              color: Colors.white38,
+                              color: onSurfaceColor.withAlpha(97),
                             ),
                             onTap: () {
                               try {

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../core/widgets/app_snackbar.dart';
 import '../models/ejercicio.dart';
 import '../models/sesion.dart';
 import '../providers/training_provider.dart';
@@ -420,8 +421,7 @@ class SessionDetailScreen extends ConsumerWidget {
               style: core.AppTypography.labelLarge,
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           ),
         ],
@@ -436,16 +436,7 @@ class SessionDetailScreen extends ConsumerWidget {
         if (context.mounted) {
           HapticFeedback.mediumImpact();
           Navigator.of(context).pop(); // Volver atrás tras eliminar
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Sesión eliminada',
-                style: core.AppTypography.bodyMedium,
-              ),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppSnackbar.show(context, message: 'Sesión eliminada');
         }
       } catch (e) {
         if (context.mounted) {

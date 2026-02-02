@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
+import '../../diet/utils/spanish_text_utils.dart';
 import 'database_connection.dart';
 
 part 'database.g.dart';
@@ -710,6 +711,7 @@ class AppDatabase extends _$AppDatabase {
   /// - Single-word queries use prefix matching
   /// - Results ordered by FTS5 rank (relevance)
   /// - Uses AND-first strategy with OR fallback for zero results
+  /// - Synonym expansion as final fallback
   Future<List<Food>> searchFoodsFTS(String query, {int limit = 50}) async {
     if (query.trim().isEmpty) return [];
 
@@ -725,28 +727,49 @@ class AppDatabase extends _$AppDatabase {
     final terms = sanitized.split(' ').where((t) => t.isNotEmpty && t.length >= 2).toList();
     if (terms.isEmpty) return [];
 
-    // Strategy: AND first (more precise), OR fallback (more tolerant)
-    // This gives best of both worlds:
-    // - "leche desnatada" finds items with BOTH terms first
-    // - If nothing found, relaxes to items with ANY term
-    
-    // 1. Try AND semantics first (space = AND in FTS5)
-    final andQuery = terms.map((t) => '$t*').join(' ');
-    debugPrint('[searchFoodsFTS] Query: "$query" -> AND query: "$andQuery"');
+    debugPrint('[searchFoodsFTS] Query: "$query" -> terms: $terms');
 
     try {
+      // Strategy: Progressive fallback for maximum findability
+      // 1. AND exact (most precise) - "leche desnatada" finds items with BOTH terms
+      // 2. OR fallback (any term) - relaxes to items with ANY term
+      // 3. Synonym expansion (final fallback) - expands with Spanish food synonyms
+      
+      // 1. Try AND semantics first (space = AND in FTS5)
+      final andQuery = terms.map((t) => '$t*').join(' ');
+      debugPrint('[searchFoodsFTS] Step 1 - AND query: "$andQuery"');
       var results = await _executeFtsQuery(andQuery, limit);
       
-      // 2. If AND yields 0 results and we have multiple terms, try OR
-      if (results.isEmpty && terms.length > 1) {
-        final orQuery = terms.map((t) => '$t*').join(' OR ');
-        debugPrint('[searchFoodsFTS] AND returned 0 results, trying OR: "$orQuery"');
-        results = await _executeFtsQuery(orQuery, limit);
-        debugPrint('[searchFoodsFTS] OR fallback found ${results.length} results');
-      } else {
+      if (results.isNotEmpty) {
         debugPrint('[searchFoodsFTS] AND found ${results.length} results');
+        return results;
       }
-
+      
+      // 2. Try OR fallback (any term matches)
+      if (terms.length > 1) {
+        final orQuery = terms.map((t) => '$t*').join(' OR ');
+        debugPrint('[searchFoodsFTS] Step 2 - OR query: "$orQuery"');
+        results = await _executeFtsQuery(orQuery, limit);
+        
+        if (results.isNotEmpty) {
+          debugPrint('[searchFoodsFTS] OR found ${results.length} results');
+          return results;
+        }
+      }
+      
+      // 3. Try with synonyms expanded (finds "descremada" when searching "desnatada")
+      final enhanced = enhanceQuery(query);
+      if (enhanced.withSynonyms.isNotEmpty) {
+        debugPrint('[searchFoodsFTS] Step 3 - Synonym query: "${enhanced.withSynonyms}"');
+        results = await _executeFtsQuery(enhanced.withSynonyms, limit);
+        
+        if (results.isNotEmpty) {
+          debugPrint('[searchFoodsFTS] Synonyms found ${results.length} results');
+          return results;
+        }
+      }
+      
+      debugPrint('[searchFoodsFTS] All strategies returned 0 results');
       return results;
     } catch (e) {
       debugPrint('[searchFoodsFTS] FTS search error: $e, falling back to LIKE');
@@ -756,17 +779,26 @@ class AppDatabase extends _$AppDatabase {
   
   /// Helper to execute FTS query and map results
   Future<List<Food>> _executeFtsQuery(String ftsQuery, int limit) async {
-    final results = await customSelect(
-      'SELECT f.id, f.name, f.normalized_name, f.brand, f.barcode, '
-      'f.kcal_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, '
-      'f.portion_name, f.portion_grams, f.user_created, f.verified_source, '
-      'f.source_metadata, f.use_count, f.last_used_at, f.nutri_score, f.nova_group, '
-      'f.is_favorite, f.created_at, f.updated_at FROM foods f '
-      'INNER JOIN foods_fts fts ON f.id = fts.food_id '
-      'WHERE foods_fts MATCH ? '
-      'ORDER BY rank '
-      'LIMIT ?',
+    // FTS5 con food_id UNINDEXED: buscamos en FTS y obtenemos food_ids
+    final ftsResults = await customSelect(
+      'SELECT food_id FROM foods_fts WHERE foods_fts MATCH ? LIMIT ?',
       variables: [Variable(ftsQuery), Variable(limit)],
+    ).get();
+    
+    if (ftsResults.isEmpty) return [];
+    
+    // Obtener los alimentos por sus IDs
+    final foodIds = ftsResults.map((r) => r.data['food_id'] as String).toList();
+    final placeholders = List.filled(foodIds.length, '?').join(',');
+    
+    final results = await customSelect(
+      'SELECT id, name, normalized_name, brand, barcode, '
+      'kcal_per100g, protein_per100g, carbs_per100g, fat_per100g, '
+      'portion_name, portion_grams, user_created, verified_source, '
+      'source_metadata, use_count, last_used_at, nutri_score, nova_group, '
+      'is_favorite, created_at, updated_at '
+      'FROM foods WHERE id IN ($placeholders)',
+      variables: foodIds.map((id) => Variable(id)).toList(),
     ).get();
     
     return results.map((row) => _mapRowToFood(row)).toList();
@@ -789,7 +821,7 @@ class AppDatabase extends _$AppDatabase {
     
     final results = await customSelect(
       'SELECT id, name, normalized_name, brand, barcode, '
-      'kcal_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, '
+      'kcal_per100g, protein_per100g, carbs_per100g, fat_per100g, '
       'portion_name, portion_grams, user_created, verified_source, '
       'source_metadata, use_count, last_used_at, nutri_score, nova_group, '
       'is_favorite, created_at, updated_at FROM foods '
@@ -811,10 +843,10 @@ class AppDatabase extends _$AppDatabase {
       normalizedName: row.read<String?>('normalized_name'),
       brand: row.read<String?>('brand'),
       barcode: row.read<String?>('barcode'),
-      kcalPer100g: row.read<int>('kcal_per_100g'),
-      proteinPer100g: row.read<double?>('protein_per_100g'),
-      carbsPer100g: row.read<double?>('carbs_per_100g'),
-      fatPer100g: row.read<double?>('fat_per_100g'),
+      kcalPer100g: row.read<int>('kcal_per100g'),
+      proteinPer100g: row.read<double?>('protein_per100g'),
+      carbsPer100g: row.read<double?>('carbs_per100g'),
+      fatPer100g: row.read<double?>('fat_per100g'),
       portionName: row.read<String?>('portion_name'),
       portionGrams: row.read<double?>('portion_grams'),
       userCreated: row.read<bool>('user_created'),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../models/voice_action.dart';
 import '../../utils/design_system.dart';
 
@@ -16,6 +16,9 @@ class VoiceUndoSnackbar {
     required VoidCallback onUndo,
     Duration duration = const Duration(seconds: 5),
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -34,17 +37,14 @@ class VoiceUndoSnackbar {
                 children: [
                   Text(
                     'Por voz:',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
-                      color: Colors.white54,
+                    style: core.AppTypography.labelSmall.copyWith(
+                      color: onSurface.withAlpha(138),
                     ),
                   ),
                   Text(
                     action.description,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                    style: core.AppTypography.labelLarge.copyWith(
+                      color: onSurface,
                     ),
                   ),
                 ],
@@ -74,6 +74,9 @@ class VoiceUndoSnackbar {
     required String message,
     IconData icon = Icons.check_circle_outline,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -84,9 +87,8 @@ class VoiceUndoSnackbar {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
-                  color: Colors.white,
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: onSurface,
                 ),
               ),
             ),
@@ -109,6 +111,9 @@ class VoiceUndoSnackbar {
     required String message,
     VoidCallback? onRetry,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -123,9 +128,8 @@ class VoiceUndoSnackbar {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.montserrat(
-                  fontSize: 13,
-                  color: Colors.white,
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: onSurface,
                 ),
               ),
             ),

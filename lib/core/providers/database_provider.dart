@@ -81,8 +81,14 @@ final foodSearchResultsProvider = FutureProvider.autoDispose<List<diet.FoodModel
   return ref.watch(foodRepositoryProvider).search(query);
 });
 
-final latestWeightProvider = FutureProvider<diet.WeighInModel?>((ref) {
-  return ref.watch(weighInRepositoryProvider).getLatest();
+/// Provider del último peso registrado (derivado del stream para reactividad)
+final latestWeightProvider = Provider<AsyncValue<diet.WeighInModel?>>((ref) {
+  final weighInsAsync = ref.watch(weightStreamProvider);
+  return weighInsAsync.when(
+    data: (weighIns) => AsyncValue.data(weighIns.isNotEmpty ? weighIns.first : null),
+    loading: () => const AsyncValue.loading(),
+    error: (e, st) => AsyncValue.error(e, st),
+  );
 });
 
 final weightStreamProvider = StreamProvider<List<diet.WeighInModel>>((ref) {

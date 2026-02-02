@@ -114,24 +114,24 @@ class _PlanSetupScreenState extends ConsumerState<PlanSetupScreen> {
   Future<void> _loadLatestWeight() async {
     final container = ProviderScope.containerOf(context);
     
-    // Primero intentar obtener peso del perfil
-    final profileRepo = container.read(userProfileRepositoryProvider);
-    final profile = await profileRepo.get();
-    
-    if (profile?.currentWeightKg != null && mounted) {
-      setState(() {
-        _weightController.text = profile!.currentWeightKg!.toStringAsFixed(1);
-      });
-      return;
-    }
-    
-    // Si no hay peso en perfil, usar último weigh-in
+    // Primero buscar el último weigh-in (más actualizado)
     final weighRepo = container.read(weighInRepositoryProvider);
     final latest = await weighRepo.getLatest();
     
     if (latest != null && mounted) {
       setState(() {
         _weightController.text = latest.weightKg.toStringAsFixed(1);
+      });
+      return;
+    }
+    
+    // Si no hay weigh-ins, usar peso del perfil como fallback
+    final profileRepo = container.read(userProfileRepositoryProvider);
+    final profile = await profileRepo.get();
+    
+    if (profile?.currentWeightKg != null && mounted) {
+      setState(() {
+        _weightController.text = profile!.currentWeightKg!.toStringAsFixed(1);
       });
     }
   }

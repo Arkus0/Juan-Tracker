@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../providers/voice_input_provider.dart';
 import '../../utils/design_system.dart';
 
@@ -54,9 +54,7 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
     final currentState = ref.read(voiceInputProvider);
 
     if (currentState.isListening) {
-      // Parar y procesar
       await notifier.stopListening();
-      // Obtener el transcript del estado actualizado
       final updatedState = ref.read(voiceInputProvider);
       final transcript = updatedState.transcript;
 
@@ -64,17 +62,14 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
       _pulseController.stop();
       _pulseController.reset();
 
-      // Parsear comando de entrenamiento
       if (transcript.isNotEmpty) {
         final command = _parseTrainingCommand(transcript);
         if (command != null) {
           widget.onCommand(command);
         }
       }
-      // Limpiar después de procesar
       notifier.clearResults();
     } else {
-      // Empezar a escuchar
       setState(() => _showTranscript = true);
       _pulseController.repeat(reverse: true);
       await notifier.startListening();
@@ -84,108 +79,61 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
   VoiceTrainingCommand? _parseTrainingCommand(String transcript) {
     final normalized = transcript.toLowerCase().trim();
 
-    // Comando: "Hecho" / "Listo" / "Serie completada"
-    if (RegExp(
-      r'^(hecho|listo|completado|terminado|serie\s+(?:hecha|completada))',
-    ).hasMatch(normalized)) {
-      try {
-        HapticFeedback.heavyImpact();
-      } catch (_) {}
+    if (RegExp(r'^(hecho|listo|completado|terminado|serie\s+(?:hecha|completada))').hasMatch(normalized)) {
+      try { HapticFeedback.heavyImpact(); } catch (_) {}
       return const VoiceTrainingCommand(type: VoiceCommandType.markDone);
     }
 
-    // Comando: "Siguiente" / "Next" / "Próxima serie"
     if (RegExp(r'^(siguiente|next|proxim|adelante)').hasMatch(normalized)) {
-      try {
-        HapticFeedback.mediumImpact();
-      } catch (_) {}
+      try { HapticFeedback.mediumImpact(); } catch (_) {}
       return const VoiceTrainingCommand(type: VoiceCommandType.nextSet);
     }
 
-    // Comando: "Descanso" / "Timer" / "Descansar X segundos"
-    final restMatch = RegExp(
-      r'(?:descanso|timer|descansar)\s*(?:de\s*)?(\d+)?',
-    ).firstMatch(normalized);
+    final restMatch = RegExp(r'(?:descanso|timer|descansar)\s*(?:de\s*)?(\d+)?').firstMatch(normalized);
     if (restMatch != null) {
       final seconds = restMatch.group(1);
-      try {
-        HapticFeedback.lightImpact();
-      } catch (_) {}
-      return VoiceTrainingCommand(
-        type: VoiceCommandType.startRest,
-        value: seconds != null ? int.tryParse(seconds)?.toDouble() : null,
-      );
+      try { HapticFeedback.lightImpact(); } catch (_) {}
+      return VoiceTrainingCommand(type: VoiceCommandType.startRest, value: seconds != null ? int.tryParse(seconds)?.toDouble() : null);
     }
 
-    // Comando: "Peso X kilos" / "X kilos" / "X kg"
-    final weightMatch = RegExp(
-      r'(?:peso\s*)?(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg)',
-    ).firstMatch(normalized);
+    final weightMatch = RegExp(r'(?:peso\s*)?(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg)').firstMatch(normalized);
     if (weightMatch != null) {
       final weightStr = weightMatch.group(1)!.replaceAll(',', '.');
       final weight = double.tryParse(weightStr);
       if (weight != null) {
-        try {
-          HapticFeedback.selectionClick();
-        } catch (_) {}
-        return VoiceTrainingCommand(
-          type: VoiceCommandType.setWeight,
-          value: weight,
-        );
+        try { HapticFeedback.selectionClick(); } catch (_) {}
+        return VoiceTrainingCommand(type: VoiceCommandType.setWeight, value: weight);
       }
     }
 
-    // Comando: "X repeticiones" / "X reps"
-    final repsMatch = RegExp(
-      r'(\d+)\s*(?:reps?|repeticiones?)',
-    ).firstMatch(normalized);
+    final repsMatch = RegExp(r'(\d+)\s*(?:reps?|repeticiones?)').firstMatch(normalized);
     if (repsMatch != null) {
       final reps = int.tryParse(repsMatch.group(1)!);
       if (reps != null) {
-        try {
-          HapticFeedback.selectionClick();
-        } catch (_) {}
-        return VoiceTrainingCommand(
-          type: VoiceCommandType.setReps,
-          value: reps.toDouble(),
-        );
+        try { HapticFeedback.selectionClick(); } catch (_) {}
+        return VoiceTrainingCommand(type: VoiceCommandType.setReps, value: reps.toDouble());
       }
     }
 
-    // Comando: "RPE X" / "Esfuerzo X"
-    final rpeMatch = RegExp(
-      r'(?:rpe|esfuerzo)\s*(\d+(?:[.,]\d+)?)',
-    ).firstMatch(normalized);
+    final rpeMatch = RegExp(r'(?:rpe|esfuerzo)\s*(\d+(?:[.,]\d+)?)').firstMatch(normalized);
     if (rpeMatch != null) {
       final rpeStr = rpeMatch.group(1)!.replaceAll(',', '.');
       final rpe = double.tryParse(rpeStr);
       if (rpe != null && rpe >= 1 && rpe <= 10) {
-        try {
-          HapticFeedback.selectionClick();
-        } catch (_) {}
+        try { HapticFeedback.selectionClick(); } catch (_) {}
         return VoiceTrainingCommand(type: VoiceCommandType.setRpe, value: rpe);
       }
     }
 
-    // Comando: "Nota: texto" / "Anotar: texto" / "Apuntar: texto"
-    final noteMatch = RegExp(
-      r'^(?:nota|anotar|apuntar|apunta|anota)[:\s]+(.+)',
-      caseSensitive: false,
-    ).firstMatch(normalized);
+    final noteMatch = RegExp(r'^(?:nota|anotar|apuntar|apunta|anota)[:\s]+(.+)', caseSensitive: false).firstMatch(normalized);
     if (noteMatch != null) {
       final noteText = noteMatch.group(1)!.trim();
       if (noteText.isNotEmpty) {
-        try {
-          HapticFeedback.selectionClick();
-        } catch (_) {}
-        return VoiceTrainingCommand(
-          type: VoiceCommandType.addNote,
-          note: noteText,
-        );
+        try { HapticFeedback.selectionClick(); } catch (_) {}
+        return VoiceTrainingCommand(type: VoiceCommandType.addNote, note: noteText);
       }
     }
 
-    // No reconocido
     return null;
   }
 
@@ -193,6 +141,8 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
   Widget build(BuildContext context) {
     final voiceState = ref.watch(voiceInputProvider);
     final isListening = voiceState.isListening;
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
 
     if (!widget.enabled) {
       return const SizedBox.shrink();
@@ -200,35 +150,27 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
 
     return Stack(
       children: [
-        // Transcripción flotante
-        if (_showTranscript &&
-            (isListening || voiceState.partialTranscript.isNotEmpty))
+        if (_showTranscript && (isListening || voiceState.partialTranscript.isNotEmpty))
           Positioned(
             bottom: 80,
             left: 16,
             right: 80,
-            child: _buildTranscriptBubble(voiceState),
+            child: _buildTranscriptBubble(voiceState, onSurface),
           ),
-
-        // FAB
         Positioned(
           bottom: 16,
           left: 16,
           child: AnimatedBuilder(
             animation: _pulseController,
             builder: (context, child) {
-              final scale = isListening
-                  ? 1.0 + (_pulseController.value * 0.15)
-                  : 1.0;
+              final scale = isListening ? 1.0 + (_pulseController.value * 0.15) : 1.0;
               return Transform.scale(scale: scale, child: child);
             },
             child: FloatingActionButton.small(
               heroTag: 'voice_training_fab',
               onPressed: _onTap,
-              backgroundColor: isListening
-                  ? Colors.red[600]
-                  : AppColors.bgElevated,
-              foregroundColor: Colors.white,
+              backgroundColor: isListening ? Colors.red[600] : AppColors.bgElevated,
+              foregroundColor: onSurface,
               elevation: isListening ? 8 : 4,
               child: Icon(isListening ? Icons.mic : Icons.mic_none, size: 20),
             ),
@@ -238,7 +180,7 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
     );
   }
 
-  Widget _buildTranscriptBubble(VoiceInputState voiceState) {
+  Widget _buildTranscriptBubble(VoiceInputState voiceState, Color onSurface) {
     final text = voiceState.partialTranscript.isNotEmpty
         ? voiceState.partialTranscript
         : 'Di: "Hecho", "50 kilos", "10 reps"...';
@@ -251,18 +193,8 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
         decoration: BoxDecoration(
           color: AppColors.bgElevated.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: voiceState.isListening
-                ? AppColors.error.withValues(alpha: 0.5)
-                : AppColors.border,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: voiceState.isListening ? AppColors.error.withValues(alpha: 0.5) : AppColors.border),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -274,14 +206,9 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
             Flexible(
               child: Text(
                 text,
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
-                  color: voiceState.partialTranscript.isEmpty
-                      ? Colors.white38
-                      : Colors.white70,
-                  fontStyle: voiceState.partialTranscript.isEmpty
-                      ? FontStyle.italic
-                      : FontStyle.normal,
+                style: core.AppTypography.bodyMedium.copyWith(
+                  color: voiceState.partialTranscript.isEmpty ? onSurface.withAlpha(97) : onSurface.withAlpha(178),
+                  fontStyle: voiceState.partialTranscript.isEmpty ? FontStyle.italic : FontStyle.normal,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -296,7 +223,6 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
 
 class _PulsingDot extends StatefulWidget {
   final double size;
-
   const _PulsingDot({required this.size});
 
   @override
@@ -310,10 +236,7 @@ class _PulsingDotState extends State<_PulsingDot>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))..repeat(reverse: true);
   }
 
   @override
@@ -326,18 +249,11 @@ class _PulsingDotState extends State<_PulsingDot>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) {
-        return Container(
-          width: widget.size,
-          height: widget.size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.red[500]!.withValues(
-              alpha: 0.5 + _controller.value * 0.5,
-            ),
-          ),
-        );
-      },
+      builder: (context, child) => Container(
+        width: widget.size,
+        height: widget.size,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red[500]!.withValues(alpha: 0.5 + _controller.value * 0.5)),
+      ),
     );
   }
 }
@@ -353,11 +269,11 @@ class VoiceTrainingCommand {
 
 /// Tipos de comandos de voz para entrenamiento
 enum VoiceCommandType {
-  markDone, // Marcar serie como completada
-  nextSet, // Ir a siguiente serie
-  setWeight, // Establecer peso (value = kg)
-  setReps, // Establecer reps (value = número)
-  setRpe, // Establecer RPE (value = 1-10)
-  startRest, // Iniciar descanso (value = segundos opcionales)
-  addNote, // Añadir nota (note = texto)
+  markDone,
+  nextSet,
+  setWeight,
+  setReps,
+  setRpe,
+  startRest,
+  addNote,
 }

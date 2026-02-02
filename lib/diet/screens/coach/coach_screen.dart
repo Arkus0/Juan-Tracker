@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/widgets/home_button.dart';
 import '../../providers/coach_providers.dart';
+import '../../providers/weight_trend_providers.dart';
 import '../../services/adaptive_coach_service.dart';
 
 class CoachScreen extends ConsumerWidget {
@@ -168,7 +169,7 @@ class _EmptyCoachState extends StatelessWidget {
 }
 
 /// Estado activo - con plan en marcha
-class _ActiveCoachState extends StatelessWidget {
+class _ActiveCoachState extends ConsumerWidget {
   final CoachPlan plan;
   final VoidCallback onCheckIn;
   final VoidCallback onEditPlan;
@@ -180,9 +181,10 @@ class _ActiveCoachState extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final weightTrendAsync = ref.watch(weightTrendProvider);
 
     final daysSinceStart = DateTime.now().difference(plan.startDate).inDays;
     final lastCheckIn = plan.lastCheckInDate;
@@ -195,6 +197,137 @@ class _ActiveCoachState extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Tarjeta de progreso visual (solo si tenemos datos de peso)
+          weightTrendAsync.when(
+            data: (trend) {
+              if (trend == null) return const SizedBox.shrink();
+              
+              final currentWeight = trend.latestWeight;
+              final startWeight = plan.startingWeight;
+              final weightChange = currentWeight - startWeight;
+              final isPositive = plan.goal == WeightGoal.gain 
+                  ? weightChange > 0 
+                  : plan.goal == WeightGoal.lose 
+                      ? weightChange < 0 
+                      : weightChange.abs() < 0.5;
+              
+              return Card(
+                color: isPositive 
+                    ? colorScheme.primaryContainer.withAlpha(128)
+                    : colorScheme.errorContainer.withAlpha(128),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Progreso',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: colorScheme.onSurface.withAlpha(179),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    currentWeight.toStringAsFixed(1),
+                                    style: theme.textTheme.headlineMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'kg',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: colorScheme.onSurface.withAlpha(179),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isPositive 
+                                  ? colorScheme.primary.withAlpha(51)
+                                  : colorScheme.error.withAlpha(51),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  weightChange < 0 
+                                      ? Icons.arrow_downward 
+                                      : weightChange > 0 
+                                          ? Icons.arrow_upward 
+                                          : Icons.remove,
+                                  size: 16,
+                                  color: isPositive 
+                                      ? colorScheme.primary 
+                                      : colorScheme.error,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${weightChange > 0 ? '+' : ''}${weightChange.toStringAsFixed(1)} kg',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: isPositive 
+                                        ? colorScheme.primary 
+                                        : colorScheme.error,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Barra de progreso
+                      _buildProgressBar(
+                        context, 
+                        startWeight, 
+                        currentWeight, 
+                        plan.goal,
+                        colorScheme,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Inicio: ${startWeight.toStringAsFixed(1)} kg',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurface.withAlpha(153),
+                            ),
+                          ),
+                          Text(
+                            'Hace $daysSinceStart días',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurface.withAlpha(153),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
+          
+          const SizedBox(height: 16),
+
           // Tarjeta del plan actual
           Card(
             child: Padding(
@@ -352,6 +485,30 @@ class _ActiveCoachState extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProgressBar(
+    BuildContext context,
+    double startWeight,
+    double currentWeight,
+    WeightGoal goal,
+    ColorScheme colorScheme,
+  ) {
+    // Calcular progreso basado en el objetivo
+    // Para pérdida/ganancia: consideramos un cambio "típico" de 5kg como 100%
+    final targetChange = 5.0; // kg objetivo típico
+    final actualChange = (currentWeight - startWeight).abs();
+    final progress = (actualChange / targetChange).clamp(0.0, 1.0);
+    
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: progress,
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+        minHeight: 8,
       ),
     );
   }

@@ -140,7 +140,8 @@ class _AddFoodManualSheetState extends ConsumerState<AddFoodManualSheet> {
     final theme = Theme.of(context);
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
     
-    return Padding(
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 100),
       padding: EdgeInsets.only(bottom: bottomPadding),
       child: DraggableScrollableSheet(
         initialChildSize: 0.85,

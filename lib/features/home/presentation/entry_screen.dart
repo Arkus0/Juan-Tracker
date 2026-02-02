@@ -606,7 +606,7 @@ class _NutritionModeCard extends ConsumerWidget {
               ),
               _Stat(
                 icon: Icons.fitness_center,
-                value: '${s.consumed.protein}g',
+                value: '${s.consumed.protein.round()}g',
                 label: 'proteína',
               ),
             ],
@@ -617,7 +617,7 @@ class _NutritionModeCard extends ConsumerWidget {
 
         final remainingKcal = s.targets!.kcalTarget - s.consumed.kcal;
         final remainingProtein = s.targets!.proteinTarget != null 
-            ? s.targets!.proteinTarget! - s.consumed.protein 
+            ? (s.targets!.proteinTarget! - s.consumed.protein).round() 
             : 0;
 
         final progress = s.progress.kcalPercent ?? 0;

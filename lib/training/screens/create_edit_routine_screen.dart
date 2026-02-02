@@ -139,38 +139,21 @@ class _CreateEditRoutineScreenState
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).colorScheme.surfaceContainerHighest,
-        title: Text(
-          '¿Salir sin guardar?',
-          style: core.AppTypography.titleLarge.copyWith(
-            color: Theme.of(ctx).colorScheme.onSurface,
-          ),
-        ),
-        content: Text(
+        title: const Text('¿Salir sin guardar?'),
+        content: const Text(
           'Tienes cambios sin guardar. Si sales ahora, se perderán.',
-          style: core.AppTypography.bodyMedium.copyWith(
-            color: Theme.of(ctx).colorScheme.onSurface.withAlpha(178),
-          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              'SEGUIR EDITANDO',
-              style: core.AppTypography.labelLarge.copyWith(
-                color: AppColors.neonPrimary,
-              ),
-            ),
+            child: const Text('SEGUIR EDITANDO'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red[400]),
-            child: Text(
-              'SALIR',
-              style: core.AppTypography.labelLarge.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
+            child: const Text('SALIR'),
           ),
         ],
       ),

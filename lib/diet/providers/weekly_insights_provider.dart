@@ -103,8 +103,9 @@ class WeeklyInsight {
 /// Retorna las últimas 4 semanas
 final weeklyInsightsProvider = FutureProvider<List<WeeklyInsight>>((ref) async {
   final diaryRepo = ref.watch(diaryRepositoryProvider);
-  final coachPlan = ref.read(coachPlanProvider);
-  final calculator = ref.read(daySummaryCalculatorProvider);
+  // Usar watch para reaccionar a cambios en el plan
+  final coachPlan = ref.watch(coachPlanProvider);
+  final calculator = ref.watch(daySummaryCalculatorProvider);
 
   final now = DateTime.now();
   final results = <WeeklyInsight>[];

@@ -219,20 +219,25 @@ void main() {
       expect(results.length, 2);
     });
 
-    test('FTS JOIN query returns complete food data', () async {
+    test('FTS query with 2-step approach returns complete food data', () async {
       await _insertTestFoods(db);
       await db.rebuildFtsIndex();
 
-      // Test the actual JOIN query used in searchFoodsFTS
+      // Test the CORRECT 2-step approach used in searchFoodsFTS
+      // Step 1: Get IDs from FTS
+      final ftsResults = await db.customSelect(
+        "SELECT food_id FROM foods_fts WHERE foods_fts MATCH 'leche*' LIMIT 50",
+      ).get();
+      
+      expect(ftsResults, isNotEmpty);
+      
+      // Step 2: Get full food data by IDs
+      final foodIds = ftsResults.map((r) => r.data['food_id'] as String).toList();
+      final placeholders = List.filled(foodIds.length, '?').join(',');
+      
       final results = await db.customSelect(
-        '''
-        SELECT f.id, f.name, f.brand, f.kcal_per_100g
-        FROM foods f
-        INNER JOIN foods_fts fts ON f.id = fts.food_id
-        WHERE fts MATCH 'leche*'
-        ORDER BY rank
-        LIMIT 50
-        ''',
+        'SELECT id, name, brand, kcal_per100g FROM foods WHERE id IN ($placeholders)',
+        variables: foodIds.map((id) => Variable(id)).toList(),
       ).get();
 
       expect(results, isNotEmpty);

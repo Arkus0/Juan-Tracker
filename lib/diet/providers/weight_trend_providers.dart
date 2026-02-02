@@ -41,9 +41,14 @@ final allWeighInsProvider = StreamProvider<List<WeighInModel>>((ref) {
   return ref.watch(weighInRepositoryProvider).watchAll();
 });
 
-/// Provider del weigh-in más reciente
-final latestWeighInProvider = FutureProvider<WeighInModel?>((ref) async {
-  return ref.watch(weighInRepositoryProvider).getLatest();
+/// Provider del weigh-in más reciente (derivado del stream para reactividad)
+final latestWeighInProvider = Provider<AsyncValue<WeighInModel?>>((ref) {
+  final weighInsAsync = ref.watch(recentWeighInsProvider);
+  return weighInsAsync.when(
+    data: (weighIns) => AsyncValue.data(weighIns.isNotEmpty ? weighIns.first : null),
+    loading: () => const AsyncValue.loading(),
+    error: (e, st) => AsyncValue.error(e, st),
+  );
 });
 
 // ============================================================================

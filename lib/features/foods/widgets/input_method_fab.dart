@@ -76,6 +76,7 @@ class _InputMethodFabState extends State<InputMethodFab>
   Widget build(BuildContext context) {
     return Stack(
       alignment: Alignment.bottomRight,
+      clipBehavior: Clip.none, // Permitir que los children se dibujen fuera del bounds
       children: [
         // Backdrop para cerrar al tocar fuera
         if (_isExpanded)
@@ -89,8 +90,9 @@ class _InputMethodFabState extends State<InputMethodFab>
           ),
         
         // Opciones expandibles
-        Padding(
-          padding: const EdgeInsets.only(bottom: 80, right: 8),
+        Positioned(
+          bottom: 72,
+          right: 0,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -140,20 +142,17 @@ class _InputMethodFabState extends State<InputMethodFab>
         ),
         
         // FAB principal
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16, right: 16),
-          child: FloatingActionButton(
-            onPressed: _toggle,
-            elevation: _isExpanded ? 8 : 4,
-            child: AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) {
-                return Transform.rotate(
-                  angle: _animation.value * 0.785, // 45 grados
-                  child: Icon(_isExpanded ? Icons.close : Icons.add),
-                );
-              },
-            ),
+        FloatingActionButton(
+          onPressed: _toggle,
+          elevation: _isExpanded ? 8 : 4,
+          child: AnimatedBuilder(
+            animation: _animation,
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: _animation.value * 0.785, // 45 grados
+                child: Icon(_isExpanded ? Icons.close : Icons.add),
+              );
+            },
           ),
         ),
       ],

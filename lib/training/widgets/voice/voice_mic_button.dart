@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/design_system/design_system.dart' as core show AppTypography;
 import '../../providers/voice_input_provider.dart';
 import '../../utils/design_system.dart';
 
@@ -34,13 +34,8 @@ class _VoiceMicButtonState extends ConsumerState<VoiceMicButton>
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
   }
 
   @override
@@ -53,8 +48,9 @@ class _VoiceMicButtonState extends ConsumerState<VoiceMicButton>
   Widget build(BuildContext context) {
     final voiceState = ref.watch(voiceInputProvider);
     final isListening = voiceState.isListening;
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
 
-    // Controlar animación según estado
     if (isListening && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
     } else if (!isListening && _pulseController.isAnimating) {
@@ -67,9 +63,7 @@ class _VoiceMicButtonState extends ConsumerState<VoiceMicButton>
       children: [
         GestureDetector(
           onTap: () {
-            try {
-              HapticFeedback.selectionClick();
-            } catch (_) {}
+            try { HapticFeedback.selectionClick(); } catch (_) {}
             widget.onTap();
           },
           child: AnimatedBuilder(
@@ -85,24 +79,12 @@ class _VoiceMicButtonState extends ConsumerState<VoiceMicButton>
                 shape: BoxShape.circle,
                 color: isListening ? AppColors.error : AppColors.live,
                 boxShadow: isListening
-                    ? [
-                        BoxShadow(
-                          color: Colors.red.withValues(alpha: 0.5),
-                          blurRadius: 20,
-                          spreadRadius: 4,
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                    ? [BoxShadow(color: Colors.red.withValues(alpha: 0.5), blurRadius: 20, spreadRadius: 4)]
+                    : [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))],
               ),
               child: Icon(
                 isListening ? Icons.mic : Icons.mic_none,
-                color: Colors.white,
+                color: onSurface,
                 size: widget.size * 0.5,
               ),
             ),
@@ -115,10 +97,8 @@ class _VoiceMicButtonState extends ConsumerState<VoiceMicButton>
             child: Text(
               isListening ? 'Escuchando...' : 'Dictar',
               key: ValueKey(isListening),
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isListening ? AppColors.neonPrimary : Colors.white70,
+              style: core.AppTypography.labelLarge.copyWith(
+                color: isListening ? AppColors.neonPrimary : onSurface.withAlpha(178),
               ),
             ),
           ),
@@ -137,18 +117,15 @@ class VoiceListeningIndicator extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final voiceState = ref.watch(voiceInputProvider);
-
     if (!voiceState.isListening) {
       return const SizedBox.shrink();
     }
-
     return _PulsingDot(size: size);
   }
 }
 
 class _PulsingDot extends StatefulWidget {
   final double size;
-
   const _PulsingDot({required this.size});
 
   @override
@@ -162,10 +139,7 @@ class _PulsingDotState extends State<_PulsingDot>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat(reverse: true);
   }
 
   @override
@@ -178,28 +152,18 @@ class _PulsingDotState extends State<_PulsingDot>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) {
-        return Container(
-          width: widget.size,
-          height: widget.size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.red[600]!.withValues(
-              alpha: 0.5 + _controller.value * 0.5,
-            ),
+      builder: (context, child) => Container(
+        width: widget.size,
+        height: widget.size,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red[600]!.withValues(alpha: 0.5 + _controller.value * 0.5)),
+        child: Center(
+          child: Container(
+            width: widget.size * 0.6,
+            height: widget.size * 0.6,
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.neonPrimary),
           ),
-          child: Center(
-            child: Container(
-              width: widget.size * 0.6,
-              height: widget.size * 0.6,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.neonPrimary,
-              ),
-            ),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -219,9 +183,9 @@ class VoiceTranscriptPreview extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final voiceState = ref.watch(voiceInputProvider);
-    final text = voiceState.partialTranscript.isNotEmpty
-        ? voiceState.partialTranscript
-        : voiceState.transcript;
+    final text = voiceState.partialTranscript.isNotEmpty ? voiceState.partialTranscript : voiceState.transcript;
+    final colorScheme = Theme.of(context).colorScheme;
+    final onSurface = colorScheme.onSurface;
 
     if (text.isEmpty && !voiceState.isListening) {
       return const SizedBox.shrink();
@@ -233,43 +197,24 @@ class VoiceTranscriptPreview extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.bgElevated.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: voiceState.isListening
-              ? AppColors.error.withValues(alpha: 0.5)
-              : AppColors.border,
-        ),
+        border: Border.all(color: voiceState.isListening ? AppColors.error.withValues(alpha: 0.5) : AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           if (voiceState.isListening)
-            Row(
-              children: [
-                const _PulsingDot(size: 12),
-                const SizedBox(width: 8),
-                Text(
-                  'Escuchando...',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.neonPrimary,
-                  ),
-                ),
-              ],
-            ),
+            Row(children: [
+              const _PulsingDot(size: 12),
+              const SizedBox(width: 8),
+              Text('Escuchando...', style: core.AppTypography.labelLarge.copyWith(color: AppColors.neonPrimary)),
+            ]),
           if (voiceState.isListening) const SizedBox(height: 8),
           Text(
-            text.isEmpty
-                ? 'Di algo como: "Añade sentadilla 5 series de 5..."'
-                : text,
-            style: GoogleFonts.montserrat(
-              fontSize: fontSize,
+            text.isEmpty ? 'Di algo como: "Añade sentadilla 5 series de 5..."' : text,
+            style: core.AppTypography.bodyLarge.copyWith(
               fontWeight: text.isEmpty ? FontWeight.w400 : FontWeight.w500,
-              // Gris clarito para transcripción en progreso
-              color: text.isEmpty
-                  ? Colors.white30
-                  : (voiceState.isListening ? Colors.white54 : Colors.white),
+              color: text.isEmpty ? onSurface.withAlpha(76) : (voiceState.isListening ? onSurface.withAlpha(138) : onSurface),
               fontStyle: text.isEmpty ? FontStyle.italic : FontStyle.normal,
             ),
           ),

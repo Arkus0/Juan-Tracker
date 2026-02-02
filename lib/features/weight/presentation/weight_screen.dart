@@ -560,6 +560,7 @@ class _GoalProjectionCard extends ConsumerWidget {
                     _StatusBadge(
                       isOnTrack: projection.isOnTrack,
                       goalReached: projection.goalReached,
+                      goal: projection.goal,
                     ),
                   ],
                 ),
@@ -632,6 +633,12 @@ class _GoalProjectionCard extends ConsumerWidget {
   }
 
   String _formatEta(GoalProjection projection) {
+    // Para mantener peso, mostrar texto diferente cuando está en objetivo
+    if (projection.goal == WeightGoal.maintain) {
+      if (projection.goalReached) return 'En objetivo';
+      return 'Ajustando...';
+    }
+    
     if (projection.goalReached) return '¡Logrado!';
     
     final date = projection.estimatedGoalDate;
@@ -650,14 +657,47 @@ class _GoalProjectionCard extends ConsumerWidget {
 class _StatusBadge extends StatelessWidget {
   final bool isOnTrack;
   final bool goalReached;
+  final WeightGoal goal;
 
   const _StatusBadge({
     required this.isOnTrack,
     required this.goalReached,
+    required this.goal,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Para objetivo "mantener", mostrar texto diferente
+    if (goal == WeightGoal.maintain) {
+      final isMaintaining = goalReached;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: (isMaintaining ? AppColors.success : Colors.orange).withAlpha(51),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isMaintaining ? Icons.balance : Icons.sync,
+              size: 14,
+              color: isMaintaining ? AppColors.success : Colors.orange,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              isMaintaining ? 'Manteniendo' : 'Ajustando',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isMaintaining ? AppColors.success : Colors.orange,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
     if (goalReached) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

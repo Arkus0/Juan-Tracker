@@ -15,6 +15,7 @@ import '../models/sesion.dart';
 import '../providers/training_provider.dart';
 import '../services/csv_export_service.dart';
 import '../utils/design_system.dart';
+import '../../core/widgets/home_button.dart';
 
 /// Pantalla de exportación de datos con filtros
 class ExportScreen extends ConsumerStatefulWidget {
@@ -255,6 +256,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     return Scaffold(
       backgroundColor: scheme.surface,
       appBar: AppBar(
+        leading: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: HomeButton(),
+        ),
         title: Text(
           'EXPORTAR DATOS',
           style: AppTypography.sectionTitle.copyWith(

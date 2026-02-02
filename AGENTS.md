@@ -482,6 +482,109 @@ const model = MyModel(id: '1'); // ❌
 
 ---
 
+## ⚠️ CRÍTICO: Sistema de Búsqueda FTS5
+
+> **LEER ANTES DE TOCAR CUALQUIER QUERY SQL DE ALIMENTOS**
+
+### Nombres de Columnas en Drift
+
+Drift convierte nombres camelCase a snake_case **SIN guion bajo antes de números**:
+
+| Dart (en tabla)    | SQL real (en DB)   | ❌ INCORRECTO      |
+|--------------------|--------------------|--------------------|
+| `kcalPer100g`      | `kcal_per100g`     | `kcal_per_100g`    |
+| `proteinPer100g`   | `protein_per100g`  | `protein_per_100g` |
+| `carbsPer100g`     | `carbs_per100g`    | `carbs_per_100g`   |
+| `fatPer100g`       | `fat_per100g`      | `fat_per_100g`     |
+
+**Para verificar nombres reales**: Revisar `database.g.dart` (archivo generado por Drift).
+
+### Arquitectura de Búsqueda FTS5
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    FLUJO DE BÚSQUEDA                            │
+├─────────────────────────────────────────────────────────────────┤
+│  Usuario escribe "leche"                                        │
+│       ↓                                                         │
+│  FoodSearchNotifier.search() [150ms debounce]                   │
+│       ↓                                                         │
+│  AlimentoRepository.search()                                    │
+│       ↓                                                         │
+│  AppDatabase.searchFoodsFTS() ← AQUÍ ESTÁ LA MAGIA              │
+│       ↓                                                         │
+│  Estrategia de 3 pasos:                                         │
+│    1. AND query: "leche*" (más preciso)                         │
+│    2. OR query: "leche* OR desnatada*" (si AND=0)               │
+│    3. Sinónimos: expandQueryWithSynonyms() (último recurso)     │
+│       ↓                                                         │
+│  _executeFtsQuery() [2 queries separadas]:                      │
+│    a) SELECT food_id FROM foods_fts WHERE MATCH ?               │
+│    b) SELECT * FROM foods WHERE id IN (...)                     │
+│       ↓                                                         │
+│  _mapRowToFood() → Lista de Food                                │
+│       ↓                                                         │
+│  Ranking en AlimentoRepository._applyRanking()                  │
+│       ↓                                                         │
+│  UI muestra resultados                                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Query FTS5 Correcta (¡COPIAR ESTO!)
+
+```dart
+/// Helper to execute FTS query and map results
+Future<List<Food>> _executeFtsQuery(String ftsQuery, int limit) async {
+  // PASO 1: Buscar IDs en tabla FTS5
+  final ftsResults = await customSelect(
+    'SELECT food_id FROM foods_fts WHERE foods_fts MATCH ? LIMIT ?',
+    variables: [Variable(ftsQuery), Variable(limit)],
+  ).get();
+  
+  if (ftsResults.isEmpty) return [];
+  
+  // PASO 2: Obtener alimentos completos por IDs
+  final foodIds = ftsResults.map((r) => r.data['food_id'] as String).toList();
+  final placeholders = List.filled(foodIds.length, '?').join(',');
+  
+  final results = await customSelect(
+    'SELECT id, name, normalized_name, brand, barcode, '
+    'kcal_per100g, protein_per100g, carbs_per100g, fat_per100g, '  // ← SIN guion bajo antes de 100
+    'portion_name, portion_grams, user_created, verified_source, '
+    'source_metadata, use_count, last_used_at, nutri_score, nova_group, '
+    'is_favorite, created_at, updated_at '
+    'FROM foods WHERE id IN ($placeholders)',
+    variables: foodIds.map((id) => Variable(id)).toList(),
+  ).get();
+  
+  return results.map((row) => _mapRowToFood(row)).toList();
+}
+```
+
+### ¿Por qué 2 queries separadas?
+
+La tabla `foods_fts` usa `food_id UNINDEXED` (no es rowid). Un JOIN directo como:
+```sql
+-- ❌ NO FUNCIONA BIEN
+SELECT f.* FROM foods f 
+INNER JOIN foods_fts fts ON f.id = fts.food_id 
+WHERE foods_fts MATCH ?
+```
+Causa problemas de sintaxis. La solución es **2 queries separadas**:
+1. Obtener IDs del índice FTS
+2. Obtener datos completos de `foods` con IN clause
+
+### Sinónimos Españoles
+
+Archivo: `lib/diet/utils/spanish_text_utils.dart`
+
+- 180+ sinónimos en 80 grupos semánticos
+- `expandQueryWithSynonyms()`: Genera query OR con sinónimos de una palabra
+- Solo sinónimos sin espacios (multi-palabra se ignoran para FTS)
+- Ejemplo: "leche" → "leche* OR lacteo* OR desnatada* OR descremada*"
+
+---
+
 ## Known Pitfalls
 
 1. **FTS5 sync**: Después de insertar alimentos, llamar `rebuildFtsIndex()` o `insertFoodFts()` manualmente.
@@ -490,6 +593,8 @@ const model = MyModel(id: '1'); // ❌
 4. **Drift codegen**: Ejecutar `dart run build_runner build` después de modificar tablas.
 5. **GoRouter vs Navigator**: Usar extensiones de `context.goTo*()`, no `Navigator.push()`.
 6. **Búsqueda de alimentos**: Sistema unificado en `AlimentoRepository` (local FTS5 + Open Food Facts). NO existe ya el sistema en `diet/data/` ni `diet/domain/`.
+7. **⚠️ NOMBRES DE COLUMNAS SQL**: Drift genera `kcal_per100g` NO `kcal_per_100g`. Ver sección "Sistema de Búsqueda FTS5" arriba.
+8. **FTS5 queries**: Usar 2 queries separadas (FTS → IDs → SELECT foods). NO usar JOIN directo con foods_fts.
 
 ---
 

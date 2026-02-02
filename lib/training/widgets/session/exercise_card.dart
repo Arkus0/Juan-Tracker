@@ -662,8 +662,8 @@ class ExerciseCard extends ConsumerWidget {
         bottom: densityValues.cardMargin,
       ), // Ajustado según densidad
       // Color diferente si está colapsado/completado
-      color: isCollapsed
-          ? (allSetsCompleted ? const Color(0xFF1A2A1A) : AppColors.bgElevated)
+      color: isCollapsed && allSetsCompleted
+          ? Theme.of(context).colorScheme.surfaceContainerHighest
           : null,
       child: Semantics(
         button: isCollapsed,
@@ -874,7 +874,7 @@ class ExerciseCard extends ConsumerWidget {
               // 🆕 Contenido colapsable con animación
               AnimatedCrossFade(
                 firstChild: const SizedBox.shrink(),
-                secondChild: _buildExpandedContent(restSeconds),
+                secondChild: _buildExpandedContent(context, restSeconds),
                 crossFadeState: isCollapsed
                     ? CrossFadeState.showFirst
                     : CrossFadeState.showSecond,
@@ -889,7 +889,7 @@ class ExerciseCard extends ConsumerWidget {
   }
 
   /// Contenido expandido del ejercicio (series, etc.)
-  Widget _buildExpandedContent(int restSeconds) {
+  Widget _buildExpandedContent(BuildContext context, int restSeconds) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -899,14 +899,14 @@ class ExerciseCard extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.orange[800],
+              color: Theme.of(context).colorScheme.tertiary,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               'SUPERSET',
               style: AppTypography.labelSmall.copyWith(
                 fontWeight: FontWeight.w800,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onTertiary,
               ),
             ),
           ),
