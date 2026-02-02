@@ -1,3 +1,4 @@
+// ignore_for_file: dead_code
 // Tests para SessionSetRow swipe-to-delete (Fast Logging Parity)
 //
 // NOTA: SessionSetRow tiene muchas dependencias de providers (informationDensityProvider,
@@ -59,27 +60,21 @@ void main() {
 
     test('contrato canDelete=true requiere onDelete para habilitar swipe', () {
       // Este es un test de documentación - la lógica real está en el widget
-      const canDelete = true;
-      const onDeleteProvided = true;
-      final swipeEnabled = canDelete && onDeleteProvided;
-
-      expect(swipeEnabled, isTrue);
+      final canDelete = true;
+      final onDeleteProvided = true;
+      expect(canDelete && onDeleteProvided, isTrue);
     });
 
     test('contrato canDelete=false deshabilita swipe', () {
-      const canDelete = false;
-      const onDeleteProvided = true;
-      final swipeEnabled = canDelete && onDeleteProvided;
-
-      expect(swipeEnabled, isFalse);
+      final canDelete = false;
+      final onDeleteProvided = true;
+      expect(canDelete && onDeleteProvided, isFalse);
     });
 
     test('contrato onDelete=null deshabilita swipe aunque canDelete=true', () {
-      const canDelete = true;
-      const onDeleteProvided = false;
-      final swipeEnabled = canDelete && onDeleteProvided;
-
-      expect(swipeEnabled, isFalse);
+      final canDelete = true;
+      final onDeleteProvided = false;
+      expect(canDelete && onDeleteProvided, isFalse);
     });
   });
 }

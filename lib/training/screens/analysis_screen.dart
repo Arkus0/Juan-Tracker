@@ -15,6 +15,7 @@ import '../widgets/analysis/recovery_monitor.dart';
 import '../widgets/analysis/session_list_view.dart';
 import '../widgets/analysis/streak_counter.dart';
 import '../widgets/analysis/strength_trend.dart';
+import '../widgets/analysis/muscle_imbalance_dashboard.dart';
 import '../widgets/analysis/symmetry_radar.dart';
 import '../widgets/deload_alerts_widget.dart';
 import 'export_screen.dart';
@@ -282,6 +283,11 @@ class _LaboratorioTab extends ConsumerWidget {
 
         // Symmetry Radar
         SymmetryRadar(),
+
+        SizedBox(height: 20),
+
+        // Muscle Imbalance Dashboard (Push/Pull, Quad/Ham)
+        MuscleImbalanceDashboard(),
 
         SizedBox(height: 20),
 

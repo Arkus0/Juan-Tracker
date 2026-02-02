@@ -7,12 +7,14 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
+import 'package:juan_tracker/diet/models/meal_template.dart';
 import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
+import 'package:juan_tracker/diet/providers/meal_template_providers.dart';
 import 'package:juan_tracker/diet/providers/quick_actions_provider.dart';
 import 'package:juan_tracker/diet/services/day_summary_calculator.dart';
-import 'package:juan_tracker/core/widgets/home_button.dart';
 import 'package:juan_tracker/features/diary/presentation/edit_entry_dialog.dart';
+import 'package:juan_tracker/training/database/database.dart' as db;
 
 enum DiaryViewMode { list, calendar }
 
@@ -306,6 +308,34 @@ class _MealSection extends ConsumerWidget {
                     isExpanded ? Icons.expand_less : Icons.expand_more,
                     color: colors.onSurfaceVariant,
                   ),
+                  
+                  // Menú de opciones (solo si hay entries)
+                  if (entries.isNotEmpty)
+                    PopupMenuButton<String>(
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: colors.onSurfaceVariant,
+                        size: 20,
+                      ),
+                      padding: EdgeInsets.zero,
+                      itemBuilder: (ctx) => [
+                        const PopupMenuItem(
+                          value: 'save_template',
+                          child: Row(
+                            children: [
+                              Icon(Icons.bookmark_add_outlined, size: 20),
+                              SizedBox(width: 8),
+                              Text('Guardar como plantilla'),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (value) {
+                        if (value == 'save_template') {
+                          _showSaveAsTemplateDialog(context, ref, mealType, entries);
+                        }
+                      },
+                    ),
                 ],
               ),
             ),
@@ -413,6 +443,130 @@ class _MealSection extends ConsumerWidget {
       }
     }
   }
+
+  void _showSaveAsTemplateDialog(
+    BuildContext context,
+    WidgetRef ref,
+    MealType mealType,
+    List<DiaryEntryModel> entries,
+  ) async {
+    final nameController = TextEditingController(
+      text: '${mealType.displayName} favorito',
+    );
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Guardar como plantilla'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Se guardarán ${entries.length} alimento(s):',
+              style: AppTypography.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...entries.take(3).map((e) => Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 4),
+              child: Text('• ${e.foodName}', style: AppTypography.bodySmall),
+            )),
+            if (entries.length > 3)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text(
+                  '... y ${entries.length - 3} más',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre de la plantilla',
+                hintText: 'Ej: Desayuno típico',
+              ),
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(nameController.text),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    
+    if (result != null && result.trim().isNotEmpty && context.mounted) {
+      // Convertir DiaryEntryModel a DiaryEntry de la DB
+      final dbEntries = await _convertToDbEntries(ref, entries);
+      
+      // Convertir MealType a db.MealType
+      final dbMealType = _convertToDbMealType(mealType);
+      
+      final template = await ref
+          .read(saveMealAsTemplateProvider.notifier)
+          .save(
+            name: result.trim(),
+            mealType: dbMealType,
+            entries: dbEntries,
+          );
+          
+      if (context.mounted) {
+        if (template != null) {
+          AppSnackbar.show(
+            context,
+            message: 'Plantilla "${template.name}" guardada',
+          );
+        } else {
+          AppSnackbar.showError(
+            context,
+            message: 'Error al guardar la plantilla',
+          );
+        }
+      }
+    }
+  }
+
+  /// Convierte DiaryEntryModel a DiaryEntry de la DB
+  Future<List<db.DiaryEntry>> _convertToDbEntries(
+    WidgetRef ref,
+    List<DiaryEntryModel> entries,
+  ) async {
+    final database = ref.read(appDatabaseProvider);
+    final dbEntries = <db.DiaryEntry>[];
+    
+    for (final entry in entries) {
+      final dbEntry = await (database.select(database.diaryEntries)
+        ..where((e) => e.id.equals(entry.id)))
+        .getSingleOrNull();
+      
+      if (dbEntry != null) {
+        dbEntries.add(dbEntry);
+      }
+    }
+    
+    return dbEntries;
+  }
+
+  /// Convierte MealType de modelo a MealType de DB
+  db.MealType _convertToDbMealType(MealType mealType) => switch (mealType) {
+    MealType.breakfast => db.MealType.breakfast,
+    MealType.lunch => db.MealType.lunch,
+    MealType.dinner => db.MealType.dinner,
+    MealType.snack => db.MealType.snack,
+  };
 
   IconData _getMealIcon(MealType type) {
     return switch (type) {
@@ -883,6 +1037,7 @@ class _DailySummaryCard extends StatelessWidget {
                   color: AppColors.error,
                   progress: summary.progress.proteinPercent ?? 0,
                   showRemaining: summary.hasTargets,
+                  isOver: _isOverTarget(summary.targets?.proteinTarget, summary.consumed.protein),
                 ),
               ),
               Expanded(
@@ -896,6 +1051,7 @@ class _DailySummaryCard extends StatelessWidget {
                   color: AppColors.warning,
                   progress: summary.progress.carbsPercent ?? 0,
                   showRemaining: summary.hasTargets,
+                  isOver: _isOverTarget(summary.targets?.carbsTarget, summary.consumed.carbs),
                 ),
               ),
               Expanded(
@@ -909,6 +1065,7 @@ class _DailySummaryCard extends StatelessWidget {
                   color: AppColors.info,
                   progress: summary.progress.fatPercent ?? 0,
                   showRemaining: summary.hasTargets,
+                  isOver: _isOverTarget(summary.targets?.fatTarget, summary.consumed.fat),
                 ),
               ),
             ],
@@ -925,10 +1082,22 @@ class _DailySummaryCard extends StatelessWidget {
     return colors.primary;
   }
 
+  /// Calcula el valor restante o exceso de un macro
+  /// Si hay exceso, retorna el valor con + prefijo (ej: "+15")
   String _calculateRemaining(double? target, double consumed) {
     if (target == null) return consumed.toStringAsFixed(0);
-    final remaining = (target - consumed).clamp(0, double.infinity);
+    final remaining = target - consumed;
+    if (remaining < 0) {
+      // Exceso: mostrar como "+X"
+      return '+${(-remaining).toStringAsFixed(0)}';
+    }
     return remaining.toStringAsFixed(0);
+  }
+  
+  /// Verifica si un macro está en exceso
+  bool _isOverTarget(double? target, double consumed) {
+    if (target == null) return false;
+    return consumed > target;
   }
 }
 
@@ -989,6 +1158,7 @@ class _MacroItem extends StatelessWidget {
   final Color color;
   final double? progress;
   final bool showRemaining;
+  final bool isOver;
 
   const _MacroItem({
     required this.label,
@@ -997,11 +1167,17 @@ class _MacroItem extends StatelessWidget {
     required this.color,
     required this.progress,
     this.showRemaining = false,
+    this.isOver = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    // Cuando hay exceso, usar color de error
+    final displayColor = isOver ? AppColors.error : color;
+    final labelText = isOver 
+        ? '$label exceso' 
+        : (showRemaining ? '$label rest.' : label);
 
     return Column(
       children: [
@@ -1012,15 +1188,16 @@ class _MacroItem extends StatelessWidget {
               width: 8,
               height: 8,
               decoration: BoxDecoration(
-                color: color,
+                color: displayColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(width: 6),
             Text(
-              showRemaining ? '$label rest.' : label,
+              labelText,
               style: AppTypography.labelSmall.copyWith(
-                color: colors.onSurfaceVariant,
+                color: isOver ? AppColors.error : colors.onSurfaceVariant,
+                fontWeight: isOver ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],
@@ -1029,21 +1206,29 @@ class _MacroItem extends StatelessWidget {
         Text(
           '${value}g',
           style: AppTypography.dataSmall.copyWith(
-            color: colors.onSurface,
+            color: isOver ? AppColors.error : colors.onSurface,
+            fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-        if (target != null && !showRemaining)
+        if (target != null && !showRemaining && !isOver)
           Text(
             '/${target}g',
             style: AppTypography.labelSmall.copyWith(
               color: colors.onSurfaceVariant,
             ),
           ),
-        if (target != null && showRemaining)
+        if (target != null && showRemaining && !isOver)
           Text(
             'de ${target}g',
             style: AppTypography.labelSmall.copyWith(
               color: colors.onSurfaceVariant,
+            ),
+          ),
+        if (target != null && isOver)
+          Text(
+            'obj: ${target}g',
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.error.withAlpha((0.7 * 255).round()),
             ),
           ),
         const SizedBox(height: 6),
@@ -1159,6 +1344,7 @@ class _QuickActionsCard extends ConsumerWidget {
     final selectedDate = ref.watch(selectedDateProvider);
     final yesterdayAsync = ref.watch(yesterdayMealsProvider);
     final recentsAsync = ref.watch(quickRecentFoodsProvider);
+    final templatesAsync = ref.watch(topMealTemplatesProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1188,6 +1374,48 @@ class _QuickActionsCard extends ConsumerWidget {
           error: (_, _) => const SizedBox.shrink(),
         ),
 
+        // Chips de plantillas guardadas
+        templatesAsync.when(
+          data: (templates) {
+            if (templates.isEmpty) return const SizedBox.shrink();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.bookmark_outline,
+                      size: 14,
+                      color: colors.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Plantillas guardadas',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: templates.take(4).map((template) {
+                    return _TemplateChip(template: template);
+                  }).toList(),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
+        ),
+
         // Chips de alimentos recientes
         recentsAsync.when(
           data: (recents) {
@@ -1204,10 +1432,12 @@ class _QuickActionsCard extends ConsumerWidget {
                       color: colors.onSurfaceVariant,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      'Recientes',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: colors.onSurfaceVariant,
+                    Expanded(
+                      child: Text(
+                        'Añadir rápido (toca para elegir comida)',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ],
@@ -1329,7 +1559,7 @@ class _RepeatYesterdayButton extends ConsumerWidget {
   }
 }
 
-/// Chip para un alimento reciente
+/// Chip para un alimento reciente - permite añadir rápido eligiendo la comida
 class _RecentFoodChip extends ConsumerWidget {
   final QuickRecentFood food;
 
@@ -1339,27 +1569,214 @@ class _RecentFoodChip extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
 
-    return ActionChip(
-      avatar: Icon(
-        Icons.restaurant,
-        size: 14,
-        color: colors.onSurfaceVariant,
+    return Tooltip(
+      message: '${food.kcal} kcal · Toca para añadir',
+      child: ActionChip(
+        avatar: Icon(
+          Icons.add_circle_outline,
+          size: 14,
+          color: colors.primary,
+        ),
+        label: Text(
+          food.name.length > 15 ? '${food.name.substring(0, 15)}...' : food.name,
+          style: AppTypography.labelSmall,
+        ),
+        onPressed: () => _showMealSelector(context, ref),
+        backgroundColor: colors.surfaceContainerHighest,
+        side: BorderSide.none,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        visualDensity: VisualDensity.compact,
       ),
-      label: Text(
-        food.name.length > 15 ? '${food.name.substring(0, 15)}...' : food.name,
-        style: AppTypography.labelSmall,
-      ),
-      onPressed: () => _addToToday(context, ref),
-      backgroundColor: colors.surfaceContainerHighest,
-      side: BorderSide.none,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      visualDensity: VisualDensity.compact,
     );
   }
 
-  void _addToToday(BuildContext context, WidgetRef ref) {
-    // Navegar a búsqueda de alimentos con el término pre-llenado
-    // Para simplificar, vamos a la pantalla de búsqueda
-    context.pushTo(AppRouter.nutritionFoodSearch);
+  void _showMealSelector(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '¿A qué comida añadir?',
+                style: AppTypography.titleMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                '${food.name} · ${food.kcal} kcal',
+                style: AppTypography.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              ...MealType.values.map((mealType) => ListTile(
+                leading: Icon(_getMealIcon(mealType)),
+                title: Text(mealType.displayName),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _addToMeal(context, ref, mealType);
+                },
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getMealIcon(MealType mealType) {
+    return switch (mealType) {
+      MealType.breakfast => Icons.wb_sunny,
+      MealType.lunch => Icons.restaurant,
+      MealType.dinner => Icons.nights_stay,
+      MealType.snack => Icons.cookie,
+    };
+  }
+
+  Future<void> _addToMeal(BuildContext context, WidgetRef ref, MealType mealType) async {
+    final diaryRepo = ref.read(diaryRepositoryProvider);
+    final selectedDate = ref.read(selectedDateProvider);
+    
+    // Crear entrada del diario con el alimento reciente usando su última cantidad
+    final entry = DiaryEntryModel(
+      id: '${DateTime.now().millisecondsSinceEpoch}_quick',
+      date: selectedDate,
+      mealType: mealType,
+      foodId: food.id,
+      foodName: food.name,
+      foodBrand: food.brand,
+      amount: food.lastAmount,
+      unit: food.lastUnit,
+      kcal: food.kcal,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+      createdAt: DateTime.now(),
+    );
+    
+    await diaryRepo.insert(entry);
+    
+    if (context.mounted) {
+      AppSnackbar.show(
+        context, 
+        message: '${food.name} añadido a ${mealType.displayName}',
+      );
+    }
+  }
+}
+
+/// Chip para una plantilla de comida - permite añadir rápido eligiendo la comida destino
+class _TemplateChip extends ConsumerWidget {
+  final MealTemplateModel template;
+
+  const _TemplateChip({required this.template});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Tooltip(
+      message: '${template.itemCount} items · ${template.totalKcal} kcal',
+      child: ActionChip(
+        avatar: Icon(
+          Icons.bookmark,
+          size: 14,
+          color: colors.tertiary,
+        ),
+        label: Text(
+          template.name.length > 15 
+              ? '${template.name.substring(0, 15)}...' 
+              : template.name,
+          style: AppTypography.labelSmall,
+        ),
+        onPressed: () => _showMealSelector(context, ref),
+        backgroundColor: colors.tertiaryContainer.withAlpha((0.5 * 255).round()),
+        side: BorderSide.none,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        visualDensity: VisualDensity.compact,
+      ),
+    );
+  }
+
+  void _showMealSelector(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '¿A qué comida añadir la plantilla?',
+                style: AppTypography.titleMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                '${template.name} · ${template.itemCount} items · ${template.totalKcal} kcal',
+                style: AppTypography.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              ...MealType.values.map((mealType) => ListTile(
+                leading: Icon(_getMealIcon(mealType)),
+                title: Text(mealType.displayName),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _applyTemplate(context, ref, mealType);
+                },
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getMealIcon(MealType mealType) {
+    return switch (mealType) {
+      MealType.breakfast => Icons.wb_sunny,
+      MealType.lunch => Icons.restaurant,
+      MealType.dinner => Icons.nights_stay,
+      MealType.snack => Icons.cookie,
+    };
+  }
+
+  Future<void> _applyTemplate(BuildContext context, WidgetRef ref, MealType mealType) async {
+    final selectedDate = ref.read(selectedDateProvider);
+    
+    // Convertir MealType de diary a db
+    final dbMealType = switch (mealType) {
+      MealType.breakfast => db.MealType.breakfast,
+      MealType.lunch => db.MealType.lunch,
+      MealType.dinner => db.MealType.dinner,
+      MealType.snack => db.MealType.snack,
+    };
+
+    final success = await ref.read(useMealTemplateProvider.notifier).apply(
+      templateId: template.id,
+      date: selectedDate,
+      mealType: dbMealType,
+    );
+    
+    if (context.mounted) {
+      if (success) {
+        AppSnackbar.show(
+          context, 
+          message: '${template.itemCount} items añadidos a ${mealType.displayName}',
+        );
+      } else {
+        AppSnackbar.showError(context, message: 'Error al aplicar plantilla');
+      }
+    }
   }
 }

@@ -478,6 +478,49 @@ class ConsumptionPatterns extends Table {
   DateTimeColumn get lastConsumedAt => dateTime()();
 }
 
+// ============================================================================
+// 🆕 NUEVO: MEAL TEMPLATES (Schema v12)
+// ============================================================================
+
+/// Plantillas de comidas guardadas para quick-add
+/// Permite guardar una comida completa (ej: "Desayuno típico") para añadirla con 1 toque
+@TableIndex(name: 'meal_templates_name_idx', columns: {#name})
+class MealTemplates extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()(); // Nombre de la plantilla: "Desayuno típico"
+  TextColumn get mealType => text().map(const MealTypeConverter())(); // Tipo de comida sugerido
+  IntColumn get useCount => integer().withDefault(const Constant(0))(); // Para ordenar por uso
+  DateTimeColumn get lastUsedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Items de una plantilla de comida
+/// Cada item representa un alimento con su cantidad
+class MealTemplateItems extends Table {
+  TextColumn get id => text()();
+  TextColumn get templateId => text().references(MealTemplates, #id, onDelete: KeyAction.cascade)();
+  TextColumn get foodId => text().references(Foods, #id, onDelete: KeyAction.cascade)();
+  
+  RealColumn get amount => real()(); // Cantidad en gramos
+  TextColumn get unit => text().map(const ServingUnitConverter())();
+  
+  // Snapshot del alimento al momento de crear la plantilla (para mostrar aunque se borre el food)
+  TextColumn get foodNameSnapshot => text()();
+  IntColumn get kcalPer100gSnapshot => integer()();
+  RealColumn get proteinPer100gSnapshot => real().nullable()();
+  RealColumn get carbsPer100gSnapshot => real().nullable()();
+  RealColumn get fatPer100gSnapshot => real().nullable()();
+  
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     // Training
@@ -501,6 +544,9 @@ class ConsumptionPatterns extends Table {
     FoodsFts,
     SearchHistory,
     ConsumptionPatterns,
+    // 🆕 Meal Templates (v12)
+    MealTemplates,
+    MealTemplateItems,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -640,6 +686,16 @@ class AppDatabase extends _$AppDatabase {
           debugPrint('Migration v11 FTS recreate error: $e');
         }
       }
+      // 🆕 Migration path to version 12: Add Meal Templates tables
+      if (from < 12) {
+        try {
+          await m.createTable(mealTemplates);
+          await m.createTable(mealTemplateItems);
+          debugPrint('Migration v12: MealTemplates tables created successfully');
+        } catch (e) {
+          debugPrint('Migration v12 MealTemplates error: $e');
+        }
+      }
     },
   );
 
@@ -698,7 +754,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   // ============================================================================
   // 🆕 NUEVO: MÉTODOS DE BÚSQUEDA FTS5

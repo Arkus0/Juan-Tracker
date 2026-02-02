@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/analysis_models.dart';
 import '../models/sesion.dart';
+import '../widgets/analysis/muscle_imbalance_dashboard.dart';
 import 'training_provider.dart';
 
 // =============================================================================
@@ -284,3 +285,117 @@ class SymmetryData {
     return (volume.totalVolume / maxVolume).clamp(0.0, 1.0);
   }
 }
+
+// =============================================================================
+// MUSCLE IMBALANCE DASHBOARD PROVIDER
+// =============================================================================
+
+/// Provider para datos de desbalance muscular (empuje/jalón, quad/ham)
+final muscleImbalanceProvider = FutureProvider<MuscleImbalanceData>((ref) async {
+  final volumes = await ref.watch(muscleVolumeProvider.future);
+
+  if (volumes.isEmpty) {
+    return const MuscleImbalanceData();
+  }
+
+  // Calcular volúmenes agregados
+  double pushVolume = 0;
+  double pullVolume = 0;
+  double quadVolume = 0;
+  double hamstringVolume = 0;
+
+  // Agrupar por categorías
+  for (final entry in volumes.entries) {
+    final muscle = entry.key.toLowerCase();
+    final volume = entry.value.totalVolume;
+
+    // Empuje (push)
+    if (muscle.contains('pecho') || 
+        muscle.contains('hombro') || 
+        muscle.contains('triceps') ||
+        muscle.contains('frontal')) {
+      pushVolume += volume;
+    }
+
+    // Jalón (pull)
+    if (muscle.contains('espalda') || 
+        muscle.contains('dorsal') || 
+        muscle.contains('biceps') ||
+        muscle.contains('trapecio')) {
+      pullVolume += volume;
+    }
+
+    // Cuádriceps
+    if (muscle.contains('cuadriceps') || 
+        muscle.contains('frontal') ||
+        muscle.contains('muslo')) {
+      quadVolume += volume;
+    }
+
+    // Femoral
+    if (muscle.contains('femoral') || 
+        muscle.contains('isquio') || 
+        muscle.contains('posterior')) {
+      hamstringVolume += volume;
+    }
+  }
+
+  // Calcular ratios
+  double? pushPullRatio;
+  double? quadHamstringRatio;
+  final warnings = <MuscleImbalanceWarning>[];
+
+  // Ratio empuje/jalón (ideal 1:1, aceptable 0.8-1.3)
+  if (pushVolume > 0 && pullVolume > 0) {
+    pushPullRatio = pushVolume / pullVolume;
+    
+    if (pushPullRatio > 1.3) {
+      warnings.add(MuscleImbalanceWarning(
+        type: 'push_pull',
+        message: 'Demasiado empuje (${(pushPullRatio - 1).abs().toStringAsFixed(0)}% más). Añade más dominadas y remos.',
+        severity: (pushPullRatio - 1.3).clamp(0.0, 1.0),
+      ));
+    } else if (pushPullRatio < 0.8) {
+      warnings.add(MuscleImbalanceWarning(
+        type: 'push_pull',
+        message: 'Demasiado jalón (${(pushPullRatio - 1).abs().toStringAsFixed(0)}% más). Equilibra con press y fondos.',
+        severity: (0.8 - pushPullRatio).clamp(0.0, 1.0),
+      ));
+    }
+  }
+
+  // Ratio cuádriceps/femoral (ideal 1.5:1, alerta si > 2.5 o < 1.0)
+  if (quadVolume > 0 && hamstringVolume > 0) {
+    quadHamstringRatio = quadVolume / hamstringVolume;
+    
+    if (quadHamstringRatio > 2.5) {
+      warnings.add(MuscleImbalanceWarning(
+        type: 'quad_hamstring',
+        message: 'Desbalance pierna severo (${quadHamstringRatio.toStringAsFixed(1)}:1). Prioriza peso muerto y curl femoral.',
+        severity: ((quadHamstringRatio - 2.5) / 2).clamp(0.0, 1.0),
+      ));
+    } else if (quadHamstringRatio < 1.0) {
+      warnings.add(MuscleImbalanceWarning(
+        type: 'quad_hamstring',
+        message: 'Femorales dominantes. Añade sentadillas o prensa.',
+        severity: (1.0 - quadHamstringRatio).clamp(0.0, 1.0),
+      ));
+    }
+  } else if (quadVolume > 0 && hamstringVolume == 0) {
+    warnings.add(MuscleImbalanceWarning(
+      type: 'quad_hamstring',
+      message: 'Sin trabajo de femoral detectado. Incluye curl femoral o peso muerto.',
+      severity: 0.8,
+    ));
+  }
+
+  return MuscleImbalanceData(
+    pushPullRatio: pushPullRatio,
+    quadHamstringRatio: quadHamstringRatio,
+    pushVolume: pushVolume,
+    pullVolume: pullVolume,
+    quadVolume: quadVolume,
+    hamstringVolume: hamstringVolume,
+    warnings: warnings,
+  );
+});

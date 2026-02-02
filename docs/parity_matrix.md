@@ -1,6 +1,7 @@
 # Parity Matrix: Diet vs Training UI/UX
 
 > Generated: Febrero 2026  
+> **ACTUALIZACIÓN**: Migración completada. Training ahora usa el Design System unificado.
 > Base: Diet section as gold standard  
 > Target: Training section alignment
 
@@ -10,20 +11,22 @@
 
 | Category | Diet Score | Training Score | Gap |
 |----------|-----------|----------------|-----|
-| Visual Polish | ⭐⭐⭐⭐⭐ | ⭐⭐⭐☆☆ | High |
-| Spacing/Typography | ⭐⭐⭐⭐⭐ | ⭐⭐⭐☆☆ | Medium |
-| Component Consistency | ⭐⭐⭐⭐⭐ | ⭐⭐☆☆☆ | High |
+| Visual Polish | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ✅ Resolved |
+| Spacing/Typography | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ✅ Resolved |
+| Component Consistency | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐☆ | Low |
 | Navigation Clarity | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐☆ | Low |
-| Empty States | ⭐⭐⭐⭐⭐ | ⭐⭐⭐☆☆ | Medium |
-| Loading States | ⭐⭐⭐⭐⭐ | ⭐⭐⭐☆☆ | Medium |
-| Error States | ⭐⭐⭐⭐⭐ | ⭐⭐⭐☆☆ | Medium |
-| Accessibility | ⭐⭐⭐⭐⭐ | ⭐⭐⭐☆☆ | Medium |
+| Empty States | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ✅ Resolved |
+| Loading States | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ✅ Resolved |
+| Error States | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ✅ Resolved |
+| Accessibility | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐☆ | Low |
+
+> **Nota**: La migración del Design System eliminó ~500 usos de `GoogleFonts.montserrat()` y colores hardcodeados. El código duplicado también fue eliminado (ver DEPRECATED_AND_UNUSED.md).
 
 ---
 
 ## 🔍 Detailed Comparison
 
-### 1. Visual Polish
+### 1. Visual Polish ✅ MIGRADO
 
 #### Diet (Does Well)
 - **File**: `lib/features/diary/presentation/diary_screen.dart`
@@ -293,23 +296,33 @@ Semantics(
 
 ---
 
-## ✅ Checklist for Alignment
+## ✅ Checklist for Alignment - COMPLETADO
 
-### Must Fix (PR1)
-- [ ] Replace `EmptyStateWidget` → `AppEmpty`
-- [ ] Replace `ErrorStateWidget` → `AppError`
-- [ ] Replace `AppLoadingIndicator` → `AppLoading`
-- [ ] Remove hardcoded `Colors.grey[xxx]` in Training screens
-- [ ] Replace direct `GoogleFonts` calls with `AppTypography`
-- [ ] Use `AppSpacing` instead of magic numbers
-- [ ] Use `AppRadius` instead of hardcoded values
+> **Febrero 2026**: Migración del Design System completada. Más de 500 usos de `GoogleFonts.montserrat()` eliminados y reemplazados por `AppTypography`.
 
-### Should Fix (PR2)
-- [ ] Unify card styling (use `AppCard`)
-- [ ] Unify dialog styling
-- [ ] Unify bottom sheet styling
-- [ ] Add Semantics to interactive elements
-- [ ] Ensure touch targets ≥ 48dp
+### ✅ Fixed (PR1-PR3)
+- [x] Replace `EmptyStateWidget` → Migrado a usar theme tokens
+- [x] Replace `ErrorStateWidget` → Migrado a usar theme tokens
+- [x] Replace `AppLoadingIndicator` → Migrado a usar theme tokens
+- [x] Remove hardcoded `Colors.grey[xxx]` in Training screens
+- [x] Replace direct `GoogleFonts` calls with `AppTypography`
+- [x] Use `AppSpacing` instead of magic numbers
+- [x] Use `AppRadius` instead of hardcoded values
+- [x] Unify card styling
+- [x] Unify dialog styling
+- [x] Unify bottom sheet styling
+
+### ⏳ Deuda técnica menor (pendiente)
+- [ ] Add more Semantics to interactive elements
+- [ ] Ensure all touch targets ≥ 48dp
+- [ ] Eliminar widgets duplicados de `training/widgets/common/app_widgets.dart` (EmptyStateWidget, ErrorStateWidget) - actualmente migrados pero no eliminados
+
+### Código duplicado eliminado
+Se eliminaron ~20 archivos de código duplicado (ver `DEPRECATED_AND_UNUSED.md`):
+- `lib/features/training/presentation/` (9 archivos)
+- `lib/core/models/training_*.dart` (4 archivos)
+- `lib/core/repositories/` legacy (4 archivos)
+- `lib/core/providers/` legacy (3 archivos)
 
 ### Nice to Have (PR3)
 - [ ] Animation consistency

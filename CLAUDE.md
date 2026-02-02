@@ -25,11 +25,10 @@ lib/
 ├── core/                  # Shared infrastructure
 │   ├── design_system/     # Theme, colors (AppColors), typography (AppTypography)
 │   ├── router/            # GoRouter configuration (main router)
-│   ├── navigation/        # Legacy router (unused)
-│   ├── providers/         # Core providers (database, diary, training, etc.)
+│   ├── providers/         # Core providers (database, diary, exercise, etc.)
 │   ├── repositories/      # Data access interfaces & implementations
-│   ├── services/          # Service interfaces & stubs
-│   ├── models/            # Shared data models
+│   ├── services/          # Service interfaces (tdee_calculator)
+│   ├── models/            # Shared data models (user_profile, food, weight)
 │   ├── widgets/           # Reusable UI components (AppCard, AppButton, etc.)
 │   ├── onboarding/        # SplashWrapper, OnboardingScreen
 │   └── local_db/seeds/    # Seed data
@@ -39,18 +38,21 @@ lib/
 │   ├── repositories/      # Drift repositories (AlimentoRepository, etc.)
 │   ├── screens/coach/     # Adaptive coach UI
 │   └── services/          # WeightTrendCalculator, AdaptiveCoachService, OCR
-├── training/              # Workout tracking module
+├── training/              # Workout tracking module (self-contained)
 │   ├── database/          # AppDatabase (Drift) - ALL tables defined here
-│   ├── models/            # Exercise, session models
-│   ├── providers/         # Training providers
-│   ├── screens/           # Training UI screens
-│   ├── services/          # TimerAudioService, NativeBeepService
-│   └── widgets/           # Training-specific widgets
-└── features/              # Feature presentation layer
+│   ├── models/            # Sesion, Ejercicio, Rutina, SerieLog models
+│   ├── providers/         # Training providers (trainingRepositoryProvider, etc.)
+│   ├── repositories/      # DriftTrainingRepository, RoutineRepository
+│   ├── screens/           # Training UI screens (TrainingSessionScreen, etc.)
+│   ├── services/          # TimerAudioService, NativeBeepService, OCR, voice
+│   ├── widgets/           # Training-specific widgets (ExerciseCard, etc.)
+│   └── features/exercises/ # Exercise search subsystem
+└── features/              # Feature presentation layer (Nutrition only)
     ├── diary/presentation/    # DiaryScreen
     ├── foods/                 # FoodSearchUnifiedScreen, providers
     ├── home/presentation/     # EntryScreen, HomeScreen, TodayScreen
-    ├── training/presentation/ # HistoryScreen, TrainingLibraryScreen
+    ├── settings/presentation/ # SettingsScreen (profile/nutrition)
+    ├── summary/presentation/  # SummaryScreen
     └── weight/presentation/   # WeightScreen
 ```
 
@@ -125,7 +127,8 @@ flutter build web --release
 3. **BuildContext async**: Always check `context.mounted` after `await`
 4. **Drift codegen**: Run `dart run build_runner build` after modifying tables
 5. **GoRouter vs Navigator**: Use `context.goTo*()` extensions, not `Navigator.push()`
-6. **Duplicate providers**: Two `food_search_provider.dart` exist - use `diet/providers/`
+6. **Training providers**: Located in `training/providers/`, NOT in `core/providers/`
+7. **Training models**: Located in `training/models/` (Sesion, Ejercicio, Rutina, SerieLog)
 
 ## Important Notes
 

@@ -153,6 +153,8 @@ class TrainingState {
 class TrainingSessionNotifier extends Notifier<TrainingState> {
   late final ITrainingRepository _repository;
 
+  final Logger _logger = Logger();
+
   /// Controlador de timer de descanso (delegación de responsabilidad)
   late final RestTimerController _timerController;
 
@@ -450,6 +452,45 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
 
     // NO actualizamos targets - la rutina original permanece intacta
     // Esto permite que la sesión sea flexible sin afectar futuros entrenamientos
+
+    state = state.copyWith(exercises: exercises);
+    _saveState();
+  }
+
+  /// Inserta un set en una posición específica (para warm-up)
+  void insertSetAt({
+    required int exerciseIndex,
+    required int setIndex,
+    required double weight,
+    required int reps,
+    bool isWarmup = false,
+  }) {
+    if (exerciseIndex >= state.exercises.length) return;
+
+    final exercises = [...state.exercises];
+    final exercise = exercises[exerciseIndex];
+
+    // Crear nueva serie con valores especificados
+    final newLog = SerieLog(
+      peso: weight,
+      reps: reps,
+      completed: false,
+      isWarmup: isWarmup,
+    );
+
+    // Insertar en la posición específica
+    final newLogs = [...exercise.logs];
+    if (setIndex >= 0 && setIndex <= newLogs.length) {
+      newLogs.insert(setIndex, newLog);
+    } else {
+      newLogs.add(newLog);
+    }
+
+    final newExercise = exercise.copyWith(
+      logs: newLogs,
+      series: newLogs.length,
+    );
+    exercises[exerciseIndex] = newExercise;
 
     state = state.copyWith(exercises: exercises);
     _saveState();

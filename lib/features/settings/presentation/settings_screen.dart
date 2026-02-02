@@ -6,7 +6,6 @@ import '../../../core/models/user_profile_model.dart';
 import '../../../core/providers/database_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/tdee_calculator.dart';
-import '../../../core/widgets/home_button.dart';
 import '../../../core/widgets/widgets.dart';
 
 /// Pantalla de Perfil y Ajustes

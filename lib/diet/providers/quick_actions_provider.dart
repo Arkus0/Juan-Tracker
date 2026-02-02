@@ -145,6 +145,9 @@ class QuickRecentFood {
   final String name;
   final String? brand;
   final int kcal;
+  final double? protein;
+  final double? carbs;
+  final double? fat;
   final DateTime lastUsed;
   final int useCount;
   final double lastAmount;
@@ -155,6 +158,9 @@ class QuickRecentFood {
     required this.name,
     this.brand,
     required this.kcal,
+    this.protein,
+    this.carbs,
+    this.fat,
     required this.lastUsed,
     required this.useCount,
     required this.lastAmount,
@@ -193,6 +199,9 @@ final quickRecentFoodsProvider = FutureProvider<List<QuickRecentFood>>((ref) asy
       name: mostRecent.foodName,
       brand: mostRecent.foodBrand,
       kcal: mostRecent.kcal,
+      protein: mostRecent.protein,
+      carbs: mostRecent.carbs,
+      fat: mostRecent.fat,
       lastUsed: mostRecent.date,
       useCount: entryList.length,
       lastAmount: mostRecent.amount,

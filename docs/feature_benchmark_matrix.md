@@ -2,9 +2,9 @@
 
 > Análisis comparativo de conceptos de apps líderes en fitness/nutrición para evaluar implementación en Juan Tracker.
 > 
-> **Fecha:** 1 Febrero 2026  
+> **Fecha:** 15 Febrero 2026  
 > **Autor:** GitHub Copilot  
-> **Estado:** PHASE 1 - Discovery
+> **Estado:** PHASE 2 - Implemented
 
 ---
 
@@ -23,16 +23,18 @@
 | Recipe Model | ✅ Modelo | `RecipeModel` existe pero sin UI de builder |
 | Macro Presets | ✅ Completo | `MacroPreset` enum con distribuciones predefinidas |
 | Phase Detection | ✅ Completo | `WeightPhase` - losing/maintaining/gaining |
+| Goal Forecasting (ETA) | ✅ Completo | `GoalProjection` + `goalProjectionProvider` - Proyección de peso con ETA |
+| Goal Line in Chart | ✅ Completo | Línea punteada verde en gráfico de peso |
+| Food Logging Speed | ✅ Completo | `quickRecentFoodsProvider` - Chips de alimentos recientes |
+| Repeat Yesterday | ✅ Completo | `repeatYesterdayProvider` - Copiar comidas del día anterior |
+| Weekly History Insights | ✅ Completo | `weeklyInsightsProvider` - Resúmenes semanales con adherencia |
+| Meal Templates | ✅ Completo | `mealTemplatesProvider` - Guardar comidas como plantillas reutilizables |
 
 ### 🟡 Gaps Identificados
 
 | Gap | Impacto | Complejidad |
 |-----|---------|-------------|
-| No hay goal line/ETA en charts | Alto | Bajo |
-| No hay proyección visual de peso | Alto | Bajo |
-| No hay meal templates (comidas guardadas) | Medio | Medio |
-| No hay resúmenes semanales históricos | Medio | Medio |
-| No hay visualización de adherencia | Bajo | Bajo |
+| Recipe Builder UI ausente | Bajo | Alto |
 
 ---
 
@@ -50,9 +52,9 @@
 | Concepto | User Value | Complexity | Data Requirements | Privacy Risk | Offline | Fit | Dependencies | ROI | Status |
 |----------|------------|------------|-------------------|--------------|---------|-----|--------------|-----|--------|
 | **Dynamic TDEE Estimation** | 5 | 4 | weighIns + diaryEntries | Low | Yes | ✅ IMPLEMENTED | None | 1.25 | ✅ Ya existe |
-| **Goal Forecasting (ETA)** | 4 | 2 | weighIns + goal + trend | Low | Yes | Strong | None | **2.0** | 🎯 **CANDIDATO** |
+| **Goal Forecasting (ETA)** | 4 | 2 | weighIns + goal + trend | Low | Yes | ✅ IMPLEMENTED | None | 2.0 | ✅ Ya existe |
 | **Check-in Workflow** | 5 | 4 | weighIns + diary + plan | Low | Yes | ✅ IMPLEMENTED | None | 1.25 | ✅ Ya existe |
-| **Food Logging Speed (Recents/Favorites)** | 4 | 2 | diaryEntries + foods | Low | Yes | Strong | None | **2.0** | 🎯 **CANDIDATO** |
+| **Food Logging Speed (Recents/Favorites)** | 4 | 2 | diaryEntries + foods | Low | Yes | ✅ IMPLEMENTED | None | 2.0 | ✅ Ya existe |
 | **Macro Flexibility Ranges** | 3 | 3 | targets | Low | Yes | Medium | None | 1.0 | Pendiente |
 | **Trend Weight Smoothing** | 5 | 4 | weighIns | Low | Yes | ✅ IMPLEMENTED | None | 1.25 | ✅ Ya existe |
 
@@ -63,9 +65,9 @@
 | Concepto | User Value | Complexity | Data Requirements | Privacy Risk | Offline | Fit | Dependencies | ROI | Status |
 |----------|------------|------------|-------------------|--------------|---------|-----|--------------|-----|--------|
 | **Barcode Logging** | 4 | 3 | OFF API + local cache | Low | Partial | ✅ IMPLEMENTED | mobile_scanner | 1.33 | ✅ Ya existe |
-| **Quick Meal Templates** | 3 | 3 | recipes table + UI | Low | Yes | Medium | None | 1.0 | Pendiente |
+| **Quick Meal Templates** | 3 | 3 | MealTemplates + UI | Low | Yes | ✅ IMPLEMENTED | None | 1.0 | ✅ Ya existe |
 | **Recipe Builder (Offline)** | 3 | 4 | recipes + recipeItems | Low | Yes | Medium | None | 0.75 | Bajo ROI |
-| **Weekly History Insights** | 4 | 2 | diaryEntries agregados | Low | Yes | Strong | None | **2.0** | 🎯 **CANDIDATO** |
+| **Weekly History Insights** | 4 | 2 | diaryEntries agregados | Low | Yes | ✅ IMPLEMENTED | None | 2.0 | ✅ Ya existe |
 
 ---
 
@@ -74,7 +76,7 @@
 | Concepto | User Value | Complexity | Data Requirements | Privacy Risk | Offline | Fit | Dependencies | ROI | Status |
 |----------|------------|------------|-------------------|--------------|---------|-----|--------------|-----|--------|
 | **Weight Trend Smoothing** | 5 | 4 | weighIns | Low | Yes | ✅ IMPLEMENTED | None | 1.25 | ✅ Ya existe |
-| **Goal Line + ETA** | 4 | 2 | goal + trend | Low | Yes | Strong | None | **2.0** | 🎯 **CANDIDATO** |
+| **Goal Line + ETA** | 4 | 2 | goal + trend | Low | Yes | ✅ IMPLEMENTED | None | 2.0 | ✅ Ya existe |
 | **Water Retention Smoothing** | 2 | 3 | weighIns + ML opcional | Low | Yes | Weak | None | 0.67 | Bajo valor |
 | **Adherence Visualization** | 3 | 2 | diaryEntries | Low | Yes | Strong | None | 1.5 | Opcional |
 
@@ -92,9 +94,35 @@
 
 ## 3. Análisis de Candidatos
 
-### 🎯 TOP CANDIDATES (ROI ≥ 2.0)
+> **NOTA:** Los features marcados como "🎯 CANDIDATO" en la versión anterior de este documento 
+> (Goal Forecasting, Food Logging Speed, Weekly History Insights) han sido **implementados** 
+> en Febrero 2026. Ver sección "✅ Features Ya Implementadas" arriba.
 
-#### A. Goal Forecasting (Weight Projection + ETA)
+### ✅ IMPLEMENTADO: Quick Meal Templates (v12)
+
+#### A. Quick Meal Templates (IMPLEMENTADO)
+```
+User Value: 3 | Complexity: 3 | ROI: 1.0 | Status: ✅ Completo
+```
+
+**Qué hace:**
+- Guardar combinaciones de alimentos como "plantillas de comida"
+- Permite agregar comidas completas con un toque
+- Similar a recetas pero más simple (sin proporción, solo alimentos fijos)
+
+**Implementación:**
+- Tablas: `MealTemplates`, `MealTemplateItems` (schema v12)
+- Modelos: `MealTemplateModel`, `MealTemplateItemModel`
+- Repository: `MealTemplateRepository` con CRUD
+- Providers: `mealTemplatesProvider`, `topMealTemplatesProvider`, `saveMealAsTemplateProvider`, `useMealTemplateProvider`
+- UI: PopupMenuButton en `_MealSection` → "Guardar como plantilla"
+- UI: `_TemplateChip` en `_QuickActionsCard` con las 4 plantillas más usadas
+
+---
+
+## 4. ✅ Features Implementadas (Febrero 2026)
+
+### Goal Forecasting + Goal Line (IMPLEMENTADO)
 ```
 User Value: 4 | Complexity: 2 | ROI: 2.0
 ```
@@ -160,7 +188,61 @@ User Value: 4 | Complexity: 2 | ROI: 2.0
 
 ---
 
-## 4. Hard Gate Analysis
+## 4. ✅ Features Implementadas (Febrero 2026)
+
+### Goal Forecasting + Goal Line ✅
+
+**Estado:** IMPLEMENTADO
+
+**Qué hace:**
+- Muestra una línea de objetivo (verde punteada) en el gráfico de peso
+- Calcula y muestra ETA (fecha estimada para alcanzar peso objetivo)
+- Progress bar con porcentaje hacia el objetivo
+- Badge "On Track" cuando el ritmo actual lleva al objetivo
+
+**Implementación:**
+- Provider: `goalProjectionProvider`, `goalEtaDaysProvider`, `isOnTrackProvider`
+- Model: `GoalProjection` en `lib/diet/models/goal_projection.dart`
+- UI: `_GoalProjectionCard` en `weight_screen.dart`
+- Docs: `docs/feature_goal_projection.md`
+
+---
+
+### Food Logging Speed ✅
+
+**Estado:** IMPLEMENTADO
+
+**Qué hace:**
+- Muestra los 6 alimentos más recientes como chips interactivos
+- Quick-add con selector de comida (desayuno, almuerzo, etc.)
+- Botón "Repetir ayer" para copiar todas las comidas del día anterior
+- Botón "Repetir comida" para copiar una sola comida específica
+
+**Implementación:**
+- Providers: `quickRecentFoodsProvider`, `yesterdayMealsProvider`, `repeatYesterdayProvider`
+- UI: `_QuickActionsCard` + `_RecentFoodChip` en `diary_screen.dart`
+- Modelo: `QuickRecentFood` con macros incluidos
+
+---
+
+### Weekly History Insights ✅
+
+**Estado:** IMPLEMENTADO
+
+**Qué hace:**
+- Resumen semanal con adherencia (% días dentro de ±10% objetivo)
+- Promedios de kcal, proteínas, carbos, grasas
+- Comparación vs semana anterior (↑/↓ con color)
+- Badge de adherencia (Excelente >80%, Buena 60-80%, Mejorable <60%)
+
+**Implementación:**
+- Provider: `weeklyInsightsProvider`, `currentWeekInsightProvider`
+- Model: `WeeklyInsight` en `lib/diet/models/weekly_insight.dart`
+- UI: `_WeeklyInsightsCard` en `summary_screen.dart`
+
+---
+
+## 5. Hard Gate Analysis
 
 ### ⛔ REJECTED - Out of Scope
 
@@ -179,98 +261,19 @@ User Value: 4 | Complexity: 2 | ROI: 2.0
 | Recipe Builder UI | ROI 0.75, modelo ya existe | v2.0 |
 | Macro Flexibility Ranges | ROI 1.0, nice-to-have | v1.5 |
 | Water Retention Smoothing | ROI 0.67, valor cuestionable | Maybe never |
-| Meal Templates | ROI 1.0, requiere más diseño UX | v1.5 |
+| Meal Templates | ✅ Implementado en schema v12 | ✅ v1.0 |
 
 ---
 
-## 5. Decision Memo
+## 6. Quality Checklist
 
-### ✅ IMPLEMENTAR AHORA (PR2)
-
-**Feature:** Goal Forecasting (Weight Projection + ETA)
-
-**Justificación:**
-1. **ROI Alto (2.0):** Máximo valor con mínima complejidad
-2. **Fit Perfecto:** Ya tenemos TODA la lógica necesaria:
-   - `WeightTrendResult.hwTrend` - velocidad actual kg/día
-   - `WeightTrendResult.predictWeight(days)` - proyección Holt-Winters
-   - `CoachPlan.goal` y `weeklyRateKg` - objetivo del usuario
-3. **Solo UI:** No requiere cambios de modelo, DB, o servicios
-4. **Diferenciador:** Libra es la app de referencia para esto - alto impacto visual
-5. **Offline-First:** 100% local, sin dependencias externas
-
-**Scope de Implementación:**
-- Nuevo provider: `goalProjectionProvider` → `GoalProjection` model
-- UI: Goal line (dashed) en weight chart
-- UI: ETA card con fecha estimada
-- UI: Mensaje de progreso ("X días para tu meta")
-- Tests: Unit tests para cálculo de ETA
-
-### 🟡 CONSIDERAR DESPUÉS (PR3 - Si PR2 es estable)
-
-**Feature:** Food Logging Speed (Recents Quick-Add)
-
-**Justificación:**
-- Ya tenemos los providers necesarios
-- Alta mejora en UX diaria
-- Requiere solo UI work
+- [x] **No jank:** Cálculos de proyección en `WeightTrendResult` (off-UI)
+- [x] **Deterministic:** ETA se calcula con fórmula simple
+- [x] **Transparent:** Mostrar "basado en tu ritmo actual"
+- [x] **Safe defaults:** Si no hay goal o datos insuficientes → no mostrar ETA
+- [x] **Tests:** Unit tests implementados
+- [x] **Docs:** `docs/feature_goal_projection.md`
 
 ---
 
-## 6. Implementation Roadmap
-
-### Phase 1: Goal Forecasting (Este PR)
-
-```
-1. Model: GoalProjection
-   ├── goalWeightKg: double
-   ├── currentTrendWeight: double
-   ├── projectedWeightKg(days): double
-   ├── estimatedDaysToGoal: int?
-   ├── goalDate: DateTime?
-   └── progressPercentage: double
-
-2. Provider: goalProjectionProvider
-   ├── Inputs: CoachPlan + WeightTrendResult
-   └── Output: GoalProjection?
-
-3. UI: WeightScreen enhancements
-   ├── Goal line in chart (dashed)
-   ├── ETA card ("Meta: 75kg en ~45 días")
-   └── Progress indicator
-
-4. Tests
-   ├── goal_projection_test.dart
-   └── Update weight_screen_test.dart
-```
-
-### Phase 2: Food Logging Speed (Siguiente PR)
-
-```
-1. Provider: yesterdayMealsProvider
-2. UI: Recents chips in FoodSearchUnifiedScreen
-3. UI: "Repetir ayer" button in DiaryScreen
-```
-
-### Phase 3: Weekly Insights (Backlog)
-
-```
-1. Provider: weeklyInsightsProvider
-2. Screen: WeeklyHistoryScreen
-3. Integration with SummaryScreen
-```
-
----
-
-## 7. Quality Checklist for Implementation
-
-- [ ] **No jank:** Cálculos de proyección ya están en `WeightTrendResult` (off-UI)
-- [ ] **Deterministic:** ETA se calcula con fórmula simple: `deltaPeso / trenDaily`
-- [ ] **Transparent:** Mostrar "basado en tu ritmo actual de X kg/semana"
-- [ ] **Safe defaults:** Si no hay goal o datos insuficientes → no mostrar ETA
-- [ ] **Tests:** Unit tests para `GoalProjection` calculations
-- [ ] **Docs:** `docs/feature_goal_projection.md`
-
----
-
-*Última actualización: 1 Febrero 2026*
+*Última actualización: 18 Febrero 2026 - Meal Templates implementado*

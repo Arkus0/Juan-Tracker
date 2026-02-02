@@ -137,23 +137,53 @@ grep -rn "filename" .
 
 ---
 
-## 🟣 Código Potencialmente Duplicado
+## 🟣 Código Duplicado - LIMPIEZA COMPLETADA ✅
 
-### 1. Dos History Screens
+> **Febrero 2026 - Limpieza Mayor**: Se identificaron y eliminaron ~20 archivos (~3,500 líneas) de código duplicado del módulo de entrenamiento.
 
-| Campo | Valor |
-|-------|-------|
-| **Paths** | `lib/features/training/presentation/history_screen.dart` vs `lib/training/screens/history_screen.dart` |
-| **Evidencia** | Ambos existen. El de `features/training/presentation/` es importado por GoRouter. El de `training/screens/` puede ser versión legacy. |
-| **Acción sugerida** | Verificar cuál usa GoRouter y consolidar |
+### Archivos Eliminados en Limpieza Febrero 2026
 
-### 2. Dos Session Detail Screens
+#### features/training/presentation/ (9 archivos - ~2,200 líneas) ✅ ELIMINADO
+| Archivo | Razón |
+|---------|-------|
+| `training_home_screen.dart` | Duplicado de `training/training_shell.dart` + `main_screen.dart` |
+| `training_session_screen.dart` | Duplicado de `training/screens/training_session_screen.dart` |
+| `session_detail_screen.dart` | Duplicado de `training/screens/session_detail_screen.dart` |
+| `history_screen.dart` | Duplicado de `training/screens/history_screen.dart` |
+| `create_edit_routine_screen.dart` | Duplicado de `training/screens/create_edit_routine_screen.dart` |
+| `exercise_search_screen.dart` | Duplicado de `training/screens/exercise_search_screen.dart` |
+| `exercise_detail_screen.dart` | Duplicado de `training/screens/exercise_detail_screen.dart` |
+| `providers/training_providers.dart` | Duplicado de `training/providers/` |
+| `widgets/session/` | Duplicado de `training/widgets/` |
 
-| Campo | Valor |
-|-------|-------|
-| **Paths** | `lib/features/training/presentation/session_detail_screen.dart` vs `lib/training/screens/session_detail_screen.dart` |
-| **Evidencia** | Similar situación a History Screens. |
-| **Acción sugerida** | Verificar cuál está activo y consolidar |
+#### core/models/training_*.dart (4 archivos - ~300 líneas) ✅ ELIMINADO
+| Archivo | Razón |
+|---------|-------|
+| `training_session.dart` | Duplicado simplificado de `training/models/sesion.dart` |
+| `training_set.dart` | Duplicado simplificado de `training/models/serie_log.dart` |
+| `training_exercise.dart` | Duplicado simplificado de `training/models/ejercicio.dart` |
+| `training_routine.dart` | Duplicado simplificado de `training/models/rutina.dart` |
+
+#### core/repositories/ (4 archivos) ✅ ELIMINADO
+| Archivo | Razón |
+|---------|-------|
+| `in_memory_training_repository.dart` | Producción usa DriftTrainingRepository |
+| `i_training_repository.dart` | Interfaz obsoleta (interfaz real en training/) |
+| `routine_repository.dart` | Duplicado de `training/repositories/routine_repository.dart` |
+| `drift_training_repository.dart` (core) | Producción usa `training/repositories/drift_training_repository.dart` |
+
+#### core/providers/ (3 archivos) ✅ ELIMINADO
+| Archivo | Razón |
+|---------|-------|
+| `training_providers.dart` | Duplicado de `training/providers/training_provider.dart` |
+| `training_session_controller.dart` | Duplicado de `training/providers/training_session_provider.dart` |
+| `routine_providers.dart` | Duplicado de `training/providers/routine_provider.dart` |
+
+#### test/ (6 archivos) ✅ ELIMINADO
+| Carpeta | Razón |
+|---------|-------|
+| `test/features/training/` | Tests de screens duplicadas |
+| `test/core/training/` | Tests de modelos/repos duplicados |
 
 ---
 
@@ -191,10 +221,9 @@ Los siguientes archivos fueron verificados y SÍ están en uso:
 3. `assets/sounds/beep.mp3`, `success.mp3` - Potencial uso futuro
 
 ### ⚠️ Pendiente de Revisión
-1. Posible duplicación entre `features/training/presentation/` y `training/screens/` (History, SessionDetail)
-2. Fuentes Montserrat adicionales (Light, Thin, SemiBold, ExtraLight) - mantener si google_fonts las necesita
+1. Fuentes Montserrat adicionales (Light, Thin, SemiBold, ExtraLight) - mantener si google_fonts las necesita
 
 ---
 
 *Generado: Febrero 2026*
-*Última limpieza: Febrero 2026 - Consolidación de búsqueda + eliminación de código deprecated*
+*Última limpieza: Febrero 2026 - Consolidación de búsqueda + eliminación de código duplicado de training (~3,500 líneas)*

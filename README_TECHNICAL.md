@@ -23,7 +23,7 @@ App Android-first para registrar comida y entrenamientos, analizar progreso y us
 ## Flujo de uso (ejemplo)
 1. Abre la app (pantalla inicial `EntryScreen` → `HomeScreen`).
 2. En `Diario` añade alimentos o registra peso (`DiaryScreen`).
-3. Selecciona `ENTRENAR` y elige una rutina o crea una sesión libre (`TrainingHomeScreen`).
+3. Selecciona `ENTRENAR` y elige una rutina o crea una sesión libre (`TrainingShell` → `MainScreen`).
 4. Inicia `TrainingSessionScreen`, registra series manualmente o por voz, usa el temporizador de descanso.
 5. Revisa el historial y gráficos en la sección de análisis.
 

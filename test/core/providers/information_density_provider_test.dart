@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:juan_tracker/core/providers/app_providers.dart';
 import 'package:juan_tracker/core/providers/information_density_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,11 +9,17 @@ void main() {
 
   group('InformationDensityNotifier', () {
     late ProviderContainer container;
+    late SharedPreferences prefs;
 
-    setUp(() {
+    setUp(() async {
       // Reset SharedPreferences for each test
       SharedPreferences.setMockInitialValues({});
-      container = ProviderContainer();
+      prefs = await SharedPreferences.getInstance();
+      container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
     });
 
     tearDown(() {
@@ -57,7 +64,6 @@ void main() {
       final notifier = container.read(informationDensityProvider.notifier);
       await notifier.setMode(DensityMode.compact);
 
-      final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('information_density_mode'), 'compact');
     });
 
@@ -67,16 +73,17 @@ void main() {
       await notifier.setMode(DensityMode.detailed);
       
       // Verify the preference was persisted
-      final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('information_density_mode'), 'detailed');
       
-      // Create a new container with the same preferences
-      final newContainer = ProviderContainer();
+      // Create a new container with the SAME prefs override
+      final newContainer = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
       
-      // The new container should eventually load the persisted value
-      // Note: Since _loadPreference is async, we verify the persisted value exists
-      // The actual loading happens asynchronously in build()
-      expect(prefs.getString('information_density_mode'), 'detailed');
+      // The new container should load the persisted value synchronously
+      expect(newContainer.read(informationDensityProvider), DensityMode.detailed);
       newContainer.dispose();
     });
   });

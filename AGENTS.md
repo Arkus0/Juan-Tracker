@@ -41,10 +41,10 @@ lib/
 │   ├── design_system/           # Tokens (AppColors, AppSpacing, AppRadius, AppTypography)
 │   ├── router/                  # GoRouter configuration (app_router.dart)
 │   ├── navigation/              # Router legacy (no usado actualmente)
-│   ├── providers/               # Providers globales (database, diary, training, etc.)
+│   ├── providers/               # Providers globales (database, diary, etc.)
 │   ├── repositories/            # Interfaces + implementaciones de repositorios
-│   ├── services/                # Interfaces de servicios (timer, voice - stubs)
-│   ├── models/                  # Modelos compartidos (training_ejercicio, user_profile, etc.)
+│   ├── services/                # Interfaces de servicios (tdee_calculator)
+│   ├── models/                  # Modelos compartidos (user_profile, food, weight_entry, etc.)
 │   ├── widgets/                 # Widgets reutilizables (AppCard, AppButton, etc.)
 │   ├── onboarding/              # SplashWrapper, OnboardingScreen
 │   ├── tdee/                    # Cálculos TDEE
@@ -55,9 +55,8 @@ lib/
 │   ├── diary/presentation/      # DiaryScreen
 │   ├── foods/                   # FoodSearchUnifiedScreen, providers de búsqueda
 │   ├── home/presentation/       # EntryScreen, HomeScreen, TodayScreen
-│   ├── settings/presentation/   # SettingsScreen (nutrición)
+│   ├── settings/presentation/   # SettingsScreen (perfil/nutrición)
 │   ├── summary/presentation/    # SummaryScreen (resumen calórico)
-│   ├── training/presentation/   # HistoryScreen, TrainingLibraryScreen, etc.
 │   └── weight/presentation/     # WeightScreen
 ├── diet/                        # Capa de datos de nutrición
 │   ├── models/                  # Modelos de dominio (FoodModel, DiaryEntryModel, etc.)
@@ -66,14 +65,16 @@ lib/
 │   ├── screens/coach/           # CoachScreen, PlanSetupScreen, WeeklyCheckInScreen
 │   ├── services/                # WeightTrendCalculator, AdaptiveCoachService, OCR
 │   └── presentation/providers/  # Providers alternativos de búsqueda
-└── training/                    # Feature de ENTRENAMIENTO
+└── training/                    # Feature de ENTRENAMIENTO (módulo autocontenido)
     ├── database/                # AppDatabase (Drift) - TODAS las tablas aquí
-    ├── models/                  # Modelos del dominio (Ejercicio, Serie, etc.)
-    ├── providers/               # Training providers
-    ├── repositories/            # Repositorios especializados
-    ├── screens/                 # UI screens (TrainingSessionScreen, AnalysisScreen, etc.)
+    ├── models/                  # Modelos del dominio (Ejercicio, Sesion, Rutina, SerieLog, etc.)
+    ├── providers/               # Training providers (trainingRepositoryProvider, trainingSessionProvider)
+    ├── repositories/            # Repositorios (DriftTrainingRepository, RoutineRepository, etc.)
+    ├── screens/                 # UI screens (TrainingSessionScreen, AnalysisScreen, HistoryScreen, etc.)
     ├── services/                # TimerAudioService, NativeBeepService, OCR, voz
     ├── training_shell.dart      # Shell de navegación de entrenamiento
+    ├── features/exercises/      # Subsistema de búsqueda de ejercicios
+    ├── utils/                   # design_system.dart (legacy), strings
     └── widgets/                 # Widgets reutilizables (ExerciseCard, RestTimerBar, etc.)
 ```
 
@@ -228,23 +229,15 @@ Card(
 |------|--------|-------|
 | `core/widgets/` | ✅ Completo | AppCard, AppButton, AppEmpty, AppLoading, AppError, AppSnackbar |
 | `core/design_system/` | ✅ Completo | AppTypography, AppColors, AppSpacing, AppRadius |
-| `training/widgets/session/exercise_card.dart` | ✅ Migrado | PR2 |
-| `training/widgets/session/rest_timer_bar.dart` | ✅ Migrado | PR2 |
-| `training/screens/history_screen.dart` | ✅ Migrado | PR1 |
-| Otros archivos Training | ⏳ Pendiente | ~100 archivos con deuda técnica |
+| `training/widgets/` | ✅ Migrado | Todos los widgets usan core design system |
+| `training/screens/` | ✅ Migrado | Todas las pantallas migradas |
+| Código duplicado | ✅ Eliminado | Ya no existe features/training/presentation/ ni modelos duplicados en core/ |
 
 ### Deuda Técnica Conocida
 
-Archivos con `GoogleFonts.montserrat()` directo (requieren migración gradual):
-- `training/utils/design_system.dart` - Tiene su propio `AppTypography` (legacy)
-- `training/widgets/smart_import_sheet*.dart`
-- `training/screens/settings_screen.dart`
-- `training/screens/session_detail_screen.dart`
-- `training/widgets/voice/*.dart`
-- `training/widgets/routine/*.dart`
-- ~50 archivos más
+El archivo `training/utils/design_system.dart` mantiene un design system legacy "Aggressive Red" para compatibilidad. Los nuevos desarrollos deben usar `core/design_system/` exclusivamente.
 
-**Estrategia:** En nuevos features usar el core design system. En archivos existentes, migrar solo cuando se modifiquen.
+**Estrategia:** En nuevos features usar el core design system. El archivo legacy se mantiene solo para referencias de color específicas del modo entrenamiento.
 
 ---
 
@@ -317,11 +310,21 @@ Resumen semanal con métricas de adherencia y tendencias.
 - **Providers**: `weeklyInsightsProvider` (últimas 4 semanas), `currentWeekInsightProvider`
 - **UI**: `_WeeklyInsightsCard` en SummaryScreen
 
+### 11. Meal Templates (Febrero 2026) ✅
+Guardar comidas como plantillas reutilizables con 1 toque.
+- **Guardar**: PopupMenuButton en cada sección de comida → "Guardar como plantilla"
+- **Aplicar**: Chips en _QuickActionsCard con las 4 plantillas más usadas
+- **Modelo**: `MealTemplateModel` con items anidados (`MealTemplateItemModel`)
+- **Snapshots**: Valores nutricionales guardados por 100g para cálculo dinámico
+- **Providers**: `mealTemplatesProvider`, `topMealTemplatesProvider`, `saveMealAsTemplateProvider`, `useMealTemplateProvider`, `deleteMealTemplateProvider`
+- **Repository**: `MealTemplateRepository` con CRUD completo
+- **UI**: `_TemplateChip` en Quick Actions, dialog de guardado con nombre
+
 ---
 
 ## Database (Drift)
 
-### Schema v11 (Actual)
+### Schema v12 (Actual)
 
 **Training:**
 - `Routines` - Rutinas con `schedulingMode` y `schedulingConfig` (v9)
@@ -341,6 +344,7 @@ Resumen semanal con métricas de adherencia y tendencias.
 - `WeighIns` - Registros de peso
 - `Targets` - Objetivos calóricos versionados
 - `Recipes`, `RecipeItems` - Recetas compuestas
+- `MealTemplates`, `MealTemplateItems` - Plantillas de comidas reutilizables (v12)
 
 **Search System (v7+):**
 - `FoodsFts` - Tabla FTS5 virtual (food_id UNINDEXED, name, brand)
@@ -383,6 +387,12 @@ smartFoodSuggestionsProvider     // Sugerencias basadas en historial
 yesterdayMealsProvider           // Comidas de ayer por tipo
 repeatYesterdayProvider          // Copiar todas las comidas de ayer
 quickRecentFoodsProvider         // 6 alimentos recientes para chips
+
+// Meal Templates
+mealTemplatesProvider            // Todas las plantillas guardadas
+topMealTemplatesProvider         // 4 plantillas más usadas
+saveMealAsTemplateProvider       // Guardar comida actual como plantilla
+useMealTemplateProvider          // Aplicar plantilla al diario
 
 // Weekly Insights
 weeklyInsightsProvider           // Últimas 4 semanas de insights
@@ -595,6 +605,8 @@ Archivo: `lib/diet/utils/spanish_text_utils.dart`
 6. **Búsqueda de alimentos**: Sistema unificado en `AlimentoRepository` (local FTS5 + Open Food Facts). NO existe ya el sistema en `diet/data/` ni `diet/domain/`.
 7. **⚠️ NOMBRES DE COLUMNAS SQL**: Drift genera `kcal_per100g` NO `kcal_per_100g`. Ver sección "Sistema de Búsqueda FTS5" arriba.
 8. **FTS5 queries**: Usar 2 queries separadas (FTS → IDs → SELECT foods). NO usar JOIN directo con foods_fts.
+9. **Training providers**: Los providers de entrenamiento están en `training/providers/`, NO en `core/providers/`. El repositorio de training usa Drift (`DriftTrainingRepository`), no InMemory.
+10. **Training models**: Los modelos de entrenamiento (Sesion, Ejercicio, Rutina, SerieLog) están en `training/models/`, NO en `core/models/`.
 
 ---
 

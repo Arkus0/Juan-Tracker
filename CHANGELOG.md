@@ -5,6 +5,27 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [Unreleased] - 2026-02-XX
+
+### Removed - Limpieza de Código Duplicado
+- **20 archivos eliminados** (~3,500 líneas de código duplicado)
+- `lib/features/training/presentation/` - 9 archivos de screens duplicadas
+- `lib/core/models/training_*.dart` - 4 modelos simplificados duplicados
+- `lib/core/repositories/` legacy - `in_memory_training_repository.dart`, `i_training_repository.dart`, `routine_repository.dart`, `drift_training_repository.dart`
+- `lib/core/providers/` legacy - `training_providers.dart`, `training_session_controller.dart`, `routine_providers.dart`
+- Tests obsoletos en `test/features/training/` y `test/core/training/`
+
+### Changed - Consolidación del Módulo Training
+- El módulo de entrenamiento ahora es completamente autocontenido en `lib/training/`
+- Actualizada documentación: AGENTS.md, CLAUDE.md, README_TECHNICAL.md, DEPRECATED_AND_UNUSED.md, parity_matrix.md
+- Limpiado `database_provider.dart` removiendo imports y providers legacy
+
+### Fixed
+- `flutter analyze` pasa sin errores tras la limpieza
+- Eliminadas referencias a pantallas inexistentes (TrainingHomeScreen)
+
+---
+
 ## [Unreleased] - 2026-01-29
 
 ### Added - Fase A: UX/UI Improvements

@@ -19,9 +19,11 @@ import '../../features/foods/presentation/foods_screen.dart';
 import '../../features/weight/presentation/weight_screen.dart';
 import '../../features/summary/presentation/summary_screen.dart';
 
-import '../../features/training/presentation/history_screen.dart';
-import '../../features/training/presentation/training_routines_screen.dart';
-import '../../features/training/presentation/training_library_screen.dart';
+import '../../training/models/sesion.dart';
+import '../../training/providers/analysis_provider.dart';
+import '../../training/providers/main_provider.dart';
+import '../../training/screens/search_exercise_screen.dart';
+import '../../training/screens/session_detail_screen.dart';
 import '../../training/screens/training_session_screen.dart';
 import '../../diet/screens/coach/coach_screen.dart';
 import '../../diet/screens/coach/plan_setup_screen.dart';
@@ -57,14 +59,13 @@ class AppRouter {
   static const String trainingHistory = '/training/history';
   static const String trainingRoutines = '/training/routines';
   static const String trainingLibrary = '/training/library';
+  static const String trainingAnalysis = '/training/analysis';
+  static const String trainingSettings = '/training/settings';
   static const String trainingSession = '/training/session';
   static const String trainingSessionDetail = '/training/session/detail';
 
   // Debug routes (only available in debug mode)
   static const String debugSearchBenchmark = '/debug/search-benchmark';
-  
-  // Helper para navegar a detalle de sesión (requiere objeto Sesion)
-  static String trainingSessionDetailWithId(String id) => '/training/session/detail/$id';
 
   /// Helper para crear páginas con transición fade
   static CustomTransitionPage<void> _fadePage({
@@ -182,17 +183,39 @@ class AppRouter {
 
       GoRoute(
         path: trainingHistory,
-        builder: (context, state) => const HistoryScreen(),
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const _TrainingAnalysisEntry(),
+        ),
       ),
 
       GoRoute(
         path: trainingRoutines,
-        builder: (context, state) => const TrainingRoutinesScreen(),
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const _TrainingTabEntry(index: 0),
+        ),
       ),
 
       GoRoute(
         path: trainingLibrary,
-        builder: (context, state) => const TrainingLibraryScreen(),
+        builder: (context, state) => const SearchExerciseScreen(),
+      ),
+
+      GoRoute(
+        path: trainingAnalysis,
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const _TrainingTabEntry(index: 2),
+        ),
+      ),
+
+      GoRoute(
+        path: trainingSettings,
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const _TrainingTabEntry(index: 3),
+        ),
       ),
 
       // Sesión de entrenamiento activa
@@ -207,7 +230,13 @@ class AppRouter {
       // Por ahora redirige a historial (deep link complejo requiere provider)
       GoRoute(
         path: trainingSessionDetail,
-        builder: (context, state) => const HistoryScreen(),
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is Sesion) {
+            return SessionDetailScreen(sesion: extra);
+          }
+          return const _MissingSessionDetailScreen();
+        },
       ),
     ],
 
@@ -283,11 +312,21 @@ extension GoRouterExtension on BuildContext {
   /// Navega a la pantalla de sesión de entrenamiento
   void goToTrainingSession() => go(AppRouter.trainingSession);
 
+  /// Navega al detalle de sesión (push con extra)
+  void pushToTrainingSessionDetail(Sesion sesion) =>
+      push(AppRouter.trainingSessionDetail, extra: sesion);
+
   /// Navega a la biblioteca de ejercicios
   void goToTrainingLibrary() => go(AppRouter.trainingLibrary);
 
   /// Navega a las rutinas
   void goToTrainingRoutines() => go(AppRouter.trainingRoutines);
+
+  /// Navega a análisis de entrenamiento
+  void goToTrainingAnalysis() => go(AppRouter.trainingAnalysis);
+
+  /// Navega a ajustes de entrenamiento
+  void goToTrainingSettings() => go(AppRouter.trainingSettings);
 
   /// Navega al coach
   void goToCoach() => go(AppRouter.nutritionCoach);
@@ -303,10 +342,79 @@ extension GoRouterExtension on BuildContext {
 
   /// Navega a la pantalla de peso
   void goToWeight() => go(AppRouter.nutritionWeight);
-
   /// Navega a Today Screen (vista HOY unificada)
   void goToToday() => go('/today');
 
   /// Vuelve atrás
   void goBack() => pop();
+}
+
+class _MissingSessionDetailScreen extends StatelessWidget {
+  const _MissingSessionDetailScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detalle de sesión')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Sesión no encontrada. Abre el historial y selecciona una sesión.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrainingTabEntry extends ConsumerStatefulWidget {
+  final int index;
+
+  const _TrainingTabEntry({required this.index});
+
+  @override
+  ConsumerState<_TrainingTabEntry> createState() => _TrainingTabEntryState();
+}
+
+class _TrainingTabEntryState extends ConsumerState<_TrainingTabEntry> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(bottomNavIndexProvider.notifier).setIndex(widget.index);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const TrainingShell();
+  }
+}
+
+class _TrainingAnalysisEntry extends ConsumerStatefulWidget {
+  const _TrainingAnalysisEntry();
+
+  @override
+  ConsumerState<_TrainingAnalysisEntry> createState() =>
+      _TrainingAnalysisEntryState();
+}
+
+class _TrainingAnalysisEntryState
+    extends ConsumerState<_TrainingAnalysisEntry> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(bottomNavIndexProvider.notifier).setIndex(2);
+      ref.read(analysisTabIndexProvider.notifier).setIndex(0);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const TrainingShell();
+  }
 }

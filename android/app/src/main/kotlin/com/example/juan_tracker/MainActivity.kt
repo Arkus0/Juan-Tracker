@@ -1,5 +1,6 @@
 package com.example.juan_tracker
 
+import android.content.Context
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -21,6 +22,7 @@ class MainActivity : FlutterActivity() {
     private val TIMER_SERVICE_CHANNEL = "com.juantraining/timer_service"
     private val TIMER_EVENTS_CHANNEL = "com.juantraining/timer_events"
     private val BEEP_CHANNEL = "com.juantraining/beep_sound"
+    private val HOME_WIDGET_CHANNEL = "com.juantracker/home_widget"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -164,6 +166,30 @@ class MainActivity : FlutterActivity() {
                 }
                 "dispose" -> {
                     stopAllTracks()
+                    result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // Home Widget Channel - Comunicación con el widget de home screen
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, HOME_WIDGET_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "updateWidget" -> {
+                    // Guardar datos del widget en SharedPreferences
+                    val widgetData = call.argument<String>("widgetData")
+                    if (widgetData != null) {
+                        val prefs = getSharedPreferences(WorkoutWidgetProvider.PREFS_NAME, Context.MODE_PRIVATE)
+                        prefs.edit().putString("widget_data", widgetData).apply()
+                    }
+                    // Forzar actualización del widget
+                    WorkoutWidgetProvider.updateAllWidgets(this)
+                    result.success(true)
+                }
+                "clearWidget" -> {
+                    val prefs = getSharedPreferences(WorkoutWidgetProvider.PREFS_NAME, Context.MODE_PRIVATE)
+                    prefs.edit().remove("widget_data").apply()
+                    WorkoutWidgetProvider.updateAllWidgets(this)
                     result.success(true)
                 }
                 else -> result.notImplemented()

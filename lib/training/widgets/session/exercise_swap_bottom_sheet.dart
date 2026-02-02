@@ -3,11 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/design_system/design_system.dart';
-import '../../../../core/widgets/app_snackbar.dart';
 import '../../models/ejercicio.dart';
 import '../../models/library_exercise.dart';
 import '../../providers/exercise_alternatives_provider.dart';
-import '../../services/exercise_library_service.dart';
 
 /// {@template exercise_swap_bottom_sheet}
 /// Bottom sheet para sustituir un ejercicio durante una sesión activa.
@@ -84,7 +82,7 @@ class _ExerciseSwapBottomSheetState
         ? ref.watch(exerciseAlternativesProvider((
             exerciseId: libraryId,
             muscleGroups: muscleGroups,
-            equipment: widget.currentExercise.equipment,
+            equipment: null, // Sin preferencia de equipment específica
           )))
         : <LibraryExercise>[];
 
@@ -156,7 +154,7 @@ class _ExerciseSwapBottomSheetState
                   children: [
                     _InfoChip(
                       icon: Icons.fitness_center,
-                      label: '${widget.currentExercise.musculosPrincipales.join(", ")}',
+                      label: widget.currentExercise.musculosPrincipales.join(", "),
                       color: colors.primary,
                     ),
                     _InfoChip(
@@ -286,12 +284,12 @@ class _ExerciseSwapBottomSheetState
       itemCount: filteredAlternatives.length,
       itemBuilder: (context, index) {
         final exercise = filteredAlternatives[index];
-        final isSameEquipment = exercise.equipment.toLowerCase() ==
-            widget.currentExercise.equipment.toLowerCase();
+        // Recomendar el primero de la lista (ya ordenados por relevancia)
+        final isRecommended = index == 0;
 
         return _AlternativeTile(
           exercise: exercise,
-          isRecommended: isSameEquipment && index == 0,
+          isRecommended: isRecommended,
           onTap: () {
             HapticFeedback.mediumImpact();
             widget.onSwapSelected(exercise);

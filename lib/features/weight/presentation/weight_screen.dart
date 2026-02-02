@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
-import 'package:juan_tracker/core/widgets/home_button.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/providers/goal_projection_providers.dart';
@@ -68,15 +67,44 @@ class WeightScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final messenger = ScaffoldMessenger.of(context);
-
-          final result = await showDialog<bool>(
+          final result = await showDialog<double?>(
             context: context,
             builder: (context) => const AddWeightDialog(),
           );
 
-          if (result == true && context.mounted) {
-            messenger.showSnackBar(const SnackBar(content: Text('Peso registrado')));
+          if (result != null && context.mounted) {
+            // Mostrar confirmación más detallada
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${result.toStringAsFixed(1)} kg registrado',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const Text(
+                            'Perfil actualizado automáticamente',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: AppColors.success,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+            // Forzar refresco de providers
+            ref.invalidate(weightTrendProvider);
+            ref.invalidate(recentWeighInsProvider);
           }
         },
         icon: const Icon(Icons.add),
@@ -145,7 +173,7 @@ class _AddWeightDialogState extends ConsumerState<AddWeightDialog> {
     final id = 'wi_${DateTime.now().millisecondsSinceEpoch}';
     await repo.insert(WeighInModel(id: id, dateTime: _selectedDate, weightKg: value));
     if (mounted) {
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(value); // Devolver el valor del peso
     }
   }
 
@@ -175,7 +203,7 @@ class _AddWeightDialogState extends ConsumerState<AddWeightDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
+          onPressed: () => Navigator.of(context).pop(null),
           child: const Text('CANCELAR'),
         ),
         FilledButton(

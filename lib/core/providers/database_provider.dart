@@ -5,12 +5,8 @@ import '../../diet/repositories/repositories.dart';
 import '../../diet/repositories/drift_diet_repositories.dart';
 import '../../training/database/database.dart';
 import '../models/user_profile_model.dart';
-import '../repositories/i_training_repository.dart';
-import '../repositories/in_memory_training_repository.dart';
 import '../repositories/exercise_repository.dart';
 import '../repositories/local_exercise_repository.dart';
-import '../repositories/routine_repository.dart';
-import '../repositories/in_memory_routine_repository.dart';
 
 // ============================================================================
 // DATABASE & REPOSITORIES
@@ -449,17 +445,11 @@ final mealContextMessageProvider = Provider<String>((ref) {
 });
 
 // ============================================================================
-// TRAINING REPOSITORIES (sin cambios)
+// EXERCISE REPOSITORY
 // ============================================================================
 
-final trainingRepositoryProvider = Provider<ITrainingRepository>(
-  (ref) => InMemoryTrainingRepository(),
-);
 final exerciseRepositoryProvider = Provider<ExerciseRepository>(
   (ref) => LocalExerciseRepository(),
-);
-final routineRepositoryProvider = Provider<RoutineRepository>(
-  (ref) => InMemoryRoutineRepository(),
 );
 
 // ============================================================================

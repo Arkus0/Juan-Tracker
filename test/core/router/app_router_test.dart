@@ -67,9 +67,8 @@ void main() {
       expect(uri.path, equals('/weight'));
     });
 
-    test('helper para detalle de sesión genera URL correcta', () {
-      final url = AppRouter.trainingSessionDetailWithId('123');
-      expect(url, equals('/training/session/detail/123'));
+    test('ruta de detalle de sesión está definida', () {
+      expect(AppRouter.trainingSessionDetail, equals('/training/session/detail'));
     });
   });
 

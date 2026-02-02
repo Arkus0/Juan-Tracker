@@ -127,7 +127,9 @@ class AlimentoRepository {
     
     // 1. Búsqueda FTS local (instantánea, ~1-5ms)
     var localResults = await _db.searchFoodsFTS(normalizedQuery, limit: limit);
-    debugPrint('[AlimentoRepository] Local FTS results: ${localResults.length}');
+    if (kDebugMode) {
+      debugPrint('[AlimentoRepository] Local FTS results: ${localResults.length}');
+    }
     
     // 2. Aplicar filtros adicionales
     if (filters != null) {
@@ -159,7 +161,9 @@ class AlimentoRepository {
     final normalizedQuery = query.toLowerCase().trim();
     final token = cancelToken ?? CancelToken();
     
-    debugPrint('[AlimentoRepository] Searching OFF for: "$normalizedQuery"');
+    if (kDebugMode) {
+      debugPrint('[AlimentoRepository] Searching OFF for: "$normalizedQuery"');
+    }
     
     try {
       final remoteResults = await _searchOpenFoodFacts(
@@ -168,14 +172,20 @@ class AlimentoRepository {
         cancelToken: token,
       );
       
-      debugPrint('[AlimentoRepository] OFF results: ${remoteResults.length}');
+      if (kDebugMode) {
+        debugPrint('[AlimentoRepository] OFF results: ${remoteResults.length}');
+      }
       return _applyRanking(remoteResults, normalizedQuery).take(limit).toList();
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) {
-        debugPrint('[AlimentoRepository] OFF search cancelled');
+        if (kDebugMode) {
+          debugPrint('[AlimentoRepository] OFF search cancelled');
+        }
         return [];
       }
-      debugPrint('[AlimentoRepository] OFF search failed: $e');
+      if (kDebugMode) {
+        debugPrint('[AlimentoRepository] OFF search failed: $e');
+      }
       rethrow;
     }
   }
@@ -203,14 +213,18 @@ class AlimentoRepository {
     
     // 2. Si no está local, buscar en OFF
     try {
-      debugPrint('[AlimentoRepository] Barcode not local, searching OFF: $cleanBarcode');
+      if (kDebugMode) {
+        debugPrint('[AlimentoRepository] Barcode not local, searching OFF: $cleanBarcode');
+      }
       final remote = await _searchBarcodeInOFF(cleanBarcode);
       if (remote != null) {
         await _db.recordFoodUsage(remote.id);
         return remote;
       }
     } catch (e) {
-      debugPrint('[AlimentoRepository] OFF barcode search failed: $e');
+      if (kDebugMode) {
+        debugPrint('[AlimentoRepository] OFF barcode search failed: $e');
+      }
     }
     
     return null;

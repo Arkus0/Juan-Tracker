@@ -62,15 +62,23 @@ class ExerciseLibraryService {
     try {
       final jsonStr = await rootBundle.loadString(_bundlePath);
       final list = jsonDecode(jsonStr) as List<dynamic>;
-      return list.asMap().entries.map((entry) {
-        final index = entry.key + 1;
-        final map = Map<String, dynamic>.from(entry.value as Map);
+      return list.map((entry) {
+        final map = Map<String, dynamic>.from(entry as Map);
 
-        // Prefer native keys if present
+        // 🆕 IDs numéricos estables desde JSON (schema v2)
+        // Si el JSON tiene ID numérico, lo usamos. Si no, fallback al índice.
+        final jsonId = map['id'];
+        final stableId = jsonId is int ? jsonId : (list.indexOf(entry) + 1);
+
+        // Prefer native keys if present (nuevo formato)
         if (map.containsKey('name') || map.containsKey('muscleGroup')) {
-          return LibraryExercise.fromJson(map);
+          return LibraryExercise.fromJson(map).copyWith(
+            id: stableId,
+            isCurated: true,
+          );
         }
 
+        // Formato legacy (nombre, grupoMuscular, etc.)
         final name = (map['nombre'] as String?) ?? '';
         final muscleGroup = (map['grupoMuscular'] as String?) ?? '';
         final equipment = (map['equipo'] as String?) ?? '';
@@ -80,14 +88,18 @@ class ExerciseLibraryService {
                 ?.map((e) => e.toString())
                 .toList() ??
             const <String>[];
+        // 🆕 Usar campo muscles si existe, sino fallback a grupoMuscular
         final primary =
+            (map['muscles'] as List?)
+                ?.map((e) => e.toString())
+                .toList() ??
             (map['musculosPrincipales'] as List?)
                 ?.map((e) => e.toString())
                 .toList() ??
             (muscleGroup.isNotEmpty ? <String>[muscleGroup] : const <String>[]);
 
         return LibraryExercise(
-          id: index,
+          id: stableId,
           name: name,
           muscleGroup: muscleGroup,
           equipment: equipment,

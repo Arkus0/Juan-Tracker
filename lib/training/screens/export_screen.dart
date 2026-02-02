@@ -13,6 +13,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../models/sesion.dart';
 import '../providers/training_provider.dart';
+import '../services/backup_service.dart';
 import '../services/csv_export_service.dart';
 import '../utils/design_system.dart';
 import '../../core/widgets/home_button.dart';
@@ -318,6 +319,25 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
           // Botones de acción
           _buildActionButtons(),
+
+          const SizedBox(height: 40),
+
+          // Divider
+          Divider(color: scheme.outline),
+          const SizedBox(height: 24),
+
+          // 🆕 BACKUP COMPLETO JSON
+          _buildSectionTitle('BACKUP COMPLETO'),
+          const SizedBox(height: 12),
+          _buildBackupSection(scheme),
+
+          const SizedBox(height: 24),
+
+          // 🆕 IMPORTAR
+          _buildSectionTitle('IMPORTAR DATOS'),
+          const SizedBox(height: 12),
+          _buildImportSection(scheme),
+
           const SizedBox(height: 40),
         ],
       ),
@@ -883,6 +903,170 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         ),
       ],
     );
+  }
+
+  // 🆕 BACKUP JSON COMPLETO
+  Widget _buildBackupSection(ColorScheme scheme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer.withAlpha((0.1 * 255).round()),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: scheme.primary.withAlpha((0.3 * 255).round())),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.backup, color: scheme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Backup JSON Completo',
+                      style: GoogleFonts.montserrat(
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      'Incluye: rutinas, sesiones, notas, perfiles',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 12,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _isLoading ? null : _exportFullBackup,
+              icon: const Icon(Icons.cloud_upload),
+              label: const Text('GENERAR Y COMPARTIR BACKUP'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportFullBackup() async {
+    setState(() => _isLoading = true);
+    try {
+      final repo = ref.read(trainingRepositoryProvider);
+      final backupService = BackupService(repo);
+      await backupService.shareBackup();
+    } catch (e) {
+      _showError('Error al generar backup: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // 🆕 IMPORTAR DATOS
+  Widget _buildImportSection(ColorScheme scheme) {
+    return Column(
+      children: [
+        // Importar desde JSON
+        _buildImportCard(
+          scheme: scheme,
+          icon: Icons.restore,
+          title: 'Restaurar desde Backup',
+          subtitle: 'Importar archivo JSON de Juan Tracker',
+          color: scheme.secondary,
+          onTap: _importFromJson,
+        ),
+        const SizedBox(height: 12),
+        // Importar desde Strong.app
+        _buildImportCard(
+          scheme: scheme,
+          icon: Icons.fitness_center,
+          title: 'Importar de Strong.app',
+          subtitle: 'Importar CSV exportado de Strong',
+          color: Colors.orange,
+          onTap: _importFromStrong,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImportCard({
+    required ColorScheme scheme,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: _isLoading ? null : onTap,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: scheme.outline),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withAlpha((0.15 * 255).round()),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 12,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: scheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _importFromJson() async {
+    // TODO: Implementar file picker y importación
+    _showError('Función en desarrollo - usa CSV por ahora');
+  }
+
+  Future<void> _importFromStrong() async {
+    // TODO: Implementar file picker para CSV de Strong
+    _showError('Función en desarrollo');
   }
 }
 

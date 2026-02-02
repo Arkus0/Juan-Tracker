@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/app_snackbar.dart';
 
 import '../../models/ejercicio.dart';
+import '../../services/warmup_generator_service.dart';
 import '../../models/library_exercise.dart';
 import '../../models/progression_engine_models.dart';
 import '../../models/serie_log.dart';
@@ -21,6 +22,7 @@ import '../../../core/design_system/design_system.dart' show AppTypography;
 import '../../utils/design_system.dart' show AppColors;
 import '../../widgets/common/alternativas_dialog.dart';
 import 'advanced_options_modal.dart';
+import 'exercise_swap_bottom_sheet.dart'; // 🆕 Quick Swap
 import 'focused_set_row.dart';
 import 'progression_suggestion_chip.dart'; // Nuevo chip de sugerencias de progresión
 import 'quick_actions_menu.dart'; // QuickActionsMenu for the FAB-style actions
@@ -116,6 +118,148 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     );
   }
 
+  void _generateWarmupSets(BuildContext context, Ejercicio exercise) {
+    // Obtener el peso de la primera serie como referencia
+    final targetWeight = exercise.logs.isNotEmpty
+        ? (exercise.logs.first.peso > 0 ? exercise.logs.first.peso : 0.0)
+        : 0.0;
+
+    if (targetWeight <= 20) {
+      AppSnackbar.show(
+        context,
+        message: 'Añade primero el peso de trabajo para generar calentamiento',
+      );
+      return;
+    }
+
+    final warmupSets = WarmupGeneratorService().generateWarmupSets(
+      targetWeight: targetWeight,
+    );
+
+    if (warmupSets.isEmpty) {
+      AppSnackbar.show(
+        context,
+        message: 'No se pueden generar sets de calentamiento',
+      );
+      return;
+    }
+
+    // Mostrar diálogo de confirmación
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final colors = Theme.of(context).colorScheme;
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.local_fire_department, color: Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'SETS DE CALENTAMIENTO',
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Peso objetivo: ${targetWeight.toStringAsFixed(1)}kg',
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Se añadirán ${warmupSets.length} sets:',
+                style: AppTypography.labelLarge,
+              ),
+              const SizedBox(height: 8),
+              ...warmupSets.map((set) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.fitness_center, size: 16, color: colors.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${set.weight.toStringAsFixed(1)}kg × ${set.reps} reps',
+                      style: AppTypography.bodyMedium,
+                    ),
+                    const Spacer(),
+                    Text(
+                      'CALENTAMIENTO',
+                      style: AppTypography.labelSmall.copyWith(
+                        color: Colors.orange,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer.withAlpha((0.3 * 255).round()),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: colors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Los sets de calentamiento se insertarán antes del primer set de trabajo y se marcarán como tal.',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: colors.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('CANCELAR'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                final notifier = ref.read(trainingSessionProvider.notifier);
+                
+                // Insertar sets de calentamiento antes del primer set
+                for (var i = 0; i < warmupSets.length; i++) {
+                  notifier.insertSetAt(
+                    exerciseIndex: widget.exerciseIndex,
+                    setIndex: i,
+                    weight: warmupSets[i].weight,
+                    reps: warmupSets[i].reps,
+                    isWarmup: true,
+                  );
+                }
+                
+                Navigator.pop(ctx);
+                AppSnackbar.show(
+                  context,
+                  message: '✅ ${warmupSets.length} sets de calentamiento añadidos',
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('AÑADIR'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showExerciseOptions(BuildContext context, Ejercicio exercise) {
     // Convert string ID to int safely
     final libId = int.tryParse(exercise.libraryId);
@@ -158,15 +302,49 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     _showHistoryDialog(context, exercise.nombre, historyLogs);
                   },
                 ),
+                // 🆕 QUICK SWAP: Sustituir ejercicio en sesión activa
                 ListTile(
                   leading: Icon(
                     Icons.swap_horiz,
-                    color: hasAlternativas
+                    color: libId != null
                         ? AppColors.techCyan
                         : AppColors.textDisabled,
                   ),
                   title: Text(
-                    'Ver Alternativas',
+                    'Sustituir Ejercicio',
+                    style: TextStyle(
+                      color: libId != null
+                          ? AppColors.textPrimary
+                          : AppColors.textDisabled,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    libId != null
+                        ? 'Cambiar por alternativa (solo esta sesión)'
+                        : 'Ejercicio personalizado - no se puede sustituir',
+                    style: const TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
+                    ),
+                  ),
+                  onTap: () {
+                    if (libId == null) return;
+
+                    Navigator.pop(sheetContext);
+                    _showSwapBottomSheet(context, exercise);
+                  },
+                ),
+                // LEGACY: Ver alternativas (información solo)
+                ListTile(
+                  leading: Icon(
+                    Icons.info_outline,
+                    color: hasAlternativas
+                        ? AppColors.textSecondary
+                        : AppColors.textDisabled,
+                  ),
+                  title: Text(
+                    'Ver Alternativas (info)',
                     style: TextStyle(
                       color: hasAlternativas
                           ? AppColors.textPrimary
@@ -175,7 +353,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   ),
                   subtitle: Text(
                     hasAlternativas
-                        ? 'Ejercicios similares disponibles'
+                        ? 'Ver ejercicios similares'
                         : 'Sin alternativas registradas',
                     style: const TextStyle(
                       color: AppColors.textTertiary,
@@ -187,19 +365,17 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
                     Navigator.pop(sheetContext);
 
-                    // Resolve LibraryExercise object
                     final libraryExercise = ExerciseLibraryService.instance
                         .getExerciseById(libId);
 
                     if (libraryExercise == null) {
                       AppSnackbar.showError(
                         context,
-                        message: 'No se encontró información del ejercicio en la biblioteca',
+                        message: 'No se encontró información del ejercicio',
                       );
                       return;
                     }
 
-                    // Get full list for service
                     final allExercises = ExerciseLibraryService
                         .instance
                         .exercises
@@ -210,16 +386,46 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                       ejercicioOriginal: libraryExercise,
                       allExercises: allExercises,
                       onReplace: (alternativa) {
-                        try {
-                          HapticFeedback.selectionClick();
-                        } catch (_) {}
-
+                        HapticFeedback.selectionClick();
                         AppSnackbar.show(
                           context,
-                          message: 'Alternativa: ${alternativa.name} (edita la rutina para cambiar)',
+                          message: 'Alternativa: ${alternativa.name}',
                         );
                       },
                     );
+                  },
+                ),
+                // 🆕 WARMUP: Generar sets de calentamiento
+                ListTile(
+                  leading: Icon(
+                    Icons.local_fire_department_outlined,
+                    color: libId != null
+                        ? Colors.orange
+                        : AppColors.textDisabled,
+                  ),
+                  title: Text(
+                    'Generar Calentamiento',
+                    style: TextStyle(
+                      color: libId != null
+                          ? AppColors.textPrimary
+                          : AppColors.textDisabled,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    libId != null
+                        ? 'Auto-generar 2-3 sets de calentamiento'
+                        : 'Solo para ejercicios de la biblioteca',
+                    style: const TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
+                    ),
+                  ),
+                  onTap: () {
+                    if (libId == null) return;
+
+                    Navigator.pop(sheetContext);
+                    _generateWarmupSets(context, exercise);
                   },
                 ),
                 ListTile(
@@ -580,6 +786,34 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
         onUndo: () => notifier.addSetToExercise(widget.exerciseIndex),
       );
     }
+  }
+
+  /// 🆕 QUICK SWAP: Muestra bottom sheet para sustituir el ejercicio
+  void _showSwapBottomSheet(BuildContext context, Ejercicio exercise) {
+    final notifier = ref.read(trainingSessionProvider.notifier);
+
+    ExerciseSwapBottomSheet.show(
+      context,
+      currentExercise: exercise,
+      exerciseIndex: widget.exerciseIndex,
+      onSwapSelected: (selectedExercise) {
+        // Realizar el swap
+        notifier.swapExerciseInSession(
+          exerciseIndex: widget.exerciseIndex,
+          newExercise: selectedExercise,
+          preserveCompletedSets: true,
+        );
+
+        HapticFeedback.mediumImpact();
+        if (mounted) {
+          AppSnackbar.show(
+            context,
+            message: 'Sustituido por: ${selectedExercise.name}',
+            duration: AppSnackbar.shortDuration,
+          );
+        }
+      },
+    );
   }
 }
 
