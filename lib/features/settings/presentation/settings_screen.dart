@@ -259,9 +259,151 @@ class _LibrarySection extends StatelessWidget {
               label: 'Ver Biblioteca',
               isFullWidth: true,
             ),
+            const SizedBox(height: AppSpacing.lg),
+            const Divider(),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Mantenimiento',
+              style: AppTypography.labelLarge.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const _CleanupDuplicatesButton(),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Botón para limpiar duplicados de alimentos
+class _CleanupDuplicatesButton extends ConsumerStatefulWidget {
+  const _CleanupDuplicatesButton();
+
+  @override
+  ConsumerState<_CleanupDuplicatesButton> createState() => _CleanupDuplicatesButtonState();
+}
+
+class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButton> {
+  bool _isLoading = false;
+  int? _duplicatesFound;
+
+  Future<void> _checkDuplicates() async {
+    setState(() => _isLoading = true);
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final groups = await db.findDuplicateFoods();
+      setState(() {
+        _duplicatesFound = groups.fold<int>(0, (sum, g) => sum + g.count - 1);
+      });
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _cleanupDuplicates() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Limpiar duplicados'),
+        content: Text(
+          'Se fusionarán $_duplicatesFound alimentos duplicados. '
+          'El alimento más usado se mantendrá y las referencias se actualizarán.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('CANCELAR'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('LIMPIAR'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final removed = await db.cleanupAllDuplicates();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Se eliminaron $removed duplicados')),
+        );
+        setState(() => _duplicatesFound = null);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_duplicatesFound == null) {
+      return TextButton.icon(
+        onPressed: _checkDuplicates,
+        icon: const Icon(Icons.find_replace),
+        label: const Text('Buscar duplicados'),
+      );
+    }
+
+    if (_duplicatesFound == 0) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle, color: colors.primary, size: 20),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              'No hay duplicados',
+              style: AppTypography.bodyMedium.copyWith(color: colors.primary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.warning_amber, color: colors.error, size: 20),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              '$_duplicatesFound duplicados encontrados',
+              style: AppTypography.bodyMedium.copyWith(color: colors.error),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppButton(
+          variant: AppButtonVariant.secondary,
+          onPressed: _cleanupDuplicates,
+          icon: Icons.cleaning_services,
+          label: 'Limpiar duplicados',
+          isFullWidth: true,
+        ),
+      ],
     );
   }
 }

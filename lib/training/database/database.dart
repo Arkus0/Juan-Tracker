@@ -1010,4 +1010,144 @@ class AppDatabase extends _$AppDatabase {
       )
     ''');
   }
+
+  // ============================================================================
+  // DETECCIÓN Y LIMPIEZA DE DUPLICADOS
+  // ============================================================================
+
+  /// Modelo para representar un grupo de duplicados
+  /// 
+  /// Retorna grupos de alimentos con el mismo nombre normalizado y marca.
+  /// Cada grupo tiene: nombre, marca, lista de IDs duplicados, y el ID del "maestro"
+  /// (el que tiene mayor useCount).
+  Future<List<DuplicateGroup>> findDuplicateFoods() async {
+    // Buscar grupos con mismo nombre+marca que tengan más de 1 entrada
+    final results = await customSelect('''
+      SELECT 
+        LOWER(TRIM(name)) as norm_name,
+        COALESCE(LOWER(TRIM(brand)), '') as norm_brand,
+        GROUP_CONCAT(id) as ids,
+        COUNT(*) as cnt,
+        MAX(use_count) as max_use
+      FROM foods
+      GROUP BY LOWER(TRIM(name)), COALESCE(LOWER(TRIM(brand)), '')
+      HAVING COUNT(*) > 1
+      ORDER BY cnt DESC
+    ''').get();
+
+    final groups = <DuplicateGroup>[];
+    
+    for (final row in results) {
+      final ids = (row.data['ids'] as String).split(',');
+      final normName = row.data['norm_name'] as String;
+      final normBrand = row.data['norm_brand'] as String;
+      final maxUse = row.data['max_use'] as int? ?? 0;
+      
+      // Encontrar el ID maestro (el con mayor useCount)
+      String? masterId;
+      for (final id in ids) {
+        final food = await (select(foods)..where((f) => f.id.equals(id))).getSingleOrNull();
+        if (food != null && food.useCount == maxUse) {
+          masterId = id;
+          break;
+        }
+      }
+      
+      groups.add(DuplicateGroup(
+        normalizedName: normName,
+        normalizedBrand: normBrand,
+        foodIds: ids,
+        masterId: masterId ?? ids.first,
+        count: ids.length,
+      ));
+    }
+    
+    return groups;
+  }
+
+  /// Fusionar un grupo de duplicados
+  /// 
+  /// 1. Actualiza todas las referencias en diary_entries al ID maestro
+  /// 2. Suma los useCount de todos los duplicados al maestro
+  /// 3. Elimina los duplicados (excepto el maestro)
+  /// 4. Actualiza el índice FTS
+  Future<int> mergeDuplicateGroup(DuplicateGroup group) async {
+    if (group.foodIds.length < 2) return 0;
+    
+    final duplicateIds = group.foodIds.where((id) => id != group.masterId).toList();
+    if (duplicateIds.isEmpty) return 0;
+    
+    // 1. Actualizar diary_entries para apuntar al maestro
+    for (final dupId in duplicateIds) {
+      await customStatement(
+        'UPDATE diary_entries SET food_id = ? WHERE food_id = ?',
+        [group.masterId, dupId],
+      );
+    }
+    
+    // 2. Sumar useCount al maestro
+    final totalUseCount = await customSelect(
+      'SELECT SUM(use_count) as total FROM foods WHERE id IN (${duplicateIds.map((_) => '?').join(',')})',
+      variables: duplicateIds.map((id) => Variable(id)).toList(),
+    ).getSingle();
+    
+    final additionalCount = (totalUseCount.data['total'] as int?) ?? 0;
+    if (additionalCount > 0) {
+      await customStatement(
+        'UPDATE foods SET use_count = use_count + ? WHERE id = ?',
+        [additionalCount, group.masterId],
+      );
+    }
+    
+    // 3. Eliminar duplicados del índice FTS
+    for (final dupId in duplicateIds) {
+      await customStatement(
+        'DELETE FROM foods_fts WHERE food_id = ?',
+        [dupId],
+      );
+    }
+    
+    // 4. Eliminar duplicados de la tabla foods
+    final placeholders = duplicateIds.map((_) => '?').join(',');
+    await customStatement(
+      'DELETE FROM foods WHERE id IN ($placeholders)',
+      duplicateIds,
+    );
+    
+    return duplicateIds.length;
+  }
+
+  /// Limpiar todos los duplicados de la base de datos
+  /// 
+  /// Retorna el número total de registros eliminados.
+  Future<int> cleanupAllDuplicates() async {
+    final groups = await findDuplicateFoods();
+    var totalRemoved = 0;
+    
+    for (final group in groups) {
+      totalRemoved += await mergeDuplicateGroup(group);
+    }
+    
+    return totalRemoved;
+  }
+}
+
+/// Modelo para representar un grupo de alimentos duplicados
+class DuplicateGroup {
+  final String normalizedName;
+  final String normalizedBrand;
+  final List<String> foodIds;
+  final String masterId;
+  final int count;
+
+  const DuplicateGroup({
+    required this.normalizedName,
+    required this.normalizedBrand,
+    required this.foodIds,
+    required this.masterId,
+    required this.count,
+  });
+  
+  @override
+  String toString() => 'DuplicateGroup($normalizedName, $normalizedBrand, $count duplicados)';
 }

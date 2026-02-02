@@ -580,12 +580,31 @@ class AlimentoRepository {
       brand = brand.split(',').first.trim();
     }
     
-    // Verificar si ya existe en DB
+    // Verificar si ya existe en DB (primero por barcode, luego por nombre+marca)
     Food? existing;
     if (code.isNotEmpty) {
       existing = await (_db.select(_db.foods)
         ..where((f) => f.barcode.equals(code)))
         .getSingleOrNull();
+    }
+    
+    // Si no hay barcode o no se encontró, buscar por nombre+marca (prevenir duplicados)
+    if (existing == null) {
+      final normName = name.toLowerCase().trim();
+      final normBrand = brand?.toLowerCase().trim() ?? '';
+      
+      final candidates = await (_db.select(_db.foods)
+        ..where((f) => f.normalizedName.equals(normName)))
+        .get();
+      
+      // Buscar coincidencia exacta de marca
+      for (final candidate in candidates) {
+        final candidateBrand = candidate.brand?.toLowerCase().trim() ?? '';
+        if (candidateBrand == normBrand) {
+          existing = candidate;
+          break;
+        }
+      }
     }
     
     final foodId = existing?.id ?? _uuid.v4();
