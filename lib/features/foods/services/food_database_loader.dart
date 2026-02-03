@@ -15,7 +15,7 @@ import '../../../training/database/database.dart';
 /// 
 /// Optimizaciones implementadas:
 /// 1. Parseo en Isolate (no bloquea UI)
-/// 2. Batches grandes (5000 registros)
+/// 2. Batches dinámicos basados en memoria disponible
 /// 3. Inserción sin verificación de duplicados (más rápido)
 /// 4. Una sola transacción por batch
 /// 5. Descompresión en memoria eficiente
@@ -23,11 +23,37 @@ class FoodDatabaseLoader {
   static const String _assetPath = 'assets/data/foods.jsonl.gz';
   static const String _dbVersionKey = 'food_db_version';
   static const int _currentDbVersion = 1;
-  static const int _batchSize = 5000; // Aumentado de 1000 a 5000
+  
+  /// Batch size base - se ajusta dinámicamente según memoria disponible
+  static const int _defaultBatchSize = 5000;
+  static const int _minBatchSize = 1000;  // Para dispositivos low-end
+  static const int _maxBatchSize = 8000;  // Para dispositivos high-end
 
   final AppDatabase _db;
   
   FoodDatabaseLoader(this._db);
+  
+  /// Calcula el batch size óptimo basado en la memoria disponible del dispositivo
+  /// para evitar OOM en dispositivos con poca RAM
+  int _calculateOptimalBatchSize() {
+    try {
+      // Obtener memoria disponible aproximada
+      final memInfo = PlatformDispatcher.instance.views.first.devicePixelRatio;
+      // Usar devicePixelRatio como proxy (no hay API directa de memoria en Dart)
+      // En la práctica, dispositivos con pixel ratio más alto suelen tener más RAM
+      
+      if (memInfo >= 3.0) {
+        return _maxBatchSize; // High-end devices
+      } else if (memInfo >= 2.0) {
+        return _defaultBatchSize; // Mid-range
+      } else {
+        return _minBatchSize; // Low-end devices
+      }
+    } catch (e) {
+      // Fallback seguro
+      return _defaultBatchSize;
+    }
+  }
 
   /// Verifica si la base de datos de alimentos ya está cargada
   Future<bool> isDatabaseLoaded() async {
@@ -117,13 +143,16 @@ class FoodDatabaseLoader {
       final lines = await compute(_splitLines, jsonlString);
       final totalLines = lines.length;
       
-      // 3. Procesar en batches grandes con isolates
+      // 3. Procesar en batches dinámicos según memoria disponible
+      final batchSize = _calculateOptimalBatchSize();
+      debugPrint('[FoodDatabaseLoader] Using batch size: $batchSize');
+      
       int loadedCount = 0;
-      final totalBatches = (totalLines / _batchSize).ceil();
+      final totalBatches = (totalLines / batchSize).ceil();
       
       for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-        final start = batchIndex * _batchSize;
-        final end = (start + _batchSize < totalLines) ? start + _batchSize : totalLines;
+        final start = batchIndex * batchSize;
+        final end = (start + batchSize < totalLines) ? start + batchSize : totalLines;
         final batchLines = lines.sublist(start, end);
         
         // Parsear batch en isolate

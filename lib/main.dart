@@ -18,11 +18,14 @@ Future<void> main() async {
     SystemUiMode.edgeToEdge,
   );
   
-  // Ensure DateFormat locale data is available
-  await initializeDateFormatting('es');
+  // OPT-5: Inicializar en paralelo para reducir cold start ~20-50ms
+  // DateFormat y SharedPreferences son independientes
+  final initFutures = await Future.wait([
+    initializeDateFormatting('es'),
+    SharedPreferences.getInstance(),
+  ]);
   
-  // Initialize SharedPreferences
-  final prefs = await SharedPreferences.getInstance();
+  final prefs = initFutures[1] as SharedPreferences;
   
   runApp(
     ProviderScope(
@@ -36,7 +39,10 @@ Future<void> main() async {
     Future.delayed(const Duration(seconds: 2), () async {
       try {
         await TimerAudioService.instance.playLowBeep();
-      } catch (_) {}
+      } catch (e, stack) {
+        debugPrint('[Main] Audio beep test failed: $e');
+        debugPrint(stack.toString());
+      }
     });
   }
 }

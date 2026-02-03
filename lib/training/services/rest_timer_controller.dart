@@ -299,6 +299,9 @@ class RestTimerController {
   // --- Persistencia en SharedPreferences ---
 
   Future<void> saveToPrefs() async {
+    // Si ya estamos disposed, no intentar guardar
+    if (_disposed) return;
+    
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!_state.isActive) {
@@ -372,14 +375,35 @@ class RestTimerController {
     await prefs.remove('rest_timer');
   }
 
+  /// Flag para evitar operaciones después de dispose
+  bool _disposed = false;
+  
+  /// Future del último save en curso para poder esperarlo si es necesario
+  Future<void>? _pendingSave;
+
   void _updateState(RestTimerState newState) {
+    if (_disposed) return;
+    
     _state = newState;
     onStateChanged?.call(_state);
-    saveToPrefs();
+    
+    // Guardar referencia al future para poder esperarlo en dispose si es necesario
+    _pendingSave = saveToPrefs();
+  }
+
+  /// Espera a que termine cualquier operación de guardado pendiente
+  Future<void> flushPendingSave() async {
+    if (_pendingSave != null) {
+      await _pendingSave;
+      _pendingSave = null;
+    }
   }
 
   void dispose() {
+    _disposed = true;
     _eventSubscription?.cancel();
+    // No esperamos _pendingSave aquí para evitar bloqueo, 
+    // pero el flag _disposed evita que se inicien nuevas operaciones
   }
 }
 

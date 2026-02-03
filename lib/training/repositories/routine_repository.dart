@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
 import '../database/database.dart';
@@ -35,7 +36,8 @@ class RoutineRepository {
     if (row.schedulingConfig != null) {
       try {
         schedulingConfig = jsonDecode(row.schedulingConfig!) as Map<String, dynamic>;
-      } catch (_) {
+      } catch (e) {
+        debugPrint('[RoutineRepository] Failed to parse schedulingConfig for routine ${row.id}: $e');
         schedulingConfig = null;
       }
     }
@@ -51,7 +53,8 @@ class RoutineRepository {
         try {
           final decoded = jsonDecode(dayRow.weekdays!) as List<dynamic>;
           weekdays = decoded.cast<int>();
-        } catch (_) {
+        } catch (e) {
+          debugPrint('[RoutineRepository] Failed to parse weekdays for day ${dayRow.id}: $e');
           weekdays = null;
         }
       }

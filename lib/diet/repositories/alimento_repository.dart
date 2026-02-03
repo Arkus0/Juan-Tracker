@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/providers/database_provider.dart';
+import '../../core/services/telemetry_service.dart';
 import '../../training/database/database.dart';
 import '../models/food_model.dart';
 
@@ -104,7 +105,10 @@ class AlimentoRepository {
       'User-Agent': 'JuanTracker/1.0 (Flutter; Android; es-ES)',
       'Accept': 'application/json',
     },
-  ));
+  )) {
+    // Inicializar el CancelToken para poder cancelar requests pendientes
+    _cancelToken = CancelToken();
+  }
 
   // ============================================================================
   // BÚSQUEDA PRINCIPAL
@@ -123,34 +127,43 @@ class AlimentoRepository {
   }) async {
     if (query.trim().isEmpty) return [];
     
-    final normalizedQuery = query.toLowerCase().trim();
-    
-    // 1. Búsqueda FTS local (instantánea, ~1-5ms)
-    var localResults = await _db.searchFoodsFTS(normalizedQuery, limit: limit);
-    if (kDebugMode) {
-      debugPrint('[AlimentoRepository] Local FTS results: ${localResults.length}');
-    }
-    
-    // 2. Aplicar filtros adicionales
-    if (filters != null) {
-      localResults = _applyFilters(localResults, filters);
-    }
-    
-    // 3. Convertir a ScoredFood con score base
-    final scoredResults = localResults.map((f) => ScoredFood(
-      food: f,
-      score: _calculateBaseScore(f, normalizedQuery),
-      isFromCache: true,
-    )).toList();
-    
-    // 4. Aplicar ranking final
-    return _applyRanking(scoredResults, normalizedQuery).take(limit).toList();
+    return TelemetryService().measureAsync(
+      MetricNames.foodSearchLocal,
+      () async {
+        final normalizedQuery = query.toLowerCase().trim();
+        
+        // 1. Búsqueda FTS local (instantánea, ~1-5ms)
+        var localResults = await _db.searchFoodsFTS(normalizedQuery, limit: limit);
+        if (kDebugMode) {
+          debugPrint('[AlimentoRepository] Local FTS results: ${localResults.length}');
+        }
+        
+        // 2. Aplicar filtros adicionales
+        if (filters != null) {
+          localResults = _applyFilters(localResults, filters);
+        }
+        
+        // 3. Convertir a ScoredFood con score base
+        final scoredResults = localResults.map((f) => ScoredFood(
+          food: f,
+          score: _calculateBaseScore(f, normalizedQuery),
+          isFromCache: true,
+        )).toList();
+        
+        // 4. Aplicar ranking final
+        return _applyRanking(scoredResults, normalizedQuery).take(limit).toList();
+      },
+      tags: {'query_length': query.length},
+    );
   }
 
   /// Búsqueda ONLINE en Open Food Facts
   /// 
   /// Llamar solo cuando el usuario explícitamente quiere buscar en internet.
   /// Guarda los resultados en caché local para futuras búsquedas.
+  /// 
+  /// Si hay una búsqueda anterior en curso, se cancela automáticamente
+  /// para evitar race conditions y respetar los rate limits.
   Future<List<ScoredFood>> searchOnline(
     String query, {
     int limit = 30,
@@ -159,7 +172,17 @@ class AlimentoRepository {
     if (query.trim().isEmpty) return [];
     
     final normalizedQuery = query.toLowerCase().trim();
-    final token = cancelToken ?? CancelToken();
+    
+    // Cancelar búsqueda anterior si existe para evitar múltiples requests concurrentes
+    if (_cancelToken != null && !_cancelToken!.isCancelled) {
+      if (kDebugMode) {
+        debugPrint('[AlimentoRepository] Cancelling previous search');
+      }
+      _cancelToken!.cancel('New search started');
+    }
+    
+    // Crear nuevo token para esta búsqueda
+    _cancelToken = cancelToken ?? CancelToken();
     
     if (kDebugMode) {
       debugPrint('[AlimentoRepository] Searching OFF for: "$normalizedQuery"');
@@ -169,7 +192,7 @@ class AlimentoRepository {
       final remoteResults = await _searchOpenFoodFacts(
         normalizedQuery, 
         limit: limit, 
-        cancelToken: token,
+        cancelToken: _cancelToken!,
       );
       
       if (kDebugMode) {
@@ -680,9 +703,17 @@ class AlimentoRepository {
   }
 
   /// Cancela requests pendientes
+  /// 
+  /// Útil cuando el usuario abandona la pantalla de búsqueda o cambia
+  /// el query rápidamente antes de que termine el request anterior.
   void cancelPendingRequests() {
-    _cancelToken?.cancel();
-    _cancelToken = null;
+    if (_cancelToken != null && !_cancelToken!.isCancelled) {
+      if (kDebugMode) {
+        debugPrint('[AlimentoRepository] Cancelling pending requests');
+      }
+      _cancelToken!.cancel('Cancelled by user');
+    }
+    _cancelToken = CancelToken(); // Preparar para próxima búsqueda
   }
 }
 

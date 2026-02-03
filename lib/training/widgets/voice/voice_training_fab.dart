@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -80,19 +81,19 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
     final normalized = transcript.toLowerCase().trim();
 
     if (RegExp(r'^(hecho|listo|completado|terminado|serie\s+(?:hecha|completada))').hasMatch(normalized)) {
-      try { HapticFeedback.heavyImpact(); } catch (_) {}
+      try { HapticFeedback.heavyImpact(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
       return const VoiceTrainingCommand(type: VoiceCommandType.markDone);
     }
 
     if (RegExp(r'^(siguiente|next|proxim|adelante)').hasMatch(normalized)) {
-      try { HapticFeedback.mediumImpact(); } catch (_) {}
+      try { HapticFeedback.mediumImpact(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
       return const VoiceTrainingCommand(type: VoiceCommandType.nextSet);
     }
 
     final restMatch = RegExp(r'(?:descanso|timer|descansar)\s*(?:de\s*)?(\d+)?').firstMatch(normalized);
     if (restMatch != null) {
       final seconds = restMatch.group(1);
-      try { HapticFeedback.lightImpact(); } catch (_) {}
+      try { HapticFeedback.lightImpact(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
       return VoiceTrainingCommand(type: VoiceCommandType.startRest, value: seconds != null ? int.tryParse(seconds)?.toDouble() : null);
     }
 
@@ -101,7 +102,7 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
       final weightStr = weightMatch.group(1)!.replaceAll(',', '.');
       final weight = double.tryParse(weightStr);
       if (weight != null) {
-        try { HapticFeedback.selectionClick(); } catch (_) {}
+        try { HapticFeedback.selectionClick(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
         return VoiceTrainingCommand(type: VoiceCommandType.setWeight, value: weight);
       }
     }
@@ -110,7 +111,7 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
     if (repsMatch != null) {
       final reps = int.tryParse(repsMatch.group(1)!);
       if (reps != null) {
-        try { HapticFeedback.selectionClick(); } catch (_) {}
+        try { HapticFeedback.selectionClick(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
         return VoiceTrainingCommand(type: VoiceCommandType.setReps, value: reps.toDouble());
       }
     }
@@ -120,7 +121,7 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
       final rpeStr = rpeMatch.group(1)!.replaceAll(',', '.');
       final rpe = double.tryParse(rpeStr);
       if (rpe != null && rpe >= 1 && rpe <= 10) {
-        try { HapticFeedback.selectionClick(); } catch (_) {}
+        try { HapticFeedback.selectionClick(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
         return VoiceTrainingCommand(type: VoiceCommandType.setRpe, value: rpe);
       }
     }
@@ -129,7 +130,7 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
     if (noteMatch != null) {
       final noteText = noteMatch.group(1)!.trim();
       if (noteText.isNotEmpty) {
-        try { HapticFeedback.selectionClick(); } catch (_) {}
+        try { HapticFeedback.selectionClick(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
         return VoiceTrainingCommand(type: VoiceCommandType.addNote, note: noteText);
       }
     }

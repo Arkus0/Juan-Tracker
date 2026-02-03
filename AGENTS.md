@@ -595,6 +595,152 @@ Archivo: `lib/diet/utils/spanish_text_utils.dart`
 
 ---
 
+## 🔒 Patrones de Seguridad Críticos (Post-Sprint 2)
+
+### SQL Injection Prevention
+
+> **REGLA DE ORO**: NUNCA concatenar input de usuario en queries SQL.
+
+**✅ Correcto - Parametrización completa:**
+```dart
+// lib/training/database/database.dart
+Future<List<Food>> _searchFoodsLike(String query, {int limit = 50}) async {
+  final terms = normalized.split(' ').where((t) => t.isNotEmpty).toList();
+  final whereConditions = <String>[];
+  final variables = <Variable<Object>>[];  // Type-safe variables
+  
+  for (final term in terms) {
+    // Escapar caracteres especiales de LIKE
+    final escapedTerm = term.replaceAll('%', '\\%').replaceAll('_', '\\_');
+    whereConditions.add(
+      "(LOWER(name) LIKE ? ESCAPE '\\' OR LOWER(COALESCE(brand, '')) LIKE ? ESCAPE '\\')"
+    );
+    // Placeholders parametrizados
+    variables.add(Variable('%$escapedTerm%'));
+    variables.add(Variable('%$escapedTerm%'));
+  }
+  
+  final whereClause = whereConditions.join(' AND ');
+  variables.add(Variable<int>(limit));
+  
+  final results = await customSelect(
+    'SELECT * FROM foods WHERE $whereClause LIMIT ?',
+    variables: variables,  // ✅ Seguro: nunca concatena input del usuario
+  ).get();
+}
+```
+
+**❌ Incorrecto - Concatenación directa (VULNERABLE):**
+```dart
+// NUNCA hacer esto
+String whereClause = terms.map((t) => 
+  "(LOWER(name) LIKE '%$t%' ...)"  // ❌ SQL Injection!
+).join(' AND ');
+```
+
+### CancelToken Pattern para Requests HTTP
+
+```dart
+// lib/diet/repositories/alimento_repository.dart
+class AlimentoRepository {
+  CancelToken? _cancelToken;
+  
+  AlimentoRepository(this._db) {
+    _cancelToken = CancelToken();  // Inicializar en constructor
+  }
+  
+  Future<List<ScoredFood>> searchOnline(String query) async {
+    // Cancelar búsqueda anterior si existe
+    if (_cancelToken != null && !_cancelToken!.isCancelled) {
+      _cancelToken!.cancel('New search started');
+    }
+    _cancelToken = CancelToken();  // Nuevo token para esta búsqueda
+    
+    try {
+      return await _dio.get(..., cancelToken: _cancelToken);
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        return [];  // Búsqueda cancelada - no es error
+      }
+      rethrow;
+    }
+  }
+  
+  void cancelPendingRequests() {
+    _cancelToken?.cancel('Cancelled by user');
+    _cancelToken = CancelToken();
+  }
+}
+```
+
+### Memory Management - LRU Cache
+
+```dart
+// lib/training/utils/performance_utils.dart
+class MemoCache<K, V> {
+  final Map<K, _MemoEntry<V>> _cache = {};
+  final List<K> _lruKeys = [];  // Track access order
+  final int maxSize;  // Límite para prevenir OOM
+  
+  MemoCache({this.maxSize = 1000});  // Default seguro
+  
+  V getOrCompute(K key, V Function() compute) {
+    // Evict LRU si es necesario
+    if (_cache.length >= maxSize && _lruKeys.isNotEmpty) {
+      final lruKey = _lruKeys.first;
+      _cache.remove(lruKey);
+      _lruKeys.removeAt(0);
+    }
+    
+    // ... resto de lógica
+  }
+}
+```
+
+---
+
+## 🏗️ Arquitectura Post-Refactorización (Sprint 2)
+
+### TrainingSessionNotifier - Decomposition
+
+El God Object original (>1000 líneas) ha sido decompuesto en servicios especializados:
+
+```
+TrainingSessionNotifier (UI State + Coordination)
+    │
+    ├── RestTimerController (Timer state + notifications)
+    ├── SessionPersistenceService (Save/restore + debounce)
+    └── SessionHistoryManager (LRU cache de historial)
+```
+
+**Ventajas:**
+- Testabilidad: Cada servicio puede testearse aislado
+- Reutilización: SessionHistoryManager se puede usar en otros features
+- Mantenibilidad: Cambios en timer no afectan persistencia
+
+### TelemetryService - Monitoreo en Producción
+
+```dart
+// Uso básico
+TelemetryService().recordMetric(
+  MetricNames.foodSearchLocal,
+  value: elapsedMs,
+  tags: {'query_length': query.length},
+);
+
+// Medir automáticamente
+final results = await TelemetryService().measureAsync(
+  MetricNames.dbLoadFoods,
+  () => loader.loadDatabase(),
+);
+
+// Ver estadísticas
+final stats = TelemetryService().getStats(MetricNames.foodSearchLocal);
+print(stats);  // count=150, mean=12.5ms, p95=45ms, p99=89ms
+```
+
+---
+
 ## Known Pitfalls
 
 1. **FTS5 sync**: Después de insertar alimentos, llamar `rebuildFtsIndex()` o `insertFoodFts()` manualmente.

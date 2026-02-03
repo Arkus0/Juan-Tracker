@@ -701,23 +701,79 @@ class AppDatabase extends _$AppDatabase {
 
   /// 🆕 Crea tabla FTS5 virtual para búsqueda de alimentos
   /// Usa un enfoque external content con sincronización manual
+  /// 
+  /// SEGURIDAD: Realiza backup de datos existentes antes de recrear la tabla
+  /// para permitir recuperación en caso de error durante la migración.
   Future<void> _createFts5Tables(Migrator m) async {
-    // Eliminar tabla si existe para asegurar estructura correcta
-    // ( FTS5 no permite ALTER TABLE, así que recreamos siempre )
-    await customStatement('DROP TABLE IF EXISTS foods_fts');
+    // Verificar si existe tabla previa para backup
+    List<QueryRow> existingData = [];
+    try {
+      existingData = await customSelect('SELECT food_id, name, brand FROM foods_fts LIMIT 10000').get();
+      if (existingData.isNotEmpty) {
+        debugPrint('[FTS] Backing up ${existingData.length} existing FTS entries before migration');
+      }
+    } catch (e) {
+      // Tabla no existe o está corrupta - continuar sin backup
+      debugPrint('[FTS] No existing table to backup: $e');
+    }
     
-    // Crear tabla virtual FTS5 sin content_rowid
-    // Usamos 'food_id' como columna UNINDEXED para almacenar el UUID
-    await customStatement('''
-      CREATE VIRTUAL TABLE foods_fts USING fts5(
-        food_id UNINDEXED,
-        name,
-        brand
-      )
-    ''');
+    try {
+      // Eliminar tabla si existe para asegurar estructura correcta
+      // ( FTS5 no permite ALTER TABLE, así que recreamos siempre )
+      await customStatement('DROP TABLE IF EXISTS foods_fts');
+      
+      // Crear tabla virtual FTS5 sin content_rowid
+      // Usamos 'food_id' como columna UNINDEXED para almacenar el UUID
+      await customStatement('''
+        CREATE VIRTUAL TABLE foods_fts USING fts5(
+          food_id UNINDEXED,
+          name,
+          brand
+        )
+      ''');
 
-    // Poblar índice FTS con datos existentes
-    await rebuildFtsIndex();
+      // Poblar índice FTS con datos existentes
+      await rebuildFtsIndex();
+      
+      // Verificar que la migración fue exitosa
+      final countResult = await customSelect('SELECT COUNT(*) as cnt FROM foods_fts').getSingle();
+      final newCount = countResult.data['cnt'] as int;
+      
+      if (newCount == 0 && existingData.isNotEmpty) {
+        debugPrint('[FTS] WARNING: Migration resulted in empty index, attempting restore from backup');
+        // Intentar restaurar desde backup
+        for (final row in existingData) {
+          try {
+            await insertFoodFts(
+              row.data['food_id'] as String,
+              row.data['name'] as String,
+              row.data['brand'] as String?,
+            );
+          } catch (e) {
+            debugPrint('[FTS] Failed to restore entry: $e');
+          }
+        }
+      }
+      
+      debugPrint('[FTS] Migration successful: $newCount entries in index');
+    } catch (e) {
+      debugPrint('[FTS] CRITICAL ERROR during FTS migration: $e');
+      // Intentar recuperación con estructura mínima
+      try {
+        await customStatement('DROP TABLE IF EXISTS foods_fts');
+        await customStatement('''
+          CREATE VIRTUAL TABLE foods_fts USING fts5(
+            food_id UNINDEXED,
+            name,
+            brand
+          )
+        ''');
+        debugPrint('[FTS] Recovered with empty index');
+      } catch (recoveryError) {
+        debugPrint('[FTS] FAILED TO RECOVER: $recoveryError');
+        rethrow; // No podemos continuar sin FTS
+      }
+    }
   }
   
   /// 🆕 Inserta o actualiza entrada en FTS5 para un alimento
@@ -773,10 +829,14 @@ class AppDatabase extends _$AppDatabase {
 
     // Normalizar query para FTS5
     // Remove special characters that could break FTS syntax
-    final sanitized = query.trim().toLowerCase()
-      .replaceAll(RegExp(r'["\-*():]'), ' ')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
+    // FTS5 special chars que causan errores: ' " - * ( ) : \ % _ [ ] ^ ~ { } | & < > = ! @ # $ 
+    var sanitized = query.trim().toLowerCase();
+    // Remover caracteres especiales de FTS5 reemplazándolos por espacio
+    const specialChars = "\"'\\-*():;%_[]^~{}|&<>!=@#\$";
+    for (final char in specialChars.split('')) {
+      sanitized = sanitized.replaceAll(char, ' ');
+    }
+    sanitized = sanitized.replaceAll(RegExp(r'\s+'), ' ').trim();
 
     if (sanitized.isEmpty) return [];
 
@@ -861,6 +921,9 @@ class AppDatabase extends _$AppDatabase {
   }
   
   /// Búsqueda fallback usando LIKE (cuando FTS falla)
+  /// 
+  /// SEGURIDAD: Todos los parámetros de usuario están completamente parametrizados
+  /// para prevenir SQL injection. Los términos se escapan mediante placeholders ?
   Future<List<Food>> _searchFoodsLike(String query, {int limit = 50}) async {
     final normalized = query.toLowerCase().trim();
     final terms = normalized.split(' ').where((t) => t.isNotEmpty).toList();
@@ -869,11 +932,26 @@ class AppDatabase extends _$AppDatabase {
     
     debugPrint('[_searchFoodsLike] Fallback LIKE search for: $normalized (${terms.length} terms)');
 
-    // Buscar productos donde CADA término aparezca en name O brand
-    // Esto es más flexible que buscar el string completo
-    String whereClause = terms.map((t) => 
-      "(LOWER(name) LIKE '%$t%' OR LOWER(COALESCE(brand, '')) LIKE '%$t%')"
-    ).join(' AND ');
+    // Construir WHERE clause con placeholders parametrizados
+    // Cada término necesita 2 placeholders: uno para name, uno para brand
+    final whereConditions = <String>[];
+    final variables = <Variable<Object>>[];
+    
+    for (final term in terms) {
+      // Escapar caracteres especiales de LIKE para evitar comportamiento inesperado
+      final escapedTerm = term.replaceAll('%', '\\%').replaceAll('_', '\\_');
+      whereConditions.add(
+        "(LOWER(name) LIKE ? ESCAPE '\\' OR LOWER(COALESCE(brand, '')) LIKE ? ESCAPE '\\')"
+      );
+      // Dos placeholders por término
+      variables.add(Variable('%$escapedTerm%'));
+      variables.add(Variable('%$escapedTerm%'));
+    }
+    
+    final whereClause = whereConditions.join(' AND ');
+    
+    // Añadir límite al final (con tipo explícito para type safety)
+    variables.add(Variable<int>(limit));
     
     final results = await customSelect(
       'SELECT id, name, normalized_name, brand, barcode, '
@@ -884,7 +962,7 @@ class AppDatabase extends _$AppDatabase {
       'WHERE $whereClause '
       'ORDER BY use_count DESC, last_used_at DESC '
       'LIMIT ?',
-      variables: [Variable(limit)],
+      variables: variables,
     ).get();
 
     debugPrint('[_searchFoodsLike] Found ${results.length} results');

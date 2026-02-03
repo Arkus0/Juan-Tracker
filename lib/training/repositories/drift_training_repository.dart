@@ -46,10 +46,18 @@ class DriftTrainingRepository implements ITrainingRepository {
       _sessionRepo.watchSesionesHistory(limit: limit);
 
   @override
-  Future<void> saveSesion(Sesion sesion) => _sessionRepo.saveSesion(sesion);
+  Future<void> saveSesion(Sesion sesion) async {
+    await _sessionRepo.saveSesion(sesion);
+    // Invalidar cache de actividad anual para el año de la sesión
+    _analyticsRepo.invalidateYearlyActivityCache(sesion.fecha.year);
+  }
 
   @override
-  Future<void> deleteSesion(String id) => _sessionRepo.deleteSesion(id);
+  Future<void> deleteSesion(String id) async {
+    // Invalidar cache completo ya que no sabemos el año de la sesión eliminada
+    _analyticsRepo.invalidateYearlyActivityCache();
+    await _sessionRepo.deleteSesion(id);
+  }
 
   @override
   Future<List<Sesion>> getHistoryForExercise(String exerciseName) =>
@@ -77,8 +85,11 @@ class DriftTrainingRepository implements ITrainingRepository {
   Future<void> clearActiveSession() => _sessionRepo.clearActiveSession();
 
   @override
-  Future<void> finishAndClearSession(Sesion sesion) =>
-      _sessionRepo.finishAndClearSession(sesion);
+  Future<void> finishAndClearSession(Sesion sesion) async {
+    await _sessionRepo.finishAndClearSession(sesion);
+    // Invalidar cache de actividad anual para el año de la sesión completada
+    _analyticsRepo.invalidateYearlyActivityCache(sesion.fecha.year);
+  }
 
   @override
   Future<String> getNote(String exerciseName) =>

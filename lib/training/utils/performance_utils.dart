@@ -8,6 +8,7 @@
 library;
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -159,32 +160,83 @@ class Throttler {
 // MEMOIZATION HELPERS
 // ============================================================================
 
-/// Simple memoization cache with optional expiration.
+/// Simple memoization cache with optional expiration and LRU eviction.
+/// 
+/// SEGURIDAD: Implementa límite máximo de entradas para prevenir OOM
+/// en uso prolongado. Cuando se alcanza el límite, se evictan las entradas
+/// menos recientemente usadas (LRU policy).
 class MemoCache<K, V> {
   final Map<K, _MemoEntry<V>> _cache = {};
   final Duration? expiration;
+  
+  /// Límite máximo de entradas para prevenir OOM
+  /// Default: 1000 entradas (balance entre performance y memoria)
+  final int maxSize;
+  
+  /// Lista de keys ordenadas por uso reciente (más reciente al final)
+  final List<K> _lruKeys = [];
 
-  MemoCache({this.expiration});
+  MemoCache({
+    this.expiration,
+    this.maxSize = 1000,
+  });
 
   V getOrCompute(K key, V Function() compute) {
     final existing = _cache[key];
     final now = DateTime.now();
 
     if (existing != null) {
+      // Verificar expiración
       if (expiration == null ||
           now.difference(existing.timestamp) < expiration!) {
+        // Actualizar LRU: mover al final (más reciente)
+        _lruKeys.remove(key);
+        _lruKeys.add(key);
         return existing.value;
+      } else {
+        // Expirado: remover
+        _cache.remove(key);
+        _lruKeys.remove(key);
       }
     }
 
+    // Evictar entries si estamos en el límite
+    _evictIfNeeded();
+
     final value = compute();
     _cache[key] = _MemoEntry(value, now);
+    _lruKeys.add(key);
     return value;
   }
+  
+  /// Evicta la entrada menos recientemente usada si estamos en el límite
+  void _evictIfNeeded() {
+    if (_cache.length >= maxSize && _lruKeys.isNotEmpty) {
+      final keyToRemove = _lruKeys.first; // LRU
+      _cache.remove(keyToRemove);
+      _lruKeys.removeAt(0);
+      if (kDebugMode) {
+        print('[MemoCache] Evicted LRU entry to prevent OOM');
+      }
+    }
+  }
 
-  void invalidate(K key) => _cache.remove(key);
+  void invalidate(K key) {
+    _cache.remove(key);
+    _lruKeys.remove(key);
+  }
 
-  void clear() => _cache.clear();
+  void clear() {
+    _cache.clear();
+    _lruKeys.clear();
+  }
+  
+  /// Obtiene estadísticas del cache para debugging
+  Map<String, dynamic> get stats => {
+    'size': _cache.length,
+    'maxSize': maxSize,
+    'utilization': '${((_cache.length / maxSize) * 100).toStringAsFixed(1)}%',
+  };
 }
 
 class _MemoEntry<V> {

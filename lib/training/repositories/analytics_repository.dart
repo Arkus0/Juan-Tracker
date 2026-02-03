@@ -6,11 +6,18 @@ import '../models/analysis_models.dart';
 import '../models/ejercicio.dart';
 import '../models/serie_log.dart';
 import '../models/sesion.dart';
+import '../utils/performance_utils.dart';
 
 /// Repositorio especializado para operaciones de Análisis y Estadísticas.
 /// Extraído de DriftTrainingRepository para mejor separación de responsabilidades.
 class AnalyticsRepository {
   final AppDatabase db;
+
+  /// Cache para getYearlyActivityMap - evita 3 queries SQL por cada acceso
+  /// Expiración: 5 minutos (balance entre frescura y performance)
+  /// maxSize: 5 años (suficiente para uso normal)
+  final MemoCache<int, Map<DateTime, DailyActivity>> _yearlyActivityCache =
+      MemoCache(expiration: Duration(minutes: 5), maxSize: 5);
 
   AnalyticsRepository(this.db);
 
@@ -79,7 +86,38 @@ class AnalyticsRepository {
 
   // --- Analysis Methods ---
 
+  /// Invalida el cache de actividad anual (llamar cuando cambien sesiones)
+  void invalidateYearlyActivityCache([int? year]) {
+    if (year != null) {
+      _yearlyActivityCache.invalidate(year);
+    } else {
+      _yearlyActivityCache.clear();
+    }
+  }
+
   Future<Map<DateTime, DailyActivity>> getYearlyActivityMap(int year) async {
+    // Intentar obtener del cache primero
+    // Nota: MemoCache.getOrCompute es síncrono, pero necesitamos async
+    // Usamos un patrón de "check then compute" para evitar race conditions
+    final cached = _yearlyActivityCache.getOrCompute(year, () => <DateTime, DailyActivity>{});
+    if (cached.isNotEmpty) {
+      return cached;
+    }
+
+    // Cache miss o expirado - ejecutar queries
+    final result = await _fetchYearlyActivityFromDb(year);
+    
+    // Almacenar resultado (solo si hay datos)
+    if (result.isNotEmpty) {
+      _yearlyActivityCache.invalidate(year);
+      _yearlyActivityCache.getOrCompute(year, () => result);
+    }
+    
+    return result;
+  }
+
+  /// Implementación interna que ejecuta las 3 queries SQL
+  Future<Map<DateTime, DailyActivity>> _fetchYearlyActivityFromDb(int year) async {
     final startOfYear = DateTime(year);
     final endOfYear = DateTime(year + 1);
 

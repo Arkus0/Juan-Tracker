@@ -17,6 +17,7 @@ import '../repositories/drift_training_repository.dart';
 import '../repositories/i_training_repository.dart';
 import '../services/error_tolerance_system.dart';
 import '../services/rest_timer_controller.dart';
+import '../services/session_history_manager.dart';
 import '../services/session_persistence_service.dart';
 import 'main_provider.dart';
 import 'session_tolerance_provider.dart';
@@ -160,6 +161,11 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
 
   /// Servicio de persistencia (delegación de responsabilidad)
   late final SessionPersistenceService _persistenceService;
+  
+  /// Manager de historial de ejercicios (delegación de responsabilidad)
+  /// 
+  /// Extraído del God Object para mejorar testabilidad y separación de responsabilidades
+  SessionHistoryManager? _historyManager;
 
   @override
   TrainingState build() {
@@ -185,6 +191,9 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     // Inicializar servicio de persistencia
     _persistenceService = SessionPersistenceService(_repository);
     _persistenceService.getSessionData = _getCurrentSessionData;
+    
+    // Inicializar manager de historial
+    _historyManager = SessionHistoryManager(_repository);
   }
 
   /// Callback cuando el timer cambia de estado
@@ -249,25 +258,9 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
       );
     }).toList();
 
-    // Build History Map
-    final historyMap = <String, List<SerieLog>>{};
-
-    for (final ex in sessionExercises) {
-      final historyList = await _repository.getHistoryForExercise(ex.nombre);
-      if (historyList.isNotEmpty) {
-        // getHistoryForExercise returns sorted list (newest first)
-        final lastSession = historyList.first;
-        try {
-          final match = lastSession.ejerciciosCompletados.firstWhere(
-            (e) => e.nombre == ex.nombre,
-          );
-          // Store using stable historyKey (library-based or name fallback)
-          historyMap[ex.historyKey] = match.logs;
-        } catch (e) {
-          // Should not happen if filtered correctly, but safety first
-        }
-      }
-    }
+    // Build History Map usando SessionHistoryManager (extraído del God Object)
+    // Esto mejora testabilidad y permite cacheo LRU del historial
+    final historyMap = await _historyManager?.loadHistoryForExercises(sessionExercises) ?? {};
 
     state = TrainingState(
       activeRutina: rutina,
@@ -394,7 +387,14 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
   }
 
   /// Obtiene el último peso conocido para un ejercicio (del historial)
+  /// 
+  /// Ahora delega a SessionHistoryManager para mejor separación de responsabilidades
   double _getLastKnownWeight(Ejercicio exercise) {
+    // Primero intentar con el cache del manager
+    final managerWeight = _historyManager?.getLastKnownWeight(exercise.historyKey);
+    if (managerWeight != null && managerWeight > 0) return managerWeight;
+    
+    // Fallback al estado actual (para compatibilidad con sesiones restauradas)
     final key = exercise.historyKey;
     final historyLogs = state.history[key] ?? state.history[exercise.nombre];
     if (historyLogs != null && historyLogs.isNotEmpty) {
