@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'onboarding_screen.dart';
 import '../design_system/design_system.dart';
+import '../i18n/i18n.dart';
 
 /// Wrapper que maneja Splash -> Onboarding -> App
 class SplashWrapper extends StatefulWidget {
@@ -177,7 +178,7 @@ class _SplashScreen extends StatelessWidget {
               
               // Tagline
               Text(
-                'Nutrición & Entrenamiento',
+                AppTranslations.tr('splash.tagline'),
                 style: AppTypography.bodyLarge.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

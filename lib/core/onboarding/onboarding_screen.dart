@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../design_system/design_system.dart';
+import '../i18n/i18n.dart';
 import '../widgets/widgets.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   final VoidCallback onComplete;
 
   const OnboardingScreen({
@@ -23,50 +25,15 @@ class OnboardingScreen extends StatefulWidget {
   }
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<_OnboardingPageData> _pages = [
-    _OnboardingPageData(
-      title: 'Bienvenido a Juan Tracker',
-      subtitle: 'Tu compañero definitivo para nutrición y entrenamiento',
-      icon: Icons.fitness_center_rounded,
-      color: AppColors.primary,
-      description: 'Todo lo que necesitas para alcanzar tus objetivos fitness en una sola app.',
-    ),
-    _OnboardingPageData(
-      title: 'Nutrición Inteligente',
-      subtitle: 'Diario de alimentos simplificado',
-      icon: Icons.restaurant_menu_rounded,
-      color: AppColors.success,
-      description: 'Registra tus comidas fácilmente, calcula macros automáticamente y sigue tu progreso.',
-    ),
-    _OnboardingPageData(
-      title: 'Entrenamiento Efectivo',
-      subtitle: 'Rutinas y seguimiento de fuerza',
-      icon: Icons.fitness_center_rounded,
-      color: AppColors.ironRed,
-      description: 'Crea rutinas personalizadas, sigue tus series y analiza tu progreso.',
-    ),
-    _OnboardingPageData(
-      title: 'Coach Adaptativo',
-      subtitle: 'Ajustes automáticos basados en datos',
-      icon: Icons.auto_graph_rounded,
-      color: AppColors.info,
-      description: 'Nuestro sistema ajusta tus objetivos semanalmente basándose en tu progreso real.',
-    ),
-    _OnboardingPageData(
-      title: 'Todo en Perfil',
-      subtitle: 'Ayuda y gestos ocultos',
-      icon: Icons.person_rounded,
-      color: AppColors.secondary,
-      description: 'En la pestaña Perfil encontrarás consejos, atajos y gestos como doble-tap, mantener pulsado y más. ¡Consúltalo cuando quieras!',
-    ),
-  ];
+  /// Total de páginas: 1 (idioma) + 5 (contenido) = 6
+  static const _totalPages = 6;
 
   @override
   void dispose() {
@@ -75,7 +42,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
+    if (_currentPage < _totalPages - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
@@ -111,30 +78,77 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await prefs.setBool('contextual_onboarding_needed', false);
   }
 
+  /// Construye las páginas de contenido traducidas
+  List<_OnboardingPageData> _buildPages() {
+    final t = ref.tr;
+    return [
+      _OnboardingPageData(
+        title: t('onboarding.welcome.title'),
+        subtitle: t('onboarding.welcome.subtitle'),
+        icon: Icons.fitness_center_rounded,
+        color: AppColors.primary,
+        description: t('onboarding.welcome.description'),
+      ),
+      _OnboardingPageData(
+        title: t('onboarding.nutrition.title'),
+        subtitle: t('onboarding.nutrition.subtitle'),
+        icon: Icons.restaurant_menu_rounded,
+        color: AppColors.success,
+        description: t('onboarding.nutrition.description'),
+      ),
+      _OnboardingPageData(
+        title: t('onboarding.training.title'),
+        subtitle: t('onboarding.training.subtitle'),
+        icon: Icons.fitness_center_rounded,
+        color: AppColors.ironRed,
+        description: t('onboarding.training.description'),
+      ),
+      _OnboardingPageData(
+        title: t('onboarding.coach.title'),
+        subtitle: t('onboarding.coach.subtitle'),
+        icon: Icons.auto_graph_rounded,
+        color: AppColors.info,
+        description: t('onboarding.coach.description'),
+      ),
+      _OnboardingPageData(
+        title: t('onboarding.profile.title'),
+        subtitle: t('onboarding.profile.subtitle'),
+        icon: Icons.person_rounded,
+        color: AppColors.secondary,
+        description: t('onboarding.profile.description'),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final t = ref.tr;
+    final pages = _buildPages();
+
+    // Skip visible desde la página 2 (después de idioma y bienvenida)
+    final canSkip = _currentPage >= 2;
 
     return Scaffold(
       backgroundColor: colors.surface,
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button - solo visible tras la 2ª página (UX-001)
+            // Skip button - visible tras página de idioma + bienvenida
             Align(
               alignment: Alignment.topRight,
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 child: AnimatedOpacity(
-                  opacity: _currentPage >= 1 ? 1.0 : 0.0,
+                  opacity: canSkip ? 1.0 : 0.0,
                   duration: AppDurations.fast,
                   child: TextButton(
-                    onPressed: _currentPage >= 1 ? _completeOnboarding : null,
+                    onPressed: canSkip ? _completeOnboarding : null,
                     child: Text(
-                      'Saltar',
+                      t('common.skip'),
                       style: AppTypography.labelLarge.copyWith(
-                        color: _currentPage >= 1 
-                            ? colors.onSurfaceVariant 
+                        color: canSkip
+                            ? colors.onSurfaceVariant
                             : colors.onSurfaceVariant.withAlpha((0.3 * 255).round()),
                       ),
                     ),
@@ -150,9 +164,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
                 },
-                itemCount: _pages.length,
+                itemCount: _totalPages,
                 itemBuilder: (context, index) {
-                  return _OnboardingPage(data: _pages[index]);
+                  // Página 0: selector de idioma
+                  if (index == 0) {
+                    return _LanguageSelectionPage();
+                  }
+                  // Páginas 1-5: contenido de onboarding
+                  return _OnboardingPage(data: pages[index - 1]);
                 },
               ),
             ),
@@ -162,7 +181,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_pages.length, (index) {
+                children: List.generate(_totalPages, (index) {
                   final isActive = index == _currentPage;
                   return AnimatedContainer(
                     duration: AppDurations.fast,
@@ -184,15 +203,81 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: AppButton.primary(
-                label: _currentPage == _pages.length - 1
-                    ? 'COMENZAR'
-                    : 'SIGUIENTE',
+                label: _currentPage == _totalPages - 1
+                    ? t('common.start')
+                    : t('common.next'),
                 onPressed: _nextPage,
                 isFullWidth: true,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Página de selección de idioma (primera página del onboarding)
+class _LanguageSelectionPage extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final t = ref.tr;
+
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon
+          Container(
+            width: 160,
+            height: 160,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withAlpha((0.3 * 255).round()),
+                  AppColors.primary.withAlpha((0.1 * 255).round()),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              border: Border.all(
+                color: AppColors.primary.withAlpha((0.3 * 255).round()),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              Icons.language_rounded,
+              size: 72,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+
+          Text(
+            t('onboarding.selectLanguage'),
+            style: AppTypography.headlineMedium.copyWith(
+              color: colors.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            t('onboarding.selectLanguageSubtitle'),
+            style: AppTypography.bodyLarge.copyWith(
+              color: colors.onSurfaceVariant,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+
+          // Selector de idioma
+          const LanguageSelector(),
+        ],
       ),
     );
   }

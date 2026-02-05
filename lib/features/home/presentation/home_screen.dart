@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/design_system.dart';
+import '../../../core/i18n/i18n.dart';
 import '../../../core/providers/database_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../diet/providers/coach_providers.dart';
@@ -64,6 +65,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ? DateTime.now().difference(lastCheckIn).inDays
         : DateTime.now().difference(plan.startDate).inDays;
 
+    final t = ref.read(translationsProvider).valueOrNull;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -75,18 +78,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             color: colors.primary,
             size: 48,
           ),
-          title: const Text('¡Toca check-in semanal!'),
+          title: Text(t?.translate('checkin.title') ?? '¡Toca check-in semanal!'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Han pasado $daysSince días desde tu último check-in.',
+                t?.translate('checkin.daysSince',
+                        args: {'count': '$daysSince'}) ??
+                    'Han pasado $daysSince días desde tu último check-in.',
                 style: AppTypography.bodyMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
-                'Revisa tu progreso y ajusta tus objetivos calóricos si es necesario.',
+                t?.translate('checkin.suggestion') ??
+                    'Revisa tu progreso y ajusta tus objetivos calóricos si es necesario.',
                 style: AppTypography.bodySmall.copyWith(
                   color: colors.onSurfaceVariant,
                 ),
@@ -99,7 +105,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               onPressed: () {
                 Navigator.pop(ctx);
               },
-              child: const Text('DESPUÉS'),
+              child: Text(t?.translate('common.later') ?? 'DESPUÉS'),
             ),
             FilledButton.icon(
               onPressed: () {
@@ -107,7 +113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 context.goToCoachCheckIn();
               },
               icon: const Icon(Icons.check),
-              label: const Text('HACER CHECK-IN'),
+              label: Text(t?.translate('checkin.doCheckin') ?? 'HACER CHECK-IN'),
             ),
           ],
         );
@@ -132,9 +138,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final currentTab = ref.watch(homeTabProvider);
+    final t = ref.tr;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Juan Tracker')),
+      appBar: AppBar(title: Text(t('home.title'))),
       // IndexedStack mantiene todos los tabs en memoria pero solo muestra uno
       // Esto preserva el scroll position y evita re-fetch de datos
       body: SafeArea(
@@ -146,15 +153,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         currentIndex: currentTab.index,
         onTap: (i) =>
             ref.read(homeTabProvider.notifier).setTab(HomeTab.values[i]),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Diario'),
-          BottomNavigationBarItem(icon: Icon(Icons.scale), label: 'Peso'),
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.book), label: t('home.tabs.diary')),
+          BottomNavigationBarItem(icon: const Icon(Icons.scale), label: t('home.tabs.weight')),
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Resumen',
+            icon: const Icon(Icons.dashboard),
+            label: t('home.tabs.summary'),
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'Coach'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+          BottomNavigationBarItem(icon: const Icon(Icons.auto_graph), label: t('home.tabs.coach')),
+          BottomNavigationBarItem(icon: const Icon(Icons.person), label: t('home.tabs.profile')),
         ],
       ),
     );

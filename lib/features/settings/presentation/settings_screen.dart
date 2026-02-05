@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/design_system/design_system.dart';
+import '../../../core/i18n/i18n.dart';
 import '../../../core/models/user_profile_model.dart';
 import '../../../core/providers/database_provider.dart';
 import '../../../core/router/app_router.dart';
@@ -11,18 +12,20 @@ import '../../../diet/providers/body_progress_providers.dart';
 import 'body_progress_screen.dart';
 
 /// Pantalla de Perfil y Ajustes
-/// 
+///
 /// Centraliza:
 /// - Datos del perfil (edad, sexo, altura, peso)
 /// - Cálculo de TDEE
 /// - Acceso a objetivos
 /// - Biblioteca de alimentos
+/// - Selección de idioma
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider);
+    final t = ref.tr;
 
     return Scaffold(
       body: CustomScrollView(
@@ -30,7 +33,7 @@ class SettingsScreen extends ConsumerWidget {
           SliverAppBar(
             floating: true,
             snap: true,
-            title: const Text('Perfil'),
+            title: Text(t('settings.title')),
             centerTitle: true,
             leading: const Padding(
               padding: EdgeInsets.all(8.0),
@@ -42,7 +45,7 @@ class SettingsScreen extends ConsumerWidget {
               data: (profile) => _SettingsContent(profile: profile),
               loading: () => const AppLoading(),
               error: (e, _) => AppError(
-                message: 'Error al cargar perfil',
+                message: t('settings.errorLoadProfile'),
                 onRetry: () => ref.invalidate(userProfileProvider),
               ),
             ),
@@ -71,13 +74,18 @@ class _SettingsContent extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.lg),
 
+        // Sección Idioma
+        const _LanguageSection(),
+
+        const SizedBox(height: AppSpacing.lg),
+
         // Sección Progreso Corporal
         const _BodyProgressSection(),
 
         const SizedBox(height: AppSpacing.lg),
 
         // Sección Biblioteca
-        _LibrarySection(),
+        const _LibrarySection(),
 
         const SizedBox(height: AppSpacing.lg),
 
@@ -94,15 +102,80 @@ class _SettingsContent extends StatelessWidget {
   }
 }
 
-class _ProfileSection extends StatelessWidget {
+// ============================================================================
+// LANGUAGE SECTION
+// ============================================================================
+
+class _LanguageSection extends ConsumerWidget {
+  const _LanguageSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final t = ref.tr;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: colors.secondaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    Icons.translate,
+                    color: colors.onSecondaryContainer,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t('settings.languageSection'),
+                        style: AppTypography.titleMedium,
+                      ),
+                      Text(
+                        t('settings.languageSectionDesc'),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const LanguageToggle(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// PROFILE SECTION
+// ============================================================================
+
+class _ProfileSection extends ConsumerWidget {
   final UserProfileModel? profile;
   final bool isComplete;
 
   const _ProfileSection({required this.profile, required this.isComplete});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final t = ref.tr;
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -129,13 +202,13 @@ class _ProfileSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tus Datos',
+                      t('settings.yourData'),
                       style: AppTypography.titleMedium,
                     ),
                     Text(
                       isComplete
-                          ? 'Perfil completo'
-                          : 'Completa tu perfil para calcular tu TDEE',
+                          ? t('settings.profileComplete')
+                          : t('settings.completeProfile'),
                       style: AppTypography.bodySmall.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
@@ -151,38 +224,42 @@ class _ProfileSection extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             _ProfileInfoRow(
               icon: Icons.cake,
-              label: 'Edad',
-              value: profile?.age != null ? '${profile!.age} años' : 'No configurado',
+              label: t('settings.age'),
+              value: profile?.age != null
+                  ? '${profile!.age} ${t('units.years')}'
+                  : t('common.notConfigured'),
             ),
             _ProfileInfoRow(
               icon: Icons.person,
-              label: 'Sexo',
-              value: profile?.gender?.displayName ?? 'No configurado',
+              label: t('settings.sex'),
+              value: profile?.gender?.displayName ?? t('common.notConfigured'),
             ),
             _ProfileInfoRow(
               icon: Icons.height,
-              label: 'Altura',
+              label: t('settings.height'),
               value: profile?.heightCm != null
-                  ? '${profile!.heightCm!.toStringAsFixed(0)} cm'
-                  : 'No configurado',
+                  ? '${profile!.heightCm!.toStringAsFixed(0)} ${t('units.cm')}'
+                  : t('common.notConfigured'),
             ),
             _ProfileInfoRow(
               icon: Icons.scale,
-              label: 'Peso actual',
+              label: t('settings.currentWeight'),
               value: profile?.currentWeightKg != null
-                  ? '${profile!.currentWeightKg!.toStringAsFixed(1)} kg'
-                  : 'No configurado',
+                  ? '${profile!.currentWeightKg!.toStringAsFixed(1)} ${t('units.kg')}'
+                  : t('common.notConfigured'),
             ),
             _ProfileInfoRow(
               icon: Icons.local_fire_department,
-              label: 'Nivel de actividad',
-              value: profile?.activityLevel.displayName ?? 'Moderado',
+              label: t('settings.activityLevel'),
+              value: profile?.activityLevel.displayName ?? t('settings.moderate'),
             ),
           ],
           const SizedBox(height: AppSpacing.md),
           AppButton(
             onPressed: () => _showEditProfileDialog(context, profile),
-            label: isComplete ? 'Editar Perfil' : 'Completar Perfil',
+            label: isComplete
+                ? t('settings.editProfile')
+                : t('settings.completeProfileBtn'),
             isFullWidth: true,
           ),
         ],
@@ -240,10 +317,13 @@ class _ProfileInfoRow extends StatelessWidget {
   }
 }
 
-class _LibrarySection extends StatelessWidget {
+class _LibrarySection extends ConsumerWidget {
+  const _LibrarySection();
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final t = ref.tr;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -252,12 +332,12 @@ class _LibrarySection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Biblioteca de Alimentos',
+              t('settings.foodLibrary'),
               style: AppTypography.titleMedium,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Gestiona tus alimentos guardados',
+              t('settings.manageFoods'),
               style: AppTypography.bodySmall.copyWith(
                 color: colors.onSurfaceVariant,
               ),
@@ -267,14 +347,14 @@ class _LibrarySection extends StatelessWidget {
               variant: AppButtonVariant.secondary,
               onPressed: () => context.pushTo(AppRouter.nutritionFoods),
               icon: Icons.restaurant_menu,
-              label: 'Ver Biblioteca',
+              label: t('settings.viewLibrary'),
               isFullWidth: true,
             ),
             const SizedBox(height: AppSpacing.lg),
             const Divider(),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Mantenimiento',
+              t('settings.maintenance'),
               style: AppTypography.labelLarge.copyWith(
                 color: colors.onSurfaceVariant,
               ),
@@ -299,6 +379,7 @@ class _BodyProgressSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final latestAsync = ref.watch(latestMeasurementProvider);
+    final t = ref.tr;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -325,14 +406,16 @@ class _BodyProgressSection extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Progreso Corporal',
+                        t('settings.bodyProgress'),
                         style: AppTypography.titleMedium,
                       ),
                       latestAsync.when(
                         data: (latest) => Text(
                           latest != null
-                              ? 'Última medida: ${_formatDate(latest.date)}'
-                              : 'Registra tus medidas y fotos',
+                              ? t('settings.lastMeasure', args: {
+                                  'date': _formatDate(latest.date, t),
+                                })
+                              : t('settings.recordMeasures'),
                           style: AppTypography.bodySmall.copyWith(
                             color: colors.onSurfaceVariant,
                           ),
@@ -354,7 +437,7 @@ class _BodyProgressSection extends ConsumerWidget {
                 ),
               ),
               icon: Icons.trending_up,
-              label: 'Ver Progreso',
+              label: t('settings.viewProgress'),
               isFullWidth: true,
             ),
           ],
@@ -363,15 +446,18 @@ class _BodyProgressSection extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(
+    DateTime date,
+    String Function(String, {Map<String, String>? args, int? count}) t,
+  ) {
     final now = DateTime.now();
     final diff = now.difference(date).inDays;
-    
-    if (diff == 0) return 'Hoy';
-    if (diff == 1) return 'Ayer';
-    if (diff < 7) return 'Hace $diff días';
-    if (diff < 30) return 'Hace ${diff ~/ 7} semanas';
-    return 'Hace ${diff ~/ 30} meses';
+
+    if (diff == 0) return t('common.today');
+    if (diff == 1) return t('common.yesterday');
+    if (diff < 7) return t('common.daysAgo', count: diff);
+    if (diff < 30) return t('common.weeksAgo', count: diff ~/ 7);
+    return t('common.monthsAgo', count: diff ~/ 30);
   }
 }
 
@@ -401,22 +487,26 @@ class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButt
   }
 
   Future<void> _cleanupDuplicates() async {
+    final t = ref.read(translationsProvider).valueOrNull;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Limpiar duplicados'),
+        title: Text(t?.translate('settings.cleanDuplicatesTitle') ?? 'Limpiar duplicados'),
         content: Text(
-          'Se fusionarán $_duplicatesFound alimentos duplicados. '
-          'El alimento más usado se mantendrá y las referencias se actualizarán.',
+          t?.translate('settings.cleanDuplicatesMessage',
+                  args: {'count': '$_duplicatesFound'}) ??
+              'Se fusionarán $_duplicatesFound alimentos duplicados. '
+                  'El alimento más usado se mantendrá y las referencias se actualizarán.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('CANCELAR'),
+            child: Text(t?.translate('common.cancel') ?? 'CANCELAR'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('LIMPIAR'),
+            child: Text(t?.translate('settings.cleanDuplicates') ?? 'LIMPIAR'),
           ),
         ],
       ),
@@ -429,8 +519,11 @@ class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButt
       final db = ref.read(appDatabaseProvider);
       final removed = await db.cleanupAllDuplicates();
       if (mounted) {
+        final msg = t?.translate('settings.duplicatesRemoved',
+                args: {'count': '$removed'}) ??
+            'Se eliminaron $removed duplicados';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Se eliminaron $removed duplicados')),
+          SnackBar(content: Text(msg)),
         );
         setState(() => _duplicatesFound = null);
       }
@@ -448,6 +541,7 @@ class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButt
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final t = ref.tr;
 
     if (_isLoading) {
       return const Padding(
@@ -460,7 +554,7 @@ class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButt
       return TextButton.icon(
         onPressed: _checkDuplicates,
         icon: const Icon(Icons.find_replace),
-        label: const Text('Buscar duplicados'),
+        label: Text(t('settings.findDuplicates')),
       );
     }
 
@@ -472,7 +566,7 @@ class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButt
             Icon(Icons.check_circle, color: colors.primary, size: 20),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              'No hay duplicados',
+              t('settings.noDuplicates'),
               style: AppTypography.bodyMedium.copyWith(color: colors.primary),
             ),
           ],
@@ -488,7 +582,7 @@ class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButt
             Icon(Icons.warning_amber, color: colors.error, size: 20),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              '$_duplicatesFound duplicados encontrados',
+              t('settings.duplicatesFound', args: {'count': '$_duplicatesFound'}),
               style: AppTypography.bodyMedium.copyWith(color: colors.error),
             ),
           ],
@@ -498,7 +592,7 @@ class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButt
           variant: AppButtonVariant.secondary,
           onPressed: _cleanupDuplicates,
           icon: Icons.cleaning_services,
-          label: 'Limpiar duplicados',
+          label: t('settings.cleanDuplicates'),
           isFullWidth: true,
         ),
       ],
@@ -551,8 +645,10 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final t = ref.tr;
+
     return AlertDialog(
-      title: const Text('Editar Perfil'),
+      title: Text(t('settings.editProfileTitle')),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -561,10 +657,10 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
             TextField(
               controller: _ageController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Edad *',
-                suffixText: 'años',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: t('settings.ageLabel'),
+                suffixText: t('units.years'),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -573,16 +669,16 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
             SegmentedButton<Gender?>(
               selected: {_gender},
               onSelectionChanged: (set) => setState(() => _gender = set.first),
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: Gender.male,
-                  label: Text('Hombre'),
-                  icon: Icon(Icons.male),
+                  label: Text(t('settings.male')),
+                  icon: const Icon(Icons.male),
                 ),
                 ButtonSegment(
                   value: Gender.female,
-                  label: Text('Mujer'),
-                  icon: Icon(Icons.female),
+                  label: Text(t('settings.female')),
+                  icon: const Icon(Icons.female),
                 ),
               ],
             ),
@@ -592,10 +688,10 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
             TextField(
               controller: _heightController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Altura *',
-                suffixText: 'cm',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: t('settings.heightLabel'),
+                suffixText: t('units.cm'),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -604,10 +700,10 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
             TextField(
               controller: _weightController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Peso actual *',
-                suffixText: 'kg',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: t('settings.weightLabel'),
+                suffixText: t('units.kg'),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -615,9 +711,9 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
             // Nivel de actividad
             DropdownButtonFormField<ActivityLevel>(
               initialValue: _activityLevel,
-              decoration: const InputDecoration(
-                labelText: 'Nivel de actividad',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: t('settings.activityLevel'),
+                border: const OutlineInputBorder(),
               ),
               items: ActivityLevel.values.map((level) {
                 return DropdownMenuItem(
@@ -633,11 +729,11 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: Text(t('common.cancel')),
         ),
         FilledButton(
           onPressed: _save,
-          child: const Text('Guardar'),
+          child: Text(t('common.save')),
         ),
       ],
     );
@@ -647,10 +743,16 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
     final age = int.tryParse(_ageController.text);
     final height = double.tryParse(_heightController.text);
     final weight = double.tryParse(_weightController.text);
+    final t = ref.read(translationsProvider).valueOrNull;
 
     if (age == null || height == null || weight == null || _gender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Completa todos los campos')),
+        SnackBar(
+          content: Text(
+            t?.translate('settings.completeAllFields') ??
+                'Completa todos los campos',
+          ),
+        ),
       );
       return;
     }
@@ -693,12 +795,13 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
 // TIPS AND TRICKS SECTION - Ayuda para nuevos usuarios
 // ============================================================================
 
-class _TipsAndTricksSection extends StatelessWidget {
+class _TipsAndTricksSection extends ConsumerWidget {
   const _TipsAndTricksSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final t = ref.tr;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -725,11 +828,11 @@ class _TipsAndTricksSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Consejos y Atajos',
+                        t('settings.tipsTitle'),
                         style: AppTypography.titleMedium,
                       ),
                       Text(
-                        'Saca el máximo provecho de la app',
+                        t('settings.tipsSubtitle'),
                         style: AppTypography.bodySmall.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
@@ -743,36 +846,36 @@ class _TipsAndTricksSection extends StatelessWidget {
             const Divider(),
             const SizedBox(height: AppSpacing.md),
 
-            // Tips de búsqueda
+            // Tips
             _TipItem(
               icon: Icons.search,
-              title: 'Búsqueda inteligente',
-              description: 'Escribe solo las primeras letras. La app busca por palabras clave y sinónimos.',
+              title: t('settings.tipSearch'),
+              description: t('settings.tipSearchDesc'),
             ),
             _TipItem(
               icon: Icons.history,
-              title: 'Alimentos frecuentes',
-              description: 'Los chips de acceso rápido muestran lo que más usas. ¡Un tap para añadir!',
+              title: t('settings.tipFrequent'),
+              description: t('settings.tipFrequentDesc'),
             ),
             _TipItem(
               icon: Icons.copy_all,
-              title: 'Repetir ayer',
-              description: 'Usa "Repetir ayer" para copiar todas las comidas del día anterior.',
+              title: t('settings.tipRepeat'),
+              description: t('settings.tipRepeatDesc'),
             ),
             _TipItem(
               icon: Icons.bookmark,
-              title: 'Plantillas de comida',
-              description: 'Guarda comidas como plantillas desde el menú (⋮) de cada sección.',
+              title: t('settings.tipTemplates'),
+              description: t('settings.tipTemplatesDesc'),
             ),
             _TipItem(
               icon: Icons.qr_code_scanner,
-              title: 'Escanear código de barras',
-              description: 'Escanea productos para añadirlos automáticamente a tu diario.',
+              title: t('settings.tipBarcode'),
+              description: t('settings.tipBarcodeDesc'),
             ),
             _TipItem(
               icon: Icons.auto_graph,
-              title: 'Coach adaptativo',
-              description: 'El check-in semanal ajusta tus objetivos basándose en tu progreso real.',
+              title: t('settings.tipCoach'),
+              description: t('settings.tipCoachDesc'),
             ),
 
             const SizedBox(height: AppSpacing.md),
@@ -789,7 +892,7 @@ class _TipsAndTricksSection extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      'Los valores grises son sugerencias. Edítalos o acéptalos directamente.',
+                      t('settings.tipGrayValues'),
                       style: AppTypography.bodySmall.copyWith(
                         color: colors.primary,
                       ),
@@ -864,12 +967,13 @@ class _TipItem extends StatelessWidget {
 // DEBUG SECTION (only visible in debug mode)
 // ============================================================================
 
-class _DebugSection extends StatelessWidget {
+class _DebugSection extends ConsumerWidget {
   const _DebugSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final t = ref.tr;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -893,14 +997,14 @@ class _DebugSection extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Text(
-                  'Herramientas de Desarrollo',
+                  t('settings.debugTitle'),
                   style: AppTypography.titleMedium,
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Solo visible en modo debug',
+              t('settings.debugOnly'),
               style: AppTypography.bodySmall.copyWith(
                 color: colors.onSurfaceVariant,
               ),
@@ -910,7 +1014,7 @@ class _DebugSection extends StatelessWidget {
               variant: AppButtonVariant.secondary,
               onPressed: () => context.pushTo(AppRouter.debugSearchBenchmark),
               icon: Icons.speed,
-              label: 'Benchmark Búsqueda',
+              label: t('settings.benchmark'),
               isFullWidth: true,
             ),
           ],

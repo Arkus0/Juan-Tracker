@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/app_constants.dart';
 import 'core/design_system/app_theme.dart';
+import 'core/i18n/i18n.dart';
 import 'core/router/app_router.dart';
 import 'core/settings/theme_provider.dart';
 import 'features/foods/services/food_database_loader.dart';
@@ -41,6 +42,9 @@ class _JuanTrackerAppState extends ConsumerState<JuanTrackerApp> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final router = ref.watch(appRouterProvider);
+
+    // Sincronizar traducciones para acceso estático (AppTranslations.tr)
+    ref.watch(translationsSyncProvider);
 
     // UX-005: Configurar system overlays para edge-to-edge
     final brightness =

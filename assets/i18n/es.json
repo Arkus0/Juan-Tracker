@@ -1,0 +1,201 @@
+{
+  "common": {
+    "appName": "Juan Tracker",
+    "save": "GUARDAR",
+    "cancel": "CANCELAR",
+    "delete": "ELIMINAR",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "retry": "Reintentar",
+    "next": "SIGUIENTE",
+    "start": "COMENZAR",
+    "skip": "Saltar",
+    "later": "DESPUÉS",
+    "yes": "Sí",
+    "no": "No",
+    "ok": "OK",
+    "search": "Buscar",
+    "noData": "Sin datos",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "daysAgo": {
+      "one": "Hace {{count}} día",
+      "other": "Hace {{count}} días"
+    },
+    "weeksAgo": {
+      "one": "Hace {{count}} semana",
+      "other": "Hace {{count}} semanas"
+    },
+    "monthsAgo": {
+      "one": "Hace {{count}} mes",
+      "other": "Hace {{count}} meses"
+    },
+    "notConfigured": "No configurado",
+    "quickActions": "ACCESOS RÁPIDOS",
+    "language": "Idioma",
+    "changeLanguage": "Cambiar idioma"
+  },
+  "units": {
+    "kg": "kg",
+    "lbs": "lbs",
+    "cm": "cm",
+    "kcal": "kcal",
+    "grams": "g",
+    "years": "años"
+  },
+  "greeting": {
+    "morning": "¡Buenos días!",
+    "afternoon": "¡Buenas tardes!",
+    "evening": "¡Buenas noches!"
+  },
+  "onboarding": {
+    "selectLanguage": "Selecciona tu idioma",
+    "selectLanguageSubtitle": "Puedes cambiarlo después en Perfil",
+    "welcome": {
+      "title": "Bienvenido a Juan Tracker",
+      "subtitle": "Tu compañero definitivo para nutrición y entrenamiento",
+      "description": "Todo lo que necesitas para alcanzar tus objetivos fitness en una sola app."
+    },
+    "nutrition": {
+      "title": "Nutrición Inteligente",
+      "subtitle": "Diario de alimentos simplificado",
+      "description": "Registra tus comidas fácilmente, calcula macros automáticamente y sigue tu progreso."
+    },
+    "training": {
+      "title": "Entrenamiento Efectivo",
+      "subtitle": "Rutinas y seguimiento de fuerza",
+      "description": "Crea rutinas personalizadas, sigue tus series y analiza tu progreso."
+    },
+    "coach": {
+      "title": "Coach Adaptativo",
+      "subtitle": "Ajustes automáticos basados en datos",
+      "description": "Nuestro sistema ajusta tus objetivos semanalmente basándose en tu progreso real."
+    },
+    "profile": {
+      "title": "Todo en Perfil",
+      "subtitle": "Ayuda y gestos ocultos",
+      "description": "En la pestaña Perfil encontrarás consejos, atajos y gestos como doble-tap, mantener pulsado y más. ¡Consúltalo cuando quieras!"
+    }
+  },
+  "splash": {
+    "tagline": "Nutrición & Entrenamiento"
+  },
+  "home": {
+    "title": "Juan Tracker",
+    "tabs": {
+      "diary": "Diario",
+      "weight": "Peso",
+      "summary": "Resumen",
+      "coach": "Coach",
+      "profile": "Perfil"
+    }
+  },
+  "entry": {
+    "nutrition": "Nutrición",
+    "nutritionTracking": "Seguimiento de nutrición",
+    "training": "Entrenamiento",
+    "rest": "Descanso",
+    "configureRoutine": "Configura tu primera rutina",
+    "firstTime": "Primera vez: {{dayName}}",
+    "kcalConsumed": "{{consumed}}/{{target}} kcal consumidas",
+    "kcalRemaining": "kcal rest",
+    "proteinRemaining": "prot rest",
+    "kcal": "kcal",
+    "protein": "proteína",
+    "noRoutine": "sin rutina",
+    "todayLabel": "hoy",
+    "scheduledLabel": "toca",
+    "lastSession": "última",
+    "noGym": "sin gym"
+  },
+  "quickActions": {
+    "weight": "Peso",
+    "train": "Entrenar",
+    "food": "Comida",
+    "addWeight": "Registrar peso",
+    "weightKg": "Peso (kg)",
+    "weightHint": "Ej: 75.5",
+    "dateLabel": "Fecha: ",
+    "weightSaved": "Peso registrado",
+    "mealQuestion": "¿En qué comida quieres añadir?"
+  },
+  "diet": {
+    "meals": {
+      "breakfast": "Desayuno",
+      "lunch": "Almuerzo",
+      "dinner": "Cena",
+      "snack": "Snack"
+    },
+    "language": "Idioma de dieta",
+    "languageDescription": "Cambia el idioma de la sección de nutrición"
+  },
+  "training": {
+    "language": "Idioma de entrenamiento",
+    "languageDescription": "Cambia el idioma de la sección de entrenamiento"
+  },
+  "settings": {
+    "title": "Perfil",
+    "yourData": "Tus Datos",
+    "profileComplete": "Perfil completo",
+    "completeProfile": "Completa tu perfil para calcular tu TDEE",
+    "editProfile": "Editar Perfil",
+    "completeProfileBtn": "Completar Perfil",
+    "age": "Edad",
+    "sex": "Sexo",
+    "male": "Hombre",
+    "female": "Mujer",
+    "height": "Altura",
+    "currentWeight": "Peso actual",
+    "activityLevel": "Nivel de actividad",
+    "moderate": "Moderado",
+    "bodyProgress": "Progreso Corporal",
+    "lastMeasure": "Última medida: {{date}}",
+    "recordMeasures": "Registra tus medidas y fotos",
+    "viewProgress": "Ver Progreso",
+    "foodLibrary": "Biblioteca de Alimentos",
+    "manageFoods": "Gestiona tus alimentos guardados",
+    "viewLibrary": "Ver Biblioteca",
+    "maintenance": "Mantenimiento",
+    "findDuplicates": "Buscar duplicados",
+    "cleanDuplicates": "Limpiar duplicados",
+    "cleanDuplicatesTitle": "Limpiar duplicados",
+    "cleanDuplicatesMessage": "Se fusionarán {{count}} alimentos duplicados. El alimento más usado se mantendrá y las referencias se actualizarán.",
+    "duplicatesRemoved": "Se eliminaron {{count}} duplicados",
+    "duplicatesFound": "{{count}} duplicados encontrados",
+    "noDuplicates": "No hay duplicados",
+    "tipsTitle": "Consejos y Atajos",
+    "tipsSubtitle": "Saca el máximo provecho de la app",
+    "tipSearch": "Búsqueda inteligente",
+    "tipSearchDesc": "Escribe solo las primeras letras. La app busca por palabras clave y sinónimos.",
+    "tipFrequent": "Alimentos frecuentes",
+    "tipFrequentDesc": "Los chips de acceso rápido muestran lo que más usas. ¡Un tap para añadir!",
+    "tipRepeat": "Repetir ayer",
+    "tipRepeatDesc": "Usa \"Repetir ayer\" para copiar todas las comidas del día anterior.",
+    "tipTemplates": "Plantillas de comida",
+    "tipTemplatesDesc": "Guarda comidas como plantillas desde el menú (⋮) de cada sección.",
+    "tipBarcode": "Escanear código de barras",
+    "tipBarcodeDesc": "Escanea productos para añadirlos automáticamente a tu diario.",
+    "tipCoach": "Coach adaptativo",
+    "tipCoachDesc": "El check-in semanal ajusta tus objetivos basándose en tu progreso real.",
+    "tipGrayValues": "Los valores grises son sugerencias. Edítalos o acéptalos directamente.",
+    "debugTitle": "Herramientas de Desarrollo",
+    "debugOnly": "Solo visible en modo debug",
+    "benchmark": "Benchmark Búsqueda",
+    "languageSection": "Idioma",
+    "languageSectionDesc": "Selecciona el idioma de la aplicación",
+    "completeAllFields": "Completa todos los campos",
+    "errorLoadProfile": "Error al cargar perfil",
+    "editProfileTitle": "Editar Perfil",
+    "ageLabel": "Edad *",
+    "heightLabel": "Altura *",
+    "weightLabel": "Peso actual *"
+  },
+  "checkin": {
+    "title": "¡Toca check-in semanal!",
+    "daysSince": "Han pasado {{count}} días desde tu último check-in.",
+    "suggestion": "Revisa tu progreso y ajusta tus objetivos calóricos si es necesario.",
+    "doCheckin": "HACER CHECK-IN"
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "common": {
+    "appName": "Juan Tracker",
+    "save": "SAVE",
+    "cancel": "CANCEL",
+    "delete": "DELETE",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "next": "NEXT",
+    "start": "START",
+    "skip": "Skip",
+    "later": "LATER",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "search": "Search",
+    "noData": "No data",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": {
+      "one": "{{count}} day ago",
+      "other": "{{count}} days ago"
+    },
+    "weeksAgo": {
+      "one": "{{count}} week ago",
+      "other": "{{count}} weeks ago"
+    },
+    "monthsAgo": {
+      "one": "{{count}} month ago",
+      "other": "{{count}} months ago"
+    },
+    "notConfigured": "Not configured",
+    "quickActions": "QUICK ACTIONS",
+    "language": "Language",
+    "changeLanguage": "Change language"
+  },
+  "units": {
+    "kg": "kg",
+    "lbs": "lbs",
+    "cm": "cm",
+    "kcal": "kcal",
+    "grams": "g",
+    "years": "years"
+  },
+  "greeting": {
+    "morning": "Good morning!",
+    "afternoon": "Good afternoon!",
+    "evening": "Good evening!"
+  },
+  "onboarding": {
+    "selectLanguage": "Select your language",
+    "selectLanguageSubtitle": "You can change it later in Profile",
+    "welcome": {
+      "title": "Welcome to Juan Tracker",
+      "subtitle": "Your ultimate nutrition & workout companion",
+      "description": "Everything you need to reach your fitness goals in one single app."
+    },
+    "nutrition": {
+      "title": "Smart Nutrition",
+      "subtitle": "Simplified food diary",
+      "description": "Log your meals easily, automatically calculate macros and track your progress."
+    },
+    "training": {
+      "title": "Effective Training",
+      "subtitle": "Routines and strength tracking",
+      "description": "Create custom routines, track your sets and analyze your progress."
+    },
+    "coach": {
+      "title": "Adaptive Coach",
+      "subtitle": "Data-driven automatic adjustments",
+      "description": "Our system adjusts your goals weekly based on your actual progress."
+    },
+    "profile": {
+      "title": "Everything in Profile",
+      "subtitle": "Help and hidden gestures",
+      "description": "In the Profile tab you'll find tips, shortcuts and gestures like double-tap, long press and more. Check it out anytime!"
+    }
+  },
+  "splash": {
+    "tagline": "Nutrition & Training"
+  },
+  "home": {
+    "title": "Juan Tracker",
+    "tabs": {
+      "diary": "Diary",
+      "weight": "Weight",
+      "summary": "Summary",
+      "coach": "Coach",
+      "profile": "Profile"
+    }
+  },
+  "entry": {
+    "nutrition": "Nutrition",
+    "nutritionTracking": "Nutrition tracking",
+    "training": "Training",
+    "rest": "Rest",
+    "configureRoutine": "Set up your first routine",
+    "firstTime": "First time: {{dayName}}",
+    "kcalConsumed": "{{consumed}}/{{target}} kcal consumed",
+    "kcalRemaining": "kcal left",
+    "proteinRemaining": "prot left",
+    "kcal": "kcal",
+    "protein": "protein",
+    "noRoutine": "no routine",
+    "todayLabel": "today",
+    "scheduledLabel": "next",
+    "lastSession": "last",
+    "noGym": "no gym"
+  },
+  "quickActions": {
+    "weight": "Weight",
+    "train": "Train",
+    "food": "Food",
+    "addWeight": "Log weight",
+    "weightKg": "Weight (kg)",
+    "weightHint": "e.g. 75.5",
+    "dateLabel": "Date: ",
+    "weightSaved": "Weight logged",
+    "mealQuestion": "Which meal do you want to add to?"
+  },
+  "diet": {
+    "meals": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack"
+    },
+    "language": "Diet language",
+    "languageDescription": "Change the nutrition section language"
+  },
+  "training": {
+    "language": "Training language",
+    "languageDescription": "Change the training section language"
+  },
+  "settings": {
+    "title": "Profile",
+    "yourData": "Your Data",
+    "profileComplete": "Profile complete",
+    "completeProfile": "Complete your profile to calculate your TDEE",
+    "editProfile": "Edit Profile",
+    "completeProfileBtn": "Complete Profile",
+    "age": "Age",
+    "sex": "Sex",
+    "male": "Male",
+    "female": "Female",
+    "height": "Height",
+    "currentWeight": "Current weight",
+    "activityLevel": "Activity level",
+    "moderate": "Moderate",
+    "bodyProgress": "Body Progress",
+    "lastMeasure": "Last measure: {{date}}",
+    "recordMeasures": "Record your measurements and photos",
+    "viewProgress": "View Progress",
+    "foodLibrary": "Food Library",
+    "manageFoods": "Manage your saved foods",
+    "viewLibrary": "View Library",
+    "maintenance": "Maintenance",
+    "findDuplicates": "Find duplicates",
+    "cleanDuplicates": "Clean duplicates",
+    "cleanDuplicatesTitle": "Clean duplicates",
+    "cleanDuplicatesMessage": "{{count}} duplicate foods will be merged. The most used food will be kept and references will be updated.",
+    "duplicatesRemoved": "{{count}} duplicates removed",
+    "duplicatesFound": "{{count}} duplicates found",
+    "noDuplicates": "No duplicates",
+    "tipsTitle": "Tips & Shortcuts",
+    "tipsSubtitle": "Get the most out of the app",
+    "tipSearch": "Smart search",
+    "tipSearchDesc": "Type just the first letters. The app searches by keywords and synonyms.",
+    "tipFrequent": "Frequent foods",
+    "tipFrequentDesc": "Quick access chips show what you use the most. One tap to add!",
+    "tipRepeat": "Repeat yesterday",
+    "tipRepeatDesc": "Use \"Repeat yesterday\" to copy all meals from the previous day.",
+    "tipTemplates": "Meal templates",
+    "tipTemplatesDesc": "Save meals as templates from the menu (⋮) of each section.",
+    "tipBarcode": "Scan barcode",
+    "tipBarcodeDesc": "Scan products to automatically add them to your diary.",
+    "tipCoach": "Adaptive coach",
+    "tipCoachDesc": "The weekly check-in adjusts your goals based on your real progress.",
+    "tipGrayValues": "Gray values are suggestions. Edit them or accept them directly.",
+    "debugTitle": "Development Tools",
+    "debugOnly": "Only visible in debug mode",
+    "benchmark": "Search Benchmark",
+    "languageSection": "Language",
+    "languageSectionDesc": "Select the application language",
+    "completeAllFields": "Complete all fields",
+    "errorLoadProfile": "Error loading profile",
+    "editProfileTitle": "Edit Profile",
+    "ageLabel": "Age *",
+    "heightLabel": "Height *",
+    "weightLabel": "Current weight *"
+  },
+  "checkin": {
+    "title": "Weekly check-in time!",
+    "daysSince": "It's been {{count}} days since your last check-in.",
+    "suggestion": "Review your progress and adjust your caloric goals if needed.",
+    "doCheckin": "DO CHECK-IN"
+  }
+}

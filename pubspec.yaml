@@ -58,6 +58,7 @@ flutter:
     - assets/data/foods.jsonl.gz
     - assets/fonts/
     - assets/sounds/
+    - assets/i18n/
 
 google_fonts:
   use_google_fonts_v2: true

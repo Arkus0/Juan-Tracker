@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/feedback/haptics.dart';
+import 'package:juan_tracker/core/i18n/i18n.dart';
 import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,23 +16,25 @@ import 'package:juan_tracker/training/widgets/analysis/streak_counter.dart';
 import 'package:juan_tracker/training/providers/training_provider.dart';
 
 /// Pantalla de entrada principal con selección de modo
-class EntryScreen extends StatelessWidget {
+class EntryScreen extends ConsumerWidget {
   const EntryScreen({super.key});
 
-  String get _greeting {
+  String _greeting(String Function(String, {Map<String, String>? args, int? count}) t) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return '¡Buenos días!';
-    if (hour < 18) return '¡Buenas tardes!';
-    return '¡Buenas noches!';
+    if (hour < 12) return t('greeting.morning');
+    if (hour < 18) return t('greeting.afternoon');
+    return t('greeting.evening');
   }
 
-  String get _currentDate {
-    return DateFormat('EEEE, d MMMM', 'es').format(DateTime.now());
+  String _currentDate(String localeCode) {
+    return DateFormat('EEEE, d MMMM', localeCode).format(DateTime.now());
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final t = ref.tr;
+    final localeCode = ref.watch(localeCodeProvider);
 
     return Scaffold(
       backgroundColor: colors.surface,
@@ -54,14 +57,14 @@ class EntryScreen extends StatelessWidget {
                         _AnimatedLogo(),
                         const SizedBox(height: 24),
                         Text(
-                          _greeting,
+                          _greeting(t),
                           style: AppTypography.displaySmall.copyWith(
                             color: colors.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _currentDate.toUpperCase(),
+                          _currentDate(localeCode).toUpperCase(),
                           style: AppTypography.labelLarge.copyWith(
                             color: colors.onSurfaceVariant,
                             letterSpacing: 1,
@@ -155,7 +158,7 @@ class _QuickActionsRow extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ACCESOS RÁPIDOS',
+          ref.tr('common.quickActions'),
           style: AppTypography.labelSmall.copyWith(
             color: colors.onSurfaceVariant,
           ),
@@ -165,19 +168,19 @@ class _QuickActionsRow extends ConsumerWidget {
           children: [
             _QuickActionButton(
               icon: Icons.add_rounded,
-              label: 'Peso',
+              label: ref.tr('quickActions.weight'),
               onTap: () => _showAddWeightDialog(context, ref),
             ),
             const SizedBox(width: 12),
             _QuickActionButton(
               icon: Icons.play_arrow_rounded,
-              label: 'Entrenar',
+              label: ref.tr('quickActions.train'),
               onTap: () => _navigateToTraining(context),
             ),
             const SizedBox(width: 12),
             _QuickActionButton(
               icon: Icons.restaurant_rounded,
-              label: 'Comida',
+              label: ref.tr('quickActions.food'),
               onTap: () => _showAddFoodDialog(context, ref),
             ),
           ],
@@ -196,11 +199,14 @@ class _QuickActionsRow extends ConsumerWidget {
     final weightController = TextEditingController();
     DateTime selectedDate = DateTime.now();
 
+    final t = ref.read(translationsProvider).valueOrNull;
+    final localeCode = ref.read(localeCodeProvider);
+
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Registrar peso'),
+          title: Text(t?.translate('quickActions.addWeight') ?? 'Registrar peso'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -209,16 +215,16 @@ class _QuickActionsRow extends ConsumerWidget {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(
-                  labelText: 'Peso (kg)',
-                  hintText: 'Ej: 75.5',
+                decoration: InputDecoration(
+                  labelText: t?.translate('quickActions.weightKg') ?? 'Peso (kg)',
+                  hintText: t?.translate('quickActions.weightHint') ?? 'Ej: 75.5',
                 ),
                 autofocus: true,
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Text('Fecha: '),
+                  Text(t?.translate('quickActions.dateLabel') ?? 'Fecha: '),
                   TextButton(
                     onPressed: () async {
                       final picked = await showDatePicker(
@@ -234,7 +240,7 @@ class _QuickActionsRow extends ConsumerWidget {
                       }
                     },
                     child: Text(
-                      DateFormat('d MMM yyyy', 'es').format(selectedDate),
+                      DateFormat('d MMM yyyy', localeCode).format(selectedDate),
                     ),
                   ),
                 ],
@@ -244,7 +250,7 @@ class _QuickActionsRow extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('CANCELAR'),
+              child: Text(t?.translate('common.cancel') ?? 'CANCELAR'),
             ),
             FilledButton(
               onPressed: () {
@@ -257,7 +263,7 @@ class _QuickActionsRow extends ConsumerWidget {
                   AppSnackbar.showError(context, message: validationError);
                 }
               },
-              child: const Text('GUARDAR'),
+              child: Text(t?.translate('common.save') ?? 'GUARDAR'),
             ),
           ],
         ),
@@ -273,7 +279,9 @@ class _QuickActionsRow extends ConsumerWidget {
           WeighInModel(id: id, dateTime: selectedDate, weightKg: value),
         );
         if (context.mounted) {
-          AppSnackbar.show(context, message: 'Peso registrado');
+          AppSnackbar.show(context,
+              message: t?.translate('quickActions.weightSaved') ??
+                  'Peso registrado');
         }
       }
     }
@@ -283,6 +291,7 @@ class _QuickActionsRow extends ConsumerWidget {
 
   void _showAddFoodDialog(BuildContext context, WidgetRef ref) {
     AppHaptics.buttonPressed();
+    final t = ref.read(translationsProvider).valueOrNull;
     // Mostrar diálogo para elegir en qué comida añadir
     showModalBottomSheet(
       context: context,
@@ -294,7 +303,8 @@ class _QuickActionsRow extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '¿En qué comida quieres añadir?',
+                t?.translate('quickActions.mealQuestion') ??
+                    '¿En qué comida quieres añadir?',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 16),

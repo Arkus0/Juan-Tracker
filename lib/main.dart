@@ -20,10 +20,11 @@ Future<void> main() async {
   // DateFormat y SharedPreferences son independientes
   final initFutures = await Future.wait([
     initializeDateFormatting('es'),
+    initializeDateFormatting('en'),
     SharedPreferences.getInstance(),
   ]);
 
-  final prefs = initFutures[1] as SharedPreferences;
+  final prefs = initFutures[2] as SharedPreferences;
 
   runApp(
     ProviderScope(
