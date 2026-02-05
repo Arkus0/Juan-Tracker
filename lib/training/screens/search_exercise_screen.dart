@@ -1,14 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/design_system/design_system.dart';
 import '../../core/widgets/widgets.dart';
+import '../models/detected_exercise_draft.dart';
 import '../models/library_exercise.dart';
 import '../providers/exercise_search_providers.dart';
 import '../providers/exercise_usage_provider.dart';
+import '../providers/smart_import_provider.dart';
 import '../utils/exercise_colors.dart';
 import '../widgets/exercise_detail_dialog.dart';
 import '../widgets/common/create_exercise_dialog.dart';
+import '../widgets/smart_import_sheet_v2.dart';
 
 class SearchExerciseScreen extends ConsumerStatefulWidget {
   final bool isPickerMode;
@@ -41,9 +47,8 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
   }
 
   void _onExerciseSelected(LibraryExercise exercise) {
-    ref.read(exerciseUsageProvider.notifier).recordUsage(exercise.id);
-
     if (widget.isPickerMode) {
+      ref.read(exerciseUsageProvider.notifier).recordUsage(exercise.id);
       Navigator.of(context).pop(exercise);
       return;
     }
@@ -156,6 +161,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
     ).then((exercise) {
       if (exercise != null && mounted) {
         if (widget.isPickerMode) {
+          ref.read(exerciseUsageProvider.notifier).recordUsage(exercise.id);
           Navigator.of(context).pop(exercise);
           return;
         }
@@ -168,17 +174,177 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
 
   void _showSmartImportDialog() {
     setState(() => _isFabMenuOpen = false);
-    AppSnackbar.show(
-      context,
-      message: 'ImportaciÃ³n Smart disponible al crear o editar rutinas',
-    );
+    _openSmartImportSheet(voiceMode: true);
   }
 
   void _showOcrImportDialog() {
     setState(() => _isFabMenuOpen = false);
+    showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Escanear con cámara'),
+              onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Importar desde galería'),
+              onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    ).then((source) {
+      if (source != null && mounted) {
+        _openSmartImportSheet(ocrSource: source);
+      }
+    });
+  }
+
+  void _openSmartImportSheet({ImageSource? ocrSource, bool voiceMode = false}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => SmartImportSheetV2(
+        onConfirm: (drafts) {
+          unawaited(_handleImportedDrafts(drafts));
+        },
+        onCancel: () => Navigator.of(ctx).pop(),
+      ),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final notifier = ref.read(smartImportProvider.notifier);
+      if (ocrSource != null) {
+        unawaited(notifier.startOcrImport(ocrSource));
+      } else if (voiceMode) {
+        unawaited(_startVoiceImportWhenReady());
+      }
+    });
+  }
+
+  Future<void> _startVoiceImportWhenReady() async {
+    final notifier = ref.read(smartImportProvider.notifier);
+
+    // SmartImport inicializa voz async en build(); esperamos brevemente
+    // para evitar falsos "no disponible" por carrera de inicialización.
+    for (var i = 0; i < 15; i++) {
+      if (!mounted) return;
+      final state = ref.read(smartImportProvider);
+      if (state.isVoiceAvailable) {
+        await notifier.startVoiceListening();
+        return;
+      }
+      if (state.hasError) break;
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    // Último intento para que el provider emita error real si aplica.
+    await notifier.startVoiceListening();
+  }
+
+  Future<void> _handleImportedDrafts(List<DetectedExerciseDraft> drafts) async {
+    final importedExercises = await _resolveImportedExercises(drafts);
+    if (!mounted) return;
+
+    if (importedExercises.isEmpty) {
+      AppSnackbar.showError(
+        context,
+        message: 'No se pudo resolver ningún ejercicio importado',
+      );
+      return;
+    }
+
+    if (widget.isPickerMode) {
+      final selected = await _pickImportedExercise(importedExercises);
+      if (selected != null && mounted) {
+        ref.read(exerciseUsageProvider.notifier).recordUsage(selected.id);
+        Navigator.of(context).pop(selected);
+      }
+      return;
+    }
+
+    _showImportedExercisesSheet(importedExercises);
+  }
+
+  Future<List<LibraryExercise>> _resolveImportedExercises(
+    List<DetectedExerciseDraft> drafts,
+  ) async {
+    final notifier = ref.read(smartImportProvider.notifier);
+    final resolved = <LibraryExercise>[];
+
+    for (final draft in drafts) {
+      final id = draft.currentMatchedId;
+      if (id == null) continue;
+      final exercise = await notifier.getExerciseById(id);
+      if (exercise != null) {
+        resolved.add(exercise);
+      }
+    }
+
+    return resolved;
+  }
+
+  Future<LibraryExercise?> _pickImportedExercise(
+    List<LibraryExercise> exercises,
+  ) async {
+    if (exercises.length == 1) return exercises.first;
+
+    return showModalBottomSheet<LibraryExercise>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('Selecciona un ejercicio importado')),
+            ...exercises.map(
+              (exercise) => ListTile(
+                title: Text(exercise.name),
+                subtitle: Text(exercise.muscleGroup),
+                onTap: () => Navigator.of(ctx).pop(exercise),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImportedExercisesSheet(List<LibraryExercise> exercises) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            ListTile(
+              title: Text('${exercises.length} ejercicios importados'),
+              subtitle: const Text('Toca uno para ver detalles'),
+            ),
+            ...exercises.map(
+              (exercise) => ListTile(
+                leading: const Icon(Icons.fitness_center),
+                title: Text(exercise.name),
+                subtitle: Text(exercise.muscleGroup),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _showExerciseDetails(exercise);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
     AppSnackbar.show(
       context,
-      message: 'ImportaciÃ³n OCR disponible al crear o editar rutinas',
+      message: '${exercises.length} ejercicios importados',
     );
   }
 
@@ -189,7 +355,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
       onAdd: () {
         AppSnackbar.show(
           context,
-          message: 'Abre una rutina para aÃ±adir este ejercicio',
+          message: 'Abre una rutina para añadir este ejercicio',
         );
       },
     );

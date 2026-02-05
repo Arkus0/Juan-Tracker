@@ -18,6 +18,7 @@ import '../../../../training/database/database.dart' hide MealType, ServingUnit;
 import '../../diary/presentation/add_entry_dialog.dart';
 import '../providers/food_input_providers.dart';
 import '../providers/unified_search_provider.dart';
+import '../services/food_database_loader.dart';
 import '../widgets/add_food_manual_sheet.dart';
 import '../widgets/food_list_item.dart';
 import '../widgets/input_method_fab.dart';
@@ -770,6 +771,7 @@ class _FoodSearchUnifiedScreenState
     final recentFoods = ref.watch(recentFoodsForUnifiedProvider);
     final batchState = ref.watch(batchSelectionProvider);
     final favoriteFoods = ref.watch(favoriteFoodsForUnifiedProvider);
+    final foodBootstrapStatus = ref.watch(foodBootstrapControllerProvider);
 
     return Scaffold(
       resizeToAvoidBottomInset:
@@ -816,6 +818,10 @@ class _FoodSearchUnifiedScreenState
 
           // Chips de modo de entrada
           _buildInputModeChips(inputMode),
+
+          if (foodBootstrapStatus.isBusy ||
+              foodBootstrapStatus.stage == FoodBootstrapStage.error)
+            _buildFoodBootstrapBanner(foodBootstrapStatus),
 
           // Indicador de escucha de voz
           if (_isListening) _buildVoiceListeningIndicator(),
@@ -940,6 +946,103 @@ class _FoodSearchUnifiedScreenState
     );
   }
 
+  Widget _buildFoodBootstrapBanner(FoodBootstrapStatus status) {
+    final theme = Theme.of(context);
+    final isError = status.stage == FoodBootstrapStage.error;
+    final message =
+        status.message ??
+        (isError
+            ? (status.errorMessage ?? 'Error al preparar base de alimentos')
+            : 'Preparando base de alimentos...');
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isError
+            ? theme.colorScheme.errorContainer
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isError
+              ? theme.colorScheme.error.withAlpha((0.4 * 255).round())
+              : theme.colorScheme.outline.withAlpha((0.2 * 255).round()),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isError ? Icons.error_outline : Icons.sync,
+                size: 18,
+                color: isError
+                    ? theme.colorScheme.onErrorContainer
+                    : theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isError
+                        ? theme.colorScheme.onErrorContainer
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              if (isError)
+                TextButton(
+                  onPressed: _retryFoodBootstrap,
+                  child: const Text('Reintentar'),
+                ),
+            ],
+          ),
+          if (status.isBusy) ...[
+            const SizedBox(height: 8),
+            LinearProgressIndicator(value: status.progress),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBootstrapWaitingResults({
+    String message = 'Preparando base de alimentos. Espera un momento...',
+  }) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _retryFoodBootstrap() async {
+    await ref
+        .read(foodBootstrapControllerProvider.notifier)
+        .bootstrapIfNeeded(forceReload: true);
+  }
+
   Widget _buildVoiceListeningIndicator() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1003,11 +1106,16 @@ class _FoodSearchUnifiedScreenState
     required String searchQuery,
     required BatchSelectionState batchState,
   }) {
+    final bootstrapStatus = ref.watch(foodBootstrapControllerProvider);
+
     // Modo recientes
     if (inputMode == FoodInputMode.recent) {
       return recentFoods.when(
         data: (foods) {
           if (foods.isEmpty) {
+            if (bootstrapStatus.isBusy) {
+              return _buildBootstrapWaitingResults();
+            }
             return SearchEmptyState(
               onManualAdd: () => _showManualAddSheet(),
               onVoiceInput: _startListening,
@@ -1038,6 +1146,12 @@ class _FoodSearchUnifiedScreenState
       return searchResults.when(
         data: (scoredFoods) {
           if (scoredFoods.isEmpty && searchQuery.isNotEmpty) {
+            if (bootstrapStatus.isBusy) {
+              return _buildBootstrapWaitingResults(
+                message:
+                    'La base de alimentos todavía se está preparando. Intenta de nuevo en unos segundos.',
+              );
+            }
             return SearchEmptyState(
               query: searchQuery,
               onManualAdd: () => _showManualAddSheet(

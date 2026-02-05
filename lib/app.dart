@@ -17,24 +17,19 @@ class JuanTrackerApp extends ConsumerStatefulWidget {
 }
 
 class _JuanTrackerAppState extends ConsumerState<JuanTrackerApp> {
-  bool _foodBootstrapStarted = false;
-
   @override
   void initState() {
     super.initState();
-    unawaited(_bootstrapFoodDatabaseInBackground());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_bootstrapFoodDatabaseInBackground());
+    });
   }
 
   Future<void> _bootstrapFoodDatabaseInBackground() async {
-    if (_foodBootstrapStarted) return;
-    _foodBootstrapStarted = true;
-
     try {
-      final loader = ref.read(foodDatabaseLoaderProvider);
-      final isLoaded = await loader.isDatabaseLoaded();
-      if (!isLoaded) {
-        await loader.loadDatabase();
-      }
+      await ref
+          .read(foodBootstrapControllerProvider.notifier)
+          .bootstrapIfNeeded();
     } catch (e, stackTrace) {
       // No bloquea arranque: solo registrar para diagnóstico.
       debugPrint('[AppBootstrap] Food DB bootstrap failed: $e');
