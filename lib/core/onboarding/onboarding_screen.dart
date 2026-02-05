@@ -59,6 +59,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       color: AppColors.info,
       description: 'Nuestro sistema ajusta tus objetivos semanalmente basándose en tu progreso real.',
     ),
+    _OnboardingPageData(
+      title: 'Todo en Perfil',
+      subtitle: 'Ayuda y gestos ocultos',
+      icon: Icons.person_rounded,
+      color: AppColors.secondary,
+      description: 'En la pestaña Perfil encontrarás consejos, atajos y gestos como doble-tap, mantener pulsado y más. ¡Consúltalo cuando quieras!',
+    ),
   ];
 
   @override

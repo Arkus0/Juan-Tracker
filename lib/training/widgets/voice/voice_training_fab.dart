@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,18 +77,24 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
   }
 
   VoiceTrainingCommand? _parseTrainingCommand(String transcript) {
-    final normalized = transcript.toLowerCase().trim();
+    var normalized = transcript.toLowerCase().trim();
 
-    if (RegExp(r'^(hecho|listo|completado|terminado|serie\s+(?:hecha|completada))').hasMatch(normalized)) {
+    // Normalizar números hablados en español
+    normalized = _normalizeSpokenNumbers(normalized);
+
+    // Comando: "Hecho" / "Listo" / "Serie completada" / "Ya"
+    if (RegExp(r'^(hecho|listo|completado|terminado|ya|vale|ok|serie\s+(?:hecha|completada))').hasMatch(normalized)) {
       try { HapticFeedback.heavyImpact(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
       return const VoiceTrainingCommand(type: VoiceCommandType.markDone);
     }
 
-    if (RegExp(r'^(siguiente|next|proxim|adelante)').hasMatch(normalized)) {
+    // Comando: "Siguiente" / "Next" / "Próxima serie"
+    if (RegExp(r'^(siguiente|next|proxim|adelante|otra)').hasMatch(normalized)) {
       try { HapticFeedback.mediumImpact(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
       return const VoiceTrainingCommand(type: VoiceCommandType.nextSet);
     }
 
+    // Comando: "Descanso" / "Timer" / "Descansar X segundos"
     final restMatch = RegExp(r'(?:descanso|timer|descansar)\s*(?:de\s*)?(\d+)?').firstMatch(normalized);
     if (restMatch != null) {
       final seconds = restMatch.group(1);
@@ -97,26 +102,66 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
       return VoiceTrainingCommand(type: VoiceCommandType.startRest, value: seconds != null ? int.tryParse(seconds)?.toDouble() : null);
     }
 
-    final weightMatch = RegExp(r'(?:peso\s*)?(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg)').firstMatch(normalized);
-    if (weightMatch != null) {
-      final weightStr = weightMatch.group(1)!.replaceAll(',', '.');
+    // Comando combinado PRIMERO: "X kilos Y reps" / "80 kilos 12 reps" / "80 12"
+    // Este regex debe ir antes de los individuales para capturar ambos valores
+    final combinedMatch = RegExp(
+      r'(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg|k)?\s+(?:por\s+|x\s+)?(\d+)\s*(?:reps?|repeticiones?|veces)?',
+    ).firstMatch(normalized);
+    if (combinedMatch != null) {
+      final weightStr = combinedMatch.group(1)!.replaceAll(',', '.');
       final weight = double.tryParse(weightStr);
-      if (weight != null) {
+      final reps = int.tryParse(combinedMatch.group(2)!);
+      // Si el primer número parece peso (>=15) y el segundo reps (<=100)
+      if (weight != null && weight >= 15 && reps != null && reps >= 1 && reps <= 100) {
+        // Retornamos peso (el más importante, reps se puede inferir)
         try { HapticFeedback.selectionClick(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
         return VoiceTrainingCommand(type: VoiceCommandType.setWeight, value: weight);
       }
     }
 
-    final repsMatch = RegExp(r'(\d+)\s*(?:reps?|repeticiones?)').firstMatch(normalized);
-    if (repsMatch != null) {
-      final reps = int.tryParse(repsMatch.group(1)!);
-      if (reps != null) {
-        try { HapticFeedback.selectionClick(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
-        return VoiceTrainingCommand(type: VoiceCommandType.setReps, value: reps.toDouble());
+    // Comando: "Peso X kilos" / "X kilos" / "X kg" / "a X kilos" / "con X kg"
+    // También acepta números grandes sin unidad (>= 20 se asume como peso)
+    final weightMatch = RegExp(
+      r'(?:peso\s*|a\s*|con\s*)?(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg|k)?',
+    ).firstMatch(normalized);
+    if (weightMatch != null) {
+      final weightStr = weightMatch.group(1)!.replaceAll(',', '.');
+      final weight = double.tryParse(weightStr);
+      if (weight != null && weight > 0 && weight <= 500) {
+        // Si tiene unidad explícita (kilos/kg), aceptar cualquier peso válido
+        final hasUnit = RegExp(r'(?:kilos?|kg|k)\b').hasMatch(normalized);
+        // Sin unidad: solo aceptar si >= 20 (claramente peso, no reps)
+        if (hasUnit || weight >= 20) {
+          try { HapticFeedback.selectionClick(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
+          return VoiceTrainingCommand(type: VoiceCommandType.setWeight, value: weight);
+        }
       }
     }
 
-    final rpeMatch = RegExp(r'(?:rpe|esfuerzo)\s*(\d+(?:[.,]\d+)?)').firstMatch(normalized);
+    // Comando: "X repeticiones" / "X reps" / "hice X" / "he hecho X"
+    // También acepta números pequeños sin contexto (1-19 se asume como reps)
+    final repsMatch = RegExp(
+      r'(?:hice\s*|he\s+hecho\s*)?(\d+)\s*(?:reps?|repeticiones?|veces)?',
+    ).firstMatch(normalized);
+    if (repsMatch != null) {
+      final reps = int.tryParse(repsMatch.group(1)!);
+      // Aceptar si parece reps (1-99 range)
+      if (reps != null && reps >= 1 && reps <= 99) {
+        // Evitar conflicto con peso: si ya procesamos peso, no duplicar
+        final hasWeightUnit = normalized.contains('kilo') || 
+            RegExp(r'\d+\s*kg\b').hasMatch(normalized) ||
+            RegExp(r'\d+\s*k\b').hasMatch(normalized);
+        // Si tiene unidad de reps explícita, o es número pequeño (1-19), es reps
+        final hasRepsUnit = normalized.contains('rep') || normalized.contains('veces');
+        if (hasRepsUnit || (!hasWeightUnit && reps <= 19)) {
+          try { HapticFeedback.selectionClick(); } catch (e) { debugPrint('[Voice] Haptic error: $e'); }
+          return VoiceTrainingCommand(type: VoiceCommandType.setReps, value: reps.toDouble());
+        }
+      }
+    }
+
+    // Comando: "RPE X" / "Esfuerzo X"
+    final rpeMatch = RegExp(r'(?:rpe|esfuerzo|dificultad)\s*(\d+(?:[.,]\d+)?)').firstMatch(normalized);
     if (rpeMatch != null) {
       final rpeStr = rpeMatch.group(1)!.replaceAll(',', '.');
       final rpe = double.tryParse(rpeStr);
@@ -126,6 +171,7 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
       }
     }
 
+    // Comando: "Nota: texto" / "Anotar: texto" / "Apuntar: texto"
     final noteMatch = RegExp(r'^(?:nota|anotar|apuntar|apunta|anota)[:\s]+(.+)', caseSensitive: false).firstMatch(normalized);
     if (noteMatch != null) {
       final noteText = noteMatch.group(1)!.trim();
@@ -136,6 +182,35 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
     }
 
     return null;
+  }
+
+  /// Normaliza números hablados en español a dígitos
+  String _normalizeSpokenNumbers(String text) {
+    const numberWords = {
+      'cero': '0', 'uno': '1', 'una': '1', 'dos': '2', 'tres': '3',
+      'cuatro': '4', 'cinco': '5', 'seis': '6', 'siete': '7', 'ocho': '8',
+      'nueve': '9', 'diez': '10', 'once': '11', 'doce': '12', 'trece': '13',
+      'catorce': '14', 'quince': '15', 'dieciséis': '16', 'dieciseis': '16',
+      'diecisiete': '17', 'dieciocho': '18', 'diecinueve': '19',
+      'veinte': '20', 'veintiuno': '21', 'veintidós': '22', 'veintidos': '22',
+      'veintitrés': '23', 'veintitres': '23', 'veinticuatro': '24',
+      'veinticinco': '25', 'treinta': '30', 'cuarenta': '40', 'cincuenta': '50',
+      'sesenta': '60', 'setenta': '70', 'ochenta': '80', 'noventa': '90',
+      'cien': '100', 'ciento': '100',
+    };
+
+    var result = text;
+    for (final entry in numberWords.entries) {
+      result = result.replaceAll(RegExp('\\b${entry.key}\\b'), entry.value);
+    }
+
+    // Manejar "treinta y cinco" → "35", etc.
+    result = result.replaceAllMapped(
+      RegExp(r'(\d0)\s+y\s+(\d)'),
+      (m) => (int.parse(m.group(1)!) + int.parse(m.group(2)!)).toString(),
+    );
+
+    return result;
   }
 
   @override

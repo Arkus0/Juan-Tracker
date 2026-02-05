@@ -1553,7 +1553,13 @@ class _RepeatYesterdayButton extends ConsumerWidget {
       final count = await repeatFn();
       
       if (context.mounted) {
-        AppSnackbar.show(context, message: '$count alimentos añadidos');
+        if (count == 0) {
+          AppSnackbar.show(context, message: 'Ya tienes esas comidas añadidas');
+        } else if (count < entryCount) {
+          AppSnackbar.show(context, message: '$count alimentos añadidos (${entryCount - count} ya existían)');
+        } else {
+          AppSnackbar.show(context, message: '$count alimentos añadidos');
+        }
       }
     }
   }

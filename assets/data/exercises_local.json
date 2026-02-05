@@ -39,7 +39,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión guiada del press banca. Ideal para principiantes o para ir al fallo con seguridad sin necesidad de spotter.",
     "muscles": [
       "Pecho"
     ]
@@ -54,7 +54,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Enfatiza la porción clavicular (superior) del pectoral. Usa un ángulo de 30-45° para máximo estímulo.",
     "muscles": [
       "Pecho"
     ]
@@ -69,7 +69,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Mayor rango de movimiento que la barra. Permite mayor estiramiento y contracción del pecho superior.",
     "muscles": [
       "Pecho"
     ]
@@ -84,7 +84,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión guiada del press inclinado. Mantén los codos a 45° del torso para proteger los hombros.",
     "muscles": [
       "Pecho"
     ]
@@ -99,7 +99,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Enfatiza la porción inferior del pectoral. Requiere banco declinado y preferiblemente un spotter.",
     "muscles": [
       "Pecho"
     ]
@@ -114,7 +114,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Trabaja el pecho inferior con mayor rango de movimiento. Control en la bajada es clave.",
     "muscles": [
       "Pecho"
     ]
@@ -129,7 +129,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión segura del press declinado. Bueno para series al fallo sin riesgo.",
     "muscles": [
       "Pecho"
     ]
@@ -157,7 +157,7 @@
     ],
     "equipo": "cable",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para pecho. Mantén ligera flexión de codos.",
     "muscles": [
       "Pecho"
     ]
@@ -171,7 +171,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para pecho. Mantén ligera flexión de codos.",
     "muscles": [
       "Pecho"
     ]
@@ -199,7 +199,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Versión con barra que permite usar cargas más pesadas. Mantén la técnica estricta.",
     "muscles": [
       "Pecho"
     ]
@@ -213,7 +213,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión en máquina que ofrece movimiento guiado y seguro. Ideal para principiantes o para ir al fallo.",
     "muscles": [
       "Pecho"
     ]
@@ -241,7 +241,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje con peso corporal. Baja hasta 90° de flexión de codos y empuja fuerte.",
     "muscles": [
       "Pecho"
     ]
@@ -269,7 +269,7 @@
     ],
     "equipo": "lastre",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -297,7 +297,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Remo unilateral con mancuerna. Apoya una mano para estabilidad y tira el codo hacia atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -311,7 +311,7 @@
     ],
     "equipo": "cable",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Remo con cable para espalda. Mantén el pecho alto y tira hacia el abdomen.",
     "muscles": [
       "Espalda"
     ]
@@ -325,7 +325,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción para la espalda. Mantén la espalda neutra y tira de los codos.",
     "muscles": [
       "Espalda"
     ]
@@ -339,7 +339,7 @@
     ],
     "equipo": "cable",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -353,7 +353,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -383,7 +383,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental de tracción. Mantén la espalda neutra y empuja el suelo con los pies.",
     "muscles": [
       "Espalda"
     ]
@@ -398,7 +398,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Versión con barra que permite usar cargas más pesadas. Mantén la técnica estricta.",
     "muscles": [
       "Espalda"
     ]
@@ -426,7 +426,7 @@
     ],
     "equipo": "bandas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio para desarrollo de la espalda. Tira de los codos, no de las manos.",
     "muscles": [
       "Espalda"
     ]
@@ -456,7 +456,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental para piernas. Baja hasta paralelo o más, mantén la espalda neutra.",
     "muscles": [
       "Piernas"
     ]
@@ -471,7 +471,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental para piernas. Baja hasta paralelo o más, mantén la espalda neutra.",
     "muscles": [
       "Piernas"
     ]
@@ -485,7 +485,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Versión en máquina que ofrece movimiento guiado y seguro. Ideal para principiantes o para ir al fallo.",
     "muscles": [
       "Piernas"
     ]
@@ -513,7 +513,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Zancadas caminando o en el sitio. Trabaja cuádriceps, glúteos e isquios.",
     "muscles": [
       "Piernas"
     ]
@@ -527,7 +527,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio unilateral para piernas. Mantén el torso erguido y la rodilla alineada con el pie.",
     "muscles": [
       "Piernas"
     ]
@@ -555,7 +555,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental de tracción. Mantén la espalda neutra y empuja el suelo con los pies.",
     "muscles": [
       "Femoral"
     ]
@@ -583,7 +583,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Aislamiento de cuádriceps. No bloquees completamente las rodillas al final.",
     "muscles": [
       "Piernas"
     ]
@@ -611,7 +611,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio para desarrollo de glúteos. Contrae fuerte en la parte superior y mantén 1-2 segundos.",
     "muscles": [
       "Gluteos"
     ]
@@ -625,7 +625,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de elevación para gemelos. Controla el movimiento y evita usar impulso.",
     "muscles": [
       "Gemelos"
     ]
@@ -639,7 +639,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de elevación para gemelos. Controla el movimiento y evita usar impulso.",
     "muscles": [
       "Gemelos"
     ]
@@ -653,7 +653,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de elevación para gemelos. Controla el movimiento y evita usar impulso.",
     "muscles": [
       "Gemelos"
     ]
@@ -681,7 +681,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Mayor rango de movimiento y trabajo estabilizador. Permite rotación natural.",
     "muscles": [
       "Hombros"
     ]
@@ -695,7 +695,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Press vertical para desarrollo de hombros. Mantén el core apretado y evita arquear la espalda.",
     "muscles": [
       "Hombros"
     ]
@@ -723,7 +723,7 @@
     ],
     "equipo": "cable",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Aislamiento del deltoides lateral. Ligera inclinación hacia adelante, codos ligeramente flexionados.",
     "muscles": [
       "Hombros"
     ]
@@ -737,7 +737,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Trabaja el deltoides anterior. Alterna brazos o hazlo simultáneo.",
     "muscles": [
       "Hombros"
     ]
@@ -751,7 +751,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Versión bilateral para el deltoides anterior. Mantén los codos ligeramente flexionados.",
     "muscles": [
       "Hombros"
     ]
@@ -765,7 +765,7 @@
     ],
     "equipo": "cable",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Aislamiento del deltoides anterior. Eleva hasta la altura de los hombros.",
     "muscles": [
       "Hombros"
     ]
@@ -779,7 +779,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Versión con mancuernas que permite mayor rango de movimiento y trabajo estabilizador.",
     "muscles": [
       "Hombros"
     ]
@@ -793,7 +793,7 @@
     ],
     "equipo": "cable",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio con cable que proporciona tensión constante durante todo el rango de movimiento.",
     "muscles": [
       "Hombros"
     ]
@@ -807,7 +807,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión en máquina que ofrece movimiento guiado y seguro. Ideal para principiantes o para ir al fallo.",
     "muscles": [
       "Hombros"
     ]
@@ -835,7 +835,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Versión con mancuernas para mayor rango. Mantén los brazos rectos a los lados.",
     "muscles": [
       "Trapecio"
     ]
@@ -849,7 +849,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para bíceps. Mantén los codos fijos a los costados durante todo el movimiento.",
     "muscles": [
       "Biceps"
     ]
@@ -877,7 +877,7 @@
     ],
     "equipo": "cable",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para bíceps. Mantén los codos fijos a los costados durante todo el movimiento.",
     "muscles": [
       "Biceps"
     ]
@@ -891,7 +891,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para bíceps. Mantén los codos fijos a los costados durante todo el movimiento.",
     "muscles": [
       "Biceps"
     ]
@@ -905,7 +905,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Agarre neutro que trabaja el braquial además del bíceps. Mantén los codos fijos.",
     "muscles": [
       "Biceps"
     ]
@@ -919,7 +919,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para bíceps. Mantén los codos fijos a los costados durante todo el movimiento.",
     "muscles": [
       "Biceps"
     ]
@@ -947,7 +947,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Aislamiento de tríceps. Mantén los codos fijos y extiende completamente.",
     "muscles": [
       "Triceps"
     ]
@@ -961,7 +961,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Aislamiento de tríceps. Mantén los codos fijos y extiende completamente.",
     "muscles": [
       "Triceps"
     ]
@@ -975,7 +975,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para triceps. Controla el movimiento en ambas fases.",
     "muscles": [
       "Triceps"
     ]
@@ -989,7 +989,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para triceps. Controla el movimiento en ambas fases.",
     "muscles": [
       "Triceps"
     ]
@@ -1003,7 +1003,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Versión más fácil con manos en banco. Añade peso en las piernas para progresar.",
     "muscles": [
       "Triceps"
     ]
@@ -1017,7 +1017,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje con peso corporal. Baja hasta 90° de flexión de codos y empuja fuerte.",
     "muscles": [
       "Triceps"
     ]
@@ -1059,7 +1059,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Flexión de tronco para abdominales. Eleva los hombros del suelo contrayendo el abdomen.",
     "muscles": [
       "Core"
     ]
@@ -1087,7 +1087,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de elevación para core. Controla el movimiento y evita usar impulso.",
     "muscles": [
       "Core"
     ]
@@ -1101,7 +1101,7 @@
     ],
     "equipo": "rueda",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio para el core. Mantén el abdomen contraído durante todo el movimiento.",
     "muscles": [
       "Core"
     ]
@@ -1116,7 +1116,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Versión con mancuernas que permite mayor rango de movimiento y trabajo estabilizador.",
     "muscles": [
       "Full body"
     ]
@@ -1131,7 +1131,7 @@
     ],
     "equipo": "kettlebell",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio para full body. Mantén buena técnica y control del movimiento.",
     "muscles": [
       "Full body"
     ]
@@ -1146,7 +1146,7 @@
     ],
     "equipo": "kettlebell",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio para glúteos. Contrae fuerte en la parte superior.",
     "muscles": [
       "Gluteos"
     ]
@@ -1176,7 +1176,7 @@
     ],
     "equipo": "kettlebell",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para full body. Controla el movimiento en ambas fases.",
     "muscles": [
       "Full body"
     ]
@@ -1233,7 +1233,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para pecho. Controla el movimiento en ambas fases.",
     "muscles": [
       "Pecho"
     ]
@@ -1248,7 +1248,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para pecho. Controla el movimiento en ambas fases.",
     "muscles": [
       "Pecho"
     ]
@@ -1263,7 +1263,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para pecho. Controla el movimiento en ambas fases.",
     "muscles": [
       "Pecho"
     ]
@@ -1278,7 +1278,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Variante inclinada que enfatiza la porción superior del músculo objetivo. Usa un ángulo de 30-45° para óptimos resultados.",
     "muscles": [
       "Pecho"
     ]
@@ -1293,7 +1293,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Variante inclinada que enfatiza la porción superior del músculo objetivo. Usa un ángulo de 30-45° para óptimos resultados.",
     "muscles": [
       "Pecho"
     ]
@@ -1308,7 +1308,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Variante inclinada que enfatiza la porción superior del músculo objetivo. Usa un ángulo de 30-45° para óptimos resultados.",
     "muscles": [
       "Pecho"
     ]
@@ -1323,7 +1323,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Variante declinada que enfatiza la porción inferior del músculo objetivo. Requiere banco declinado.",
     "muscles": [
       "Pecho"
     ]
@@ -1338,7 +1338,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Variante declinada que enfatiza la porción inferior del músculo objetivo. Requiere banco declinado.",
     "muscles": [
       "Pecho"
     ]
@@ -1353,7 +1353,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Variante declinada que enfatiza la porción inferior del músculo objetivo. Requiere banco declinado.",
     "muscles": [
       "Pecho"
     ]
@@ -1367,7 +1367,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para pecho. Mantén ligera flexión de codos.",
     "muscles": [
       "Pecho"
     ]
@@ -1381,7 +1381,7 @@
     ],
     "equipo": "cable",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para pecho. Mantén ligera flexión de codos.",
     "muscles": [
       "Pecho"
     ]
@@ -1395,7 +1395,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para pecho. Mantén ligera flexión de codos.",
     "muscles": [
       "Pecho"
     ]
@@ -1409,7 +1409,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión con mancuernas que permite mayor rango de movimiento y trabajo estabilizador.",
     "muscles": [
       "Pecho"
     ]
@@ -1423,7 +1423,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Versión con barra que permite usar cargas más pesadas. Mantén la técnica estricta.",
     "muscles": [
       "Pecho"
     ]
@@ -1437,7 +1437,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Versión en máquina que ofrece movimiento guiado y seguro. Ideal para principiantes o para ir al fallo.",
     "muscles": [
       "Pecho"
     ]
@@ -1451,7 +1451,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje con peso corporal. Baja hasta 90° de flexión de codos y empuja fuerte.",
     "muscles": [
       "Pecho"
     ]
@@ -1465,7 +1465,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje con peso corporal. Baja hasta 90° de flexión de codos y empuja fuerte.",
     "muscles": [
       "Pecho"
     ]
@@ -1479,7 +1479,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -1493,7 +1493,7 @@
     ],
     "equipo": "lastre",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -1507,7 +1507,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción para la espalda. Mantén la espalda neutra y tira de los codos.",
     "muscles": [
       "Espalda"
     ]
@@ -1521,7 +1521,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Remo unilateral con mancuerna. Apoya una mano para estabilidad y tira el codo hacia atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -1535,7 +1535,7 @@
     ],
     "equipo": "cable",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Remo con cable para espalda. Mantén el pecho alto y tira hacia el abdomen.",
     "muscles": [
       "Espalda"
     ]
@@ -1549,7 +1549,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción para la espalda. Mantén la espalda neutra y tira de los codos.",
     "muscles": [
       "Espalda"
     ]
@@ -1563,7 +1563,7 @@
     ],
     "equipo": "cable",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -1577,7 +1577,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -1592,7 +1592,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental de tracción. Mantén la espalda neutra y empuja el suelo con los pies.",
     "muscles": [
       "Espalda"
     ]
@@ -1607,7 +1607,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental de tracción. Mantén la espalda neutra y empuja el suelo con los pies.",
     "muscles": [
       "Espalda"
     ]
@@ -1622,7 +1622,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión con barra que permite usar cargas más pesadas. Mantén la técnica estricta.",
     "muscles": [
       "Espalda"
     ]
@@ -1636,7 +1636,7 @@
     ],
     "equipo": "cable",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio con cable que proporciona tensión constante durante todo el rango de movimiento.",
     "muscles": [
       "Espalda"
     ]
@@ -1650,7 +1650,7 @@
     ],
     "equipo": "bandas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio para desarrollo de la espalda. Tira de los codos, no de las manos.",
     "muscles": [
       "Espalda"
     ]
@@ -1665,7 +1665,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental para piernas. Baja hasta paralelo o más, mantén la espalda neutra.",
     "muscles": [
       "Piernas"
     ]
@@ -1680,7 +1680,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental para piernas. Baja hasta paralelo o más, mantén la espalda neutra.",
     "muscles": [
       "Piernas"
     ]
@@ -1695,7 +1695,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental para piernas. Baja hasta paralelo o más, mantén la espalda neutra.",
     "muscles": [
       "Piernas"
     ]
@@ -1709,7 +1709,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión en máquina que ofrece movimiento guiado y seguro. Ideal para principiantes o para ir al fallo.",
     "muscles": [
       "Piernas"
     ]
@@ -1723,7 +1723,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio unilateral para piernas. Mantén el torso erguido y la rodilla alineada con el pie.",
     "muscles": [
       "Piernas"
     ]
@@ -1737,7 +1737,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio unilateral para piernas. Mantén el torso erguido y la rodilla alineada con el pie.",
     "muscles": [
       "Piernas"
     ]
@@ -1751,7 +1751,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio unilateral para piernas. Mantén el torso erguido y la rodilla alineada con el pie.",
     "muscles": [
       "Piernas"
     ]
@@ -1765,7 +1765,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental de tracción. Mantén la espalda neutra y empuja el suelo con los pies.",
     "muscles": [
       "Femoral"
     ]
@@ -1779,7 +1779,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental de tracción. Mantén la espalda neutra y empuja el suelo con los pies.",
     "muscles": [
       "Femoral"
     ]
@@ -1793,7 +1793,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para isquiotibiales. Contrae fuerte en la parte superior del movimiento.",
     "muscles": [
       "Femoral"
     ]
@@ -1807,7 +1807,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Aislamiento de cuádriceps. No bloquees completamente las rodillas al final.",
     "muscles": [
       "Piernas"
     ]
@@ -1821,7 +1821,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio para desarrollo de glúteos. Contrae fuerte en la parte superior y mantén 1-2 segundos.",
     "muscles": [
       "Gluteos"
     ]
@@ -1835,7 +1835,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio para desarrollo de glúteos. Contrae fuerte en la parte superior y mantén 1-2 segundos.",
     "muscles": [
       "Gluteos"
     ]
@@ -1849,7 +1849,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de elevación para gemelos. Controla el movimiento y evita usar impulso.",
     "muscles": [
       "Gemelos"
     ]
@@ -1863,7 +1863,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de elevación para gemelos. Controla el movimiento y evita usar impulso.",
     "muscles": [
       "Gemelos"
     ]
@@ -1877,7 +1877,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de elevación para gemelos. Controla el movimiento y evita usar impulso.",
     "muscles": [
       "Gemelos"
     ]
@@ -1891,7 +1891,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Press vertical para desarrollo de hombros. Mantén el core apretado y evita arquear la espalda.",
     "muscles": [
       "Hombros"
     ]
@@ -1905,7 +1905,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Press vertical para desarrollo de hombros. Mantén el core apretado y evita arquear la espalda.",
     "muscles": [
       "Hombros"
     ]
@@ -1919,7 +1919,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Press vertical para desarrollo de hombros. Mantén el core apretado y evita arquear la espalda.",
     "muscles": [
       "Hombros"
     ]
@@ -1933,7 +1933,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Aislamiento del deltoides lateral. Ligera inclinación hacia adelante, codos ligeramente flexionados.",
     "muscles": [
       "Hombros"
     ]
@@ -1947,7 +1947,7 @@
     ],
     "equipo": "cable",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Aislamiento del deltoides lateral. Ligera inclinación hacia adelante, codos ligeramente flexionados.",
     "muscles": [
       "Hombros"
     ]
@@ -1961,7 +1961,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Aislamiento del deltoides anterior. Eleva hasta la altura de los hombros.",
     "muscles": [
       "Hombros"
     ]
@@ -1975,7 +1975,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Aislamiento del deltoides anterior. Eleva hasta la altura de los hombros.",
     "muscles": [
       "Hombros"
     ]
@@ -1989,7 +1989,7 @@
     ],
     "equipo": "cable",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Aislamiento del deltoides anterior. Eleva hasta la altura de los hombros.",
     "muscles": [
       "Hombros"
     ]
@@ -2003,7 +2003,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión con mancuernas que permite mayor rango de movimiento y trabajo estabilizador.",
     "muscles": [
       "Hombros"
     ]
@@ -2017,7 +2017,7 @@
     ],
     "equipo": "cable",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio con cable que proporciona tensión constante durante todo el rango de movimiento.",
     "muscles": [
       "Hombros"
     ]
@@ -2031,7 +2031,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Versión en máquina que ofrece movimiento guiado y seguro. Ideal para principiantes o para ir al fallo.",
     "muscles": [
       "Hombros"
     ]
@@ -2045,7 +2045,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión con barra que permite usar cargas más pesadas. Mantén la técnica estricta.",
     "muscles": [
       "Trapecio"
     ]
@@ -2059,7 +2059,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Versión con mancuernas que permite mayor rango de movimiento y trabajo estabilizador.",
     "muscles": [
       "Trapecio"
     ]
@@ -2073,7 +2073,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para bíceps. Mantén los codos fijos a los costados durante todo el movimiento.",
     "muscles": [
       "Biceps"
     ]
@@ -2087,7 +2087,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para bíceps. Mantén los codos fijos a los costados durante todo el movimiento.",
     "muscles": [
       "Biceps"
     ]
@@ -2101,7 +2101,7 @@
     ],
     "equipo": "cable",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para bíceps. Mantén los codos fijos a los costados durante todo el movimiento.",
     "muscles": [
       "Biceps"
     ]
@@ -2115,7 +2115,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para bíceps. Mantén los codos fijos a los costados durante todo el movimiento.",
     "muscles": [
       "Biceps"
     ]
@@ -2129,7 +2129,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Agarre neutro que trabaja el braquial además del bíceps. Mantén los codos fijos.",
     "muscles": [
       "Biceps"
     ]
@@ -2143,7 +2143,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para bíceps. Mantén los codos fijos a los costados durante todo el movimiento.",
     "muscles": [
       "Biceps"
     ]
@@ -2157,7 +2157,7 @@
     ],
     "equipo": "cable",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Aislamiento de tríceps. Mantén los codos fijos y extiende completamente.",
     "muscles": [
       "Triceps"
     ]
@@ -2171,7 +2171,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Aislamiento de tríceps. Mantén los codos fijos y extiende completamente.",
     "muscles": [
       "Triceps"
     ]
@@ -2185,7 +2185,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Aislamiento de tríceps. Mantén los codos fijos y extiende completamente.",
     "muscles": [
       "Triceps"
     ]
@@ -2199,7 +2199,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para triceps. Controla el movimiento en ambas fases.",
     "muscles": [
       "Triceps"
     ]
@@ -2213,7 +2213,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para triceps. Controla el movimiento en ambas fases.",
     "muscles": [
       "Triceps"
     ]
@@ -2227,7 +2227,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje con peso corporal. Baja hasta 90° de flexión de codos y empuja fuerte.",
     "muscles": [
       "Triceps"
     ]
@@ -2241,7 +2241,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje con peso corporal. Baja hasta 90° de flexión de codos y empuja fuerte.",
     "muscles": [
       "Triceps"
     ]
@@ -2255,7 +2255,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio isométrico para el core. Mantén el cuerpo en línea recta, sin hundir la cadera.",
     "muscles": [
       "Core"
     ]
@@ -2269,7 +2269,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Flexión de tronco para abdominales. Eleva los hombros del suelo contrayendo el abdomen.",
     "muscles": [
       "Core"
     ]
@@ -2283,7 +2283,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Flexión de tronco para abdominales. Eleva los hombros del suelo contrayendo el abdomen.",
     "muscles": [
       "Core"
     ]
@@ -2297,7 +2297,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de elevación para core. Controla el movimiento y evita usar impulso.",
     "muscles": [
       "Core"
     ]
@@ -2311,7 +2311,7 @@
     ],
     "equipo": "barra",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de elevación para core. Controla el movimiento y evita usar impulso.",
     "muscles": [
       "Core"
     ]
@@ -2325,7 +2325,7 @@
     ],
     "equipo": "rueda",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio para el core. Mantén el abdomen contraído durante todo el movimiento.",
     "muscles": [
       "Core"
     ]
@@ -2340,7 +2340,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión con mancuernas que permite mayor rango de movimiento y trabajo estabilizador.",
     "muscles": [
       "Full body"
     ]
@@ -2355,7 +2355,7 @@
     ],
     "equipo": "kettlebell",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio para full body. Mantén buena técnica y control del movimiento.",
     "muscles": [
       "Full body"
     ]
@@ -2370,7 +2370,7 @@
     ],
     "equipo": "kettlebell",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio para glúteos. Contrae fuerte en la parte superior.",
     "muscles": [
       "Gluteos"
     ]
@@ -2385,7 +2385,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para full body. Controla el movimiento en ambas fases.",
     "muscles": [
       "Full body"
     ]
@@ -2400,7 +2400,7 @@
     ],
     "equipo": "kettlebell",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para full body. Controla el movimiento en ambas fases.",
     "muscles": [
       "Full body"
     ]
@@ -2414,7 +2414,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio con peso corporal. Progresa aumentando repeticiones o dificultad.",
     "muscles": [
       "Full body"
     ]
@@ -2428,7 +2428,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción para la espalda. Mantén la espalda neutra y tira de los codos.",
     "muscles": [
       "Espalda"
     ]
@@ -2442,7 +2442,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio con peso corporal. Progresa aumentando repeticiones o dificultad.",
     "muscles": [
       "Pecho"
     ]
@@ -2457,7 +2457,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para pecho. Controla el movimiento en ambas fases.",
     "muscles": [
       "Pecho"
     ]
@@ -2472,7 +2472,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para pecho. Controla el movimiento en ambas fases.",
     "muscles": [
       "Pecho"
     ]
@@ -2487,7 +2487,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje para pecho. Controla el movimiento en ambas fases.",
     "muscles": [
       "Pecho"
     ]
@@ -2502,7 +2502,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Variante inclinada que enfatiza la porción superior del músculo objetivo. Usa un ángulo de 30-45° para óptimos resultados.",
     "muscles": [
       "Pecho"
     ]
@@ -2517,7 +2517,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Variante inclinada que enfatiza la porción superior del músculo objetivo. Usa un ángulo de 30-45° para óptimos resultados.",
     "muscles": [
       "Pecho"
     ]
@@ -2532,7 +2532,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Variante inclinada que enfatiza la porción superior del músculo objetivo. Usa un ángulo de 30-45° para óptimos resultados.",
     "muscles": [
       "Pecho"
     ]
@@ -2547,7 +2547,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Variante declinada que enfatiza la porción inferior del músculo objetivo. Requiere banco declinado.",
     "muscles": [
       "Pecho"
     ]
@@ -2562,7 +2562,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Variante declinada que enfatiza la porción inferior del músculo objetivo. Requiere banco declinado.",
     "muscles": [
       "Pecho"
     ]
@@ -2577,7 +2577,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Variante declinada que enfatiza la porción inferior del músculo objetivo. Requiere banco declinado.",
     "muscles": [
       "Pecho"
     ]
@@ -2591,7 +2591,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para pecho. Mantén ligera flexión de codos.",
     "muscles": [
       "Pecho"
     ]
@@ -2605,7 +2605,7 @@
     ],
     "equipo": "cable",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para pecho. Mantén ligera flexión de codos.",
     "muscles": [
       "Pecho"
     ]
@@ -2619,7 +2619,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de aislamiento para pecho. Mantén ligera flexión de codos.",
     "muscles": [
       "Pecho"
     ]
@@ -2633,7 +2633,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Versión con mancuernas que permite mayor rango de movimiento y trabajo estabilizador.",
     "muscles": [
       "Pecho"
     ]
@@ -2647,7 +2647,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Versión con barra que permite usar cargas más pesadas. Mantén la técnica estricta.",
     "muscles": [
       "Pecho"
     ]
@@ -2661,7 +2661,7 @@
     ],
     "equipo": "maquina",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Versión en máquina que ofrece movimiento guiado y seguro. Ideal para principiantes o para ir al fallo.",
     "muscles": [
       "Pecho"
     ]
@@ -2675,7 +2675,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje con peso corporal. Baja hasta 90° de flexión de codos y empuja fuerte.",
     "muscles": [
       "Pecho"
     ]
@@ -2689,7 +2689,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de empuje con peso corporal. Baja hasta 90° de flexión de codos y empuja fuerte.",
     "muscles": [
       "Pecho"
     ]
@@ -2703,7 +2703,7 @@
     ],
     "equipo": "peso corporal",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -2717,7 +2717,7 @@
     ],
     "equipo": "lastre",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -2731,7 +2731,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción para la espalda. Mantén la espalda neutra y tira de los codos.",
     "muscles": [
       "Espalda"
     ]
@@ -2745,7 +2745,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Remo unilateral con mancuerna. Apoya una mano para estabilidad y tira el codo hacia atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -2759,7 +2759,7 @@
     ],
     "equipo": "cable",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Remo con cable para espalda. Mantén el pecho alto y tira hacia el abdomen.",
     "muscles": [
       "Espalda"
     ]
@@ -2773,7 +2773,7 @@
     ],
     "equipo": "maquina",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción para la espalda. Mantén la espalda neutra y tira de los codos.",
     "muscles": [
       "Espalda"
     ]
@@ -2787,7 +2787,7 @@
     ],
     "equipo": "cable",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -2801,7 +2801,7 @@
     ],
     "equipo": "maquina",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Ejercicio de tracción vertical para espalda y bíceps. Tira de los codos hacia abajo y atrás.",
     "muscles": [
       "Espalda"
     ]
@@ -2816,7 +2816,7 @@
     ],
     "equipo": "barra",
     "nivel": "avanzado",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental de tracción. Mantén la espalda neutra y empuja el suelo con los pies.",
     "muscles": [
       "Espalda"
     ]
@@ -2831,7 +2831,7 @@
     ],
     "equipo": "mancuernas",
     "nivel": "basico",
-    "descripcion": "",
+    "descripcion": "Ejercicio fundamental de tracción. Mantén la espalda neutra y empuja el suelo con los pies.",
     "muscles": [
       "Espalda"
     ]
@@ -2846,7 +2846,7 @@
     ],
     "equipo": "barra",
     "nivel": "intermedio",
-    "descripcion": "",
+    "descripcion": "Versión con barra que permite usar cargas más pesadas. Mantén la técnica estricta.",
     "muscles": [
       "Espalda"
     ]

@@ -27,7 +27,7 @@ class SettingsScreen extends ConsumerWidget {
           child: HomeButton(),
         ),
         title: Text(
-          'AJUSTES',
+          'PERFIL',
           style: core.AppTypography.headlineMedium,
         ),
       ),
@@ -171,7 +171,9 @@ class SettingsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-              'Modo compacto: más ejercicios visibles en pantalla. Ideal para gimnasio con poca luz.',
+              'Ajusta el espaciado entre elementos en la pantalla de entrenamiento. '
+              'Compacta = más info en pantalla, menos scroll. '
+              'Detallada = más espacio entre ejercicios, más legible.',
               style: core.AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
               ),
@@ -286,6 +288,82 @@ class SettingsScreen extends ConsumerWidget {
                   MaterialPageRoute(builder: (_) => const ExportScreen()),
                 );
               },
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ================================================================
+          // SECCIÓN GESTOS Y ATAJOS - Para que los usuarios descubran funcionalidades
+          // ================================================================
+          const _SectionHeader(title: 'GESTOS Y ATAJOS'),
+          const SizedBox(height: 8),
+
+          _GestureTile(
+            icon: Icons.touch_app,
+            gesture: 'Doble-tap',
+            where: 'Nombre del ejercicio',
+            action: 'Ver series de calentamiento sugeridas',
+          ),
+
+          _GestureTile(
+            icon: Icons.pan_tool,
+            gesture: 'Mantener pulsado',
+            where: 'Una serie (fila)',
+            action: 'Marcar como warmup, failure o dropset',
+          ),
+
+          _GestureTile(
+            icon: Icons.swipe_vertical,
+            gesture: 'Deslizar arriba/abajo',
+            where: 'Campo de peso o reps',
+            action: 'Ajustar +1/-1 rápidamente',
+          ),
+
+          _GestureTile(
+            icon: Icons.touch_app,
+            gesture: 'Doble-tap',
+            where: 'Campo con valor gris (ghost)',
+            action: 'Copiar el valor sugerido',
+          ),
+
+          _GestureTile(
+            icon: Icons.expand_more,
+            gesture: 'Tap',
+            where: 'Nombre del ejercicio',
+            action: 'Colapsar/expandir ejercicio',
+          ),
+
+          _GestureTile(
+            icon: Icons.timer,
+            gesture: 'Mantener pulsado',
+            where: 'Barra del timer',
+            action: 'Añadir 30 segundos extra',
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.info.withAlpha(20),
+                borderRadius: BorderRadius.circular(core.AppRadius.sm),
+                border: Border.all(color: AppColors.info.withAlpha(50)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb_outline, color: AppColors.info, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Los valores grises en peso/reps son sugerencias basadas en tu historial. ¡Doble-tap para usarlos!',
+                      style: core.AppTypography.bodySmall.copyWith(
+                        color: AppColors.info,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -1103,25 +1181,22 @@ class _DensityModeTile extends ConsumerWidget {
                   value: DensityMode.compact,
                   label: Text(
                     'Compacta',
-                    style: core.AppTypography.bodySmall,
+                    style: core.AppTypography.labelSmall,
                   ),
-                  icon: Icon(Icons.view_compact, size: 18),
                 ),
                 ButtonSegment<DensityMode>(
                   value: DensityMode.comfortable,
                   label: Text(
                     'Cómoda',
-                    style: core.AppTypography.bodySmall,
+                    style: core.AppTypography.labelSmall,
                   ),
-                  icon: Icon(Icons.view_comfy, size: 18),
                 ),
                 ButtonSegment<DensityMode>(
                   value: DensityMode.detailed,
                   label: Text(
                     'Detallada',
-                    style: core.AppTypography.bodySmall,
+                    style: core.AppTypography.labelSmall,
                   ),
-                  icon: Icon(Icons.view_agenda, size: 18),
                 ),
               ],
               selected: {density},
@@ -1237,3 +1312,87 @@ void _showGuideDialog(
     ),
   );
 }
+
+/// Tile para mostrar un gesto/atajo con su acción
+class _GestureTile extends StatelessWidget {
+  final IconData icon;
+  final String gesture;
+  final String where;
+  final String action;
+
+  const _GestureTile({
+    required this.icon,
+    required this.gesture,
+    required this.where,
+    required this.action,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(core.AppRadius.sm),
+        border: Border.all(color: colorScheme.outline.withAlpha(50)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.neonPrimary.withAlpha(30),
+              borderRadius: BorderRadius.circular(core.AppRadius.xs),
+            ),
+            child: Icon(icon, color: AppColors.neonPrimary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: gesture,
+                        style: core.AppTypography.labelLarge.copyWith(
+                          color: AppColors.neonPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' en ',
+                        style: core.AppTypography.bodySmall.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      TextSpan(
+                        text: where,
+                        style: core.AppTypography.bodySmall.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  action,
+                  style: core.AppTypography.bodySmall.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

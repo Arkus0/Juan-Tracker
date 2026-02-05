@@ -306,6 +306,8 @@ class SessionRepository {
                   notes: Value(log.notas),
                   restSeconds: Value(log.restSeconds),
                   isFailure: Value(log.isFailure),
+                  isDropset: Value(log.isDropset),
+                  isRestPause: Value(log.isRestPause),
                   isWarmup: Value(log.isWarmup),
                 ),
               );

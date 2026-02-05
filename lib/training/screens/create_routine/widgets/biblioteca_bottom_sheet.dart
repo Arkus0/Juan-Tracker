@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/training/models/analysis_models.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
 import 'package:juan_tracker/training/services/exercise_library_service.dart';
 import 'package:juan_tracker/training/services/smart_exercise_search_service.dart';
 import 'package:juan_tracker/training/widgets/common/create_exercise_dialog.dart';
+import 'package:juan_tracker/training/widgets/exercise_detail_dialog.dart';
 
 /// Modo de búsqueda
 enum SearchMode {
@@ -161,12 +162,12 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
       SnackBar(
         content: Text(
           '$exerciseName añadido',
-          style: GoogleFonts.montserrat(
-            color: Colors.white,
+          style: AppTypography.labelLarge.copyWith(
+            color: scheme.onSurface,
             fontWeight: FontWeight.w900,
           ),
         ),
-        backgroundColor: scheme.surface,
+        backgroundColor: scheme.surfaceContainerHighest,
         duration: const Duration(milliseconds: 1000),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
@@ -175,10 +176,11 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
   }
 
   void _showCustomExerciseOptions(BuildContext context, LibraryExercise ex) {
+    final scheme = Theme.of(context).colorScheme;
     HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: scheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -191,40 +193,38 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 16),
               decoration: BoxDecoration(
-                color: Colors.grey[700],
+                color: scheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             Text(
               ex.name,
-              style: GoogleFonts.montserrat(
+              style: AppTypography.titleMedium.copyWith(
                 fontWeight: FontWeight.w800,
-                color: Colors.white,
-                fontSize: 16,
+                color: scheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.purple[700],
+                color: scheme.tertiary,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 'EJERCICIO PERSONALIZADO',
-                style: GoogleFonts.montserrat(
-                  fontSize: 10,
+                style: AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: scheme.onTertiary,
                 ),
               ),
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: Icon(Icons.edit, color: Colors.blue[400]),
-              title: const Text(
+              leading: Icon(Icons.edit, color: scheme.primary),
+              title: Text(
                 'Editar ejercicio',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: scheme.onSurface),
               ),
               onTap: () async {
                 Navigator.pop(ctx);
@@ -240,24 +240,19 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.delete, color: Colors.red[400]),
-              title: const Text(
+              leading: Icon(Icons.delete, color: scheme.error),
+              title: Text(
                 'Eliminar ejercicio',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: scheme.onSurface),
               ),
               onTap: () async {
                 Navigator.pop(ctx);
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (c) => AlertDialog(
-                    backgroundColor: Colors.grey[900],
-                    title: const Text(
-                      '¿ELIMINAR EJERCICIO?',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    title: const Text('¿ELIMINAR EJERCICIO?'),
                     content: Text(
                       'Se eliminará "${ex.name}" de tu biblioteca. Esta acción no se puede deshacer.',
-                      style: const TextStyle(color: Colors.white70),
                     ),
                     actions: [
                       TextButton(
@@ -268,7 +263,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                         onPressed: () => Navigator.pop(c, true),
                         child: Text(
                           'ELIMINAR',
-                          style: TextStyle(color: Colors.red[400]),
+                          style: TextStyle(color: scheme.error),
                         ),
                       ),
                     ],
@@ -284,7 +279,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${ex.name} eliminado'),
-                        backgroundColor: Colors.red[700],
+                        backgroundColor: scheme.error,
                       ),
                     );
                   }
@@ -298,9 +293,16 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     );
   }
 
-  /// 🆕 Muestra preview del ejercicio con historial personal
-  void _showExercisePreview(BuildContext context, LibraryExercise ex) async {
-    final scheme = Theme.of(context).colorScheme;
+  /// Abre el dialog de detalles del ejercicio con historial completo.
+  /// Usa el nuevo ExerciseDetailDialog que es ConsumerWidget y puede
+  /// acceder al historial via Riverpod.
+  void _openExerciseDetails(
+    BuildContext context,
+    LibraryExercise ex,
+    bool isCustom,
+  ) async {
+    HapticFeedback.selectionClick();
+
     // Obtener PR personal si hay callback
     PersonalRecord? personalRecord;
     if (widget.getPersonalRecord != null) {
@@ -313,227 +315,26 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
 
     if (!context.mounted || !mounted) return;
 
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 340, maxHeight: 550),
-          decoration: BoxDecoration(
-            color: Colors.grey[900],
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[700]!),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Imagen grande
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-                child: SizedBox(height: 180, child: _buildImage(ex)),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Nombre
-                    Text(
-                      ex.name.toUpperCase(),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: scheme.onSurface,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-
-                    // 🆕 Historial personal (PR)
-                    if (personalRecord != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.amber[800]!, Colors.orange[700]!],
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.emoji_events,
-                              color: scheme.onSurface,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'TU MEJOR: ${personalRecord.maxWeight.toStringAsFixed(1)}kg × ${personalRecord.repsAtMax}',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: scheme.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-
-                    // Grupo muscular + equipo
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: scheme.primary.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            ex.muscleGroup.toUpperCase(),
-                            style: GoogleFonts.montserrat(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: scheme.onSurface,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          ex.equipment,
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Músculos detallados
-                    if (ex.muscles.isNotEmpty) ...[
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: ex.muscles
-                            .map(
-                              (m) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[800],
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  m,
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 10,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // Descripción
-                    if (ex.description?.isNotEmpty ?? false)
-                      Text(
-                        ex.description!,
-                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-
-              // Botones de acción
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[850],
-                  borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // Favorito toggle
-                    IconButton(
-                      onPressed: () async {
-                        await ExerciseLibraryService.instance.toggleFavorite(
-                          ex.id,
-                        );
-                        if (!ctx.mounted) return;
-                        Navigator.pop(ctx);
-                        setState(() {});
-                      },
-                      icon: Icon(
-                        ex.isFavorite ? Icons.star : Icons.star_border,
-                        color: ex.isFavorite ? Colors.amber : Colors.grey,
-                      ),
-                    ),
-                    const Spacer(),
-                    // Cerrar
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text(
-                        'CERRAR',
-                        style: GoogleFonts.montserrat(
-                          color: Colors.grey[400],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Añadir
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        widget.onAdd(ex);
-                        _addToRecent(ex);
-                        _generateSuggestions(ex);
-                        _showAddedSnackbar(context, ex.name);
-                        setState(() {});
-                      },
-                      icon: const Icon(Icons.add, size: 18),
-                      label: Text(
-                        'AÑADIR',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: scheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    final added = await ExerciseDetailDialog.show(
+      context,
+      exercise: ex,
+      personalRecord: personalRecord,
+      onAdd: () {
+        widget.onAdd(ex);
+        _addToRecent(ex);
+        _generateSuggestions(ex);
+        _showAddedSnackbar(context, ex.name);
+      },
+      onFavoriteToggle: () async {
+        await ExerciseLibraryService.instance.toggleFavorite(ex.id);
+        setState(() {});
+      },
     );
+
+    // Si se añadió, actualizar UI
+    if (added == true && mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -546,38 +347,45 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
         height: MediaQuery.of(context).size.height * 0.9,
         child: Column(
           children: [
-            // Header
+            // Handle bar con espacio superior generoso
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+              color: scheme.surfaceContainerHighest,
+              padding: const EdgeInsets.only(top: 12, bottom: 8),
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: scheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
+            ),
+            // Header con más espacio vertical
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: scheme.surfaceContainerHighest,
               child: Row(
                 children: [
-                  Icon(Icons.library_books, color: scheme.onSurface),
+                  Icon(Icons.fitness_center, color: scheme.onSurface, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     'EJERCICIOS',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 20,
+                    style: AppTypography.titleSmall.copyWith(
                       fontWeight: FontWeight.w900,
                       color: scheme.onSurface,
                     ),
                   ),
                   const Spacer(),
                   // Toggle favoritos
-                  IconButton(
-                    icon: Icon(
-                      _searchMode == SearchMode.favorites 
-                        ? Icons.star 
-                        : Icons.star_border,
-                      color: _searchMode == SearchMode.favorites 
-                        ? Colors.amber 
-                        : scheme.onSurface,
-                    ),
+                  _HeaderIconButton(
+                    icon: _searchMode == SearchMode.favorites 
+                      ? Icons.star 
+                      : Icons.star_border,
+                    color: _searchMode == SearchMode.favorites 
+                      ? AppColors.warning 
+                      : scheme.onSurfaceVariant,
                     tooltip: 'Solo favoritos',
                     onPressed: () {
                       setState(() {
@@ -588,12 +396,10 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       HapticFeedback.selectionClick();
                     },
                   ),
-                  // 🆕 Toggle vista compacta/grid
-                  IconButton(
-                    icon: Icon(
-                      _compactView ? Icons.grid_view : Icons.view_list,
-                      color: scheme.onSurface,
-                    ),
+                  // Toggle vista compacta/grid
+                  _HeaderIconButton(
+                    icon: _compactView ? Icons.grid_view : Icons.view_list,
+                    color: scheme.onSurfaceVariant,
                     tooltip: _compactView ? 'Vista grid' : 'Vista compacta',
                     onPressed: () {
                       setState(() {
@@ -605,8 +411,9 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     },
                   ),
                   // Botón crear ejercicio custom
-                  IconButton(
-                    icon: const Icon(Icons.add_circle, color: Colors.white),
+                  _HeaderIconButton(
+                    icon: Icons.add_circle,
+                    color: scheme.primary,
                     tooltip: 'Crear ejercicio',
                     onPressed: () async {
                       final result = await CreateExerciseDialog.show(context);
@@ -617,8 +424,10 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       }
                     },
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                  _HeaderIconButton(
+                    icon: Icons.close,
+                    color: scheme.onSurfaceVariant,
+                    tooltip: 'Cerrar',
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -627,19 +436,19 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
 
             // Search & Filters
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Campo de búsqueda principal
                   TextField(
                     controller: _searchController,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    style: AppTypography.bodyLarge.copyWith(color: scheme.onSurface),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                      prefixIcon: Icon(Icons.search, color: scheme.onSurfaceVariant),
                       suffixIcon: _query.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.white54),
+                            icon: Icon(Icons.clear, color: scheme.onSurfaceVariant),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _query = '');
@@ -647,7 +456,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                           )
                         : null,
                       hintText: 'Buscar ejercicio (ej: press banca)...',
-                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      hintStyle: AppTypography.bodyLarge.copyWith(color: scheme.onSurfaceVariant),
                     ),
                     onChanged: (val) {
                       setState(() => _query = val);
@@ -694,9 +503,8 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     const SizedBox(height: 8),
                     Text(
                       'Búsqueda inteligente activa - Los filtros se ignoran',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 11,
-                        color: Colors.grey[600],
+                      style: AppTypography.labelSmall.copyWith(
+                        color: scheme.onSurfaceVariant,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -719,14 +527,13 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.history, size: 16, color: Colors.grey[500]),
+                        Icon(Icons.history, size: 16, color: scheme.onSurfaceVariant),
                         const SizedBox(width: 6),
                         Text(
                           'RECIENTES',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 12,
+                          style: AppTypography.labelMedium.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: Colors.grey[500],
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -744,20 +551,19 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                             avatar: Icon(
                               Icons.add,
                               size: 16,
-                              color: Colors.redAccent[200],
+                              color: scheme.primary,
                             ),
                             label: Text(
                               ex.name.length > 20
                                   ? '${ex.name.substring(0, 17)}...'
                                   : ex.name,
-                              style: GoogleFonts.montserrat(
-                                fontSize: 12,
+                              style: AppTypography.labelMedium.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: scheme.onSurface,
                               ),
                             ),
-                            backgroundColor: Colors.grey[850],
-                            side: BorderSide(color: Colors.grey[700]!),
+                            backgroundColor: scheme.surfaceContainerHighest,
+                            side: BorderSide(color: scheme.outlineVariant),
                             onPressed: () {
                               try {
                                 HapticFeedback.selectionClick();
@@ -774,7 +580,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Divider(color: Colors.grey[800], height: 1),
+                    Divider(color: scheme.outlineVariant, height: 1),
                   ],
                 ),
               ),
@@ -789,8 +595,8 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  border: Border(bottom: BorderSide(color: Colors.grey[800]!)),
+                  color: AppColors.success.withAlpha(25),
+                  border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -800,15 +606,14 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                         Icon(
                           Icons.lightbulb_outline,
                           size: 16,
-                          color: Colors.green[400],
+                          color: AppColors.success,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           'COMPLEMENTA TU ${_lastAddedExercise!.muscleGroup.toUpperCase()}',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 11,
+                          style: AppTypography.labelSmall.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: Colors.green[400],
+                            color: AppColors.success,
                           ),
                         ),
                         const Spacer(),
@@ -822,7 +627,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                           child: Icon(
                             Icons.close,
                             size: 16,
-                            color: Colors.grey[600],
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -840,22 +645,19 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                             avatar: Icon(
                               Icons.add,
                               size: 14,
-                              color: Colors.green[300],
+                              color: AppColors.success,
                             ),
                             label: Text(
                               ex.name.length > 18
                                   ? '${ex.name.substring(0, 15)}...'
                                   : ex.name,
-                              style: GoogleFonts.montserrat(
-                                fontSize: 11,
+                              style: AppTypography.labelSmall.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: scheme.onSurface,
                               ),
                             ),
-                            backgroundColor: Colors.green.withValues(
-                              alpha: 0.2,
-                            ),
-                            side: BorderSide(color: Colors.green[700]!),
+                            backgroundColor: AppColors.success.withAlpha(51),
+                            side: BorderSide(color: AppColors.success),
                             onPressed: () {
                               try {
                                 HapticFeedback.selectionClick();
@@ -890,7 +692,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     return Center(
                       child: Text(
                         'No se encontraron ejercicios.',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(color: scheme.onSurfaceVariant),
                       ),
                     );
                   }
@@ -904,7 +706,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                         final ex = filtered[index];
                         final isCustom = !ex.isCurated;
                         return Card(
-                          color: Colors.grey[900],
+                          color: scheme.surfaceContainerHighest,
                           margin: const EdgeInsets.only(bottom: 4),
                           child: ListTile(
                             dense: true,
@@ -929,8 +731,8 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                         ? Icons.star
                                         : Icons.star_border,
                                     color: ex.isFavorite
-                                        ? Colors.amber
-                                        : Colors.grey[600],
+                                        ? AppColors.warning
+                                        : scheme.onSurfaceVariant,
                                     size: 20,
                                   ),
                                 ),
@@ -939,26 +741,24 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                   Icon(
                                     Icons.person,
                                     size: 16,
-                                    color: Colors.purple[400],
+                                    color: scheme.tertiary,
                                   ),
                                 ],
                               ],
                             ),
                             title: Text(
                               ex.name,
-                              style: GoogleFonts.montserrat(
+                              style: AppTypography.labelLarge.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: scheme.onSurface,
-                                fontSize: 13,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: Text(
                               '${ex.muscleGroup} • ${ex.equipment}',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 11,
+                              style: AppTypography.bodySmall.copyWith(
+                                color: scheme.onSurfaceVariant,
                               ),
                             ),
                             trailing: IconButton(
@@ -977,22 +777,11 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                 setState(() {});
                               },
                             ),
-                            onTap: () {
-                              try {
-                                HapticFeedback.selectionClick();
-                              } catch (_) {}
-                              widget.onAdd(ex);
-                              _addToRecent(ex);
-                              _generateSuggestions(ex);
-                              _showAddedSnackbar(context, ex.name);
-                              setState(() {});
-                            },
+                            onTap: () => _openExerciseDetails(context, ex, isCustom),
                             onLongPress: () {
                               HapticFeedback.mediumImpact();
                               if (isCustom) {
                                 _showCustomExerciseOptions(context, ex);
-                              } else {
-                                _showExercisePreview(context, ex);
                               }
                             },
                           ),
@@ -1015,27 +804,23 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       final ex = filtered[index];
                       final isCustom = !ex.isCurated;
                       return GestureDetector(
+                        onTap: () => _openExerciseDetails(context, ex, isCustom),
                         onLongPress: () {
                           HapticFeedback.mediumImpact();
                           if (isCustom) {
                             _showCustomExerciseOptions(context, ex);
-                          } else {
-                            _showExercisePreview(
-                              context,
-                              ex,
-                            ); // 🆕 Preview con historial
                           }
                         },
                         child: Card(
-                          color: Colors.grey[900],
+                          color: scheme.surfaceContainerHighest,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
                               color: isCustom
-                                  ? Colors.purple[400]!
+                                  ? scheme.tertiary
                                   : (ex.isFavorite
-                                        ? Colors.amber
-                                        : Colors.grey[800]!),
+                                        ? AppColors.warning
+                                        : scheme.outlineVariant),
                               width: (ex.isFavorite || isCustom) ? 2 : 1,
                             ),
                           ),
@@ -1064,17 +849,17 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.purple[700],
+                                            color: scheme.tertiary,
                                             borderRadius: BorderRadius.circular(
                                               4,
                                             ),
                                           ),
                                           child: Text(
                                             'CUSTOM',
-                                            style: GoogleFonts.montserrat(
+                                            style: AppTypography.labelSmall.copyWith(
                                               fontSize: 8,
                                               fontWeight: FontWeight.w800,
-                                              color: scheme.onSurface,
+                                              color: scheme.onTertiary,
                                             ),
                                           ),
                                         ),
@@ -1095,7 +880,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                         child: Container(
                                           padding: const EdgeInsets.all(6),
                                           decoration: BoxDecoration(
-                                            color: Colors.black54,
+                                            color: scheme.scrim.withAlpha(140),
                                             borderRadius: BorderRadius.circular(
                                               20,
                                             ),
@@ -1105,8 +890,8 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                                 ? Icons.star
                                                 : Icons.star_border,
                                             color: ex.isFavorite
-                                                ? Colors.amber
-                                                : Colors.white70,
+                                                ? AppColors.warning
+                                                : scheme.onSurface.withAlpha(180),
                                             size: 20,
                                           ),
                                         ),
@@ -1122,10 +907,9 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                   children: [
                                     Text(
                                       ex.name,
-                                      style: GoogleFonts.montserrat(
+                                      style: AppTypography.labelLarge.copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: scheme.onSurface,
-                                        fontSize: 14,
                                       ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -1133,9 +917,8 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                     const SizedBox(height: 4),
                                     Text(
                                       ex.muscleGroup,
-                                      style: TextStyle(
+                                      style: AppTypography.bodySmall.copyWith(
                                         color: scheme.onSurfaceVariant,
-                                        fontSize: 12,
                                       ),
                                     ),
                                   ],
@@ -1149,6 +932,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: scheme.primary,
+                                    foregroundColor: scheme.onPrimary,
                                     minimumSize: const Size(
                                       double.infinity,
                                       36,
@@ -1192,6 +976,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
@@ -1202,18 +987,17 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.redAccent[700] : Colors.grey[800],
+            color: isSelected ? scheme.primary : scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(20),
             border: isSelected 
-              ? Border.all(color: Colors.redAccent[400]!) 
+              ? Border.all(color: scheme.primary) 
               : null,
           ),
           child: Text(
             label,
-            style: GoogleFonts.montserrat(
-              fontSize: 13,
+            style: AppTypography.labelMedium.copyWith(
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? Colors.white : Colors.white70,
+              color: isSelected ? scheme.onPrimary : scheme.onSurface.withAlpha(180),
             ),
           ),
         ),
@@ -1222,22 +1006,55 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
   }
 
   Widget _buildImage(LibraryExercise ex) {
+    final scheme = Theme.of(context).colorScheme;
     if (ex.imageUrls.isNotEmpty) {
       return Image.network(
         ex.imageUrls.first,
         fit: BoxFit.cover,
+        // Cache en memoria para evitar re-descargas
+        cacheWidth: 120,
+        cacheHeight: 120,
         errorBuilder: (ctx, err, stack) => Container(
-          color: Colors.grey[800],
-          child: const Icon(Icons.broken_image, color: Colors.white24),
+          color: scheme.surfaceContainerHighest,
+          child: Icon(Icons.broken_image, color: scheme.onSurfaceVariant.withAlpha(60)),
         ),
       );
     }
 
     return Container(
-      color: Colors.grey[800],
-      child: const Icon(Icons.fitness_center, color: Colors.white24),
+      color: scheme.surfaceContainerHighest,
+      child: Icon(Icons.fitness_center, color: scheme.onSurfaceVariant.withAlpha(60)),
     );
   }
 }
 
+/// IconButton para el header de la biblioteca - tamaño táctil adecuado
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onPressed;
 
+  const _HeaderIconButton({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: IconButton(
+        icon: Icon(icon, size: 22),
+        color: color,
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        onPressed: onPressed,
+      ),
+    );
+  }
+}

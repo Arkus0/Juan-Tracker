@@ -454,6 +454,33 @@ class SmartImportNotifier extends Notifier<SmartImportState> {
     state = state.copyWith(drafts: newDrafts);
   }
 
+  /// Re-matchea un draft buscando por un nuevo nombre
+  Future<void> rematchDraftByName(int index, String newName) async {
+    if (index < 0 || index >= state.drafts.length) return;
+    if (newName.isEmpty) return;
+
+    _saveForUndo();
+
+    // Buscar match en biblioteca
+    final matchResult = await _matchingService.match(newName);
+
+    final newDrafts = [...state.drafts];
+    if (matchResult.isValid && matchResult.exercise != null) {
+      newDrafts[index] = newDrafts[index].withNewMatch(
+        newName: matchResult.exercise!.name,
+        newId: matchResult.exercise!.id,
+      );
+    } else {
+      // Sin match encontrado, mantener el nombre pero sin ID
+      newDrafts[index] = newDrafts[index].withNewMatch(
+        newName: newName,
+        newId: null,
+      );
+    }
+
+    state = state.copyWith(drafts: newDrafts);
+  }
+
   // ============================================
   // BÚSQUEDA DE ALTERNATIVAS
   // ============================================

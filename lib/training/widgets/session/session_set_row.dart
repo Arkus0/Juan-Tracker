@@ -698,6 +698,7 @@ class _TagsRow extends StatelessWidget {
         log.rpe != null ||
         log.isFailure ||
         log.isDropset ||
+        log.isRestPause ||
         (log.notas != null && log.notas!.isNotEmpty) ||
         (suggestion?.message != null && suggestion!.isImprovement);
 
@@ -716,7 +717,10 @@ class _TagsRow extends StatelessWidget {
               icon: Icons.trending_up,
             ),
           if (log.rpe != null)
-            _Tag(text: 'RPE ${log.rpe}', color: AppColors.warning),
+            Tooltip(
+              message: 'RPE = Esfuerzo Percibido (1-10)\n1 = muy fácil, 10 = máximo esfuerzo',
+              child: _Tag(text: 'RPE ${log.rpe}', color: AppColors.warning),
+            ),
           if (log.isFailure)
             const _Tag(
               text: 'FALLO',
@@ -724,13 +728,15 @@ class _TagsRow extends StatelessWidget {
               icon: Icons.warning_amber_rounded,
             ),
           if (log.isDropset)
-            const _Tag(text: 'DROP', color: AppColors.neonPrimary),
+            const _Tag(text: 'DROP', color: AppColors.warning),
+          if (log.isRestPause)
+            const _Tag(text: 'R-P', color: AppColors.info),
           if (log.isWarmup) const _Tag(text: 'WARM', color: AppColors.info),
           if (log.notas != null && log.notas!.isNotEmpty)
-            Expanded(
+            Flexible(
               child: Text(
                 log.notas!,
-                style: _SetRowStyles.noteText.copyWith(color: colorScheme.onSurfaceVariant),
+                style: _SetRowStyles.noteText.copyWith(color: colorScheme.onSurface.withAlpha(200)),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),

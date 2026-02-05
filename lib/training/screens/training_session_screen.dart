@@ -17,6 +17,7 @@ import '../widgets/session/progression_preview.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_modifiers.dart';
 import '../widgets/session/session_progress_bar.dart';
+import '../widgets/session/session_timer_display.dart';
 import '../widgets/session/tolerance_feedback_widgets.dart';
 import '../widgets/voice/voice_training_button.dart';
 
@@ -500,6 +501,16 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             ).textTheme.headlineSmall?.copyWith(fontSize: 20),
           ),
           actions: [
+            // ⏱️ CRONÓMETRO TOTAL DE SESIÓN
+            const Padding(
+              padding: EdgeInsets.only(right: 8.0),
+              child: Center(
+                child: SessionTimerDisplay(
+                  showIcon: true,
+                  compact: true,
+                ),
+              ),
+            ),
             // 🎯 NEON IRON: Control de música compacto (antes era barra completa)
             const MusicAppBarAction(),
             // Botón de voz en AppBar (al lado de terminar)
@@ -546,13 +557,12 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (progress.isComplete)
-                      const Padding(
-                        padding: EdgeInsets.only(right: 4),
-                        child: Icon(Icons.check, size: 16),
-                      ),
+                    const Padding(
+                      padding: EdgeInsets.only(right: 4),
+                      child: Icon(Icons.save_outlined, size: 16),
+                    ),
                     Text(
-                      'TERMINAR',
+                      progress.isComplete ? 'GUARDAR' : 'GUARDAR',
                       style: AppTypography.button.copyWith(
                         color: Theme.of(context).colorScheme.onPrimary,
                       ),
@@ -807,7 +817,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
     if (nextSet != null) {
       // Marcar la serie como completada (toggle done)
-      notifier.toggleSetDone(nextSet.exerciseIndex, nextSet.setIndex);
+      notifier.updateLog(nextSet.exerciseIndex, nextSet.setIndex, completed: true);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -850,7 +860,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final nextSet = state.nextIncompleteSet;
 
     if (nextSet != null) {
-      notifier.updateWeight(nextSet.exerciseIndex, nextSet.setIndex, weight);
+      notifier.updateLog(nextSet.exerciseIndex, nextSet.setIndex, peso: weight);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -871,7 +881,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final nextSet = state.nextIncompleteSet;
 
     if (nextSet != null) {
-      notifier.updateReps(nextSet.exerciseIndex, nextSet.setIndex, reps);
+      notifier.updateLog(nextSet.exerciseIndex, nextSet.setIndex, reps: reps);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -889,7 +899,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final nextSet = state.nextIncompleteSet;
 
     if (nextSet != null) {
-      notifier.updateRpe(nextSet.exerciseIndex, nextSet.setIndex, rpe);
+      notifier.updateLog(nextSet.exerciseIndex, nextSet.setIndex, rpe: rpe.toInt());
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

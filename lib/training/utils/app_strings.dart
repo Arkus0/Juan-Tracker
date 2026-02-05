@@ -98,7 +98,7 @@ abstract class AppStrings {
   static const exerciseGoalMet = '¡Objetivo cumplido!';
   static const exerciseHistory = 'Ver Historial';
   static const exerciseAlternatives = 'Ver Alternativas';
-  static const exerciseNotes = 'Notas del Ejercicio';
+  static const exerciseNotes = 'Comentarios del ejercicio';
   static const exerciseNoAlternatives = 'Sin alternativas registradas';
   static const exerciseNoHistory = 'No hay datos previos.';
   static const exerciseLastSession = 'ÚLTIMA SESIÓN:';

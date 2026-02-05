@@ -1484,6 +1484,7 @@ class _CreateEditRoutineScreenState
             onPressed: _saveRoutine,
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shadowColor: Theme.of(context).colorScheme.primary,
               elevation: 10,
@@ -1492,6 +1493,7 @@ class _CreateEditRoutineScreenState
               'GUARDAR RUTINA',
               style: core.AppTypography.headlineSmall.copyWith(
                 letterSpacing: 1,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
           ),
@@ -1525,37 +1527,39 @@ class _CreateEditRoutineScreenState
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Nombre del día'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: customController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre personalizado',
-                hintText: 'Ej: Pecho & Tríceps',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: customController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre personalizado',
+                  hintText: 'Ej: Pecho & Tríceps',
+                ),
+                autofocus: true,
               ),
-              autofocus: true,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Sugerencias:',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
+              const SizedBox(height: 16),
+              Text(
+                'Sugerencias:',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(153),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: suggestedNames.map((name) => ActionChip(
-                label: Text(name),
-                onPressed: () {
-                  Navigator.of(context).pop(name);
-                },
-              )).toList(),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: suggestedNames.map((name) => ActionChip(
+                  label: Text(name),
+                  onPressed: () {
+                    Navigator.of(context).pop(name);
+                  },
+                )).toList(),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

@@ -93,7 +93,7 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
                   widget.setIndex,
                   isFailure: val,
                 ),
-                selectedColor: AppColors.techCyan,
+                selectedColor: AppColors.error.withAlpha(180),
               ),
               const SizedBox(width: 8),
               FilterChip(
@@ -104,7 +104,18 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
                   widget.setIndex,
                   isDropset: val,
                 ),
-                selectedColor: AppColors.goldAccent,
+                selectedColor: AppColors.warning.withAlpha(180),
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text('REST-PAUSE'),
+                selected: log.isRestPause,
+                onSelected: (val) => notifier.updateLog(
+                  widget.exerciseIndex,
+                  widget.setIndex,
+                  isRestPause: val,
+                ),
+                selectedColor: AppColors.info.withAlpha(180),
               ),
             ],
           ),

@@ -333,9 +333,11 @@ class PerformanceMode {
   bool useLowPowerMode = false;
 
   /// Timer ticker interval (higher = less frequent updates)
+  /// 200ms normal = 5 updates/s (suficiente para segundos)
+  /// 500ms low power = 2 updates/s (ahorro batería)
   Duration get timerTickInterval => useLowPowerMode
-      ? const Duration(milliseconds: 250)
-      : const Duration(milliseconds: 100);
+      ? const Duration(milliseconds: 500)
+      : const Duration(milliseconds: 200);
 
   /// Animation duration multiplier
   double get animationScale => reduceAnimations ? 0.5 : 1.0;

@@ -277,6 +277,24 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     _saveState();
   }
 
+  /// Inicia una sesión de entrenamiento libre sin rutina predefinida.
+  /// 
+  /// Permite al usuario empezar a entrenar inmediatamente y añadir
+  /// ejercicios sobre la marcha. Reduce TTV de 14 clics a 2.
+  void startFreeSession() {
+    state = TrainingState(
+      activeRutina: null, // Sin rutina base
+      dayName: 'Entrenamiento Libre',
+      dayIndex: null,
+      exercises: [], // Vacío - usuario añade ejercicios
+      targets: [],
+      startTime: DateTime.now(),
+      history: const {},
+      showAdvancedOptions: false,
+    );
+    _saveState();
+  }
+
   void updateLog(
     int exerciseIndex,
     int setIndex, {
@@ -288,6 +306,7 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     int? restSeconds,
     bool? isFailure,
     bool? isDropset,
+    bool? isRestPause,
     bool? isWarmup,
     bool skipToleranceCheck =
         false, // 🎯 Skip validation when user accepted a correction
@@ -375,6 +394,7 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
       restSeconds: restSeconds ?? log.restSeconds,
       isFailure: isFailure ?? log.isFailure,
       isDropset: isDropset ?? log.isDropset,
+      isRestPause: isRestPause ?? log.isRestPause,
       isWarmup: isWarmup ?? log.isWarmup,
     );
 

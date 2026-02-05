@@ -10,10 +10,10 @@ import '../../models/library_exercise.dart';
 import '../../models/progression_engine_models.dart';
 import '../../models/serie_log.dart';
 import '../../../core/providers/information_density_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/exercise_history_provider.dart';
 import '../../providers/focus_manager_provider.dart';
 import '../../providers/progression_provider.dart';
-import '../../providers/settings_provider.dart';
 import '../../providers/training_provider.dart';
 import '../../screens/training_session_screen.dart';
 import '../../services/alternativas_service.dart';
@@ -84,7 +84,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
-          'NOTAS: ${exerciseName.toUpperCase()}',
+          'COMENTARIOS: ${exerciseName.toUpperCase()}',
           style: AppTypography.titleMedium.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -94,7 +94,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
           maxLines: 5,
           decoration: InputDecoration(
             hintText:
-                'Escribe notas importantes para este ejercicio (ej. altura del asiento, agarre...)',
+                'Ajustes personales del ejercicio (ej. altura del asiento, agarre...)',
             border: const OutlineInputBorder(),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(color: colors.primary, width: 2),
@@ -434,7 +434,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     color: AppColors.textSecondary,
                   ),
                   title: const Text(
-                    'Notas del Ejercicio',
+                    'Comentarios del ejercicio',
                     style: TextStyle(color: AppColors.textPrimary),
                   ),
                   onTap: () {
@@ -660,6 +660,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       onQuickNote: (note) => _addQuickNote(exercise.nombre, note),
       // 🆕 ELIMINAR SERIE: Solo afecta sesión activa, no la rutina
       onDeleteSet: (setIndex) => _deleteSet(setIndex),
+      onShowWarmup: () => _generateWarmupSets(context, exercise),
     );
   }
 
@@ -776,14 +777,36 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   /// - Futuros entrenamientos no se ven afectados
   void _deleteSet(int setIndex) {
     final notifier = ref.read(trainingSessionProvider.notifier);
+    
+    // Guardar datos de la serie antes de eliminar para poder restaurar
+    final exercises = ref.read(trainingSessionProvider).exercises;
+    SerieLog? deletedLog;
+    if (widget.exerciseIndex < exercises.length) {
+      final exercise = exercises[widget.exerciseIndex];
+      if (setIndex < exercise.logs.length) {
+        deletedLog = exercise.logs[setIndex];
+      }
+    }
+    
     notifier.removeSetFromExercise(widget.exerciseIndex, setIndex);
 
     HapticFeedback.mediumImpact();
     if (mounted) {
-      AppSnackbar.showWithUndo(
+      // Duración fija de 1.5s para evitar bugs con snackbars que no desaparecen
+      AppSnackbar.show(
         context,
-        message: 'Serie ${setIndex + 1} eliminada (solo esta sesión)',
-        onUndo: () => notifier.addSetToExercise(widget.exerciseIndex),
+        message: 'Serie ${setIndex + 1} eliminada',
+        actionLabel: 'DESHACER',
+        onAction: () {
+          // Restaurar la serie con sus datos originales
+          notifier.insertSetAt(
+            exerciseIndex: widget.exerciseIndex,
+            setIndex: setIndex,
+            weight: deletedLog?.peso ?? 0,
+            reps: deletedLog?.reps ?? 0,
+          );
+        },
+        duration: const Duration(milliseconds: 1500),
       );
     }
   }
@@ -844,6 +867,8 @@ class ExerciseCard extends ConsumerWidget {
   final Function(String)? onQuickNote; // Añadir nota rápida
   // 🆕 Callback para eliminar serie (solo sesión activa)
   final Function(int)? onDeleteSet;
+  // 🆕 Callback para mostrar warm-up (doble-tap en header)
+  final VoidCallback? onShowWarmup;
 
   const ExerciseCard({
     super.key,
@@ -871,6 +896,7 @@ class ExerciseCard extends ConsumerWidget {
     this.onHistory,
     this.onQuickNote,
     this.onDeleteSet,
+    this.onShowWarmup,
   });
 
   @override
@@ -878,6 +904,9 @@ class ExerciseCard extends ConsumerWidget {
     final density = ref.watch(informationDensityProvider);
     final densityValues = DensityValues.forMode(density);
     final restSeconds = exercise.descansoSugeridoSeconds ?? 90;
+    final autofocusEnabled = ref.watch(
+      settingsProvider.select((s) => s.autofocusEnabled),
+    );
 
     // 🆕 Calcular si todas las series están completadas
     final allSetsCompleted = exercise.logs.every((log) => log.completed);
@@ -923,8 +952,10 @@ class ExerciseCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Fila 1: Nombre del ejercicio (nunca cortado)
+                    // Doble-tap para warm-up
                     GestureDetector(
                       onTap: onToggleCollapse,
+                      onDoubleTap: onShowWarmup,
                       behavior: HitTestBehavior.opaque,
                       child: Row(
                         children: [
@@ -1108,7 +1139,7 @@ class ExerciseCard extends ConsumerWidget {
               // 🆕 Contenido colapsable con animación
               AnimatedCrossFade(
                 firstChild: const SizedBox.shrink(),
-                secondChild: _buildExpandedContent(context, restSeconds),
+                secondChild: _buildExpandedContent(context, restSeconds, autofocusEnabled),
                 crossFadeState: isCollapsed
                     ? CrossFadeState.showFirst
                     : CrossFadeState.showSecond,
@@ -1123,7 +1154,7 @@ class ExerciseCard extends ConsumerWidget {
   }
 
   /// Contenido expandido del ejercicio (series, etc.)
-  Widget _buildExpandedContent(BuildContext context, int restSeconds) {
+  Widget _buildExpandedContent(BuildContext context, int restSeconds, bool autofocusEnabled) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1282,7 +1313,7 @@ class ExerciseCard extends ConsumerWidget {
             onPlateCalc: (val) => onPlateCalc(setIndex, val),
             onLongPress: () => onSetLongPress(setIndex),
             showAdvanced: showAdvanced,
-            shouldFocus: focusSetIndex == setIndex,
+            shouldFocus: autofocusEnabled && focusSetIndex == setIndex,
             canDelete: true,
             onDelete: () => onDeleteSet?.call(setIndex),
           );

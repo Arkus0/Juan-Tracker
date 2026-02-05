@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!-- Required for media playback foreground service on newer Android versions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    
+    <!-- Speech recognition / Voice input -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:label="juan_tracker"

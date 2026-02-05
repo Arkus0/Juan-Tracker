@@ -197,11 +197,14 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
   }
 
   VoiceTrainingCommand? _parseTrainingCommand(String transcript) {
-    final normalized = transcript.toLowerCase().trim();
+    var normalized = transcript.toLowerCase().trim();
 
-    // Comando: "Hecho" / "Listo" / "Serie completada"
+    // Normalizar números hablados en español
+    normalized = _normalizeSpokenNumbers(normalized);
+
+    // Comando: "Hecho" / "Listo" / "Serie completada" / "Ya"
     if (RegExp(
-      r'^(hecho|listo|completado|terminado|serie\s+(?:hecha|completada))',
+      r'^(hecho|listo|completado|terminado|ya|vale|ok|serie\s+(?:hecha|completada))',
     ).hasMatch(normalized)) {
       try {
         HapticFeedback.heavyImpact();
@@ -210,7 +213,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
     }
 
     // Comando: "Siguiente" / "Next" / "Próxima serie"
-    if (RegExp(r'^(siguiente|next|proxim|adelante)').hasMatch(normalized)) {
+    if (RegExp(r'^(siguiente|next|proxim|adelante|otra)').hasMatch(normalized)) {
       try {
         HapticFeedback.mediumImpact();
       } catch (_) {}
@@ -232,14 +235,14 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       );
     }
 
-    // Comando: "Peso X kilos" / "X kilos" / "X kg"
+    // Comando: "Peso X kilos" / "X kilos" / "X kg" / "a X kilos" / "con X kg"
     final weightMatch = RegExp(
-      r'(?:peso\s*)?(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg)',
+      r'(?:peso\s*|a\s*|con\s*)?(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg|k)',
     ).firstMatch(normalized);
     if (weightMatch != null) {
       final weightStr = weightMatch.group(1)!.replaceAll(',', '.');
       final weight = double.tryParse(weightStr);
-      if (weight != null) {
+      if (weight != null && weight > 0 && weight <= 500) {
         try {
           HapticFeedback.selectionClick();
         } catch (_) {}
@@ -250,26 +253,53 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       }
     }
 
-    // Comando: "X repeticiones" / "X reps"
+    // Comando: "X repeticiones" / "X reps" / "hice X" / "he hecho X"
     final repsMatch = RegExp(
-      r'(\d+)\s*(?:reps?|repeticiones?)',
+      r'(?:hice\s*|he\s+hecho\s*)?(\d+)\s*(?:reps?|repeticiones?|veces)?',
     ).firstMatch(normalized);
     if (repsMatch != null) {
       final reps = int.tryParse(repsMatch.group(1)!);
-      if (reps != null) {
+      // Solo aceptar si parece realmente reps (1-50 range típico)
+      if (reps != null && reps >= 1 && reps <= 50) {
+        // Evitar conflicto con peso: si el texto contiene "kg/kilos" no es reps
+        if (!normalized.contains('kilo') &&
+            !normalized.contains(' kg') &&
+            !normalized.contains(' k ')) {
+          try {
+            HapticFeedback.selectionClick();
+          } catch (_) {}
+          return VoiceTrainingCommand(
+            type: VoiceCommandType.setReps,
+            value: reps.toDouble(),
+          );
+        }
+      }
+    }
+
+    // Comando combinado: "X kilos Y reps" / "80 12" (peso primero, luego reps)
+    final combinedMatch = RegExp(
+      r'(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg|k)?\s+(\d+)\s*(?:reps?|repeticiones?)?',
+    ).firstMatch(normalized);
+    if (combinedMatch != null) {
+      final weightStr = combinedMatch.group(1)!.replaceAll(',', '.');
+      final weight = double.tryParse(weightStr);
+      final reps = int.tryParse(combinedMatch.group(2)!);
+      // Si el primer número parece peso (>20) y el segundo reps (<50)
+      if (weight != null && weight >= 20 && reps != null && reps <= 50) {
+        // Retornamos peso primero (el más importante de capturar)
         try {
           HapticFeedback.selectionClick();
         } catch (_) {}
         return VoiceTrainingCommand(
-          type: VoiceCommandType.setReps,
-          value: reps.toDouble(),
+          type: VoiceCommandType.setWeight,
+          value: weight,
         );
       }
     }
 
     // Comando: "RPE X" / "Esfuerzo X"
     final rpeMatch = RegExp(
-      r'(?:rpe|esfuerzo)\s*(\d+(?:[.,]\d+)?)',
+      r'(?:rpe|esfuerzo|dificultad)\s*(\d+(?:[.,]\d+)?)',
     ).firstMatch(normalized);
     if (rpeMatch != null) {
       final rpeStr = rpeMatch.group(1)!.replaceAll(',', '.');
@@ -302,6 +332,35 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
 
     // No reconocido
     return null;
+  }
+
+  /// Normaliza números hablados en español a dígitos
+  String _normalizeSpokenNumbers(String text) {
+    const numberWords = {
+      'cero': '0', 'uno': '1', 'una': '1', 'dos': '2', 'tres': '3',
+      'cuatro': '4', 'cinco': '5', 'seis': '6', 'siete': '7', 'ocho': '8',
+      'nueve': '9', 'diez': '10', 'once': '11', 'doce': '12', 'trece': '13',
+      'catorce': '14', 'quince': '15', 'dieciséis': '16', 'dieciseis': '16',
+      'diecisiete': '17', 'dieciocho': '18', 'diecinueve': '19',
+      'veinte': '20', 'veintiuno': '21', 'veintidós': '22', 'veintidos': '22',
+      'veintitrés': '23', 'veintitres': '23', 'veinticuatro': '24',
+      'veinticinco': '25', 'treinta': '30', 'cuarenta': '40', 'cincuenta': '50',
+      'sesenta': '60', 'setenta': '70', 'ochenta': '80', 'noventa': '90',
+      'cien': '100', 'ciento': '100',
+    };
+
+    var result = text;
+    for (final entry in numberWords.entries) {
+      result = result.replaceAll(RegExp('\\b${entry.key}\\b'), entry.value);
+    }
+
+    // Manejar "treinta y cinco" → "35", etc.
+    result = result.replaceAllMapped(
+      RegExp(r'(\d0)\s+y\s+(\d)'),
+      (m) => (int.parse(m.group(1)!) + int.parse(m.group(2)!)).toString(),
+    );
+
+    return result;
   }
 
   @override
@@ -449,7 +508,7 @@ class _ListeningOverlay extends ConsumerWidget {
                         ),
                         if (voiceState.partialTranscript.isNotEmpty) ...[
                           const SizedBox(height: 8),
-                          const _PulsingDot(color: Colors.green, size: 6),
+                          _buildLivePreview(voiceState.partialTranscript, colorScheme),
                         ],
                       ],
                     ),
@@ -550,6 +609,114 @@ class _ListeningOverlay extends ConsumerWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Preview en tiempo real de lo que se va a cambiar
+  Widget _buildLivePreview(String transcript, ColorScheme colorScheme) {
+    // Detectar qué tipo de comando se está diciendo
+    final normalized = transcript.toLowerCase().trim();
+    String? detectedType;
+    String? detectedValue;
+    IconData? detectedIcon;
+    Color? detectedColor;
+
+    // Detectar peso
+    final weightMatch = RegExp(
+      r'(?:peso\s*|a\s*|con\s*)?(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg|k)',
+    ).firstMatch(normalized);
+    if (weightMatch != null) {
+      detectedType = 'PESO';
+      detectedValue = '${weightMatch.group(1)} kg';
+      detectedIcon = Icons.scale;
+      detectedColor = Colors.orange;
+    }
+
+    // Detectar reps
+    if (detectedType == null) {
+      final repsMatch = RegExp(
+        r'(\d+)\s*(?:reps?|repeticiones?|veces)',
+      ).firstMatch(normalized);
+      if (repsMatch != null) {
+        detectedType = 'REPS';
+        detectedValue = repsMatch.group(1);
+        detectedIcon = Icons.tag;
+        detectedColor = Colors.blue;
+      }
+    }
+
+    // Detectar RPE
+    if (detectedType == null) {
+      final rpeMatch = RegExp(
+        r'(?:rpe|esfuerzo|dificultad)\s*(\d+(?:[.,]\d+)?)',
+      ).firstMatch(normalized);
+      if (rpeMatch != null) {
+        detectedType = 'RPE';
+        detectedValue = rpeMatch.group(1);
+        detectedIcon = Icons.speed;
+        detectedColor = Colors.purple;
+      }
+    }
+
+    // Detectar comandos
+    if (detectedType == null) {
+      if (RegExp(r'^(hecho|listo|completado|terminado|ya|vale|ok)').hasMatch(normalized)) {
+        detectedType = 'MARCAR';
+        detectedValue = 'Serie completada';
+        detectedIcon = Icons.check_circle;
+        detectedColor = Colors.green;
+      } else if (RegExp(r'^(siguiente|next|proxim|adelante|otra)').hasMatch(normalized)) {
+        detectedType = 'IR A';
+        detectedValue = 'Siguiente serie';
+        detectedIcon = Icons.arrow_forward;
+        detectedColor = AppColors.neonCyan;
+      } else if (RegExp(r'(?:descanso|timer|descansar)').hasMatch(normalized)) {
+        detectedType = 'INICIAR';
+        detectedValue = 'Descanso';
+        detectedIcon = Icons.timer;
+        detectedColor = Colors.teal;
+      }
+    }
+
+    if (detectedType == null) {
+      // Nada detectado aún, mostrar indicador de escucha
+      return const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _PulsingDot(color: Colors.green, size: 6),
+          SizedBox(width: 8),
+          _PulsingDot(color: Colors.green, size: 6),
+          SizedBox(width: 8),
+          _PulsingDot(color: Colors.green, size: 6),
+        ],
+      );
+    }
+
+    // Mostrar preview de lo que se detectó
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: detectedColor!.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: detectedColor.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(detectedIcon, size: 16, color: detectedColor),
+          const SizedBox(width: 8),
+          Text(
+            '$detectedType: $detectedValue',
+            style: core.AppTypography.labelLarge.copyWith(
+              color: detectedColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(Icons.check, size: 14, color: detectedColor.withValues(alpha: 0.7)),
         ],
       ),
     );

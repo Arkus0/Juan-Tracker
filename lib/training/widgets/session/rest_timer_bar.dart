@@ -434,15 +434,16 @@ class _InactiveTimerBar extends StatelessWidget {
           child: Row(
             children: [
               // ═══════════════════════════════════════════════════════
-              // IZQUIERDA: Selector de duración
+              // IZQUIERDA: Selector de duración (flexible para evitar overflow)
               // ═══════════════════════════════════════════════════════
-              _TimeDurationSelector(
-                seconds: seconds,
-                onChanged: onDurationChange,
+              Flexible(
+                child: _TimeDurationSelector(
+                  seconds: seconds,
+                  onChanged: onDurationChange,
+                ),
               ),
 
-              // Espacio flexible
-              const Spacer(),
+              const SizedBox(width: 8),
 
               // ═══════════════════════════════════════════════════════
               // DERECHA: Controles

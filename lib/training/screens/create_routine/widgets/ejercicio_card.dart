@@ -459,6 +459,9 @@ class _EjercicioCardState extends State<EjercicioCard> {
         width: 60,
         height: 60,
         fit: BoxFit.cover,
+        // Cache en memoria para evitar re-descargas
+        cacheWidth: 120, // 2x para retina
+        cacheHeight: 120,
         errorBuilder: (ctx, err, stack) => Icon(
           Icons.fitness_center,
           color: scheme.onSurfaceVariant,

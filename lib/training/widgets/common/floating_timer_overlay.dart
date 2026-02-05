@@ -99,7 +99,8 @@ class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
 
   void _startTicker() {
     _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) {
+    // 200ms es suficiente para display de segundos
+    _ticker = Timer.periodic(const Duration(milliseconds: 200), (_) {
       if (!mounted) return;
       final remaining = widget.timerState.remainingSeconds;
       setState(() {

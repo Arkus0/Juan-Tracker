@@ -10,6 +10,7 @@ import 'package:juan_tracker/diet/providers/goal_projection_providers.dart';
 import 'package:juan_tracker/diet/models/weighin_model.dart';
 import 'package:juan_tracker/diet/models/goal_projection_model.dart';
 import 'package:juan_tracker/diet/services/adaptive_coach_service.dart';
+import 'package:juan_tracker/diet/services/weight_trend_calculator.dart';
 
 import 'package:intl/intl.dart';
 
@@ -42,6 +43,14 @@ class WeightScreen extends ConsumerWidget {
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: _GoalProjectionCard(),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+          // NUEVO: Analytics avanzados
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: _EnhancedAnalyticsCard(),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
@@ -234,7 +243,7 @@ class _MainStatsSection extends ConsumerWidget {
           children: [
             Expanded(
               child: _StatCardWithTooltip(
-                label: 'Ultimo',
+                label: 'Último',
                 value: result.latestWeight.toStringAsFixed(1),
                 unit: 'kg',
                 icon: Icons.scale_outlined,
@@ -251,17 +260,20 @@ class _MainStatsSection extends ConsumerWidget {
                 icon: Icons.trending_flat,
                 color: Theme.of(context).colorScheme.secondary,
                 tooltip: 'Media móvil de 7 días que suaviza fluctuaciones diarias',
+                onTap: () => _showTrendDetailsDialog(context, result),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _StatCardWithTooltip(
                 label: 'Semana',
-                value: result.weeklyRate.toStringAsFixed(1),
+                value: '${result.weeklyRate >= 0 ? '+' : ''}${result.weeklyRate.toStringAsFixed(1)}',
                 unit: 'kg',
-                icon: Icons.trending_up,
-                color: AppColors.success,
+                icon: result.weeklyRate > 0 ? Icons.trending_up : 
+                      result.weeklyRate < 0 ? Icons.trending_down : Icons.trending_flat,
+                color: _getWeeklyRateColor(result.weeklyRate),
                 tooltip: 'Ritmo de cambio estimado en kg por semana',
+                onTap: () => _showWeekDetailsDialog(context, result),
               ),
             ),
           ],
@@ -271,6 +283,189 @@ class _MainStatsSection extends ConsumerWidget {
       error: (_, _) => AppError(
         message: 'Error al cargar',
         onRetry: () => ref.invalidate(weightTrendProvider),
+      ),
+    );
+  }
+
+  Color _getWeeklyRateColor(double rate) {
+    if (rate.abs() < 0.1) return AppColors.success; // Mantenimiento
+    if (rate < 0) return AppColors.info; // Perdiendo
+    return Colors.orange; // Ganando
+  }
+
+  void _showTrendDetailsDialog(BuildContext context, WeightTrendResult result) {
+    final colors = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.analytics, color: colors.primary, size: 20),
+            const SizedBox(width: 8),
+            const Flexible(child: Text('Tendencia')),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _DetailRow(
+                label: 'Peso tendencia',
+                value: '${result.trendWeight.toStringAsFixed(2)} kg',
+                description: 'Combina EMA y filtro Kalman',
+              ),
+              const Divider(),
+              _DetailRow(
+                label: 'EMA (Media Móvil)',
+                value: '${result.emaWeight.toStringAsFixed(2)} kg',
+                description: 'Suaviza fluctuaciones diarias',
+              ),
+              _DetailRow(
+                label: 'Kalman (Filtro)',
+                value: '${result.kalmanWeight.toStringAsFixed(2)} kg',
+                description: 'Estimación más precisa',
+              ),
+              _DetailRow(
+                label: 'Confianza Kalman',
+                value: '${(result.kalmanConfidence * 100).round()}%',
+                description: 'Fiabilidad del modelo',
+              ),
+              const Divider(),
+              _DetailRow(
+                label: 'Pendiente (R²)',
+                value: '${(result.regressionR2 * 100).round()}%',
+                description: 'Ajuste de regresión lineal',
+              ),
+              _DetailRow(
+                label: 'Varianza',
+                value: '${result.variance >= 0 ? '+' : ''}${result.variance.toStringAsFixed(2)} kg',
+                description: 'Desviación del peso actual vs tendencia',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CERRAR'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWeekDetailsDialog(BuildContext context, WeightTrendResult result) {
+    final colors = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.calendar_month, color: colors.primary),
+            const SizedBox(width: 8),
+            const Text('Análisis Semanal'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _DetailRow(
+                label: 'Ritmo semanal',
+                value: '${result.weeklyRate >= 0 ? '+' : ''}${result.weeklyRate.toStringAsFixed(2)} kg/sem',
+                description: result.phaseDescription,
+              ),
+              const Divider(),
+              _DetailRow(
+                label: 'Fase actual',
+                value: _getPhaseName(result.phase),
+                description: '${result.daysInPhase} días en esta fase',
+              ),
+              _DetailRow(
+                label: 'Tendencia diaria',
+                value: '${(result.hwTrend * 1000).round()} g/día',
+                description: 'Modelo Holt-Winters',
+              ),
+              if (result.hwPrediction7d != null) ...[
+                const Divider(),
+                _DetailRow(
+                  label: 'Predicción 7 días',
+                  value: '${result.hwPrediction7d!.toStringAsFixed(1)} kg',
+                  description: 'Si mantienes este ritmo',
+                ),
+              ],
+              if (result.hwPrediction30d != null)
+                _DetailRow(
+                  label: 'Predicción 30 días',
+                  value: '${result.hwPrediction30d!.toStringAsFixed(1)} kg',
+                  description: 'Proyección a un mes',
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CERRAR'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getPhaseName(WeightPhase phase) {
+    switch (phase) {
+      case WeightPhase.losing:
+        return 'Perdiendo peso';
+      case WeightPhase.maintaining:
+        return 'Mantenimiento';
+      case WeightPhase.gaining:
+        return 'Ganando peso';
+      case WeightPhase.insufficientData:
+        return 'Recopilando datos';
+    }
+  }
+}
+
+/// Fila de detalle para los diálogos analíticos
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final String description;
+
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: AppTypography.labelMedium.copyWith(
+                color: colors.onSurfaceVariant,
+              )),
+              Text(value, style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colors.onSurface,
+              )),
+            ],
+          ),
+          Text(description, style: AppTypography.bodySmall.copyWith(
+            color: colors.onSurfaceVariant.withAlpha(180),
+            fontSize: 11,
+          )),
+        ],
       ),
     );
   }
@@ -284,6 +479,7 @@ class _StatCardWithTooltip extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String tooltip;
+  final VoidCallback? onTap;
 
   const _StatCardWithTooltip({
     required this.label,
@@ -292,12 +488,13 @@ class _StatCardWithTooltip extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.tooltip,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: tooltip,
+      message: onTap != null ? '$tooltip\n(Pulsa para más detalles)' : tooltip,
       preferBelow: true,
       child: AppStatCard(
         label: label,
@@ -305,6 +502,7 @@ class _StatCardWithTooltip extends StatelessWidget {
         unit: unit,
         icon: icon,
         color: color,
+        onTap: onTap,
       ),
     );
   }
@@ -1002,6 +1200,355 @@ class _ProgressItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Card con análisis avanzado: velocidad, consistencia, volatilidad
+class _EnhancedAnalyticsCard extends ConsumerWidget {
+  const _EnhancedAnalyticsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final weighInsAsync = ref.watch(recentWeighInsProvider);
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return weighInsAsync.when(
+      data: (weighIns) {
+        if (weighIns.length < 7) return const SizedBox.shrink();
+
+        final stats = _calculateStats(weighIns);
+
+        return AppCard(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.analytics, color: colors.primary),
+                    const SizedBox(width: 8),
+                    Text('Análisis de tendencias', style: AppTypography.titleMedium),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Grid de métricas
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AnalyticsMetric(
+                        label: 'Velocidad',
+                        value: '${stats.velocity > 0 ? '+' : ''}${stats.velocity.toStringAsFixed(1)}',
+                        unit: 'kg/sem',
+                        icon: stats.velocity > 0 ? Icons.trending_up : 
+                              stats.velocity < 0 ? Icons.trending_down : Icons.trending_flat,
+                        color: _getVelocityColor(stats.velocity, colors),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _AnalyticsMetric(
+                        label: 'Consistencia',
+                        value: '${stats.consistency.round()}',
+                        unit: '%',
+                        icon: Icons.event_available,
+                        color: colors.tertiary,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _AnalyticsMetric(
+                        label: 'Volatilidad',
+                        value: stats.volatility.toStringAsFixed(1),
+                        unit: 'kg',
+                        icon: Icons.waves,
+                        color: colors.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+
+                if (stats.bestWeek != null && stats.worstWeek != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  const Divider(),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Best vs Worst week
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _WeekComparison(
+                          label: 'Mejor semana',
+                          change: stats.bestWeek!,
+                          icon: Icons.arrow_upward,
+                          color: AppColors.success,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: _WeekComparison(
+                          label: 'Semana más desafiante',
+                          change: stats.worstWeek!,
+                          icon: Icons.arrow_downward,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                // Insight message
+                if (stats.insight != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.lightbulb, color: colors.primary, size: 20),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            stats.insight!,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  Color _getVelocityColor(double velocity, ColorScheme colors) {
+    // Para pérdida de peso, velocidad negativa es buena
+    // Asumimos que la meta es perder peso (ajustar según el caso)
+    final absVelocity = velocity.abs();
+    if (absVelocity < 0.25) return colors.primary; // Mantenimiento
+    if (absVelocity < 0.5) return AppColors.success; // Ritmo saludable
+    if (absVelocity < 1.0) return Colors.orange; // Rápido
+    return colors.error; // Muy rápido, posiblemente no saludable
+  }
+
+  _StatsResult _calculateStats(List<WeighInModel> weighIns) {
+    // Ordenar por fecha
+    final sorted = [...weighIns]..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    
+    // Calcular velocidad (cambio por semana en últimos 30 días)
+    final recent = sorted.where((w) => 
+      w.dateTime.isAfter(DateTime.now().subtract(const Duration(days: 30)))
+    ).toList();
+    
+    double velocity = 0;
+    if (recent.length >= 2) {
+      final first = recent.first.weightKg;
+      final last = recent.last.weightKg;
+      final days = recent.last.dateTime.difference(recent.first.dateTime).inDays;
+      if (days > 0) {
+        velocity = ((last - first) / days) * 7; // kg por semana
+      }
+    }
+
+    // Calcular consistencia (% de días con registro en últimos 30 días)
+    final daysWithData = recent.map((w) => 
+      DateTime(w.dateTime.year, w.dateTime.month, w.dateTime.day)
+    ).toSet().length;
+    final consistency = ((daysWithData / 30.0 * 100).clamp(0, 100)).toDouble();
+
+    // Calcular volatilidad (desviación estándar de cambios diarios)
+    double volatility = 0;
+    if (sorted.length >= 2) {
+      final changes = <double>[];
+      for (var i = 1; i < sorted.length; i++) {
+        changes.add(sorted[i].weightKg - sorted[i-1].weightKg);
+      }
+      final mean = changes.reduce((a, b) => a + b) / changes.length;
+      final squaredDiffs = changes.map((c) => (c - mean) * (c - mean));
+      final variance = squaredDiffs.reduce((a, b) => a + b) / changes.length;
+      volatility = variance > 0 ? variance.toDouble() : 0.0;
+    }
+
+    // Encontrar mejor y peor semana
+    double? bestWeek;
+    double? worstWeek;
+    if (sorted.length >= 7) {
+      final weeklyChanges = <double>[];
+      for (var i = 7; i < sorted.length; i += 7) {
+        weeklyChanges.add(sorted[i].weightKg - sorted[i-7].weightKg);
+      }
+      if (weeklyChanges.isNotEmpty) {
+        bestWeek = weeklyChanges.reduce((a, b) => a < b ? a : b); // Menor cambio = mejor (pérdida)
+        worstWeek = weeklyChanges.reduce((a, b) => a > b ? a : b); // Mayor cambio = peor (ganancia)
+      }
+    }
+
+    // Generar insight
+    String? insight;
+    if (consistency < 50) {
+      insight = '💡 Intenta pesarte más regularmente para mejores datos';
+    } else if (volatility > 1.0) {
+      insight = '💡 Tus pesos fluctúan bastante. Considera pesarte a la misma hora cada día';
+    } else if (velocity.abs() > 1.5) {
+      insight = '⚡ Estás progresando rápido. Asegúrate de mantener buenos hábitos';
+    } else if (velocity.abs() < 0.1 && consistency > 70) {
+      insight = '🎯 Estás manteniendo tu peso consistentemente';
+    }
+
+    return _StatsResult(
+      velocity: velocity,
+      consistency: consistency,
+      volatility: volatility,
+      bestWeek: bestWeek,
+      worstWeek: worstWeek,
+      insight: insight,
+    );
+  }
+}
+
+class _StatsResult {
+  final double velocity;
+  final double consistency;
+  final double volatility;
+  final double? bestWeek;
+  final double? worstWeek;
+  final String? insight;
+
+  _StatsResult({
+    required this.velocity,
+    required this.consistency,
+    required this.volatility,
+    this.bestWeek,
+    this.worstWeek,
+    this.insight,
+  });
+}
+
+class _AnalyticsMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final IconData icon;
+  final Color color;
+
+  const _AnalyticsMetric({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: color.withAlpha((0.1 * 255).round()),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            label,
+            style: AppTypography.labelSmall.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                style: AppTypography.titleMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Text(
+                unit,
+                style: AppTypography.labelSmall.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeekComparison extends StatelessWidget {
+  final String label;
+  final double change;
+  final IconData icon;
+  final Color color;
+
+  const _WeekComparison({
+    required this.label,
+    required this.change,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  '${change > 0 ? '+' : ''}${change.toStringAsFixed(1)} kg',
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: change < 0 ? AppColors.success : Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

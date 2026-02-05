@@ -28,8 +28,9 @@ import '../widgets/search_empty_state.dart';
 // ============================================================================
 
 /// Voice input: matches amounts like "200g", "200 gramos", "150ml"
+/// NOTA: Alternativas ordenadas de mayor a menor longitud para evitar matches parciales
 final _voiceAmountRegex = RegExp(
-  r'(\d+(?:[.,]\d+)?)\s*(g|gramos|gr|ml|mililitros|l|litros)?',
+  r'(\d+(?:[.,]\d+)?)\s*(gramos|gr|g|mililitros|ml|litros|l)?',
   caseSensitive: false,
 );
 
@@ -54,9 +55,9 @@ final _ocrCarbsRegex = RegExp(
   caseSensitive: false,
 );
 
-/// OCR: matches fat values
+/// OCR: matches fat values (permite palabras intermedias como "total", "saturadas")
 final _ocrFatRegex = RegExp(
-  r'(grasas?|l[ií]pidos?)[:\s]*(\d+(?:[.,]\d+)?)',
+  r'(grasas?|l[ií]pidos?)[:\s]*(?:[a-zA-Z]+\s*)*(\d+(?:[.,]\d+)?)',
   caseSensitive: false,
 );
 

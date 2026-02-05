@@ -49,6 +49,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
   // Controllers para edición inline
   final Map<int, TextEditingController> _seriesControllers = {};
   final Map<int, TextEditingController> _repsControllers = {};
+  final Map<int, TextEditingController> _weightControllers = {};
 
   @override
   void dispose() {
@@ -56,6 +57,9 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
       c.dispose();
     }
     for (final c in _repsControllers.values) {
+      c.dispose();
+    }
+    for (final c in _weightControllers.values) {
       c.dispose();
     }
     super.dispose();
@@ -72,6 +76,15 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
     return _repsControllers.putIfAbsent(
       index,
       () => TextEditingController(text: initialValue),
+    );
+  }
+
+  TextEditingController _getWeightController(int index, double? initialValue) {
+    return _weightControllers.putIfAbsent(
+      index,
+      () => TextEditingController(
+        text: initialValue != null ? initialValue.toStringAsFixed(1) : '',
+      ),
     );
   }
 
@@ -559,6 +572,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                 index: index,
                 seriesController: _getSeriesController(index, draft.series),
                 repsController: _getRepsController(index, draft.repsRange),
+                weightController: _getWeightController(index, draft.weight),
                 onSeriesChanged: (v) {
                   final series = int.tryParse(v);
                   if (series != null && series > 0) {
@@ -570,9 +584,20 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                     notifier.updateDraftReps(index, v);
                   }
                 },
+                onWeightChanged: (v) {
+                  if (v.isEmpty) {
+                    notifier.updateDraftWeight(index, null);
+                  } else {
+                    final weight = double.tryParse(v.replaceAll(',', '.'));
+                    if (weight != null && weight > 0) {
+                      notifier.updateDraftWeight(index, weight);
+                    }
+                  }
+                },
                 onRemove: () => notifier.removeDraft(index),
                 onDuplicate: () => notifier.duplicateDraft(index),
                 onChangeExercise: () => _showExerciseSearchSheet(index, draft),
+                onEditName: (newName) => notifier.rematchDraftByName(index, newName),
                 onVerify: () => notifier.verifyDraft(index),
                 onReset: draft.wasManuallyEdited
                     ? () => notifier.resetDraft(index)
@@ -792,11 +817,14 @@ class _DraftExerciseCard extends StatelessWidget {
   final int index;
   final TextEditingController seriesController;
   final TextEditingController repsController;
+  final TextEditingController weightController;
   final Function(String) onSeriesChanged;
   final Function(String) onRepsChanged;
+  final Function(String) onWeightChanged;
   final VoidCallback onRemove;
   final VoidCallback onDuplicate;
   final VoidCallback onChangeExercise;
+  final Function(String) onEditName;
   final VoidCallback onVerify;
   final VoidCallback? onReset;
 
@@ -806,11 +834,14 @@ class _DraftExerciseCard extends StatelessWidget {
     required this.index,
     required this.seriesController,
     required this.repsController,
+    required this.weightController,
     required this.onSeriesChanged,
     required this.onRepsChanged,
+    required this.onWeightChanged,
     required this.onRemove,
     required this.onDuplicate,
     required this.onChangeExercise,
+    required this.onEditName,
     required this.onVerify,
     this.onReset,
   });
@@ -923,6 +954,9 @@ class _DraftExerciseCard extends StatelessWidget {
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     switch (value) {
+                      case 'editName':
+                        _showEditNameDialog(context);
+                        break;
                       case 'duplicate':
                         onDuplicate();
                         break;
@@ -941,6 +975,26 @@ class _DraftExerciseCard extends StatelessWidget {
                   ),
                   color: AppColors.bgElevated,
                   itemBuilder: (ctx) => [
+                    // Editar nombre manualmente
+                    PopupMenuItem(
+                      value: 'editName',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_note,
+                            size: 18,
+                            color: onSurfaceColor.withAlpha(178),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Editar nombre',
+                            style: core.AppTypography.bodyMedium.copyWith(
+                              color: onSurfaceColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     PopupMenuItem(
                       value: 'duplicate',
                       child: Row(
@@ -1029,39 +1083,97 @@ class _DraftExerciseCard extends StatelessWidget {
                     keyboardType: TextInputType.text,
                   ),
                 ),
-                // Peso (si existe)
-                if (draft.weight != null) ...[
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgElevated,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Peso',
-                          style: core.AppTypography.labelSmall.copyWith(
-                            color: onSurfaceColor.withAlpha(97),
-                          ),
-                        ),
-                        Text(
-                          '${draft.weight!.toStringAsFixed(0)}kg',
-                          style: core.AppTypography.bodyMedium.copyWith(
-                            color: onSurfaceColor.withAlpha(178),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+                // Peso (siempre editable)
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _CompactField(
+                    label: 'Peso (kg)',
+                    controller: weightController,
+                    onChanged: onWeightChanged,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    hintText: '-',
                   ),
-                ],
+                ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Muestra diálogo para editar el nombre del ejercicio manualmente
+  void _showEditNameDialog(BuildContext context) {
+    final controller = TextEditingController(
+      text: draft.currentMatchedName ?? draft.originalRawText,
+    );
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgElevated,
+        title: Text(
+          'Editar nombre',
+          style: core.AppTypography.titleMedium.copyWith(color: onSurfaceColor),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Escribe el nombre del ejercicio y se buscará en la biblioteca:',
+              style: core.AppTypography.bodySmall.copyWith(
+                color: onSurfaceColor.withAlpha(138),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              style: core.AppTypography.bodyMedium.copyWith(color: onSurfaceColor),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: AppColors.bgDeep,
+                hintText: 'Ej: Press banca',
+                hintStyle: core.AppTypography.bodyMedium.copyWith(
+                  color: onSurfaceColor.withAlpha(76),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'CANCELAR',
+              style: core.AppTypography.labelLarge.copyWith(
+                color: onSurfaceColor.withAlpha(138),
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty) {
+                onEditName(newName);
+              }
+              Navigator.of(ctx).pop();
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.neonCyan,
+            ),
+            child: Text(
+              'BUSCAR',
+              style: core.AppTypography.labelLarge.copyWith(
+                color: AppColors.bgDeep,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -1146,12 +1258,14 @@ class _CompactField extends StatelessWidget {
   final TextEditingController controller;
   final Function(String) onChanged;
   final TextInputType keyboardType;
+  final String? hintText;
 
   const _CompactField({
     required this.label,
     required this.controller,
     required this.onChanged,
     required this.keyboardType,
+    this.hintText,
   });
 
   @override
@@ -1183,10 +1297,14 @@ class _CompactField extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               isDense: true,
+              hintText: hintText,
+              hintStyle: core.AppTypography.bodyMedium.copyWith(
+                color: onSurfaceColor.withAlpha(76),
+              ),
             ),
             onChanged: onChanged,
           ),

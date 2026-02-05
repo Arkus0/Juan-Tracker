@@ -63,8 +63,8 @@ class MainScreen extends ConsumerWidget {
               label: 'ANÁLISIS',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'AJUSTES',
+              icon: Icon(Icons.person),
+              label: 'PERFIL',
             ),
           ],
         ),

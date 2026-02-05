@@ -355,9 +355,10 @@ class DetectedExerciseDraft {
   // ============================================
 
   /// Cambia el ejercicio matcheado (cuando usuario elige alternativa)
+  /// Si newId es null, el ejercicio queda sin match válido
   DetectedExerciseDraft withNewMatch({
     required String newName,
-    required int newId,
+    int? newId,
   }) {
     return copyWith(
       currentMatchedName: newName,
@@ -365,7 +366,7 @@ class DetectedExerciseDraft {
       wasManuallyEdited: true,
       wasNameChanged: true,
       lastEditedAt: DateTime.now(),
-      isVerified: true, // Usuario eligió explícitamente
+      isVerified: newId != null, // Solo verificado si hay match
     );
   }
 

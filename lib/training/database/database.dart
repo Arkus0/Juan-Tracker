@@ -241,6 +241,7 @@ class WorkoutSets extends Table {
 
   BoolColumn get isFailure => boolean().withDefault(const Constant(false))();
   BoolColumn get isDropset => boolean().withDefault(const Constant(false))();
+  BoolColumn get isRestPause => boolean().withDefault(const Constant(false))();
   BoolColumn get isWarmup => boolean().withDefault(const Constant(false))();
 
   @override
@@ -521,6 +522,67 @@ class MealTemplateItems extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// ============================================================================
+// 🆕 NUEVO: BODY PROGRESS - MEDIDAS Y FOTOS (Schema v13)
+// ============================================================================
+
+/// Medidas corporales registradas por el usuario
+/// Permite trackear evolución de cintura, pecho, brazos, etc.
+@TableIndex(name: 'body_measurements_date_idx', columns: {#date})
+class BodyMeasurements extends Table {
+  TextColumn get id => text()();
+  DateTimeColumn get date => dateTime()(); // Fecha de la medición
+  
+  // Medidas principales (todas en cm)
+  RealColumn get weightKg => real().nullable()(); // Peso al momento de la medición
+  RealColumn get waistCm => real().nullable()(); // Cintura
+  RealColumn get chestCm => real().nullable()(); // Pecho
+  RealColumn get hipsCm => real().nullable()(); // Cadera
+  RealColumn get leftArmCm => real().nullable()(); // Brazo izquierdo
+  RealColumn get rightArmCm => real().nullable()(); // Brazo derecho
+  RealColumn get leftThighCm => real().nullable()(); // Muslo izquierdo
+  RealColumn get rightThighCm => real().nullable()(); // Muslo derecho
+  RealColumn get leftCalfCm => real().nullable()(); // Pantorrilla izquierda
+  RealColumn get rightCalfCm => real().nullable()(); // Pantorrilla derecha
+  RealColumn get neckCm => real().nullable()(); // Cuello
+  
+  // Cálculo automático de grasa corporal (opcional)
+  RealColumn get bodyFatPercentage => real().nullable()();
+  
+  // Metadatos
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Fotos de progreso del usuario
+/// Almacena referencias a imágenes guardadas localmente
+@TableIndex(name: 'progress_photos_date_idx', columns: {#date})
+class ProgressPhotos extends Table {
+  TextColumn get id => text()();
+  DateTimeColumn get date => dateTime()(); // Fecha de la foto
+  
+  // Ruta de la imagen guardada localmente
+  TextColumn get imagePath => text()();
+  
+  // Categoría de la foto (front, side, back, etc.)
+  TextColumn get category => text().withDefault(const Constant('front'))();
+  // Valores posibles: 'front', 'side', 'back', 'upper', 'lower', 'other'
+  
+  // Notas opcionales
+  TextColumn get notes => text().nullable()();
+  
+  // Relación opcional con medidas del mismo día
+  TextColumn get measurementId => text().nullable().references(BodyMeasurements, #id, onDelete: KeyAction.setNull)();
+  
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     // Training
@@ -547,6 +609,9 @@ class MealTemplateItems extends Table {
     // 🆕 Meal Templates (v12)
     MealTemplates,
     MealTemplateItems,
+    // 🆕 Body Progress (v13)
+    BodyMeasurements,
+    ProgressPhotos,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -696,6 +761,25 @@ class AppDatabase extends _$AppDatabase {
           debugPrint('Migration v12 MealTemplates error: $e');
         }
       }
+      // 🆕 Migration path to version 13: Add Body Progress tables (measurements and photos)
+      if (from < 13) {
+        try {
+          await m.createTable(bodyMeasurements);
+          await m.createTable(progressPhotos);
+          debugPrint('Migration v13: BodyMeasurements and ProgressPhotos tables created successfully');
+        } catch (e) {
+          debugPrint('Migration v13 BodyProgress error: $e');
+        }
+      }
+      // 🆕 Migration path to version 14: Add isRestPause column to WorkoutSets
+      if (from < 14) {
+        try {
+          await m.addColumn(workoutSets, workoutSets.isRestPause);
+          debugPrint('Migration v14: isRestPause column added successfully');
+        } catch (e) {
+          debugPrint('Migration v14 isRestPause error: $e');
+        }
+      }
     },
   );
 
@@ -810,7 +894,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 14;
 
   // ============================================================================
   // 🆕 NUEVO: MÉTODOS DE BÚSQUEDA FTS5

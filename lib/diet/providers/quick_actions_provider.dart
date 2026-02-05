@@ -84,7 +84,17 @@ final yesterdayMealsProvider = FutureProvider<YesterdayMeals>((ref) async {
 // REPEAT YESTERDAY PROVIDER
 // ============================================================================
 
-/// Acción para repetir todas las comidas de ayer en el día actual
+/// Helper para generar una clave única que identifica un alimento + comida
+String _entryKey(DiaryEntryModel entry) {
+  // Usamos foodId si existe, o foodName + brand como fallback
+  final foodKey = entry.foodId ?? '${entry.foodName}|${entry.foodBrand ?? ''}';
+  return '${entry.mealType.name}|$foodKey|${entry.amount}|${entry.unit.name}';
+}
+
+/// Acción para repetir todas las comidas de ayer en el día actual.
+/// 
+/// IMPORTANTE: Evita duplicados verificando si ya existen entradas
+/// con el mismo alimento, comida, cantidad y unidad en el día destino.
 final repeatYesterdayProvider = Provider<Future<int> Function()>((ref) {
   return () async {
     final diaryRepo = ref.read(diaryRepositoryProvider);
@@ -93,22 +103,38 @@ final repeatYesterdayProvider = Provider<Future<int> Function()>((ref) {
 
     if (yesterdayMeals.isEmpty) return 0;
 
+    // Obtener las entradas del día destino para evitar duplicados
+    final dayStart = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    final dayEnd = dayStart.add(const Duration(days: 1));
+    final existingEntries = await diaryRepo.getByDateRange(dayStart, dayEnd);
+    
+    // Crear un Set de claves de las entradas existentes
+    final existingKeys = existingEntries.map(_entryKey).toSet();
+
     int count = 0;
     for (final entry in yesterdayMeals.all) {
-      final newEntry = entry.copyWith(
-        id: '${DateTime.now().millisecondsSinceEpoch}_$count',
-        date: selectedDate,
-        createdAt: DateTime.now(),
-      );
-      await diaryRepo.insert(newEntry);
-      count++;
+      // Solo insertar si no existe ya una entrada idéntica
+      final key = _entryKey(entry);
+      if (!existingKeys.contains(key)) {
+        final newEntry = entry.copyWith(
+          id: '${DateTime.now().millisecondsSinceEpoch}_$count',
+          date: selectedDate,
+          createdAt: DateTime.now(),
+        );
+        await diaryRepo.insert(newEntry);
+        existingKeys.add(key); // Prevenir duplicados dentro del mismo batch
+        count++;
+      }
     }
 
     return count;
   };
 });
 
-/// Acción para repetir solo una comida de ayer
+/// Acción para repetir solo una comida de ayer.
+/// 
+/// IMPORTANTE: Evita duplicados verificando si ya existen entradas
+/// con el mismo alimento, cantidad y unidad en el día destino.
 final repeatMealFromYesterdayProvider = Provider.family<Future<int> Function(), MealType>(
   (ref, mealType) {
     return () async {
@@ -119,15 +145,28 @@ final repeatMealFromYesterdayProvider = Provider.family<Future<int> Function(), 
       final entries = yesterdayMeals.byMealType(mealType);
       if (entries.isEmpty) return 0;
 
+      // Obtener las entradas del día destino para evitar duplicados
+      final dayStart = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+      final dayEnd = dayStart.add(const Duration(days: 1));
+      final existingEntries = await diaryRepo.getByDateRange(dayStart, dayEnd);
+      
+      // Crear un Set de claves de las entradas existentes
+      final existingKeys = existingEntries.map(_entryKey).toSet();
+
       int count = 0;
       for (final entry in entries) {
-        final newEntry = entry.copyWith(
-          id: '${DateTime.now().millisecondsSinceEpoch}_$count',
-          date: selectedDate,
-          createdAt: DateTime.now(),
-        );
-        await diaryRepo.insert(newEntry);
-        count++;
+        // Solo insertar si no existe ya una entrada idéntica
+        final key = _entryKey(entry);
+        if (!existingKeys.contains(key)) {
+          final newEntry = entry.copyWith(
+            id: '${DateTime.now().millisecondsSinceEpoch}_$count',
+            date: selectedDate,
+            createdAt: DateTime.now(),
+          );
+          await diaryRepo.insert(newEntry);
+          existingKeys.add(key); // Prevenir duplicados dentro del mismo batch
+          count++;
+        }
       }
 
       return count;

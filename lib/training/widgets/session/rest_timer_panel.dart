@@ -74,7 +74,8 @@ class _RestTimerPanelState extends State<RestTimerPanel>
     _currentSeconds = widget.defaultRestSeconds.toDouble();
 
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    // 200ms es suficiente para UI fluida (5 updates/s vs 10)
+    _timer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
       if (!mounted) return;
       _updateTime();
     });

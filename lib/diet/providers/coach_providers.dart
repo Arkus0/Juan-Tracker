@@ -170,6 +170,27 @@ final weeklyCheckInProvider = FutureProvider.autoDispose<CheckInResult?>((ref) a
 });
 
 // ============================================================================
+// CHECK-IN REMINDER
+// ============================================================================
+
+/// Provider que indica si es momento de hacer el check-in semanal
+/// Devuelve true si han pasado 7+ días desde el último check-in
+final isCheckInDueProvider = Provider<bool>((ref) {
+  final plan = ref.watch(coachPlanProvider);
+  if (plan == null) return false;
+  
+  final lastCheckIn = plan.lastCheckInDate;
+  if (lastCheckIn == null) {
+    // Si nunca se hizo check-in y han pasado 7+ días desde el inicio del plan
+    final daysSinceStart = DateTime.now().difference(plan.startDate).inDays;
+    return daysSinceStart >= 7;
+  }
+  
+  final daysSinceCheckIn = DateTime.now().difference(lastCheckIn).inDays;
+  return daysSinceCheckIn >= 7;
+});
+
+// ============================================================================
 // SERVICIO
 // ============================================================================
 

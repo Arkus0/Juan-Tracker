@@ -7,6 +7,8 @@ import '../../../core/providers/database_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/tdee_calculator.dart';
 import '../../../core/widgets/widgets.dart';
+import '../../../diet/providers/body_progress_providers.dart';
+import 'body_progress_screen.dart';
 
 /// Pantalla de Perfil y Ajustes
 /// 
@@ -69,8 +71,18 @@ class _SettingsContent extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.lg),
 
+        // Sección Progreso Corporal
+        const _BodyProgressSection(),
+
+        const SizedBox(height: AppSpacing.lg),
+
         // Sección Biblioteca
         _LibrarySection(),
+
+        const SizedBox(height: AppSpacing.lg),
+
+        // Sección Consejos y Atajos
+        const _TipsAndTricksSection(),
 
         // Debug section (only in debug mode)
         if (kDebugMode) ...[
@@ -273,6 +285,93 @@ class _LibrarySection extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ============================================================================
+// BODY PROGRESS SECTION
+// ============================================================================
+
+class _BodyProgressSection extends ConsumerWidget {
+  const _BodyProgressSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final latestAsync = ref.watch(latestMeasurementProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: colors.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    Icons.straighten,
+                    color: colors.onTertiaryContainer,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Progreso Corporal',
+                        style: AppTypography.titleMedium,
+                      ),
+                      latestAsync.when(
+                        data: (latest) => Text(
+                          latest != null
+                              ? 'Última medida: ${_formatDate(latest.date)}'
+                              : 'Registra tus medidas y fotos',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, _) => const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
+              variant: AppButtonVariant.secondary,
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const BodyProgressScreen(),
+                ),
+              ),
+              icon: Icons.trending_up,
+              label: 'Ver Progreso',
+              isFullWidth: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date).inDays;
+    
+    if (diff == 0) return 'Hoy';
+    if (diff == 1) return 'Ayer';
+    if (diff < 7) return 'Hace $diff días';
+    if (diff < 30) return 'Hace ${diff ~/ 7} semanas';
+    return 'Hace ${diff ~/ 30} meses';
   }
 }
 
@@ -587,6 +686,177 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
       ref.invalidate(userProfileProvider);
       Navigator.of(context).pop();
     }
+  }
+}
+
+// ============================================================================
+// TIPS AND TRICKS SECTION - Ayuda para nuevos usuarios
+// ============================================================================
+
+class _TipsAndTricksSection extends StatelessWidget {
+  const _TipsAndTricksSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withAlpha(30),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    Icons.tips_and_updates,
+                    color: AppColors.info,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Consejos y Atajos',
+                        style: AppTypography.titleMedium,
+                      ),
+                      Text(
+                        'Saca el máximo provecho de la app',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const Divider(),
+            const SizedBox(height: AppSpacing.md),
+
+            // Tips de búsqueda
+            _TipItem(
+              icon: Icons.search,
+              title: 'Búsqueda inteligente',
+              description: 'Escribe solo las primeras letras. La app busca por palabras clave y sinónimos.',
+            ),
+            _TipItem(
+              icon: Icons.history,
+              title: 'Alimentos frecuentes',
+              description: 'Los chips de acceso rápido muestran lo que más usas. ¡Un tap para añadir!',
+            ),
+            _TipItem(
+              icon: Icons.copy_all,
+              title: 'Repetir ayer',
+              description: 'Usa "Repetir ayer" para copiar todas las comidas del día anterior.',
+            ),
+            _TipItem(
+              icon: Icons.bookmark,
+              title: 'Plantillas de comida',
+              description: 'Guarda comidas como plantillas desde el menú (⋮) de cada sección.',
+            ),
+            _TipItem(
+              icon: Icons.qr_code_scanner,
+              title: 'Escanear código de barras',
+              description: 'Escanea productos para añadirlos automáticamente a tu diario.',
+            ),
+            _TipItem(
+              icon: Icons.auto_graph,
+              title: 'Coach adaptativo',
+              description: 'El check-in semanal ajusta tus objetivos basándose en tu progreso real.',
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: colors.primaryContainer.withAlpha(50),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(color: colors.primary.withAlpha(50)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb, color: colors.primary, size: 20),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Los valores grises son sugerencias. Edítalos o acéptalos directamente.',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: colors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TipItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _TipItem({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(AppRadius.xs),
+            ),
+            child: Icon(icon, size: 18, color: colors.onSurfaceVariant),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.labelLarge.copyWith(
+                    color: colors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

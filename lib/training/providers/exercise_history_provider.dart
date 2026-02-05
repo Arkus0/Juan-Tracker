@@ -84,7 +84,7 @@ final exerciseHistoryProvider = FutureProvider.family<List<Sesion>, String>(
     final repo = ref.read(_trainingRepoProvider);
     final sessions = await repo.getExpandedHistoryForExercise(
       exerciseName,
-      limit: 3,
+      limit: 5,
     );
     
     // Guardar en cache

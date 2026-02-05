@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/design_system/design_system.dart';
 import '../models/library_exercise.dart';
 import '../providers/exercise_search_providers.dart';
-import '../providers/training_provider.dart';
+import '../providers/exercise_usage_provider.dart';
+import '../utils/exercise_colors.dart';
 import '../widgets/common/create_exercise_dialog.dart';
 import '../widgets/smart_import_sheet_v2.dart';
 
@@ -23,11 +25,8 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      setState(() {});
+      ref.read(exerciseSearchQueryProvider.notifier).setQuery(_searchController.text);
     });
-    ref
-        .read(exerciseSearchQueryProvider.notifier)
-        .setQuery(_searchController.text);
   }
 
   @override
@@ -36,193 +35,80 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
     super.dispose();
   }
 
+  void _onExerciseSelected(LibraryExercise exercise) {
+    ref.read(exerciseUsageProvider.notifier).recordUsage(exercise.id);
+    Navigator.of(context).pop(exercise);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final resultsAsync = ref.watch(exerciseSearchResultsProvider);
-    final suggestionsAsync = ref.watch(exerciseSearchSuggestionsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
     final query = ref.watch(exerciseSearchQueryProvider);
     final filters = ref.watch(exerciseSearchFiltersProvider);
     final filtersNotifier = ref.read(exerciseSearchFiltersProvider.notifier);
-    final muscleGroups = ref.watch(availableMuscleGroupsProvider);
-    // final equipment = ref.watch(availableEquipmentProvider);
 
     return Scaffold(
-      // AppBar flotante para reducir espacio arriba
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text('BIBLIOTECA'),
+        title: const Text('Biblioteca'),
         centerTitle: true,
         scrolledUnderElevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: colorScheme.surface,
+          statusBarIconBrightness: colorScheme.brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark,
+        ),
       ),
       body: Stack(
         children: [
           Column(
             children: [
-              // Barra de búsqueda con menos padding superior
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
-                child: TextField(
-                  controller: _searchController,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                  onChanged: (value) {
-                    ref.read(exerciseSearchQueryProvider.notifier).setQuery(value);
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Buscar ejercicio...',
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.grey),
-                            onPressed: () {
-                              _searchController.clear();
-                              ref
-                                  .read(exerciseSearchQueryProvider.notifier)
-                                  .setQuery('');
-                            },
-                          )
-                        : null,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
+              // Search Bar
+              _SearchBar(
+                controller: _searchController,
+                onClear: () {
+                  _searchController.clear();
+                  ref.read(exerciseSearchQueryProvider.notifier).setQuery('');
+                },
+              ),
+              
+              // Muscle Group Filters
+              _MuscleGroupFilters(
+                selected: filters.muscleGroup,
+                onSelected: (muscle) => filtersNotifier.setMuscleGroup(
+                  muscle == filters.muscleGroup ? null : muscle,
                 ),
               ),
               
-              // Filtros compactos
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    FilterChip(
-                      label: const Text('Favoritos'),
-                      selected: filters.favoritesOnly,
-                      onSelected: (value) =>
-                          filtersNotifier.setFavoritesOnly(value),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    const Spacer(),
-                    if (filters.favoritesOnly ||
-                        (filters.muscleGroup != null &&
-                            filters.muscleGroup!.isNotEmpty) ||
-                        (filters.equipment != null &&
-                            filters.equipment!.isNotEmpty))
-                      TextButton(
-                        onPressed: filtersNotifier.clear,
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        child: const Text('Limpiar'),
-                      ),
-                  ],
+              // Equipment Filters
+              _EquipmentFilters(
+                selected: filters.equipment,
+                onSelected: (equip) => filtersNotifier.setEquipment(
+                  equip == filters.equipment ? null : equip,
                 ),
               ),
               
-              // Chips de grupos musculares
-              if (muscleGroups.isNotEmpty)
-                SizedBox(
-                  height: 36,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: muscleGroups.take(8).length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 6),
-                    itemBuilder: (context, index) {
-                      final muscle = muscleGroups[index];
-                      final isSelected = filters.muscleGroup == muscle;
-                      return FilterChip(
-                        label: Text(muscle),
-                        selected: isSelected,
-                        onSelected: (_) => filtersNotifier.setMuscleGroup(
-                          isSelected ? null : muscle,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      );
-                    },
-                  ),
-                ),
-              
-              // Lista de resultados
+              // Main Content
               Expanded(
-                child: resultsAsync.when(
-                  data: (displayedExercises) {
-                    if (displayedExercises.isEmpty) {
-                      final suggestions =
-                          suggestionsAsync.value ?? const <LibraryExercise>[];
-                      return _EmptyState(
-                        query: query,
-                        suggestions: suggestions,
-                        onSuggestionTap: (exercise) {
-                          Navigator.of(context).pop(exercise);
-                        },
-                      );
-                    }
-
-                    final topMatches = query.trim().isEmpty
-                        ? const <LibraryExercise>[]
-                        : displayedExercises.take(5).toList();
-                    final remaining = query.trim().isEmpty
-                        ? displayedExercises
-                        : displayedExercises.skip(5).toList();
-
-                    final rows = <_SearchRow>[];
-                    if (topMatches.isNotEmpty) {
-                      rows.add(const _SearchRow.header('MEJORES COINCIDENCIAS'));
-                      rows.addAll(topMatches.map(_SearchRow.exercise));
-                    }
-                    if (remaining.isNotEmpty) {
-                      if (query.trim().isNotEmpty) {
-                        rows.add(const _SearchRow.header('RESULTADOS'));
-                      }
-                      rows.addAll(remaining.map(_SearchRow.exercise));
-                    }
-
-                    return ListView.separated(
-                      itemCount: rows.length,
-                      separatorBuilder: (context, index) =>
-                          Divider(height: 1, color: Colors.grey[800]),
-                      itemBuilder: (context, index) {
-                        final row = rows[index];
-                        if (row.isHeader) {
-                          return _SectionHeader(title: row.header!);
-                        }
-
-                        final exercise = row.exercise!;
-                        return _ExerciseListTile(
-                          exercise: exercise,
-                          query: query,
-                          onTap: () {
-                            Navigator.of(context).pop(exercise);
-                          },
-                        );
-                      },
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (error, _) => Center(
-                    child: Text(
-                      'Error al buscar ejercicios: $error',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ),
+                child: query.isEmpty
+                    ? _SmartSectionsContent(onExerciseTap: _onExerciseSelected)
+                    : _SearchResultsContent(onExerciseTap: _onExerciseSelected),
               ),
             ],
           ),
-
-          // Menú flotante del FAB
+          
+          // FAB Menu Overlay
           if (_isFabMenuOpen)
             GestureDetector(
               onTap: () => setState(() => _isFabMenuOpen = false),
               child: Container(
-                color: Colors.black54,
+                color: colorScheme.scrim.withAlpha(140),
                 width: double.infinity,
                 height: double.infinity,
               ),
             ),
-
-          // FAB menu
+          
           if (_isFabMenuOpen)
             Positioned(
               right: 16,
@@ -235,336 +121,471 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
             ),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              setState(() => _isFabMenuOpen = !_isFabMenuOpen);
-            },
-            child: AnimatedRotation(
-              turns: _isFabMenuOpen ? 0.125 : 0,
-              duration: const Duration(milliseconds: 200),
-              child: const Icon(Icons.add),
-            ),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          setState(() => _isFabMenuOpen = !_isFabMenuOpen);
+        },
+        child: AnimatedRotation(
+          turns: _isFabMenuOpen ? 0.125 : 0,
+          duration: const Duration(milliseconds: 200),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
 
-  void _showManualAddDialog() async {
+  void _showManualAddDialog() {
     setState(() => _isFabMenuOpen = false);
-    final result = await showDialog<LibraryExercise>(
+    showDialog(
       context: context,
       builder: (ctx) => const CreateExerciseDialog(),
-    );
-    if (result != null && mounted) {
-      Navigator.of(context).pop(result);
-    }
+    ).then((exercise) {
+      if (exercise != null && mounted) {
+        Navigator.of(context).pop(exercise);
+      }
+    });
   }
 
-  void _showSmartImportDialog() async {
+  void _showSmartImportDialog() {
     setState(() => _isFabMenuOpen = false);
-    
-    final result = await showDialog<List<Map<String, dynamic>>>(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => const _SmartImportDialog(),
+      isScrollControlled: true,
+      builder: (ctx) => SmartImportSheetV2(
+        onConfirm: (exercises) {
+          // TODO: Procesar ejercicios importados
+          Navigator.of(ctx).pop();
+        },
+        onCancel: () => Navigator.of(ctx).pop(),
+      ),
     );
-    
-    if (result != null && result.isNotEmpty && mounted) {
-      // Devolver los ejercicios importados
-      Navigator.of(context).pop(result);
-    }
   }
 
   void _showOcrImportDialog() {
     setState(() => _isFabMenuOpen = false);
-    // Navegar al flujo de Smart Import unificado que incluye OCR
-    // El OCR completo está implementado en SmartImportSheetV2
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => SmartImportSheetV2(
-        onConfirm: (exercises) {
-          Navigator.of(context).pop();
-          // Procesar ejercicios importados si es necesario
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('OCR en desarrollo')),
+    );
+  }
+}
+
+// ==================== WIDGETS ====================
+
+class _SearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onClear;
+
+  const _SearchBar({required this.controller, required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: TextField(
+        controller: controller,
+        style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+        decoration: InputDecoration(
+          hintText: 'Buscar ejercicio...',
+          hintStyle: AppTypography.bodyLarge.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+          prefixIcon: Icon(Icons.search, color: colorScheme.primary),
+          suffixIcon: ValueListenableBuilder(
+            valueListenable: controller,
+            builder: (context, value, child) {
+              return value.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: onClear,
+                    )
+                  : const SizedBox.shrink();
+            },
+          ),
+          filled: true,
+          fillColor: colorScheme.surfaceContainerHighest,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
+    );
+  }
+}
+
+class _MuscleGroupFilters extends ConsumerWidget {
+  final String? selected;
+  final Function(String?) onSelected;
+
+  const _MuscleGroupFilters({this.selected, required this.onSelected});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final muscleGroups = ref.watch(availableMuscleGroupsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    final priorityMuscles = [
+      'Pecho', 'Espalda', 'Piernas', 'Hombros', 
+      'Biceps', 'Triceps', 'Core'
+    ];
+    
+    // muscleGroups es List<String>, no AsyncValue
+    final muscles = muscleGroups;
+    final sortedMuscles = muscles.toList()
+      ..sort((a, b) {
+        final aIndex = priorityMuscles.indexOf(a);
+        final bIndex = priorityMuscles.indexOf(b);
+        if (aIndex != -1 && bIndex != -1) return aIndex.compareTo(bIndex);
+        if (aIndex != -1) return -1;
+        if (bIndex != -1) return 1;
+        return a.compareTo(b);
+      });
+    
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: sortedMuscles.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final muscle = sortedMuscles[index];
+          final isSelected = selected == muscle;
+          final color = ExerciseColors.forMuscleGroup(muscle);
+          
+          return FilterChip(
+            selected: isSelected,
+            onSelected: (_) => onSelected(muscle),
+            backgroundColor: color.withAlpha(30),
+            selectedColor: color.withAlpha(100),
+            checkmarkColor: color,
+            side: BorderSide(
+              color: isSelected ? color : color.withAlpha(50),
+            ),
+            label: Text(
+              muscle,
+              style: AppTypography.labelMedium.copyWith(
+                color: isSelected ? color : colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            visualDensity: VisualDensity.compact,
+          );
         },
       ),
     );
   }
 }
 
-/// Menú flotante del FAB
-class _FabMenu extends StatelessWidget {
-  final VoidCallback onManualAdd;
-  final VoidCallback onSmartImport;
-  final VoidCallback onOcrImport;
+class _EquipmentFilters extends StatelessWidget {
+  final String? selected;
+  final Function(String?) onSelected;
 
-  const _FabMenu({
-    required this.onManualAdd,
-    required this.onSmartImport,
-    required this.onOcrImport,
-  });
+  const _EquipmentFilters({this.selected, required this.onSelected});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        _FabMenuItem(
-          icon: Icons.edit,
-          label: 'Crear manual',
-          onTap: onManualAdd,
-          color: colorScheme.primary,
-        ),
-        const SizedBox(height: 12),
-        _FabMenuItem(
-          icon: Icons.auto_fix_high,
-          label: 'Smart Import',
-          onTap: onSmartImport,
-          color: colorScheme.secondary,
-        ),
-        const SizedBox(height: 12),
-        _FabMenuItem(
-          icon: Icons.document_scanner,
-          label: 'OCR (imagen)',
-          onTap: onOcrImport,
-          color: colorScheme.tertiary,
-        ),
-      ],
+    final colorScheme = Theme.of(context).colorScheme;
+    final equipment = ['Barra', 'Mancuernas', 'Máquina', 'Peso corporal', 'Cable'];
+    final icons = {
+      'Barra': Icons.linear_scale,
+      'Mancuernas': Icons.fitness_center,
+      'Máquina': Icons.precision_manufacturing,
+      'Peso corporal': Icons.person,
+      'Cable': Icons.architecture,
+    };
+    
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: equipment.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final equip = equipment[index];
+          final isSelected = selected == equip;
+          
+          return ActionChip(
+            onPressed: () => onSelected(equip),
+            backgroundColor: isSelected 
+                ? colorScheme.primaryContainer 
+                : colorScheme.surfaceContainerHighest,
+            side: BorderSide(
+              color: isSelected 
+                  ? colorScheme.primary 
+                  : colorScheme.outline.withAlpha(50),
+            ),
+            avatar: Icon(
+              icons[equip],
+              size: 16,
+              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            ),
+            label: Text(
+              equip,
+              style: AppTypography.labelSmall.copyWith(
+                color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+              ),
+            ),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+          );
+        },
+      ),
     );
   }
 }
 
-/// Item del menú FAB
-class _FabMenuItem extends StatelessWidget {
+class _SmartSectionsContent extends ConsumerWidget {
+  final Function(LibraryExercise) onExerciseTap;
+
+  const _SmartSectionsContent({required this.onExerciseTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sectionsAsync = ref.watch(smartExerciseSectionsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return sectionsAsync.when(
+      data: (sections) {
+        if (!sections.hasRecent && !sections.hasPopular) {
+          return const _EmptyLibraryView();
+        }
+        
+        return ListView(
+          padding: const EdgeInsets.only(bottom: 100),
+          children: [
+            if (sections.hasRecent) ...[
+              _SectionHeader(
+                title: 'Usados recientemente',
+                icon: Icons.history,
+                color: colorScheme.primary,
+              ),
+              ...sections.recent.map((e) => _ExerciseListTile(
+                exercise: e,
+                onTap: () => onExerciseTap(e),
+                isRecent: true,
+              )),
+              const SizedBox(height: 16),
+            ],
+            
+            if (sections.hasPopular) ...[
+              _SectionHeader(
+                title: 'Tus favoritos',
+                icon: Icons.trending_up,
+                color: AppColors.success,
+              ),
+              ...sections.popular.map((e) => _ExerciseListTile(
+                exercise: e,
+                onTap: () => onExerciseTap(e),
+                isPopular: true,
+              )),
+              const SizedBox(height: 16),
+            ],
+            
+            _SectionHeader(
+              title: 'Todos los ejercicios',
+              icon: Icons.list,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            const _AllExercisesList(),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => const _EmptyLibraryView(),
+    );
+  }
+}
+
+class _SearchResultsContent extends ConsumerWidget {
+  final Function(LibraryExercise) onExerciseTap;
+
+  const _SearchResultsContent({required this.onExerciseTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resultsAsync = ref.watch(exerciseSearchResultsProvider);
+    final suggestionsAsync = ref.watch(exerciseSearchSuggestionsProvider);
+    final query = ref.watch(exerciseSearchQueryProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return resultsAsync.when(
+      data: (exercises) {
+        if (exercises.isEmpty) {
+          final suggestions = suggestionsAsync.value ?? [];
+          return _EmptySearchView(
+            query: query,
+            suggestions: suggestions,
+            onSuggestionTap: onExerciseTap,
+          );
+        }
+        
+        return ListView.separated(
+          padding: const EdgeInsets.only(bottom: 100),
+          itemCount: exercises.length,
+          separatorBuilder: (_, _) => Divider(
+            height: 1,
+            indent: 72,
+            color: colorScheme.outline.withAlpha(30),
+          ),
+          itemBuilder: (context, index) {
+            final exercise = exercises[index];
+            return _ExerciseListTile(
+              exercise: exercise,
+              onTap: () => onExerciseTap(exercise),
+              query: query,
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(
+        child: Text(
+          'Error: $error',
+          style: TextStyle(color: colorScheme.error),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
   final IconData icon;
-  final String label;
-  final VoidCallback onTap;
   final Color color;
 
-  const _FabMenuItem({
+  const _SectionHeader({
+    required this.title,
     required this.icon,
-    required this.label,
-    required this.onTap,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.grey[900],
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha((0.3 * 255).round()),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        FloatingActionButton.small(
-          onPressed: onTap,
-          backgroundColor: color,
-          heroTag: label,
-          child: Icon(icon, color: Colors.white),
-        ),
-      ],
-    );
-  }
-}
-
-/// Estado vacío con sugerencias
-class _EmptyState extends StatelessWidget {
-  final String query;
-  final List<LibraryExercise> suggestions;
-  final ValueChanged<LibraryExercise> onSuggestionTap;
-
-  const _EmptyState({
-    required this.query,
-    required this.suggestions,
-    required this.onSuggestionTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Row(
         children: [
-          Icon(
-            Icons.search_off,
-            size: 60,
-            color: Colors.grey[800],
-          ),
-          const SizedBox(height: 16),
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
           Text(
-            'NO SE ENCONTRÓ EL EJERCICIO',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.bold,
+            title.toUpperCase(),
+            style: AppTypography.labelLarge.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
             ),
           ),
-          if (suggestions.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(
-              '¿Quisiste decir...?',
-              style: TextStyle(color: Colors.grey[500]),
-            ),
-            const SizedBox(height: 8),
-            ...suggestions.map(
-              (exercise) => InkWell(
-                onTap: () => onSuggestionTap(exercise),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(
-                    exercise.name,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 }
 
-/// Header de sección
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-}
-
-/// Tile de ejercicio
 class _ExerciseListTile extends StatelessWidget {
   final LibraryExercise exercise;
-  final String query;
   final VoidCallback onTap;
+  final String? query;
+  final bool isRecent;
+  final bool isPopular;
 
   const _ExerciseListTile({
     required this.exercise,
-    required this.query,
     required this.onTap,
+    this.query,
+    this.isRecent = false,
+    this.isPopular = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = ExerciseColors.forMuscleGroup(exercise.muscleGroup);
+    final icon = ExerciseColors.iconFor(exercise.muscleGroup);
+    
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 4,
-      ),
-      title: _HighlightedText(
-        text: exercise.name.toUpperCase(),
-        query: query,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: color.withAlpha(20),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withAlpha(50)),
         ),
+        child: Icon(icon, color: color, size: 24),
       ),
+      title: query?.isNotEmpty == true
+          ? _HighlightedText(
+              text: exercise.name.toUpperCase(),
+              query: query!,
+              style: AppTypography.bodyLarge.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            )
+          : Text(
+              exercise.name.toUpperCase(),
+              style: AppTypography.bodyLarge.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            ),
       subtitle: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 6,
-              vertical: 2,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.2),
+              color: color.withAlpha(30),
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.4),
-              ),
             ),
             child: Text(
               exercise.muscleGroup.toUpperCase(),
-              style: TextStyle(
-                fontSize: 10,
-                color: Theme.of(context).colorScheme.onSurface,
+              style: AppTypography.labelSmall.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
           const SizedBox(width: 8),
           Text(
             exercise.equipment,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
+            style: AppTypography.bodySmall.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
+          if (isRecent) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.history, size: 14, color: colorScheme.primary),
+          ],
+          if (isPopular) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.star, size: 14, color: AppColors.warning),
+          ],
         ],
       ),
-      trailing: Icon(
-        Icons.add_circle_outline,
-        color: Theme.of(context).colorScheme.primary,
+      trailing: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          Icons.add,
+          color: colorScheme.primary,
+          size: 20,
+        ),
       ),
       onTap: onTap,
     );
   }
-}
-
-class _SearchRow {
-  final String? header;
-  final LibraryExercise? exercise;
-
-  const _SearchRow._({this.header, this.exercise});
-
-  const _SearchRow.header(String header) : this._(header: header);
-
-  const _SearchRow.exercise(LibraryExercise exercise)
-    : this._(exercise: exercise);
-
-  bool get isHeader => header != null;
 }
 
 class _HighlightedText extends StatelessWidget {
@@ -580,220 +601,186 @@ class _HighlightedText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final normalizedQuery = query.trim();
-    if (normalizedQuery.isEmpty) {
-      return Text(
-        text,
-        style: style,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      );
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final index = lowerText.indexOf(lowerQuery);
+    
+    if (index == -1) {
+      return Text(text, style: style);
     }
-
-    final tokens = normalizedQuery
-        .toLowerCase()
-        .split(RegExp(r'\s+'))
-        .where((t) => t.length >= 2)
-        .toList();
-
-    if (tokens.isEmpty) {
-      return Text(
-        text,
-        style: style,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-
-    final pattern = RegExp(
-      tokens.map(RegExp.escape).join('|'),
-      caseSensitive: false,
-    );
-    final matches = pattern.allMatches(text);
-    if (matches.isEmpty) {
-      return Text(
-        text,
-        style: style,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-
-    final highlightStyle = style.copyWith(
-      color: Theme.of(context).colorScheme.primary,
-    );
-
-    final spans = <TextSpan>[];
-    var lastIndex = 0;
-    for (final match in matches) {
-      if (match.start > lastIndex) {
-        spans.add(
-          TextSpan(text: text.substring(lastIndex, match.start), style: style),
-        );
-      }
-      spans.add(
-        TextSpan(
-          text: text.substring(match.start, match.end),
-          style: highlightStyle,
-        ),
-      );
-      lastIndex = match.end;
-    }
-    if (lastIndex < text.length) {
-      spans.add(TextSpan(text: text.substring(lastIndex), style: style));
-    }
-
+    
     return RichText(
-      text: TextSpan(children: spans),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        style: style.copyWith(color: colorScheme.onSurface),
+        children: [
+          TextSpan(text: text.substring(0, index)),
+          TextSpan(
+            text: text.substring(index, index + query.length),
+            style: style.copyWith(
+              backgroundColor: colorScheme.primaryContainer,
+              color: colorScheme.primary,
+            ),
+          ),
+          TextSpan(text: text.substring(index + query.length)),
+        ],
+      ),
     );
   }
 }
 
-/// Diálogo de Smart Import desde rutinas existentes
-class _SmartImportDialog extends ConsumerStatefulWidget {
-  const _SmartImportDialog();
-
-  @override
-  ConsumerState<_SmartImportDialog> createState() => _SmartImportDialogState();
-}
-
-class _SmartImportDialogState extends ConsumerState<_SmartImportDialog> {
-  String? _selectedRoutineId;
-  List<dynamic> _exercises = [];
-  final Set<String> _selectedExercises = {};
-
-  void _onRoutineSelected(String routineId, List<dynamic> days) {
-    setState(() {
-      _selectedRoutineId = routineId;
-      // Extraer todos los ejercicios de todos los días
-      _exercises = [];
-      for (final day in days) {
-        if (day.ejercicios != null) {
-          for (final ex in day.ejercicios) {
-            _exercises.add({
-              'name': ex.nombre,
-              'series': ex.series,
-              'repsRange': ex.repsRange,
-              'libraryId': ex.libraryId,
-              'dayName': day.nombre,
-            });
-          }
-        }
-      }
-      _selectedExercises.clear();
-    });
-  }
+class _EmptyLibraryView extends StatelessWidget {
+  const _EmptyLibraryView();
 
   @override
   Widget build(BuildContext context) {
-    final routinesAsync = ref.watch(rutinasStreamProvider);
-
-    return AlertDialog(
-      title: const Text('Importar desde rutina'),
-      content: SizedBox(
-        width: double.maxFinite,
-        height: 400,
-        child: routinesAsync.when(
-          data: (routines) {
-            if (routines.isEmpty) {
-              return const Center(
-                child: Text('No tienes rutinas guardadas'),
-              );
-            }
-
-            if (_selectedRoutineId == null) {
-              // Mostrar lista de rutinas
-              return ListView.builder(
-                itemCount: routines.length,
-                itemBuilder: (context, index) {
-                  final routine = routines[index];
-                  return ListTile(
-                    title: Text(routine.nombre),
-                    subtitle: Text('${routine.dias.length} días'),
-                    leading: const Icon(Icons.fitness_center),
-                    onTap: () => _onRoutineSelected(routine.id, routine.dias),
-                  );
-                },
-              );
-            }
-
-            // Mostrar ejercicios de la rutina seleccionada
-            if (_exercises.isEmpty) {
-              return const Center(
-                child: Text('Esta rutina no tiene ejercicios'),
-              );
-            }
-
-            return Column(
-              children: [
-                Row(
-                  children: [
-                    TextButton.icon(
-                      onPressed: () {
-                        setState(() => _selectedRoutineId = null);
-                      },
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Volver'),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${_selectedExercises.length} seleccionados',
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                  ],
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _exercises.length,
-                    itemBuilder: (context, index) {
-                      final ex = _exercises[index];
-                      final isSelected = _selectedExercises.contains(ex['name']);
-                      return CheckboxListTile(
-                        title: Text(ex['name']),
-                        subtitle: Text('${ex['dayName']} • ${ex['series']}x${ex['repsRange']}'),
-                        value: isSelected,
-                        onChanged: (checked) {
-                          setState(() {
-                            if (checked == true) {
-                              _selectedExercises.add(ex['name']);
-                            } else {
-                              _selectedExercises.remove(ex['name']);
-                            }
-                          });
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => const Center(
-            child: Text('Error al cargar rutinas'),
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.fitness_center,
+            size: 64,
+            color: colorScheme.onSurfaceVariant.withAlpha(50),
           ),
+          const SizedBox(height: 16),
+          Text(
+            'Biblioteca vacía',
+            style: AppTypography.titleMedium.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Empieza a crear rutinas para ver\ntus ejercicios favoritos aquí',
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMedium.copyWith(
+              color: colorScheme.onSurfaceVariant.withAlpha(150),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptySearchView extends StatelessWidget {
+  final String query;
+  final List<LibraryExercise> suggestions;
+  final Function(LibraryExercise) onSuggestionTap;
+
+  const _EmptySearchView({
+    required this.query,
+    required this.suggestions,
+    required this.onSuggestionTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Center(
+          child: Column(
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 48,
+                color: colorScheme.onSurfaceVariant.withAlpha(100),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No se encontró "$query"',
+                style: AppTypography.titleMedium,
+              ),
+            ],
+          ),
+        ),
+        if (suggestions.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Text(
+            '¿Quizás quisiste decir?',
+            style: AppTypography.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          ...suggestions.map((e) => _ExerciseListTile(
+            exercise: e,
+            onTap: () => onSuggestionTap(e),
+          )),
+        ],
+      ],
+    );
+  }
+}
+
+class _AllExercisesList extends ConsumerWidget {
+  const _AllExercisesList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exercisesAsync = ref.watch(exercisesProvider);
+    
+    return exercisesAsync.when(
+      data: (exercises) {
+        return Column(
+          children: exercises.take(30).map((e) => _ExerciseListTile(
+            exercise: e,
+            onTap: () => Navigator.of(context).pop(e),
+          )).toList(),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _FabMenu extends StatelessWidget {
+  final VoidCallback onManualAdd;
+  final VoidCallback onSmartImport;
+  final VoidCallback onOcrImport;
+
+  const _FabMenu({
+    required this.onManualAdd,
+    required this.onSmartImport,
+    required this.onOcrImport,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 8,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Crear manualmente'),
+              onTap: onManualAdd,
+            ),
+            ListTile(
+              leading: const Icon(Icons.mic),
+              title: const Text('Importar por voz'),
+              onTap: onSmartImport,
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Importar por OCR'),
+              onTap: onOcrImport,
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('CANCELAR'),
-        ),
-        if (_selectedRoutineId != null)
-          TextButton(
-            onPressed: _selectedExercises.isEmpty
-                ? null
-                : () {
-                    final selected = _exercises
-                        .where((ex) => _selectedExercises.contains(ex['name']))
-                        .toList();
-                    Navigator.of(context).pop(selected);
-                  },
-            child: const Text('IMPORTAR'),
-          ),
-      ],
     );
   }
 }

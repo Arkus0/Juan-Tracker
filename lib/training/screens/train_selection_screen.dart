@@ -9,6 +9,7 @@ import '../providers/main_provider.dart';
 import '../providers/session_progress_provider.dart';
 import '../providers/session_tolerance_provider.dart';
 import '../providers/training_provider.dart';
+import '../widgets/routine_template_sheet.dart';
 import 'training_session_screen.dart';
 
 /// ============================================================================
@@ -357,7 +358,7 @@ class _ZeroThoughtHome extends StatelessWidget {
                       ),
                     ],
 
-                    SizedBox(height: showAlternatives ? AppSpacing.xl : AppSpacing.xxxl),
+                    SizedBox(height: showAlternatives ? AppSpacing.md : AppSpacing.xl),
 
                     // ═══════════════════════════════════════════════════════
                     // CTA: Diferente para día de descanso vs entrenamiento
@@ -434,13 +435,13 @@ class _ZeroThoughtHome extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.md),
 
                       // Escape claro: No está atrapado
                       GestureDetector(
                         onTap: onToggleAlternatives,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -673,19 +674,145 @@ class _ActiveSessionState extends StatelessWidget {
 /// ESTADO: SIN RUTINAS
 /// ============================================================================
 
-class _EmptyState extends StatelessWidget {
+class _EmptyState extends ConsumerWidget {
   final VoidCallback onCreate;
 
   const _EmptyState({required this.onCreate});
 
   @override
-  Widget build(BuildContext context) {
-    return AppEmpty(
-      icon: Icons.fitness_center_outlined,
-      title: 'Sin rutinas',
-      subtitle: 'Crea tu primera rutina para empezar a entrenar',
-      actionLabel: 'CREAR RUTINA',
-      onAction: onCreate,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.fitness_center_outlined,
+              size: 64,
+              color: colors.onSurfaceVariant.withAlpha((0.5 * 255).round()),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Sin rutinas',
+              style: AppTypography.headlineSmall.copyWith(
+                color: colors.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Crea una rutina estructurada o entrena libremente',
+              style: AppTypography.bodyMedium.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.xxl),
+            // CTA Principal: Entrenar Libre (reduce TTV de 14 clics a 2)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => _startFreeWorkout(context, ref),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('ENTRENAR LIBRE'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            // CTA Secundario: Usar plantilla
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonal(
+                onPressed: () => _showTemplates(context, ref),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.library_books_outlined),
+                    const SizedBox(width: AppSpacing.sm),
+                    const Text('USAR PLANTILLA'),
+                    const SizedBox(width: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withAlpha((0.2 * 255).round()),
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
+                      ),
+                      child: Text(
+                        '+68',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: colors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            // CTA Terciario: Crear rutina personalizada
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onCreate,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('CREAR RUTINA'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _showTemplates(BuildContext context, WidgetRef ref) async {
+    final rutina = await RoutineTemplateSheet.show(context);
+    if (rutina != null && context.mounted) {
+      // Guardar la rutina convertida
+      await ref.read(trainingRepositoryProvider).saveRutina(rutina);
+      // Invalidar para refrescar lista
+      ref.invalidate(rutinasStreamProvider);
+      // Feedback
+      if (context.mounted) {
+        AppSnackbar.show(
+          context,
+          message: '✓ Rutina "${rutina.nombre}" añadida',
+        );
+      }
+    }
+  }
+  
+  void _startFreeWorkout(BuildContext context, WidgetRef ref) {
+    try {
+      HapticFeedback.heavyImpact();
+    } catch (_) {}
+    
+    // Iniciar sesión libre sin rutina
+    ref.read(trainingSessionProvider.notifier).startFreeSession();
+    
+    final theme = Theme.of(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Theme(
+          data: theme,
+          child: const TrainingSessionScreen(),
+        ),
+      ),
     );
   }
 }

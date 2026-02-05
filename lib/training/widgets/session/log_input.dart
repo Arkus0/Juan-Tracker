@@ -17,13 +17,13 @@ class _InputStyles {
     color: AppColors.textPrimary,
   );
 
-  // 🎯 UX MEDIO: Ghost values más visibles
+  // 🎯 UX MEDIO: Ghost values más visibles (opacity aumentada para WCAG AA)
   static final ghostText = GoogleFonts.montserrat(
     color: AppColors.textTertiary,
     fontWeight: FontWeight.w600,
     fontSize: 16,
     decoration: TextDecoration.underline,
-    decorationColor: AppColors.textTertiary.withValues(alpha: 0.3),
+    decorationColor: AppColors.textTertiary.withValues(alpha: 0.5),
     decorationStyle: TextDecorationStyle.dotted,
   );
 

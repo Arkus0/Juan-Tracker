@@ -1,0 +1,3230 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-02-03",
+  "templates": [
+    {
+      "id": "ppl-classic",
+      "nombre": "Push Pull Legs Clásico",
+      "categoria": "ppl",
+      "nivel": "intermedio",
+      "diasPorSemana": 6,
+      "descripcion": "El split más popular para hipertrofia. 6 días de entrenamiento dividiendo empuje, tirón y piernas.",
+      "dias": [
+        {
+          "nombre": "Push A",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "104", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "147", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "110", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Pull A",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 4, "repsRange": "5-6"},
+            {"exerciseId": "119", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "123", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "128", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "163", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Legs A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "137", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30-60s"}
+          ]
+        },
+        {
+          "nombre": "Push B",
+          "ejercicios": [
+            {"exerciseId": "101", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "103", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "146", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "150", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "167", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "115", "series": 3, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Pull B",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 4, "repsRange": "6-10"},
+            {"exerciseId": "120", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "124", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "128", "series": 3, "repsRange": "15-20"},
+            {"exerciseId": "160", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "158", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Legs B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "134", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "141", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "140", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "139", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "144", "series": 4, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ppl-3day",
+      "nombre": "Push Pull Legs 3 Días",
+      "categoria": "ppl",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Versión de 3 días para principiantes o personas con poco tiempo. Ideal para empezar.",
+      "dias": [
+        {
+          "nombre": "Push",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "104", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "147", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Pull",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 4, "repsRange": "5-6"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "159", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "128", "series": 3, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Legs",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "137", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 4, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "upper-lower-4",
+      "nombre": "Torso Pierna 4 Días",
+      "categoria": "upper-lower",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Split clásico de 4 días. Frecuencia 2 por grupo muscular. Ideal para ganar fuerza y masa.",
+      "dias": [
+        {
+          "nombre": "Torso A (Fuerza)",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "4-6"},
+            {"exerciseId": "119", "series": 4, "repsRange": "4-6"},
+            {"exerciseId": "147", "series": 3, "repsRange": "6-8"},
+            {"exerciseId": "123", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Pierna A (Fuerza)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "4-6"},
+            {"exerciseId": "137", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "133", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "143", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30-60s"}
+          ]
+        },
+        {
+          "nombre": "Torso B (Hipertrofia)",
+          "ejercicios": [
+            {"exerciseId": "101", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "120", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "104", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "124", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "160", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "167", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Pierna B (Hipertrofia)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "141", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "134", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "139", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "144", "series": 4, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "upper-lower-2",
+      "nombre": "Torso Pierna 2 Días",
+      "categoria": "upper-lower",
+      "nivel": "principiante",
+      "diasPorSemana": 2,
+      "descripcion": "Rutina minimalista para mantenimiento o principiantes absolutos con muy poco tiempo.",
+      "dias": [
+        {
+          "nombre": "Torso",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 3, "repsRange": "6-8"},
+            {"exerciseId": "119", "series": 3, "repsRange": "6-8"},
+            {"exerciseId": "147", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "160", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 2, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Pierna",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "137", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 3, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fullbody-3",
+      "nombre": "Full Body 3 Días",
+      "categoria": "fullbody",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Entrena todo el cuerpo cada sesión. Perfecto para principiantes y ganar fuerza base.",
+      "dias": [
+        {
+          "nombre": "Full Body A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "6-8"},
+            {"exerciseId": "100", "series": 3, "repsRange": "6-8"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "147", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "172", "series": 2, "repsRange": "30-45s"}
+          ]
+        },
+        {
+          "nombre": "Full Body B",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 3, "repsRange": "5-6"},
+            {"exerciseId": "101", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "146", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "175", "series": 2, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Full Body C",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "103", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "117", "series": 3, "repsRange": "6-10"},
+            {"exerciseId": "141", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "159", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 2, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fullbody-2",
+      "nombre": "Full Body 2 Días",
+      "categoria": "fullbody",
+      "nivel": "principiante",
+      "diasPorSemana": 2,
+      "descripcion": "Rutina mínima viable. 2 entrenamientos semanales cubriendo todo el cuerpo.",
+      "dias": [
+        {
+          "nombre": "Full Body A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "6-8"},
+            {"exerciseId": "100", "series": 3, "repsRange": "6-8"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "147", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Full Body B",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 3, "repsRange": "5-6"},
+            {"exerciseId": "101", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 3, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brosplit-5",
+      "nombre": "Clásico 5 Días",
+      "categoria": "brosplit",
+      "nivel": "intermedio",
+      "diasPorSemana": 5,
+      "descripcion": "Un grupo muscular por día. Alto volumen por sesión. Popular en culturismo clásico.",
+      "dias": [
+        {
+          "nombre": "Pecho",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "104", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "103", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "110", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "115", "series": 3, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Espalda",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 4, "repsRange": "5-6"},
+            {"exerciseId": "117", "series": 4, "repsRange": "6-10"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "128", "series": 3, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Hombros",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "147", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "151", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "154", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "157", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "133", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "137", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "143", "series": 4, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Brazos",
+          "ejercicios": [
+            {"exerciseId": "159", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "168", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "160", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "163", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "167", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "164", "series": 2, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arnold-6",
+      "nombre": "Split Arnold",
+      "categoria": "brosplit",
+      "nivel": "avanzado",
+      "diasPorSemana": 6,
+      "descripcion": "Inspirado en el entrenamiento de Arnold. Pecho/Espalda, Hombros/Brazos, Piernas. Frecuencia 2.",
+      "dias": [
+        {
+          "nombre": "Pecho y Espalda A",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "117", "series": 4, "repsRange": "6-10"},
+            {"exerciseId": "104", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "110", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "112", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Brazos A",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "149", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "154", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "168", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "160", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Piernas A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "137", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "133", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "143", "series": 5, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Pecho y Espalda B",
+          "ejercicios": [
+            {"exerciseId": "101", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "120", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "103", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "124", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "109", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "128", "series": 3, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Brazos B",
+          "ejercicios": [
+            {"exerciseId": "147", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "150", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "151", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "161", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "167", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "163", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "170", "series": 3, "repsRange": "10-15"}
+          ]
+        },
+        {
+          "nombre": "Piernas B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "141", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "134", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "138", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "144", "series": 4, "repsRange": "20-25"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strength-4",
+      "nombre": "Fuerza Básica 4 Días",
+      "categoria": "fuerza",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Enfocado en los levantamientos principales. Progresión lineal. Ideal para ganar fuerza bruta.",
+      "dias": [
+        {
+          "nombre": "Sentadilla",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "133", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30-60s"}
+          ]
+        },
+        {
+          "nombre": "Press Banca",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "101", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "115", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "128", "series": 3, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Peso Muerto",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "157", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Press Militar",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 5, "repsRange": "5"},
+            {"exerciseId": "147", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "117", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "154", "series": 3, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strength-3",
+      "nombre": "Fuerza Básica 3 Días",
+      "categoria": "fuerza",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Los 3 grandes levantamientos como base. Perfecto para principiantes que quieren fuerza.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "146", "series": 5, "repsRange": "5"},
+            {"exerciseId": "125", "series": 1, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Día C",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hypertrophy-ppl",
+      "nombre": "Hipertrofia PPL",
+      "categoria": "hipertrofia",
+      "nivel": "avanzado",
+      "diasPorSemana": 6,
+      "descripcion": "Alto volumen para máxima hipertrofia. Rangos de reps elevados. Para intermedios-avanzados.",
+      "dias": [
+        {
+          "nombre": "Push (Volumen)",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "104", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "103", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "147", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "110", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "167", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Pull (Volumen)",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "119", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "120", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "123", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "128", "series": 4, "repsRange": "15-20"},
+            {"exerciseId": "159", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "160", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "163", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Legs (Volumen)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "133", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "134", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "137", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "141", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "143", "series": 5, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Push (Intensidad)",
+          "ejercicios": [
+            {"exerciseId": "101", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "100", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "146", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "150", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "151", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "115", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "168", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Pull (Intensidad)",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 4, "repsRange": "5-6"},
+            {"exerciseId": "118", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "124", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "121", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "154", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "161", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "164", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Legs (Intensidad)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "141", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "133", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "144", "series": 5, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glutes-focus",
+      "nombre": "Enfoque Glúteos",
+      "categoria": "especializado",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Rutina con énfasis en desarrollo de glúteos. Incluye trabajo de torso para balance.",
+      "dias": [
+        {
+          "nombre": "Glúteos + Pierna",
+          "ejercicios": [
+            {"exerciseId": "141", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "130", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "134", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "180", "series": 3, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Torso A",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "147", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "159", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 2, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Glúteos + Femoral",
+          "ejercicios": [
+            {"exerciseId": "141", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "142", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "137", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "136", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Torso B",
+          "ejercicios": [
+            {"exerciseId": "101", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "120", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "124", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "160", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "167", "series": 2, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arms-specialization",
+      "nombre": "Especialización Brazos",
+      "categoria": "especializado",
+      "nivel": "avanzado",
+      "diasPorSemana": 5,
+      "descripcion": "Para desarrollar brazos rezagados. Mantiene el resto del cuerpo en mantenimiento.",
+      "dias": [
+        {
+          "nombre": "Brazos A",
+          "ejercicios": [
+            {"exerciseId": "159", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "168", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "160", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "163", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "167", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Piernas (Mantenim.)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Torso (Mantenim.)",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "147", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Brazos B",
+          "ejercicios": [
+            {"exerciseId": "161", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "164", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "170", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "163", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "167", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Hombros + Brazos",
+          "ejercicios": [
+            {"exerciseId": "147", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "159", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "168", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "160", "series": 2, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 2, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyweight",
+      "nombre": "Calistenia Completa",
+      "categoria": "calistenia",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Entrenamiento solo con peso corporal. Perfecto para entrenar en casa o al aire libre.",
+      "dias": [
+        {
+          "nombre": "Push",
+          "ejercicios": [
+            {"exerciseId": "185", "series": 4, "repsRange": "max"},
+            {"exerciseId": "115", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "170", "series": 3, "repsRange": "10-15"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30-60s"}
+          ]
+        },
+        {
+          "nombre": "Pull",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 4, "repsRange": "max"},
+            {"exerciseId": "184", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "175", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30-60s"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "136", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "134", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "145", "series": 4, "repsRange": "15-20"},
+            {"exerciseId": "172", "series": 3, "repsRange": "45-60s"}
+          ]
+        },
+        {
+          "nombre": "Full Body",
+          "ejercicios": [
+            {"exerciseId": "183", "series": 4, "repsRange": "10-15"},
+            {"exerciseId": "185", "series": 3, "repsRange": "max"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"},
+            {"exerciseId": "136", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "172", "series": 2, "repsRange": "45-60s"},
+            {"exerciseId": "173", "series": 2, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bodyweight-beginner",
+      "nombre": "Calistenia Principiante",
+      "categoria": "calistenia",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Introducción a la calistenia. Ejercicios básicos para construir fuerza base.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "185", "series": 3, "repsRange": "5-10"},
+            {"exerciseId": "184", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "136", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "172", "series": 3, "repsRange": "20-30s"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "170", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "117", "series": 3, "repsRange": "3-5"},
+            {"exerciseId": "145", "series": 3, "repsRange": "15-20"},
+            {"exerciseId": "175", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Día C",
+          "ejercicios": [
+            {"exerciseId": "185", "series": 3, "repsRange": "max"},
+            {"exerciseId": "184", "series": 3, "repsRange": "max"},
+            {"exerciseId": "136", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "173", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "172", "series": 2, "repsRange": "30-45s"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "minimalist-2",
+      "nombre": "Minimalista 2 Días",
+      "categoria": "minimalista",
+      "nivel": "principiante",
+      "diasPorSemana": 2,
+      "descripcion": "Lo mínimo para mantener o mejorar. Solo 2 entrenamientos semanales con lo esencial.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5-8"},
+            {"exerciseId": "100", "series": 3, "repsRange": "5-8"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 3, "repsRange": "5"},
+            {"exerciseId": "146", "series": 3, "repsRange": "5-8"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maintenance",
+      "nombre": "Mantenimiento 2x/sem",
+      "categoria": "minimalista",
+      "nivel": "intermedio",
+      "diasPorSemana": 2,
+      "descripcion": "Para mantener las ganancias en épocas de poco tiempo. Mínimo estímulo efectivo.",
+      "dias": [
+        {
+          "nombre": "Full Body A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 2, "repsRange": "6-8"},
+            {"exerciseId": "100", "series": 2, "repsRange": "6-8"},
+            {"exerciseId": "119", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "147", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 2, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Full Body B",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 2, "repsRange": "5"},
+            {"exerciseId": "101", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "133", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 2, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "women-beginner",
+      "nombre": "Iniciación Mujeres",
+      "categoria": "mujer",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Rutina de inicio para mujeres. Enfoque en glúteos, piernas y tonificación general.",
+      "dias": [
+        {
+          "nombre": "Pierna + Glúteo",
+          "ejercicios": [
+            {"exerciseId": "141", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "130", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "134", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "145", "series": 3, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Torso",
+          "ejercicios": [
+            {"exerciseId": "101", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "120", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "147", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "172", "series": 2, "repsRange": "30-45s"}
+          ]
+        },
+        {
+          "nombre": "Full Body",
+          "ejercicios": [
+            {"exerciseId": "141", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "100", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "119", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "137", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "women-intermediate",
+      "nombre": "Glúteos & Piernas 4 Días",
+      "categoria": "mujer",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Énfasis en tren inferior manteniendo tren superior. Balance y desarrollo muscular.",
+      "dias": [
+        {
+          "nombre": "Glúteos (Fuerza)",
+          "ejercicios": [
+            {"exerciseId": "141", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "130", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "137", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "180", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Torso (Mantenim.)",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "147", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "172", "series": 2, "repsRange": "30-45s"}
+          ]
+        },
+        {
+          "nombre": "Glúteos (Volumen)",
+          "ejercicios": [
+            {"exerciseId": "142", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "134", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "136", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Full Body",
+          "ejercicios": [
+            {"exerciseId": "141", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "101", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "120", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "175", "series": 2, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "powerbuilding",
+      "nombre": "Powerbuilding 4 Días",
+      "categoria": "powerbuilding",
+      "nivel": "avanzado",
+      "diasPorSemana": 4,
+      "descripcion": "Combina fuerza y estética. Trabajo pesado en principales + volumen de accesorios.",
+      "dias": [
+        {
+          "nombre": "Torso (Fuerza)",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 5, "repsRange": "3-5"},
+            {"exerciseId": "119", "series": 4, "repsRange": "5-6"},
+            {"exerciseId": "104", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "159", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Pierna (Fuerza)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "3-5"},
+            {"exerciseId": "137", "series": 4, "repsRange": "5-6"},
+            {"exerciseId": "133", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "143", "series": 4, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Torso (Volumen)",
+          "ejercicios": [
+            {"exerciseId": "101", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "117", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "147", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "110", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "124", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "128", "series": 3, "repsRange": "15-20"},
+            {"exerciseId": "160", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "167", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Pierna (Volumen)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "141", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "125", "series": 3, "repsRange": "6-8"},
+            {"exerciseId": "134", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "144", "series": 4, "repsRange": "15-20"},
+            {"exerciseId": "172", "series": 2, "repsRange": "45-60s"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "push-pull-4",
+      "nombre": "Push Pull 4 Días",
+      "categoria": "push-pull",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Divide entre empujar y tirar. Las piernas se integran en ambos días.",
+      "dias": [
+        {
+          "nombre": "Push + Cuádriceps",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "100", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "147", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Pull + Femoral",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 4, "repsRange": "5-6"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "159", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Push B + Cuádriceps",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "101", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "146", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "140", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "110", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "167", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Pull B + Femoral",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 4, "repsRange": "6-10"},
+            {"exerciseId": "120", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "141", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "128", "series": 3, "repsRange": "15-20"},
+            {"exerciseId": "139", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "160", "series": 3, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "senior-2",
+      "nombre": "Mayores de 50 - 2 Días",
+      "categoria": "senior",
+      "nivel": "principiante",
+      "diasPorSemana": 2,
+      "descripcion": "Enfoque en fuerza funcional, equilibrio y movilidad. Ejercicios seguros con máquinas.",
+      "dias": [
+        {
+          "nombre": "Full Body A",
+          "ejercicios": [
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "102", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "122", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "148", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "172", "series": 2, "repsRange": "20-30s"}
+          ]
+        },
+        {
+          "nombre": "Full Body B",
+          "ejercicios": [
+            {"exerciseId": "132", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "124", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "142", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "143", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "162", "series": 3, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "senior-3",
+      "nombre": "Mayores de 50 - 3 Días",
+      "categoria": "senior",
+      "nivel": "intermedio",
+      "diasPorSemana": 3,
+      "descripcion": "Versión extendida con más variedad. Mantiene el enfoque en seguridad y funcionalidad.",
+      "dias": [
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "142", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "143", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Torso Empuje",
+          "ejercicios": [
+            {"exerciseId": "102", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "148", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "111", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "172", "series": 2, "repsRange": "20-30s"}
+          ]
+        },
+        {
+          "nombre": "Torso Tirón",
+          "ejercicios": [
+            {"exerciseId": "124", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "122", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "156", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "162", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "173", "series": 2, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "home-dumbbell",
+      "nombre": "Casa Solo Mancuernas",
+      "categoria": "casa",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Rutina completa usando solo mancuernas. Perfecta para entrenar en casa.",
+      "dias": [
+        {
+          "nombre": "Push",
+          "ejercicios": [
+            {"exerciseId": "101", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "104", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "147", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "109", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "167", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Pull",
+          "ejercicios": [
+            {"exerciseId": "126", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "120", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "154", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "158", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "160", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "163", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Piernas A",
+          "ejercicios": [
+            {"exerciseId": "131", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "134", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "138", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "144", "series": 4, "repsRange": "15-20"},
+            {"exerciseId": "172", "series": 2, "repsRange": "30-45s"}
+          ]
+        },
+        {
+          "nombre": "Full Body",
+          "ejercicios": [
+            {"exerciseId": "131", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "101", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "120", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "147", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "138", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "160", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "167", "series": 2, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "home-minimal",
+      "nombre": "Casa Equipo Mínimo",
+      "categoria": "casa",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Solo necesitas un par de mancuernas. Combina peso corporal y mancuernas.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "185", "series": 4, "repsRange": "8-15"},
+            {"exerciseId": "184", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "131", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "147", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "172", "series": 2, "repsRange": "30-45s"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "134", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "120", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "138", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "160", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "175", "series": 2, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Día C",
+          "ejercicios": [
+            {"exerciseId": "101", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"},
+            {"exerciseId": "131", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "173", "series": 2, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reg-park-5x5",
+      "nombre": "Reg Park 5x5 Original (1960s)",
+      "categoria": "clasicas",
+      "nivel": "intermedio",
+      "diasPorSemana": 3,
+      "descripcion": "Programa de Reg Park, mentor de Arnold. El 5x5 original que inspiró a generaciones. 3 días alternos.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "146", "series": 5, "repsRange": "5"},
+            {"exerciseId": "125", "series": 5, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Día C",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8-10"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "steve-reeves-classic",
+      "nombre": "Steve Reeves Classic (1950s)",
+      "categoria": "clasicas",
+      "nivel": "intermedio",
+      "diasPorSemana": 3,
+      "descripcion": "Rutina del legendario Steve Reeves, Mr. Universo 1950. Enfoque en proporciones y estética clásica.",
+      "dias": [
+        {
+          "nombre": "Full Body",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "100", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "146", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "143", "series": 3, "repsRange": "15-20"},
+            {"exerciseId": "172", "series": 2, "repsRange": "max"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "john-grimek-1940s",
+      "nombre": "John Grimek Full Body (1940s)",
+      "categoria": "clasicas",
+      "nivel": "intermedio",
+      "diasPorSemana": 3,
+      "descripcion": "Programa de John Grimek, Mr. América 1940-1941. Full body clásico de la era pre-esteroides.",
+      "dias": [
+        {
+          "nombre": "Full Body",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "100", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "119", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "146", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "127", "series": 3, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vince-gironda-8x8",
+      "nombre": "Vince Gironda 8x8 (1960s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 4,
+      "descripcion": "Método Honest Workout de Vince Gironda. 8 series de 8 reps con 30 seg descanso. Brutal densidad.",
+      "dias": [
+        {
+          "nombre": "Pecho y Espalda",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 8, "repsRange": "8"},
+            {"exerciseId": "119", "series": 8, "repsRange": "8"},
+            {"exerciseId": "109", "series": 8, "repsRange": "8"},
+            {"exerciseId": "117", "series": 8, "repsRange": "8"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Brazos",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 8, "repsRange": "8"},
+            {"exerciseId": "149", "series": 8, "repsRange": "8"},
+            {"exerciseId": "159", "series": 8, "repsRange": "8"},
+            {"exerciseId": "165", "series": 8, "repsRange": "8"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 8, "repsRange": "8"},
+            {"exerciseId": "141", "series": 8, "repsRange": "8"},
+            {"exerciseId": "137", "series": 8, "repsRange": "8"},
+            {"exerciseId": "143", "series": 8, "repsRange": "8"}
+          ]
+        },
+        {
+          "nombre": "Full Body Ligero",
+          "ejercicios": [
+            {"exerciseId": "104", "series": 8, "repsRange": "8"},
+            {"exerciseId": "120", "series": 8, "repsRange": "8"},
+            {"exerciseId": "147", "series": 8, "repsRange": "8"},
+            {"exerciseId": "160", "series": 8, "repsRange": "8"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bill-starr-5x5",
+      "nombre": "Bill Starr 5x5 (1976)",
+      "categoria": "clasicas",
+      "nivel": "intermedio",
+      "diasPorSemana": 3,
+      "descripcion": "Del libro 'The Strongest Shall Survive'. Programa de fuerza para atletas con progresión ramping.",
+      "dias": [
+        {
+          "nombre": "Pesado",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "125", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Ligero",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "103", "series": 5, "repsRange": "5"},
+            {"exerciseId": "125", "series": 5, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Medio",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "125", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "20-rep-squats",
+      "nombre": "20 Rep Squats - Super Squats (1930s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 3,
+      "descripcion": "Método clásico de los años 30. Una serie de 20 reps de sentadilla 'breathing squats' + pullovers.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 1, "repsRange": "20"},
+            {"exerciseId": "112", "series": 1, "repsRange": "20"},
+            {"exerciseId": "100", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "119", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 1, "repsRange": "20"},
+            {"exerciseId": "112", "series": 1, "repsRange": "20"},
+            {"exerciseId": "146", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "159", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Día C",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 1, "repsRange": "20"},
+            {"exerciseId": "112", "series": 1, "repsRange": "20"},
+            {"exerciseId": "125", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arnold-volume",
+      "nombre": "Arnold Blueprint Volume (1970s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 6,
+      "descripcion": "Rutina de alto volumen de Arnold Schwarzenegger en su época de competición. 6 días, doble split.",
+      "dias": [
+        {
+          "nombre": "Pecho y Espalda AM",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 5, "repsRange": "6-10"},
+            {"exerciseId": "103", "series": 5, "repsRange": "6-10"},
+            {"exerciseId": "109", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "112", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "117", "series": 5, "repsRange": "max"},
+            {"exerciseId": "119", "series": 5, "repsRange": "6-10"},
+            {"exerciseId": "125", "series": 5, "repsRange": "6-10"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Brazos PM",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 5, "repsRange": "6-10"},
+            {"exerciseId": "149", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "151", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "159", "series": 5, "repsRange": "6-10"},
+            {"exerciseId": "160", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 5, "repsRange": "6-10"},
+            {"exerciseId": "167", "series": 5, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "6-10"},
+            {"exerciseId": "137", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "141", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "133", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 5, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Pecho y Espalda AM 2",
+          "ejercicios": [
+            {"exerciseId": "104", "series": 5, "repsRange": "8-12"},
+            {"exerciseId": "106", "series": 5, "repsRange": "8-12"},
+            {"exerciseId": "110", "series": 5, "repsRange": "12-15"},
+            {"exerciseId": "120", "series": 5, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "117", "series": 5, "repsRange": "max"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Brazos PM 2",
+          "ejercicios": [
+            {"exerciseId": "147", "series": 5, "repsRange": "8-12"},
+            {"exerciseId": "154", "series": 5, "repsRange": "12-15"},
+            {"exerciseId": "160", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "163", "series": 5, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 5, "repsRange": "max"},
+            {"exerciseId": "167", "series": 5, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Piernas 2",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "8-12"},
+            {"exerciseId": "134", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "137", "series": 5, "repsRange": "15-20"},
+            {"exerciseId": "133", "series": 5, "repsRange": "12-15"},
+            {"exerciseId": "143", "series": 5, "repsRange": "20-25"},
+            {"exerciseId": "144", "series": 5, "repsRange": "20-25"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frank-zane-aesthetic",
+      "nombre": "Frank Zane Aesthetic (1970s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 4,
+      "descripcion": "Programa del 3x Mr. Olympia Frank Zane. Enfoque en simetría, proporciones y definición muscular.",
+      "dias": [
+        {
+          "nombre": "Pecho, Hombros, Tríceps",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "103", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "110", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "146", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "167", "series": 4, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Espalda, Bíceps",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 4, "repsRange": "max"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "125", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "159", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "160", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "163", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "134", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "137", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "133", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "139", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "143", "series": 4, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Full Body Ligero",
+          "ejercicios": [
+            {"exerciseId": "104", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "120", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "147", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "141", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30-60s"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mike-mentzer-hit",
+      "nombre": "Mike Mentzer Heavy Duty (1980s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 2,
+      "descripcion": "High Intensity Training de Mike Mentzer. Pocas series al fallo absoluto. Filosofía de mínimo volumen, máxima intensidad.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 1, "repsRange": "6-10"},
+            {"exerciseId": "137", "series": 1, "repsRange": "8-12"},
+            {"exerciseId": "133", "series": 1, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 2, "repsRange": "10-15"},
+            {"exerciseId": "100", "series": 1, "repsRange": "6-10"},
+            {"exerciseId": "109", "series": 1, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 1, "repsRange": "6-8"},
+            {"exerciseId": "119", "series": 1, "repsRange": "6-10"},
+            {"exerciseId": "117", "series": 1, "repsRange": "max"},
+            {"exerciseId": "146", "series": 1, "repsRange": "6-10"},
+            {"exerciseId": "149", "series": 1, "repsRange": "8-12"},
+            {"exerciseId": "159", "series": 1, "repsRange": "6-10"},
+            {"exerciseId": "165", "series": 1, "repsRange": "6-10"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dorian-yates-blood-guts",
+      "nombre": "Dorian Yates Blood & Guts (1990s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 4,
+      "descripcion": "Programa del 6x Mr. Olympia. HIT evolucionado: series de calentamiento + 1 serie al fallo total.",
+      "dias": [
+        {
+          "nombre": "Pecho y Bíceps",
+          "ejercicios": [
+            {"exerciseId": "103", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "100", "series": 2, "repsRange": "6-8"},
+            {"exerciseId": "110", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "159", "series": 2, "repsRange": "6-8"},
+            {"exerciseId": "160", "series": 2, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "137", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "130", "series": 2, "repsRange": "6-8"},
+            {"exerciseId": "133", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "143", "series": 2, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Tríceps",
+          "ejercicios": [
+            {"exerciseId": "147", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "154", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "167", "series": 2, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Espalda",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "119", "series": 2, "repsRange": "6-8"},
+            {"exerciseId": "123", "series": 2, "repsRange": "8-10"},
+            {"exerciseId": "125", "series": 2, "repsRange": "6-8"},
+            {"exerciseId": "127", "series": 2, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "german-volume-10x10",
+      "nombre": "German Volume Training 10x10 (1970s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 4,
+      "descripcion": "Método alemán de los 70s. 10 series de 10 reps con 60 seg descanso. Hipertrofia extrema por volumen.",
+      "dias": [
+        {
+          "nombre": "Pecho y Espalda",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 10, "repsRange": "10"},
+            {"exerciseId": "119", "series": 10, "repsRange": "10"},
+            {"exerciseId": "109", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "123", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 10, "repsRange": "10"},
+            {"exerciseId": "139", "series": 10, "repsRange": "10"},
+            {"exerciseId": "143", "series": 3, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Brazos",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 10, "repsRange": "10"},
+            {"exerciseId": "159", "series": 10, "repsRange": "10"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Pecho y Espalda B",
+          "ejercicios": [
+            {"exerciseId": "104", "series": 10, "repsRange": "10"},
+            {"exerciseId": "117", "series": 10, "repsRange": "10"},
+            {"exerciseId": "110", "series": 3, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "larry-scott-arms",
+      "nombre": "Larry Scott Arm Routine (1960s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 3,
+      "descripcion": "Rutina del primer Mr. Olympia Larry Scott. Énfasis en brazos con el famoso 'Scott Curl' (predicador).",
+      "dias": [
+        {
+          "nombre": "Brazos",
+          "ejercicios": [
+            {"exerciseId": "159", "series": 6, "repsRange": "6-8"},
+            {"exerciseId": "160", "series": 6, "repsRange": "8-10"},
+            {"exerciseId": "163", "series": 6, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 6, "repsRange": "8-10"},
+            {"exerciseId": "167", "series": 6, "repsRange": "10-12"},
+            {"exerciseId": "168", "series": 4, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Pecho y Espalda",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "103", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "117", "series": 4, "repsRange": "max"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Piernas",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "130", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 3, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "serge-nubret-pump",
+      "nombre": "Serge Nubret Pump Training (1970s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 6,
+      "descripcion": "Método del icónico Serge Nubret. Alto volumen, descansos cortos (30s), peso moderado, pump extremo.",
+      "dias": [
+        {
+          "nombre": "Pecho",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 8, "repsRange": "12"},
+            {"exerciseId": "103", "series": 6, "repsRange": "12"},
+            {"exerciseId": "109", "series": 6, "repsRange": "12"},
+            {"exerciseId": "112", "series": 6, "repsRange": "12"}
+          ]
+        },
+        {
+          "nombre": "Espalda",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 8, "repsRange": "max"},
+            {"exerciseId": "119", "series": 6, "repsRange": "12"},
+            {"exerciseId": "123", "series": 6, "repsRange": "12"},
+            {"exerciseId": "120", "series": 6, "repsRange": "12"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 8, "repsRange": "12"},
+            {"exerciseId": "137", "series": 6, "repsRange": "15"},
+            {"exerciseId": "133", "series": 6, "repsRange": "12"},
+            {"exerciseId": "139", "series": 6, "repsRange": "12"},
+            {"exerciseId": "143", "series": 8, "repsRange": "20"}
+          ]
+        },
+        {
+          "nombre": "Hombros",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 6, "repsRange": "12"},
+            {"exerciseId": "149", "series": 6, "repsRange": "15"},
+            {"exerciseId": "151", "series": 6, "repsRange": "12"},
+            {"exerciseId": "154", "series": 6, "repsRange": "15"}
+          ]
+        },
+        {
+          "nombre": "Brazos",
+          "ejercicios": [
+            {"exerciseId": "159", "series": 8, "repsRange": "12"},
+            {"exerciseId": "160", "series": 6, "repsRange": "12"},
+            {"exerciseId": "165", "series": 8, "repsRange": "12"},
+            {"exerciseId": "167", "series": 6, "repsRange": "12"}
+          ]
+        },
+        {
+          "nombre": "Full Body Pump",
+          "ejercicios": [
+            {"exerciseId": "104", "series": 4, "repsRange": "15"},
+            {"exerciseId": "123", "series": 4, "repsRange": "15"},
+            {"exerciseId": "147", "series": 4, "repsRange": "15"},
+            {"exerciseId": "141", "series": 4, "repsRange": "15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lee-haney-8x8",
+      "nombre": "Lee Haney 8x Mr. Olympia (1980s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 5,
+      "descripcion": "Rutina del 8x Mr. Olympia Lee Haney. 'Stimulate, don't annihilate'. Balance entre volumen e intensidad.",
+      "dias": [
+        {
+          "nombre": "Pecho y Tríceps",
+          "ejercicios": [
+            {"exerciseId": "103", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "100", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "109", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "167", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Espalda y Bíceps",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "125", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "159", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "160", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "133", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 4, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Hombros",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "151", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "154", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "156", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Brazos Focus",
+          "ejercicios": [
+            {"exerciseId": "159", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "163", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "160", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "167", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "168", "series": 3, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "texas-method",
+      "nombre": "Texas Method (2000s)",
+      "categoria": "clasicas",
+      "nivel": "intermedio",
+      "diasPorSemana": 3,
+      "descripcion": "Programa intermedio de fuerza. Lunes volumen, miércoles recuperación, viernes intensidad (PRs).",
+      "dias": [
+        {
+          "nombre": "Volumen (Lunes)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "125", "series": 1, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Recuperación (Miércoles)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 2, "repsRange": "5"},
+            {"exerciseId": "146", "series": 3, "repsRange": "5"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"}
+          ]
+        },
+        {
+          "nombre": "Intensidad (Viernes)",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 1, "repsRange": "5"},
+            {"exerciseId": "100", "series": 1, "repsRange": "5"},
+            {"exerciseId": "125", "series": 1, "repsRange": "5"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "madcow-5x5",
+      "nombre": "Madcow 5x5 (2005)",
+      "categoria": "clasicas",
+      "nivel": "intermedio",
+      "diasPorSemana": 3,
+      "descripcion": "Variante del Bill Starr 5x5 con progresión semanal. Ramping sets hasta set pesado.",
+      "dias": [
+        {
+          "nombre": "Lunes",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Miércoles",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "5"},
+            {"exerciseId": "146", "series": 4, "repsRange": "5"},
+            {"exerciseId": "125", "series": 4, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Viernes",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "5"},
+            {"exerciseId": "100", "series": 4, "repsRange": "5"},
+            {"exerciseId": "119", "series": 4, "repsRange": "5"},
+            {"exerciseId": "125", "series": 1, "repsRange": "3"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ed-coan-deadlift",
+      "nombre": "Ed Coan Deadlift Peaking (1990s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 2,
+      "descripcion": "Programa de peaking de peso muerto del GOAT Ed Coan. 10 semanas, progresión hacia max.",
+      "dias": [
+        {
+          "nombre": "Peso Muerto",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 2, "repsRange": "5"},
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "139", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "127", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Accesorios",
+          "ejercicios": [
+            {"exerciseId": "137", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "141", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 4, "repsRange": "15-20"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30-60s"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bill-pearl-classic",
+      "nombre": "Bill Pearl 4-Day (1960s-70s)",
+      "categoria": "clasicas",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Rutina del 5x Mr. Universo Bill Pearl. Split clásico con volumen moderado y énfasis en forma.",
+      "dias": [
+        {
+          "nombre": "Pecho y Espalda",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "103", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "109", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "117", "series": 4, "repsRange": "max"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "112", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Brazos",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "154", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "159", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "167", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "137", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "133", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 4, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Full Body Ligero",
+          "ejercicios": [
+            {"exerciseId": "104", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "120", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "147", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "141", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "160", "series": 3, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "franco-columbu-power",
+      "nombre": "Franco Columbu Power (1970s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 5,
+      "descripcion": "Rutina del Mr. Olympia y campeón de powerlifting Franco Columbu. Combina fuerza y masa.",
+      "dias": [
+        {
+          "nombre": "Pecho",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 5, "repsRange": "4-6"},
+            {"exerciseId": "103", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "106", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "109", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "112", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Espalda",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 5, "repsRange": "3-5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5-6"},
+            {"exerciseId": "117", "series": 4, "repsRange": "max"},
+            {"exerciseId": "123", "series": 4, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "4-6"},
+            {"exerciseId": "134", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "137", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 5, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Hombros",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 5, "repsRange": "5-6"},
+            {"exerciseId": "149", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "151", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "154", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "156", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Brazos",
+          "ejercicios": [
+            {"exerciseId": "159", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "163", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "167", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "158", "series": 3, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lou-ferrigno-mass",
+      "nombre": "Lou Ferrigno Mass Builder (1970s)",
+      "categoria": "clasicas",
+      "nivel": "avanzado",
+      "diasPorSemana": 6,
+      "descripcion": "Rutina del Hulk Lou Ferrigno. Alto volumen para construir masa extrema a lo 'Pumping Iron'.",
+      "dias": [
+        {
+          "nombre": "Pecho",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "103", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "106", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "109", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "110", "series": 4, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Espalda",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 5, "repsRange": "max"},
+            {"exerciseId": "119", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "123", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "125", "series": 5, "repsRange": "5-6"},
+            {"exerciseId": "120", "series": 4, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Piernas",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 6, "repsRange": "6-10"},
+            {"exerciseId": "137", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "133", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 6, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Hombros",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "147", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 5, "repsRange": "10-12"},
+            {"exerciseId": "154", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "156", "series": 4, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Bíceps",
+          "ejercicios": [
+            {"exerciseId": "159", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "160", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "163", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "158", "series": 4, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Tríceps",
+          "ejercicios": [
+            {"exerciseId": "165", "series": 5, "repsRange": "6-8"},
+            {"exerciseId": "167", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "168", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "169", "series": 4, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nsuns-531-lp",
+      "nombre": "nSuns 5/3/1 LP (Reddit)",
+      "categoria": "fuerza",
+      "nivel": "intermedio",
+      "diasPorSemana": 5,
+      "descripcion": "Programa de fuerza viral de Reddit. Progresión lineal basada en 5/3/1 con alto volumen de T1/T2.",
+      "dias": [
+        {
+          "nombre": "Bench / OHP",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 9, "repsRange": "variado"},
+            {"exerciseId": "146", "series": 8, "repsRange": "variado"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "159", "series": 4, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Squat / Sumo DL",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 9, "repsRange": "variado"},
+            {"exerciseId": "125", "series": 8, "repsRange": "variado"},
+            {"exerciseId": "133", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-15"}
+          ]
+        },
+        {
+          "nombre": "OHP / Incline",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 9, "repsRange": "variado"},
+            {"exerciseId": "103", "series": 8, "repsRange": "variado"},
+            {"exerciseId": "117", "series": 4, "repsRange": "6-10"},
+            {"exerciseId": "149", "series": 4, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Deadlift / Front Squat",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 9, "repsRange": "variado"},
+            {"exerciseId": "130", "series": 8, "repsRange": "variado"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 4, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Bench / CG Bench",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 9, "repsRange": "variado"},
+            {"exerciseId": "100", "series": 8, "repsRange": "variado"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "165", "series": 4, "repsRange": "10-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gzclp",
+      "nombre": "GZCLP (Cody Lefever)",
+      "categoria": "fuerza",
+      "nivel": "principiante",
+      "diasPorSemana": 4,
+      "descripcion": "Programa para principiantes de Cody Lefever. Estructura T1/T2/T3 con progresión inteligente.",
+      "dias": [
+        {
+          "nombre": "Día A1",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "3"},
+            {"exerciseId": "100", "series": 3, "repsRange": "10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "15"}
+          ]
+        },
+        {
+          "nombre": "Día B1",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 5, "repsRange": "3"},
+            {"exerciseId": "125", "series": 3, "repsRange": "10"},
+            {"exerciseId": "117", "series": 3, "repsRange": "15"}
+          ]
+        },
+        {
+          "nombre": "Día A2",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 5, "repsRange": "3"},
+            {"exerciseId": "130", "series": 3, "repsRange": "10"},
+            {"exerciseId": "159", "series": 3, "repsRange": "15"}
+          ]
+        },
+        {
+          "nombre": "Día B2",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 5, "repsRange": "3"},
+            {"exerciseId": "146", "series": 3, "repsRange": "10"},
+            {"exerciseId": "119", "series": 3, "repsRange": "15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "candito-6week",
+      "nombre": "Candito 6 Week Strength",
+      "categoria": "fuerza",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Programa gratuito de Jonnie Candito. 6 semanas de periodización para fuerza máxima.",
+      "dias": [
+        {
+          "nombre": "Upper Control",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "6"},
+            {"exerciseId": "119", "series": 4, "repsRange": "6"},
+            {"exerciseId": "146", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Lower Control",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "6"},
+            {"exerciseId": "125", "series": 3, "repsRange": "6"},
+            {"exerciseId": "141", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Upper Power",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 5, "repsRange": "3"},
+            {"exerciseId": "117", "series": 4, "repsRange": "max"},
+            {"exerciseId": "119", "series": 4, "repsRange": "5"},
+            {"exerciseId": "103", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Lower Power",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "3"},
+            {"exerciseId": "125", "series": 3, "repsRange": "3"},
+            {"exerciseId": "137", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smolov-jr",
+      "nombre": "Smolov Jr (3 Semanas)",
+      "categoria": "fuerza",
+      "nivel": "avanzado",
+      "diasPorSemana": 4,
+      "descripcion": "Versión corta del programa ruso Smolov. 3 semanas de alta frecuencia para un levantamiento.",
+      "dias": [
+        {
+          "nombre": "Día 1 - 6x6",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 6, "repsRange": "6"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Día 2 - 7x5",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 7, "repsRange": "5"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"},
+            {"exerciseId": "159", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Día 3 - 8x4",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 8, "repsRange": "4"},
+            {"exerciseId": "104", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Día 4 - 10x3",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 10, "repsRange": "3"},
+            {"exerciseId": "109", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "167", "series": 3, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sheiko-beginner",
+      "nombre": "Sheiko Simplificado",
+      "categoria": "fuerza",
+      "nivel": "intermedio",
+      "diasPorSemana": 3,
+      "descripcion": "Adaptación del método ruso Sheiko. Alta frecuencia en los básicos con intensidad moderada.",
+      "dias": [
+        {
+          "nombre": "Día 1",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "4"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "130", "series": 4, "repsRange": "3"},
+            {"exerciseId": "109", "series": 3, "repsRange": "10"}
+          ]
+        },
+        {
+          "nombre": "Día 2",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 5, "repsRange": "4"},
+            {"exerciseId": "146", "series": 5, "repsRange": "5"},
+            {"exerciseId": "127", "series": 3, "repsRange": "6"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10"}
+          ]
+        },
+        {
+          "nombre": "Día 3",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 5, "repsRange": "4"},
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 4, "repsRange": "3"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "westside-conjugate",
+      "nombre": "Westside Conjugate Template",
+      "categoria": "powerbuilding",
+      "nivel": "avanzado",
+      "diasPorSemana": 4,
+      "descripcion": "Metodología de Louie Simmons/Westside Barbell. Max Effort + Dynamic Effort con rotación de ejercicios.",
+      "dias": [
+        {
+          "nombre": "Max Effort Upper",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 1, "repsRange": "1-3"},
+            {"exerciseId": "103", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 4, "repsRange": "10-15"},
+            {"exerciseId": "159", "series": 3, "repsRange": "10-15"}
+          ]
+        },
+        {
+          "nombre": "Max Effort Lower",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 1, "repsRange": "1-3"},
+            {"exerciseId": "127", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "139", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "137", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30-60s"}
+          ]
+        },
+        {
+          "nombre": "Dynamic Effort Upper",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 9, "repsRange": "3"},
+            {"exerciseId": "117", "series": 4, "repsRange": "max"},
+            {"exerciseId": "147", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "167", "series": 4, "repsRange": "10-15"},
+            {"exerciseId": "128", "series": 4, "repsRange": "15-20"}
+          ]
+        },
+        {
+          "nombre": "Dynamic Effort Lower",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 12, "repsRange": "2"},
+            {"exerciseId": "125", "series": 4, "repsRange": "5"},
+            {"exerciseId": "141", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 4, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phat-layne-norton",
+      "nombre": "PHAT - Layne Norton",
+      "categoria": "powerbuilding",
+      "nivel": "avanzado",
+      "diasPorSemana": 5,
+      "descripcion": "Power Hypertrophy Adaptive Training de Layne Norton. Combina días de fuerza y días de hipertrofia.",
+      "dias": [
+        {
+          "nombre": "Upper Power",
+          "ejercicios": [
+            {"exerciseId": "119", "series": 4, "repsRange": "3-5"},
+            {"exerciseId": "117", "series": 3, "repsRange": "6-10"},
+            {"exerciseId": "100", "series": 4, "repsRange": "3-5"},
+            {"exerciseId": "103", "series": 3, "repsRange": "6-10"},
+            {"exerciseId": "159", "series": 3, "repsRange": "6-10"},
+            {"exerciseId": "167", "series": 3, "repsRange": "6-10"}
+          ]
+        },
+        {
+          "nombre": "Lower Power",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "3-5"},
+            {"exerciseId": "134", "series": 3, "repsRange": "6-10"},
+            {"exerciseId": "137", "series": 3, "repsRange": "6-10"},
+            {"exerciseId": "139", "series": 3, "repsRange": "6-10"},
+            {"exerciseId": "143", "series": 3, "repsRange": "6-10"}
+          ]
+        },
+        {
+          "nombre": "Back & Shoulders Hyper",
+          "ejercicios": [
+            {"exerciseId": "119", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "123", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "120", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"},
+            {"exerciseId": "147", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Chest & Arms Hyper",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "103", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "109", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "160", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "167", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Lower Hyper",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "134", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "137", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "141", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "143", "series": 4, "repsRange": "10-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phul",
+      "nombre": "PHUL - 4 Días",
+      "categoria": "powerbuilding",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Power Hypertrophy Upper Lower. Versión simplificada de PHAT con 4 días semanales.",
+      "dias": [
+        {
+          "nombre": "Upper Power",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "3-5"},
+            {"exerciseId": "103", "series": 4, "repsRange": "6-10"},
+            {"exerciseId": "119", "series": 4, "repsRange": "3-5"},
+            {"exerciseId": "123", "series": 4, "repsRange": "6-10"},
+            {"exerciseId": "146", "series": 3, "repsRange": "5-8"},
+            {"exerciseId": "159", "series": 3, "repsRange": "6-10"},
+            {"exerciseId": "167", "series": 3, "repsRange": "6-10"}
+          ]
+        },
+        {
+          "nombre": "Lower Power",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "3-5"},
+            {"exerciseId": "125", "series": 4, "repsRange": "3-5"},
+            {"exerciseId": "137", "series": 4, "repsRange": "6-10"},
+            {"exerciseId": "133", "series": 4, "repsRange": "6-10"},
+            {"exerciseId": "143", "series": 4, "repsRange": "6-10"}
+          ]
+        },
+        {
+          "nombre": "Upper Hypertrophy",
+          "ejercicios": [
+            {"exerciseId": "103", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "109", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "120", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "123", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "149", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "160", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "165", "series": 4, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Lower Hypertrophy",
+          "ejercicios": [
+            {"exerciseId": "134", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "137", "series": 4, "repsRange": "10-15"},
+            {"exerciseId": "141", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "133", "series": 4, "repsRange": "10-15"},
+            {"exerciseId": "139", "series": 4, "repsRange": "10-15"},
+            {"exerciseId": "143", "series": 5, "repsRange": "15-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dc-training",
+      "nombre": "DC Training / Doggcrapp",
+      "categoria": "hipertrofia",
+      "nivel": "avanzado",
+      "diasPorSemana": 3,
+      "descripcion": "Método de Dante Trudel. Rest-pause sets al fallo, stretching extremo. Solo para avanzados.",
+      "dias": [
+        {
+          "nombre": "Pecho, Hombros, Tríceps, Espalda",
+          "ejercicios": [
+            {"exerciseId": "103", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "146", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "165", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "119", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "125", "series": 1, "repsRange": "6-9 straight"}
+          ]
+        },
+        {
+          "nombre": "Bíceps, Antebrazos, Piernas",
+          "ejercicios": [
+            {"exerciseId": "159", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "158", "series": 1, "repsRange": "10-20"},
+            {"exerciseId": "137", "series": 1, "repsRange": "15-30 widow"},
+            {"exerciseId": "139", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "143", "series": 1, "repsRange": "10-12 RP"}
+          ]
+        },
+        {
+          "nombre": "Rotación B",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "147", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "167", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "117", "series": 1, "repsRange": "15-30 RP"},
+            {"exerciseId": "130", "series": 1, "repsRange": "6-10 straight"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "john-meadows-creeping-death",
+      "nombre": "Meadows Creeping Death Style",
+      "categoria": "hipertrofia",
+      "nivel": "avanzado",
+      "diasPorSemana": 5,
+      "descripcion": "Inspirado en los programas de John Meadows. Alto volumen, técnicas intensas, énfasis en conexión mente-músculo.",
+      "dias": [
+        {
+          "nombre": "Espalda",
+          "ejercicios": [
+            {"exerciseId": "123", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "117", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "119", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "120", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "125", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Pecho",
+          "ejercicios": [
+            {"exerciseId": "110", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "104", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "100", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "109", "series": 3, "repsRange": "12-15"},
+            {"exerciseId": "115", "series": 3, "repsRange": "max"}
+          ]
+        },
+        {
+          "nombre": "Hombros y Brazos",
+          "ejercicios": [
+            {"exerciseId": "149", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "146", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "154", "series": 4, "repsRange": "12-15"},
+            {"exerciseId": "159", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "167", "series": 3, "repsRange": "12-15"}
+          ]
+        },
+        {
+          "nombre": "Piernas - Cuádriceps",
+          "ejercicios": [
+            {"exerciseId": "133", "series": 4, "repsRange": "15-20"},
+            {"exerciseId": "134", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "130", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "137", "series": 4, "repsRange": "10-15"},
+            {"exerciseId": "141", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Piernas - Femorales/Glúteos",
+          "ejercicios": [
+            {"exerciseId": "139", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "127", "series": 4, "repsRange": "10-12"},
+            {"exerciseId": "141", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 5, "repsRange": "12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gamma-bomb",
+      "nombre": "Gamma Bomb Style",
+      "categoria": "hipertrofia",
+      "nivel": "avanzado",
+      "diasPorSemana": 5,
+      "descripcion": "Estilo John Meadows enfocado en volumen y técnicas de intensidad. Pump extremo garantizado.",
+      "dias": [
+        {
+          "nombre": "Push",
+          "ejercicios": [
+            {"exerciseId": "110", "series": 4, "repsRange": "12"},
+            {"exerciseId": "103", "series": 4, "repsRange": "10"},
+            {"exerciseId": "100", "series": 4, "repsRange": "8"},
+            {"exerciseId": "147", "series": 4, "repsRange": "10"},
+            {"exerciseId": "149", "series": 4, "repsRange": "15"},
+            {"exerciseId": "167", "series": 4, "repsRange": "12"}
+          ]
+        },
+        {
+          "nombre": "Pull",
+          "ejercicios": [
+            {"exerciseId": "123", "series": 4, "repsRange": "12"},
+            {"exerciseId": "119", "series": 4, "repsRange": "10"},
+            {"exerciseId": "117", "series": 4, "repsRange": "8"},
+            {"exerciseId": "120", "series": 3, "repsRange": "12"},
+            {"exerciseId": "154", "series": 3, "repsRange": "15"},
+            {"exerciseId": "159", "series": 4, "repsRange": "12"}
+          ]
+        },
+        {
+          "nombre": "Legs",
+          "ejercicios": [
+            {"exerciseId": "133", "series": 4, "repsRange": "15"},
+            {"exerciseId": "130", "series": 4, "repsRange": "8"},
+            {"exerciseId": "137", "series": 4, "repsRange": "12"},
+            {"exerciseId": "139", "series": 4, "repsRange": "12"},
+            {"exerciseId": "141", "series": 3, "repsRange": "10"},
+            {"exerciseId": "143", "series": 5, "repsRange": "15"}
+          ]
+        },
+        {
+          "nombre": "Chest/Shoulders",
+          "ejercicios": [
+            {"exerciseId": "104", "series": 4, "repsRange": "10"},
+            {"exerciseId": "109", "series": 4, "repsRange": "15"},
+            {"exerciseId": "115", "series": 3, "repsRange": "max"},
+            {"exerciseId": "146", "series": 4, "repsRange": "8"},
+            {"exerciseId": "151", "series": 3, "repsRange": "12"},
+            {"exerciseId": "149", "series": 4, "repsRange": "15"}
+          ]
+        },
+        {
+          "nombre": "Back/Arms",
+          "ejercicios": [
+            {"exerciseId": "117", "series": 4, "repsRange": "max"},
+            {"exerciseId": "123", "series": 4, "repsRange": "12"},
+            {"exerciseId": "125", "series": 3, "repsRange": "8"},
+            {"exerciseId": "160", "series": 4, "repsRange": "10"},
+            {"exerciseId": "163", "series": 3, "repsRange": "12"},
+            {"exerciseId": "165", "series": 4, "repsRange": "10"},
+            {"exerciseId": "168", "series": 3, "repsRange": "15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "greyskull-lp",
+      "nombre": "Greyskull LP",
+      "categoria": "fuerza",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Programa para principiantes con AMRAP final. Progresión rápida con autoregulación incorporada.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 3, "repsRange": "5+"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"},
+            {"exerciseId": "130", "series": 3, "repsRange": "5+"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 3, "repsRange": "5+"},
+            {"exerciseId": "119", "series": 3, "repsRange": "5+"},
+            {"exerciseId": "125", "series": 3, "repsRange": "5+"}
+          ]
+        },
+        {
+          "nombre": "Día A2",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 3, "repsRange": "5+"},
+            {"exerciseId": "117", "series": 3, "repsRange": "max"},
+            {"exerciseId": "130", "series": 3, "repsRange": "5+"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ivysaur-448",
+      "nombre": "Ivysaur 4-4-8 (Reddit)",
+      "categoria": "fuerza",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Variante de StrongLifts de Reddit. Alta frecuencia en básicos con progresión simple.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "4"},
+            {"exerciseId": "130", "series": 4, "repsRange": "8"},
+            {"exerciseId": "119", "series": 4, "repsRange": "4"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 4, "repsRange": "4"},
+            {"exerciseId": "125", "series": 4, "repsRange": "4"},
+            {"exerciseId": "117", "series": 4, "repsRange": "8"}
+          ]
+        },
+        {
+          "nombre": "Día A2",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "8"},
+            {"exerciseId": "130", "series": 4, "repsRange": "4"},
+            {"exerciseId": "119", "series": 4, "repsRange": "8"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fierce-5",
+      "nombre": "Fierce 5",
+      "categoria": "fuerza",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Programa para principiantes con accesorios incluidos. Más completo que StrongLifts.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "100", "series": 3, "repsRange": "5"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8"},
+            {"exerciseId": "128", "series": 3, "repsRange": "10"},
+            {"exerciseId": "159", "series": 2, "repsRange": "10"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "146", "series": 3, "repsRange": "5"},
+            {"exerciseId": "125", "series": 3, "repsRange": "5"},
+            {"exerciseId": "123", "series": 3, "repsRange": "8"},
+            {"exerciseId": "167", "series": 2, "repsRange": "10"}
+          ]
+        },
+        {
+          "nombre": "Día A2",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "100", "series": 3, "repsRange": "5"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8"},
+            {"exerciseId": "128", "series": 3, "repsRange": "10"},
+            {"exerciseId": "159", "series": 2, "repsRange": "10"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ice-cream-fitness",
+      "nombre": "ICF 5x5 (Ice Cream Fitness)",
+      "categoria": "fuerza",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "StrongLifts 5x5 con accesorios para brazos. Ideal para principiantes que quieren estética también.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8"},
+            {"exerciseId": "172", "series": 2, "repsRange": "30s"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "146", "series": 5, "repsRange": "5"},
+            {"exerciseId": "125", "series": 1, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"},
+            {"exerciseId": "167", "series": 3, "repsRange": "8"},
+            {"exerciseId": "160", "series": 3, "repsRange": "8"}
+          ]
+        },
+        {
+          "nombre": "Día A2",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8"},
+            {"exerciseId": "159", "series": 3, "repsRange": "8"},
+            {"exerciseId": "143", "series": 3, "repsRange": "15"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reddit-ppl",
+      "nombre": "Reddit PPL (Metallicadpa)",
+      "categoria": "ppl",
+      "nivel": "principiante",
+      "diasPorSemana": 6,
+      "descripcion": "El PPL más popular de Reddit por Metallicadpa. Progresión lineal ideal para principiantes.",
+      "dias": [
+        {
+          "nombre": "Pull A",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 1, "repsRange": "5"},
+            {"exerciseId": "117", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "120", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "123", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "159", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "163", "series": 4, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Push A",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "5"},
+            {"exerciseId": "146", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "104", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "15-20"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "167", "series": 3, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Legs A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "140", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "137", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "133", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "143", "series": 5, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Pull B",
+          "ejercicios": [
+            {"exerciseId": "119", "series": 4, "repsRange": "5"},
+            {"exerciseId": "117", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "123", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "128", "series": 5, "repsRange": "15-20"},
+            {"exerciseId": "160", "series": 4, "repsRange": "8-12"},
+            {"exerciseId": "163", "series": 4, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Push B",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 4, "repsRange": "5"},
+            {"exerciseId": "100", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "109", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "149", "series": 3, "repsRange": "15-20"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "167", "series": 3, "repsRange": "8-12"}
+          ]
+        },
+        {
+          "nombre": "Legs B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "139", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "137", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "133", "series": 3, "repsRange": "8-12"},
+            {"exerciseId": "143", "series": 5, "repsRange": "8-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coolcicada-ppl",
+      "nombre": "Coolcicada PPL",
+      "categoria": "ppl",
+      "nivel": "intermedio",
+      "diasPorSemana": 6,
+      "descripcion": "PPL clásico de los foros de Bodybuilding.com. Balance entre fuerza e hipertrofia.",
+      "dias": [
+        {
+          "nombre": "Pull",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 3, "repsRange": "5"},
+            {"exerciseId": "117", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "119", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "123", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "128", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "159", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "163", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Push",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 3, "repsRange": "5"},
+            {"exerciseId": "146", "series": 3, "repsRange": "5"},
+            {"exerciseId": "104", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "149", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "167", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Legs",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "137", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "139", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "133", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "143", "series": 4, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Pull 2",
+          "ejercicios": [
+            {"exerciseId": "119", "series": 3, "repsRange": "5"},
+            {"exerciseId": "117", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "120", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "128", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "160", "series": 4, "repsRange": "8-10"},
+            {"exerciseId": "158", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Push 2",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 3, "repsRange": "5"},
+            {"exerciseId": "147", "series": 3, "repsRange": "5"},
+            {"exerciseId": "109", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "151", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "165", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "168", "series": 3, "repsRange": "8-10"}
+          ]
+        },
+        {
+          "nombre": "Legs 2",
+          "ejercicios": [
+            {"exerciseId": "134", "series": 3, "repsRange": "5"},
+            {"exerciseId": "141", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "140", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "133", "series": 3, "repsRange": "8-10"},
+            {"exerciseId": "144", "series": 4, "repsRange": "8-10"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lyle-mcdonald-generic",
+      "nombre": "Lyle McDonald Generic Bulking",
+      "categoria": "hipertrofia",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Programa Upper/Lower de Lyle McDonald para ganar masa. Frecuencia 2x por músculo.",
+      "dias": [
+        {
+          "nombre": "Upper A",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "119", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "104", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "123", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "149", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "159", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "167", "series": 2, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Lower A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "139", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "140", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 3, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Upper B",
+          "ejercicios": [
+            {"exerciseId": "119", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "100", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "120", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "146", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "154", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "160", "series": 2, "repsRange": "10-12"},
+            {"exerciseId": "165", "series": 2, "repsRange": "10-12"}
+          ]
+        },
+        {
+          "nombre": "Lower B",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "137", "series": 4, "repsRange": "6-8"},
+            {"exerciseId": "141", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10-12"},
+            {"exerciseId": "143", "series": 3, "repsRange": "10-12"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reddit-bodyweight",
+      "nombre": "Reddit Bodyweight Routine",
+      "categoria": "calistenia",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Rutina oficial de r/bodyweightfitness. Progresiones completas para calistenia.",
+      "dias": [
+        {
+          "nombre": "Full Body",
+          "ejercicios": [
+            {"exerciseId": "115", "series": 3, "repsRange": "5-8"},
+            {"exerciseId": "117", "series": 3, "repsRange": "5-8"},
+            {"exerciseId": "176", "series": 3, "repsRange": "5-8"},
+            {"exerciseId": "180", "series": 3, "repsRange": "5-8"},
+            {"exerciseId": "178", "series": 3, "repsRange": "5-8"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30-60s"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "starting-strength",
+      "nombre": "Starting Strength",
+      "categoria": "fuerza",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "Programa clásico para principiantes de Mark Rippetoe. Los básicos con progresión lineal.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "100", "series": 3, "repsRange": "5"},
+            {"exerciseId": "125", "series": 1, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "146", "series": 3, "repsRange": "5"},
+            {"exerciseId": "125", "series": 1, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Día A2",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5"},
+            {"exerciseId": "100", "series": 3, "repsRange": "5"},
+            {"exerciseId": "125", "series": 1, "repsRange": "5"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stronglifts-5x5",
+      "nombre": "StrongLifts 5x5",
+      "categoria": "fuerza",
+      "nivel": "principiante",
+      "diasPorSemana": 3,
+      "descripcion": "El programa de fuerza más popular para principiantes. Simple pero efectivo.",
+      "dias": [
+        {
+          "nombre": "Día A",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Día B",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "146", "series": 5, "repsRange": "5"},
+            {"exerciseId": "125", "series": 1, "repsRange": "5"}
+          ]
+        },
+        {
+          "nombre": "Día A2",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "5"},
+            {"exerciseId": "100", "series": 5, "repsRange": "5"},
+            {"exerciseId": "119", "series": 5, "repsRange": "5"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wendler-531-bbb",
+      "nombre": "5/3/1 BBB (Boring But Big)",
+      "categoria": "powerbuilding",
+      "nivel": "intermedio",
+      "diasPorSemana": 4,
+      "descripcion": "Variante popular de 5/3/1 de Jim Wendler. Combina fuerza con 5x10 de volumen.",
+      "dias": [
+        {
+          "nombre": "Squat",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 3, "repsRange": "5/3/1"},
+            {"exerciseId": "130", "series": 5, "repsRange": "10"},
+            {"exerciseId": "133", "series": 3, "repsRange": "10"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30s"}
+          ]
+        },
+        {
+          "nombre": "Bench",
+          "ejercicios": [
+            {"exerciseId": "100", "series": 3, "repsRange": "5/3/1"},
+            {"exerciseId": "100", "series": 5, "repsRange": "10"},
+            {"exerciseId": "119", "series": 3, "repsRange": "10"},
+            {"exerciseId": "159", "series": 3, "repsRange": "10"}
+          ]
+        },
+        {
+          "nombre": "Deadlift",
+          "ejercicios": [
+            {"exerciseId": "125", "series": 3, "repsRange": "5/3/1"},
+            {"exerciseId": "125", "series": 5, "repsRange": "10"},
+            {"exerciseId": "139", "series": 3, "repsRange": "10"},
+            {"exerciseId": "143", "series": 3, "repsRange": "15"}
+          ]
+        },
+        {
+          "nombre": "Press",
+          "ejercicios": [
+            {"exerciseId": "146", "series": 3, "repsRange": "5/3/1"},
+            {"exerciseId": "146", "series": 5, "repsRange": "10"},
+            {"exerciseId": "117", "series": 3, "repsRange": "10"},
+            {"exerciseId": "165", "series": 3, "repsRange": "10"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smolov-squat",
+      "nombre": "Smolov Squat Program",
+      "categoria": "fuerza",
+      "nivel": "avanzado",
+      "diasPorSemana": 4,
+      "descripcion": "Programa ruso brutal para sentadilla. Solo para avanzados con buena recuperación.",
+      "dias": [
+        {
+          "nombre": "Día 1",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 4, "repsRange": "9"},
+            {"exerciseId": "137", "series": 3, "repsRange": "10"},
+            {"exerciseId": "133", "series": 2, "repsRange": "12"}
+          ]
+        },
+        {
+          "nombre": "Día 2",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 5, "repsRange": "7"},
+            {"exerciseId": "127", "series": 3, "repsRange": "8"},
+            {"exerciseId": "139", "series": 2, "repsRange": "12"}
+          ]
+        },
+        {
+          "nombre": "Día 3",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 7, "repsRange": "5"},
+            {"exerciseId": "134", "series": 3, "repsRange": "8"},
+            {"exerciseId": "143", "series": 3, "repsRange": "15"}
+          ]
+        },
+        {
+          "nombre": "Día 4",
+          "ejercicios": [
+            {"exerciseId": "130", "series": 10, "repsRange": "3"},
+            {"exerciseId": "141", "series": 3, "repsRange": "10"},
+            {"exerciseId": "172", "series": 3, "repsRange": "30s"}
+          ]
+        }
+      ]
+    }
+  ],
+  "categories": [
+    {"id": "ppl", "nombre": "Push Pull Legs", "icono": "fitness_center"},
+    {"id": "upper-lower", "nombre": "Torso Pierna", "icono": "swap_vert"},
+    {"id": "fullbody", "nombre": "Full Body", "icono": "accessibility_new"},
+    {"id": "brosplit", "nombre": "Split Clásico", "icono": "calendar_view_week"},
+    {"id": "fuerza", "nombre": "Fuerza", "icono": "sports_gymnastics"},
+    {"id": "hipertrofia", "nombre": "Hipertrofia", "icono": "trending_up"},
+    {"id": "powerbuilding", "nombre": "Powerbuilding", "icono": "bolt"},
+    {"id": "push-pull", "nombre": "Push Pull", "icono": "sync_alt"},
+    {"id": "especializado", "nombre": "Especializado", "icono": "star"},
+    {"id": "calistenia", "nombre": "Calistenia", "icono": "self_improvement"},
+    {"id": "minimalista", "nombre": "Minimalista", "icono": "timer"},
+    {"id": "mujer", "nombre": "Enfocado Mujer", "icono": "favorite"},
+    {"id": "senior", "nombre": "Mayores 50+", "icono": "elderly"},
+    {"id": "casa", "nombre": "Casa", "icono": "home"},
+    {"id": "clasicas", "nombre": "Clásicas Históricas", "icono": "history_edu"}
+  ],
+  "levels": [
+    {"id": "principiante", "nombre": "Principiante", "descripcion": "Menos de 1 año entrenando"},
+    {"id": "intermedio", "nombre": "Intermedio", "descripcion": "1-3 años de experiencia"},
+    {"id": "avanzado", "nombre": "Avanzado", "descripcion": "Más de 3 años de experiencia"}
+  ]
+}

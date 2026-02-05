@@ -14,6 +14,7 @@ class SerieLog {
   final int? restSeconds;
   final bool isFailure;
   final bool isDropset;
+  final bool isRestPause;
   final bool isWarmup;
 
   SerieLog({
@@ -26,6 +27,7 @@ class SerieLog {
     this.restSeconds,
     this.isFailure = false,
     this.isDropset = false,
+    this.isRestPause = false,
     this.isWarmup = false,
   }) : id = id ?? const Uuid().v4();
 
@@ -40,6 +42,7 @@ class SerieLog {
     int? restSeconds,
     bool? isFailure,
     bool? isDropset,
+    bool? isRestPause,
     bool? isWarmup,
   }) {
     return SerieLog(
@@ -52,6 +55,7 @@ class SerieLog {
       restSeconds: restSeconds ?? this.restSeconds,
       isFailure: isFailure ?? this.isFailure,
       isDropset: isDropset ?? this.isDropset,
+      isRestPause: isRestPause ?? this.isRestPause,
       isWarmup: isWarmup ?? this.isWarmup,
     );
   }
@@ -69,6 +73,7 @@ class SerieLog {
         rpe == other.rpe &&
         isFailure == other.isFailure &&
         isDropset == other.isDropset &&
+        isRestPause == other.isRestPause &&
         isWarmup == other.isWarmup;
   }
 
@@ -81,6 +86,7 @@ class SerieLog {
     rpe,
     isFailure,
     isDropset,
+    isRestPause,
     isWarmup,
   );
 }

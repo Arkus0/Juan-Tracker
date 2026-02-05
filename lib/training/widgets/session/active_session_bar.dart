@@ -73,7 +73,7 @@ class ActiveSessionBar extends ConsumerWidget {
             const SizedBox(width: 12),
 
             // Info clara - ENTRENAMIENTO EN CURSO prominente
-            Expanded(
+            Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -220,7 +220,8 @@ class _EmbeddedTimerBubbleState extends State<_EmbeddedTimerBubble>
 
   void _startTicker() {
     _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) {
+    // 200ms es suficiente para mostrar segundos fluidamente
+    _ticker = Timer.periodic(const Duration(milliseconds: 200), (_) {
       if (!mounted) return;
       setState(() {
         _displaySeconds = widget.timerState.remainingSeconds;
