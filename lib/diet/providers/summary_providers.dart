@@ -7,7 +7,7 @@ import '../services/day_summary_calculator.dart';
 
 /// {@template summary_providers}
 /// Providers Riverpod segmentados para el resumen diario y objetivos.
-/// 
+///
 /// Estos providers están diseñados para:
 /// - Evitar duplicación de lógica
 /// - Facilitar testing
@@ -32,7 +32,9 @@ final daySummaryCalculatorProvider = Provider<DaySummaryCalculator>(
 ///
 /// Provider de todos los objetivos (ordenados por fecha descendente).
 /// Se auto-refresca cuando cambia la base de datos.
-@Deprecated('Usar activeTargetsProvider - el sistema manual de Targets está deprecado')
+@Deprecated(
+  'Usar activeTargetsProvider - el sistema manual de Targets está deprecado',
+)
 final allTargetsProvider = StreamProvider<List<TargetsModel>>((ref) {
   return ref.watch(targetsRepositoryProvider).watchAll();
 });
@@ -41,7 +43,9 @@ final allTargetsProvider = StreamProvider<List<TargetsModel>>((ref) {
 /// Este provider existe solo por compatibilidad con código legacy.
 ///
 /// Provider de objetivos activos para una fecha específica.
-@Deprecated('Usar activeTargetsProvider - el sistema manual de Targets está deprecado')
+@Deprecated(
+  'Usar activeTargetsProvider - el sistema manual de Targets está deprecado',
+)
 final dayTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
   final date = ref.watch(selectedDateProvider);
   // ignore: deprecated_member_use_from_same_package
@@ -78,7 +82,9 @@ final activeTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
 /// Este provider existe solo por compatibilidad con código legacy.
 ///
 /// Provider de objetivos actuales (para hoy).
-@Deprecated('Usar activeTargetsProvider - el sistema manual de Targets está deprecado')
+@Deprecated(
+  'Usar activeTargetsProvider - el sistema manual de Targets está deprecado',
+)
 final currentTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
   final repo = ref.watch(targetsRepositoryProvider);
   return repo.getCurrent();
@@ -89,41 +95,48 @@ final currentTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
 // ============================================================================
 
 /// Provider del resumen completo del día (consumo + targets + progreso).
-/// 
+///
 /// Este es el provider principal para la UI de "budget".
 /// Combina:
 /// - Totales consumidos del día
 /// - Target activo para la fecha (CoachPlan o targets tradicionales)
 /// - Progreso calculado
+final daySummaryForDateProvider =
+    Provider.family<AsyncValue<DaySummary>, DateTime>((ref, date) {
+      final normalizedDate = DateTime(date.year, date.month, date.day);
+      final totalsAsync = ref.watch(dailyTotalsForDateProvider(normalizedDate));
+      final targetsAsync = ref.watch(activeTargetsProvider);
+      final calculator = ref.watch(daySummaryCalculatorProvider);
+
+      // Combinar ambos streams
+      if (totalsAsync.isLoading || targetsAsync.isLoading) {
+        return const AsyncValue.loading();
+      }
+
+      if (totalsAsync.hasError) {
+        return AsyncValue.error(totalsAsync.error!, totalsAsync.stackTrace!);
+      }
+
+      if (targetsAsync.hasError) {
+        return AsyncValue.error(targetsAsync.error!, targetsAsync.stackTrace!);
+      }
+
+      final totals = totalsAsync.value!;
+      final targets = targetsAsync.value;
+
+      final summary = calculator.calculate(
+        date: normalizedDate,
+        consumed: totals,
+        targets: targets,
+      );
+
+      return AsyncValue.data(summary);
+    });
+
+/// Provider del resumen completo del día seleccionado por UI.
 final daySummaryProvider = Provider<AsyncValue<DaySummary>>((ref) {
-  final date = ref.watch(selectedDateProvider);
-  final totalsAsync = ref.watch(dailyTotalsProvider);
-  final targetsAsync = ref.watch(activeTargetsProvider);
-  final calculator = ref.watch(daySummaryCalculatorProvider);
-
-  // Combinar ambos streams
-  if (totalsAsync.isLoading || targetsAsync.isLoading) {
-    return const AsyncValue.loading();
-  }
-
-  if (totalsAsync.hasError) {
-    return AsyncValue.error(totalsAsync.error!, totalsAsync.stackTrace!);
-  }
-
-  if (targetsAsync.hasError) {
-    return AsyncValue.error(targetsAsync.error!, targetsAsync.stackTrace!);
-  }
-
-  final totals = totalsAsync.value!;
-  final targets = targetsAsync.value;
-
-  final summary = calculator.calculate(
-    date: date,
-    consumed: totals,
-    targets: targets,
-  );
-
-  return AsyncValue.data(summary);
+  final selectedDate = ref.watch(selectedDateProvider);
+  return ref.watch(daySummaryForDateProvider(selectedDate));
 });
 
 /// Provider del resumen del día como Future (para widgets que necesitan Future).
@@ -132,14 +145,12 @@ final daySummaryProvider = Provider<AsyncValue<DaySummary>>((ref) {
 final daySummaryFutureProvider = FutureProvider<DaySummary>((ref) async {
   final date = ref.watch(selectedDateProvider);
   final totals = await ref.watch(dailyTotalsProvider.future);
-  final targets = await ref.watch(activeTargetsProvider.future); // Usa CoachPlan
+  final targets = await ref.watch(
+    activeTargetsProvider.future,
+  ); // Usa CoachPlan
   final calculator = ref.watch(daySummaryCalculatorProvider);
 
-  return calculator.calculate(
-    date: date,
-    consumed: totals,
-    targets: targets,
-  );
+  return calculator.calculate(date: date, consumed: totals, targets: targets);
 });
 
 // ============================================================================
@@ -166,7 +177,9 @@ class DayTrendData {
 /// Provider de tendencia semanal de calorías (últimos 7 días).
 ///
 /// Retorna datos de calorías consumidas por día para mostrar en gráficos.
-final weeklyCalorieTrendProvider = FutureProvider<List<DayTrendData>>((ref) async {
+final weeklyCalorieTrendProvider = FutureProvider<List<DayTrendData>>((
+  ref,
+) async {
   final diaryRepo = ref.watch(diaryRepositoryProvider);
   // Usar watch para reaccionar a cambios en el plan
   final coachPlan = ref.watch(coachPlanProvider);
@@ -194,11 +207,13 @@ final weeklyCalorieTrendProvider = FutureProvider<List<DayTrendData>>((ref) asyn
 
     final kcalSum = entries.fold<double>(0.0, (sum, e) => sum + e.kcal).round();
 
-    result.add(DayTrendData(
-      date: dayStart,
-      kcalConsumed: kcalSum,
-      kcalTarget: targetKcal,
-    ));
+    result.add(
+      DayTrendData(
+        date: dayStart,
+        kcalConsumed: kcalSum,
+        kcalTarget: targetKcal,
+      ),
+    );
   }
 
   return result;
@@ -212,13 +227,16 @@ final weeklyCalorieTrendProvider = FutureProvider<List<DayTrendData>>((ref) asyn
 /// Usar el Coach (CoachPlan) para configurar objetivos.
 ///
 /// Notifier para gestionar el formulario de creación/edición de targets.
-@Deprecated('Usar CoachPlan via coach_providers - el sistema manual de Targets está deprecado')
+@Deprecated(
+  'Usar CoachPlan via coach_providers - el sistema manual de Targets está deprecado',
+)
 class TargetsFormNotifier extends Notifier<TargetsFormState> {
   @override
   TargetsFormState build() => TargetsFormState.empty();
 
   void setKcal(int kcal) => state = state.copyWith(kcalTarget: kcal);
-  void setProtein(double? protein) => state = state.copyWith(proteinTarget: protein);
+  void setProtein(double? protein) =>
+      state = state.copyWith(proteinTarget: protein);
   void setCarbs(double? carbs) => state = state.copyWith(carbsTarget: carbs);
   void setFat(double? fat) => state = state.copyWith(fatTarget: fat);
   void setValidFrom(DateTime date) => state = state.copyWith(validFrom: date);
@@ -246,24 +264,25 @@ class TargetsFormNotifier extends Notifier<TargetsFormState> {
 
   /// Convierte el estado actual a modelo para guardar.
   TargetsModel toModel() => TargetsModel(
-        id: state.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        validFrom: DateTime(
-          state.validFrom.year,
-          state.validFrom.month,
-          state.validFrom.day,
-        ),
-        kcalTarget: state.kcalTarget,
-        proteinTarget: state.proteinTarget,
-        carbsTarget: state.carbsTarget,
-        fatTarget: state.fatTarget,
-        notes: state.notes,
-      );
+    id: state.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+    validFrom: DateTime(
+      state.validFrom.year,
+      state.validFrom.month,
+      state.validFrom.day,
+    ),
+    kcalTarget: state.kcalTarget,
+    proteinTarget: state.proteinTarget,
+    carbsTarget: state.carbsTarget,
+    fatTarget: state.fatTarget,
+    notes: state.notes,
+  );
 }
 
 /// Provider del estado del formulario de targets.
-final targetsFormProvider = NotifierProvider<TargetsFormNotifier, TargetsFormState>(
-  TargetsFormNotifier.new,
-);
+final targetsFormProvider =
+    NotifierProvider<TargetsFormNotifier, TargetsFormState>(
+      TargetsFormNotifier.new,
+    );
 
 /// Estado del formulario de targets.
 class TargetsFormState {
@@ -287,10 +306,8 @@ class TargetsFormState {
     this.isEditing = false,
   });
 
-  factory TargetsFormState.empty() => TargetsFormState(
-        kcalTarget: 2000,
-        validFrom: DateTime.now(),
-      );
+  factory TargetsFormState.empty() =>
+      TargetsFormState(kcalTarget: 2000, validFrom: DateTime.now());
 
   TargetsFormState copyWith({
     String? id,
@@ -301,17 +318,16 @@ class TargetsFormState {
     DateTime? validFrom,
     String? notes,
     bool? isEditing,
-  }) =>
-      TargetsFormState(
-        id: id ?? this.id,
-        kcalTarget: kcalTarget ?? this.kcalTarget,
-        proteinTarget: proteinTarget ?? this.proteinTarget,
-        carbsTarget: carbsTarget ?? this.carbsTarget,
-        fatTarget: fatTarget ?? this.fatTarget,
-        validFrom: validFrom ?? this.validFrom,
-        notes: notes ?? this.notes,
-        isEditing: isEditing ?? this.isEditing,
-      );
+  }) => TargetsFormState(
+    id: id ?? this.id,
+    kcalTarget: kcalTarget ?? this.kcalTarget,
+    proteinTarget: proteinTarget ?? this.proteinTarget,
+    carbsTarget: carbsTarget ?? this.carbsTarget,
+    fatTarget: fatTarget ?? this.fatTarget,
+    validFrom: validFrom ?? this.validFrom,
+    notes: notes ?? this.notes,
+    isEditing: isEditing ?? this.isEditing,
+  );
 
   /// Calorías calculadas desde macros (para validación).
   int? get kcalFromMacros {

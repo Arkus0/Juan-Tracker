@@ -24,8 +24,13 @@ final diaryRepositoryProvider = Provider<IDiaryRepository>((ref) {
 
 final weighInRepositoryProvider = Provider<IWeighInRepository>((ref) {
   // Inject userProfileRepository for auto-sync of latest weight
-  final userProfileRepo = DriftUserProfileRepository(ref.watch(appDatabaseProvider));
-  return DriftWeighInRepository(ref.watch(appDatabaseProvider), userProfileRepo);
+  final userProfileRepo = DriftUserProfileRepository(
+    ref.watch(appDatabaseProvider),
+  );
+  return DriftWeighInRepository(
+    ref.watch(appDatabaseProvider),
+    userProfileRepo,
+  );
 });
 
 final targetsRepositoryProvider = Provider<ITargetsRepository>((ref) {
@@ -43,7 +48,8 @@ class SelectedDateNotifier extends Notifier<DateTime> {
   @override
   DateTime build() => DateTime.now();
 
-  void setDate(DateTime date) => state = DateTime(date.year, date.month, date.day);
+  void setDate(DateTime date) =>
+      state = DateTime(date.year, date.month, date.day);
   void goToToday() => state = DateTime.now();
   void previousDay() => state = state.subtract(const Duration(days: 1));
   void nextDay() => state = state.add(const Duration(days: 1));
@@ -57,31 +63,51 @@ final selectedDateProvider = NotifierProvider<SelectedDateNotifier, DateTime>(
 // UI STATE - STREAMS
 // ============================================================================
 
-final dayEntriesStreamProvider = StreamProvider.autoDispose<List<diet.DiaryEntryModel>>((ref) {
-  // T6 FIX: Add .distinct() to prevent redundant UI rebuilds
-  return ref.watch(diaryRepositoryProvider)
-      .watchByDate(ref.watch(selectedDateProvider))
-      .distinct(_areDiaryEntryListsEqual);
-});
+final dayEntriesStreamProvider =
+    StreamProvider.autoDispose<List<diet.DiaryEntryModel>>((ref) {
+      // T6 FIX: Add .distinct() to prevent redundant UI rebuilds
+      return ref
+          .watch(diaryRepositoryProvider)
+          .watchByDate(ref.watch(selectedDateProvider))
+          .distinct(_areDiaryEntryListsEqual);
+    });
 
 final dailyTotalsProvider = StreamProvider.autoDispose<diet.DailyTotals>((ref) {
   // T6 FIX: Add .distinct() to prevent redundant UI rebuilds
-  return ref.watch(diaryRepositoryProvider)
+  return ref
+      .watch(diaryRepositoryProvider)
       .watchDailyTotals(ref.watch(selectedDateProvider))
       .distinct(_areDailyTotalsEqual);
 });
 
-final foodSearchResultsProvider = FutureProvider.autoDispose<List<diet.FoodModel>>((ref) async {
-  final query = ref.watch(foodSearchQueryProvider);
-  if (query.trim().isEmpty) return ref.watch(foodRepositoryProvider).getAll();
-  return ref.watch(foodRepositoryProvider).search(query);
-});
+/// Totales diarios para una fecha explícita (independiente del estado UI).
+///
+/// Útil para pantallas contextuales como "Hoy", evitando depender de
+/// [selectedDateProvider] que puede apuntar a otro día.
+final dailyTotalsForDateProvider = StreamProvider.autoDispose
+    .family<diet.DailyTotals, DateTime>((ref, date) {
+      final normalizedDate = DateTime(date.year, date.month, date.day);
+      return ref
+          .watch(diaryRepositoryProvider)
+          .watchDailyTotals(normalizedDate)
+          .distinct(_areDailyTotalsEqual);
+    });
+
+final foodSearchResultsProvider =
+    FutureProvider.autoDispose<List<diet.FoodModel>>((ref) async {
+      final query = ref.watch(foodSearchQueryProvider);
+      if (query.trim().isEmpty) {
+        return ref.watch(foodRepositoryProvider).getAll();
+      }
+      return ref.watch(foodRepositoryProvider).search(query);
+    });
 
 /// Provider del último peso registrado (derivado del stream para reactividad)
 final latestWeightProvider = Provider<AsyncValue<diet.WeighInModel?>>((ref) {
   final weighInsAsync = ref.watch(weightStreamProvider);
   return weighInsAsync.when(
-    data: (weighIns) => AsyncValue.data(weighIns.isNotEmpty ? weighIns.first : null),
+    data: (weighIns) =>
+        AsyncValue.data(weighIns.isNotEmpty ? weighIns.first : null),
     loading: () => const AsyncValue.loading(),
     error: (e, st) => AsyncValue.error(e, st),
   );
@@ -89,7 +115,9 @@ final latestWeightProvider = Provider<AsyncValue<diet.WeighInModel?>>((ref) {
 
 final weightStreamProvider = StreamProvider<List<diet.WeighInModel>>((ref) {
   final from = DateTime.now().subtract(const Duration(days: 90));
-  return ref.watch(weighInRepositoryProvider).watchByDateRange(from, DateTime.now());
+  return ref
+      .watch(weighInRepositoryProvider)
+      .watchByDateRange(from, DateTime.now());
 });
 
 /// 🎯 MED-002: Provider de días con entradas para el calendario
@@ -119,9 +147,10 @@ final calendarEntryDaysProvider = StreamProvider<Set<DateTime>>((ref) {
 // UI STATE - SIMPLE STATE (migrado a Notifier para compatibilidad con Riverpod 3)
 // ============================================================================
 
-final foodSearchQueryProvider = NotifierProvider<FoodSearchQueryNotifier, String>(
-  FoodSearchQueryNotifier.new,
-);
+final foodSearchQueryProvider =
+    NotifierProvider<FoodSearchQueryNotifier, String>(
+      FoodSearchQueryNotifier.new,
+    );
 
 class FoodSearchQueryNotifier extends Notifier<String> {
   @override
@@ -130,9 +159,10 @@ class FoodSearchQueryNotifier extends Notifier<String> {
   set query(String q) => state = q;
 }
 
-final selectedFoodProvider = NotifierProvider<SelectedFoodNotifier, diet.FoodModel?>(
-  SelectedFoodNotifier.new,
-);
+final selectedFoodProvider =
+    NotifierProvider<SelectedFoodNotifier, diet.FoodModel?>(
+      SelectedFoodNotifier.new,
+    );
 
 class SelectedFoodNotifier extends Notifier<diet.FoodModel?> {
   @override
@@ -141,9 +171,10 @@ class SelectedFoodNotifier extends Notifier<diet.FoodModel?> {
   set selected(diet.FoodModel? f) => state = f;
 }
 
-final editingEntryProvider = NotifierProvider<EditingEntryNotifier, diet.DiaryEntryModel?>(
-  EditingEntryNotifier.new,
-);
+final editingEntryProvider =
+    NotifierProvider<EditingEntryNotifier, diet.DiaryEntryModel?>(
+      EditingEntryNotifier.new,
+    );
 
 class EditingEntryNotifier extends Notifier<diet.DiaryEntryModel?> {
   @override
@@ -152,9 +183,10 @@ class EditingEntryNotifier extends Notifier<diet.DiaryEntryModel?> {
   set editing(diet.DiaryEntryModel? e) => state = e;
 }
 
-final selectedMealTypeProvider = NotifierProvider<SelectedMealTypeNotifier, diet.MealType>(
-  SelectedMealTypeNotifier.new,
-);
+final selectedMealTypeProvider =
+    NotifierProvider<SelectedMealTypeNotifier, diet.MealType>(
+      SelectedMealTypeNotifier.new,
+    );
 
 class SelectedMealTypeNotifier extends Notifier<diet.MealType> {
   @override
@@ -299,16 +331,19 @@ class CurrentMealTypeNotifier extends Notifier<diet.MealType> {
   }
 }
 
-final currentMealTypeProvider = NotifierProvider<CurrentMealTypeNotifier, diet.MealType>(
-  CurrentMealTypeNotifier.new,
-);
+final currentMealTypeProvider =
+    NotifierProvider<CurrentMealTypeNotifier, diet.MealType>(
+      CurrentMealTypeNotifier.new,
+    );
 
 /// Provider de sugerencias inteligentes de comida basadas en:
 /// 1. Hora del día (desayuno, almuerzo, cena, snack)
 /// 2. Historial del usuario para esa comida (últimos 30 días)
 /// 3. Frecuencia de consumo (>40% de días = "habitual")
 /// 🎯 HIGH-003: Comida Habitual - Detección de patrones temporales
-final smartFoodSuggestionsProvider = FutureProvider<List<SmartFoodSuggestion>>((ref) async {
+final smartFoodSuggestionsProvider = FutureProvider<List<SmartFoodSuggestion>>((
+  ref,
+) async {
   final repo = ref.read(diaryRepositoryProvider);
   final suggestedMeal = ref.watch(currentMealTypeProvider);
 
@@ -318,7 +353,9 @@ final smartFoodSuggestionsProvider = FutureProvider<List<SmartFoodSuggestion>>((
   final recentEntries = await repo.getByDateRange(thirtyDaysAgo, now);
 
   // Filtrar solo entradas del tipo de comida actual
-  final mealEntries = recentEntries.where((e) => e.mealType == suggestedMeal).toList();
+  final mealEntries = recentEntries
+      .where((e) => e.mealType == suggestedMeal)
+      .toList();
 
   if (mealEntries.isEmpty) {
     // Sin historial para este tipo de comida
@@ -420,7 +457,8 @@ class _FoodFrequency {
 
   diet.DiaryEntryModel get mostRecentEntry => entry;
 
-  double get avgQuantity => entryCount > 0 ? totalQuantity / entryCount : entry.amount;
+  double get avgQuantity =>
+      entryCount > 0 ? totalQuantity / entryCount : entry.amount;
 }
 
 /// Provider de mensaje contextual para el tipo de comida actual

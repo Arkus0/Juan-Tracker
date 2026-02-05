@@ -167,15 +167,15 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
     double? warningThreshold,
   }) {
     final scheme = Theme.of(context).colorScheme;
-    
+
     // Determinar estado
     final isBalanced = ratio >= idealRange.start && ratio <= idealRange.end;
     final isWarning = warningThreshold != null && ratio > warningThreshold;
     final statusColor = isWarning
         ? Colors.red
         : isBalanced
-            ? Colors.green
-            : Colors.orange;
+        ? Colors.green
+        : Colors.orange;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -204,7 +204,10 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withAlpha((0.15 * 255).round()),
                   borderRadius: BorderRadius.circular(12),
@@ -260,71 +263,90 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
     required Color statusColor,
   }) {
     final scheme = Theme.of(context).colorScheme;
-    
+
     // Normalizar ratio para la barra (max 3:1 para visualización)
     final maxRatio = 3.0;
     final normalizedRatio = (ratio / maxRatio).clamp(0.0, 1.0);
-    
+
     // Posiciones del rango ideal
     final idealStart = (idealRange.start / maxRatio).clamp(0.0, 1.0);
     final idealEnd = (idealRange.end / maxRatio).clamp(0.0, 1.0);
 
     return SizedBox(
       height: 24,
-      child: Stack(
-        children: [
-          // Fondo de la barra
-          Container(
-            height: 8,
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final barWidth = constraints.maxWidth;
+          final idealLeft = barWidth * idealStart;
+          final idealRight = barWidth * (1 - idealEnd);
+          final indicatorLeft = (barWidth * normalizedRatio - 8).clamp(
+            0.0,
+            barWidth - 16,
+          );
 
-          // Zona ideal
-          Positioned(
-            left: MediaQuery.of(context).size.width * idealStart * 0.65,
-            right: MediaQuery.of(context).size.width * (1 - idealEnd) * 0.65,
-            top: 0,
-            child: Container(
-              height: 8,
-              decoration: BoxDecoration(
-                color: Colors.green.withAlpha((0.3 * 255).round()),
-                borderRadius: BorderRadius.circular(4),
+          return Stack(
+            children: [
+              // Fondo de la barra
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
-            ),
-          ),
 
-          // Indicador de posición actual
-          Positioned(
-            left: MediaQuery.of(context).size.width * normalizedRatio * 0.65 - 6,
-            top: -4,
-            child: Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                color: statusColor,
-                shape: BoxShape.circle,
-                border: Border.all(color: scheme.surface, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: statusColor.withAlpha((0.4 * 255).round()),
-                    blurRadius: 4,
-                    spreadRadius: 1,
+              // Zona ideal
+              Positioned(
+                left: idealLeft,
+                right: idealRight,
+                top: 0,
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha((0.3 * 255).round()),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
+
+              // Indicador de posición actual
+              Positioned(
+                left: indicatorLeft,
+                top: -4,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: scheme.surface, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: statusColor.withAlpha((0.4 * 255).round()),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildVolumeLabel(String label, double value, ColorScheme scheme, {required bool isLeft}) {
+  Widget _buildVolumeLabel(
+    String label,
+    double value,
+    ColorScheme scheme, {
+    required bool isLeft,
+  }) {
     return Column(
-      crossAxisAlignment: isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+      crossAxisAlignment: isLeft
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.end,
       children: [
         Text(
           label.toUpperCase(),
@@ -345,15 +367,16 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildWarnings(ColorScheme scheme, List<MuscleImbalanceWarning> warnings) {
+  Widget _buildWarnings(
+    ColorScheme scheme,
+    List<MuscleImbalanceWarning> warnings,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: scheme.errorContainer.withAlpha((0.2 * 255).round()),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: scheme.error.withAlpha((0.3 * 255).round()),
-        ),
+        border: Border.all(color: scheme.error.withAlpha((0.3 * 255).round())),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,23 +395,25 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 8),
-          ...warnings.map((w) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('• ', style: TextStyle(color: scheme.error)),
-                Expanded(
-                  child: Text(
-                    w.message,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: scheme.onErrorContainer,
+          ...warnings.map(
+            (w) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('• ', style: TextStyle(color: scheme.error)),
+                  Expanded(
+                    child: Text(
+                      w.message,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: scheme.onErrorContainer,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );

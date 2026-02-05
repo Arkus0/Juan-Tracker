@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 
+import '../../../../core/design_system/design_system.dart' show AppTypography;
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
-import '../../utils/design_system.dart';
 
 /// Horizontal list showing muscle group recovery status
 class RecoveryMonitor extends ConsumerWidget {
@@ -15,11 +14,11 @@ class RecoveryMonitor extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recoveryAsync = ref.watch(muscleRecoveryProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
@@ -27,47 +26,44 @@ class RecoveryMonitor extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.2),
+                  color: scheme.secondary.withAlpha((0.2 * 255).round()),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.battery_charging_full,
-                  color: Colors.blue,
+                  color: scheme.secondary,
                   size: 18,
                 ),
               ),
               const SizedBox(width: 10),
               Text(
-                'MONITOR DE RECUPERACIÓN',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
+                'MONITOR DE RECUPERACION',
+                style: AppTypography.labelLarge.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
+                  color: scheme.onSurfaceVariant,
                   letterSpacing: 1.2,
                 ),
               ),
             ],
           ),
         ),
-
         const SizedBox(height: 12),
-
-        // Recovery cards
         recoveryAsync.when(
           data: (recoveries) {
-            if (recoveries.isEmpty) {
-              return _buildEmptyState();
-            }
-            return _buildRecoveryList(recoveries);
+            if (recoveries.isEmpty) return _buildEmptyState(scheme);
+            return _buildRecoveryList(recoveries, scheme);
           },
-          loading: () => _buildLoading(),
-          error: (_, _) => _buildEmptyState(),
+          loading: () => _buildLoading(scheme),
+          error: (_, _) => _buildEmptyState(scheme),
         ),
       ],
     );
   }
 
-  Widget _buildRecoveryList(List<MuscleRecovery> recoveries) {
+  Widget _buildRecoveryList(
+    List<MuscleRecovery> recoveries,
+    ColorScheme scheme,
+  ) {
     return SizedBox(
       height: 120,
       child: ListView.builder(
@@ -76,36 +72,32 @@ class RecoveryMonitor extends ConsumerWidget {
         itemCount: recoveries.length,
         itemBuilder: (context, index) {
           return Padding(
-            padding: EdgeInsets.only(
-              left: index == 0 ? 0 : 8,
-              right: index == recoveries.length - 1 ? 0 : 0,
-            ),
-            child: _RecoveryCard(recovery: recoveries[index]),
+            padding: EdgeInsets.only(left: index == 0 ? 0 : 8),
+            child: _RecoveryCard(recovery: recoveries[index], scheme: scheme),
           );
         },
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ColorScheme scheme) {
     return Container(
       height: 120,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: scheme.surfaceContainerHighest.withAlpha((0.35 * 255).round()),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep),
+        border: Border.all(color: scheme.outline),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.fitness_center, color: AppColors.border, size: 32),
+          Icon(Icons.fitness_center, color: scheme.outline, size: 32),
           const SizedBox(height: 8),
           Text(
-            'Entrena para ver tu recuperación',
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
-              color: AppColors.textTertiary,
+            'Entrena para ver tu recuperacion',
+            style: AppTypography.bodySmall.copyWith(
+              color: scheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -113,7 +105,7 @@ class RecoveryMonitor extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoading() {
+  Widget _buildLoading(ColorScheme scheme) {
     return SizedBox(
       height: 120,
       child: ListView.builder(
@@ -125,7 +117,9 @@ class RecoveryMonitor extends ConsumerWidget {
             child: Container(
               width: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: scheme.surfaceContainerHighest.withAlpha(
+                  (0.35 * 255).round(),
+                ),
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
@@ -138,14 +132,14 @@ class RecoveryMonitor extends ConsumerWidget {
 
 class _RecoveryCard extends StatelessWidget {
   final MuscleRecovery recovery;
+  final ColorScheme scheme;
 
-  const _RecoveryCard({required this.recovery});
+  const _RecoveryCard({required this.recovery, required this.scheme});
 
   @override
   Widget build(BuildContext context) {
     final status = recovery.status;
 
-    // Calculate recovery percentage (inverted - 0-2 days = low, 5+ days = full)
     double recoveryPercent;
     if (recovery.daysSinceTraining >= 5) {
       recoveryPercent = 1.0;
@@ -166,19 +160,20 @@ class _RecoveryCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              status.color.withValues(alpha: 0.15),
-              const Color(0xFF1A1A1A),
+              status.color.withAlpha((0.15 * 255).round()),
+              scheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: status.color.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: status.color.withAlpha((0.3 * 255).round()),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Muscle icon/name
             Row(
               children: [
                 Text(
@@ -194,7 +189,7 @@ class _RecoveryCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: status.color.withValues(alpha: 0.5),
+                        color: status.color.withAlpha((0.5 * 255).round()),
                         blurRadius: 6,
                       ),
                     ],
@@ -202,47 +197,39 @@ class _RecoveryCard extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 8),
-
-            // Muscle name
             Text(
               recovery.displayName.toUpperCase(),
-              style: GoogleFonts.montserrat(
-                fontSize: 10,
+              style: AppTypography.labelSmall.copyWith(
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: scheme.onSurface,
                 letterSpacing: 0.5,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-
             const Spacer(),
-
-            // Recovery bar
             LinearPercentIndicator(
               padding: EdgeInsets.zero,
               lineHeight: 4,
               percent: recoveryPercent,
-              backgroundColor: AppColors.bgDeep,
+              backgroundColor: scheme.surfaceContainerHighest,
               linearGradient: LinearGradient(
-                colors: [status.color.withValues(alpha: 0.7), status.color],
+                colors: [
+                  status.color.withAlpha((0.7 * 255).round()),
+                  status.color,
+                ],
               ),
               barRadius: const Radius.circular(2),
             ),
-
             const SizedBox(height: 8),
-
-            // Days count & status
             Row(
               children: [
                 Text(
                   recovery.daysSinceTraining >= 999
                       ? '--'
                       : '${recovery.daysSinceTraining}d',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
+                  style: AppTypography.titleSmall.copyWith(
                     fontWeight: FontWeight.w800,
                     color: status.color,
                   ),
@@ -259,32 +246,30 @@ class _RecoveryCard extends StatelessWidget {
 
   void _showRecoveryDetail(BuildContext context) {
     final status = recovery.status;
+    final scheme = Theme.of(context).colorScheme;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: scheme.surface,
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle
               Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: scheme.outline,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Muscle info
               Row(
                 children: [
                   Text(
@@ -298,10 +283,9 @@ class _RecoveryCard extends StatelessWidget {
                       children: [
                         Text(
                           recovery.displayName,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 24,
+                          style: AppTypography.headlineLarge.copyWith(
                             fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                            color: scheme.onSurface,
                           ),
                         ),
                         Row(
@@ -317,8 +301,7 @@ class _RecoveryCard extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               status.label.toUpperCase(),
-                              style: GoogleFonts.montserrat(
-                                fontSize: 14,
+                              style: AppTypography.labelLarge.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: status.color,
                                 letterSpacing: 1,
@@ -331,44 +314,42 @@ class _RecoveryCard extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 24),
-
-              // Details
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: scheme.surfaceContainerHighest.withAlpha(
+                    (0.4 * 255).round(),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   children: [
                     _buildDetailRow(
-                      'Días desde último entreno',
+                      context,
+                      'Dias desde ultimo entreno',
                       recovery.daysSinceTraining >= 999
                           ? 'Nunca entrenado'
-                          : '${recovery.daysSinceTraining} días',
+                          : '${recovery.daysSinceTraining} dias',
                     ),
-                    const Divider(color: Color(0xFF2A2A2A), height: 24),
+                    Divider(color: scheme.outline, height: 24),
                     _buildDetailRow(
-                      'Estado de recuperación',
+                      context,
+                      'Estado de recuperacion',
                       _getRecoveryAdvice(status),
                     ),
                   ],
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // Recommendation
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: status.color.withValues(alpha: 0.1),
+                  color: status.color.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: status.color.withValues(alpha: 0.3),
+                    color: status.color.withAlpha((0.3 * 255).round()),
                   ),
                 ),
                 child: Row(
@@ -382,16 +363,14 @@ class _RecoveryCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         _getRecommendation(status),
-                        style: GoogleFonts.montserrat(
-                          fontSize: 13,
-                          color: Colors.grey[300],
+                        style: AppTypography.bodySmall.copyWith(
+                          color: scheme.onSurface,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
             ],
           ),
@@ -400,23 +379,22 @@ class _RecoveryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: GoogleFonts.montserrat(
-            fontSize: 13,
-            color: AppColors.textTertiary,
+          style: AppTypography.bodySmall.copyWith(
+            color: scheme.onSurfaceVariant,
           ),
         ),
         Text(
           value,
-          style: GoogleFonts.montserrat(
-            fontSize: 13,
+          style: AppTypography.bodySmall.copyWith(
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: scheme.onSurface,
           ),
         ),
       ],
@@ -426,19 +404,19 @@ class _RecoveryCard extends StatelessWidget {
   String _getMuscleEmoji(String muscle) {
     switch (muscle.toLowerCase()) {
       case 'pecho':
-        return '🫁';
+        return '\u{1FAC1}';
       case 'espalda':
-        return '🔙';
+        return '\u{1F519}';
       case 'piernas':
-        return '🦵';
+        return '\u{1F9B5}';
       case 'hombros':
-        return '🤷';
+        return '\u{1F937}';
       case 'brazos':
-        return '💪';
+        return '\u{1F4AA}';
       case 'core':
-        return '🎯';
+        return '\u{1F3AF}';
       default:
-        return '💪';
+        return '\u{1F4AA}';
     }
   }
 
@@ -467,11 +445,11 @@ class _RecoveryCard extends StatelessWidget {
   String _getRecommendation(RecoveryStatus status) {
     switch (status) {
       case RecoveryStatus.recovering:
-        return 'Este músculo aún se está recuperando. Considera entrenar otro grupo muscular hoy.';
+        return 'Este musculo aun se esta recuperando. Considera entrenar otro grupo muscular hoy.';
       case RecoveryStatus.ready:
-        return 'Buen momento para entrenar este músculo. La recuperación está casi completa.';
+        return 'Buen momento para entrenar este musculo. La recuperacion esta casi completa.';
       case RecoveryStatus.fresh:
-        return '¡Hora de atacar! Este músculo está completamente recuperado y listo para el máximo esfuerzo.';
+        return 'Hora de atacar. Este musculo esta completamente recuperado y listo para el maximo esfuerzo.';
     }
   }
 }

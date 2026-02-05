@@ -6,6 +6,7 @@ import '../../../core/providers/database_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../diet/providers/coach_providers.dart';
 import '../../../features/diary/presentation/diary_screen.dart';
+import '../../../features/home/providers/home_providers.dart';
 import '../../../features/weight/presentation/weight_screen.dart';
 import '../../../features/summary/presentation/summary_screen.dart';
 import '../../../features/settings/presentation/settings_screen.dart';
@@ -18,8 +19,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
-  int _currentIndex = 0;
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   bool _checkInReminderShown = false;
 
   // Usamos IndexedStack para preservar el estado de cada tab
@@ -46,7 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   /// Comprueba si hay un check-in semanal pendiente y muestra recordatorio
   void _checkForPendingCheckIn() {
     if (_checkInReminderShown) return;
-    
+
     final isCheckInDue = ref.read(isCheckInDueProvider);
     if (isCheckInDue && mounted) {
       _checkInReminderShown = true;
@@ -57,19 +58,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   void _showCheckInReminder() {
     final plan = ref.read(coachPlanProvider);
     if (plan == null) return;
-    
+
     final lastCheckIn = plan.lastCheckInDate;
-    final daysSince = lastCheckIn != null 
-        ? DateTime.now().difference(lastCheckIn).inDays 
+    final daysSince = lastCheckIn != null
+        ? DateTime.now().difference(lastCheckIn).inDays
         : DateTime.now().difference(plan.startDate).inDays;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
         final colors = Theme.of(ctx).colorScheme;
         return AlertDialog(
-          icon: Icon(Icons.notifications_active, color: colors.primary, size: 48),
+          icon: Icon(
+            Icons.notifications_active,
+            color: colors.primary,
+            size: 48,
+          ),
           title: const Text('¡Toca check-in semanal!'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -126,42 +131,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
+    final currentTab = ref.watch(homeTabProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Juan Tracker')),
       // IndexedStack mantiene todos los tabs en memoria pero solo muestra uno
       // Esto preserva el scroll position y evita re-fetch de datos
       body: SafeArea(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: _tabs,
-        ),
+        child: IndexedStack(index: currentTab.index, children: _tabs),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         showUnselectedLabels: true,
-        currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        currentIndex: currentTab.index,
+        onTap: (i) =>
+            ref.read(homeTabProvider.notifier).setTab(HomeTab.values[i]),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: 'Diario',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.scale),
-            label: 'Peso',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Diario'),
+          BottomNavigationBarItem(icon: Icon(Icons.scale), label: 'Peso'),
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Resumen',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.auto_graph),
-            label: 'Coach',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'Coach'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),
     );

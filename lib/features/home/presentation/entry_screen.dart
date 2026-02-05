@@ -9,6 +9,7 @@ import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/models/models.dart';
+import 'package:juan_tracker/diet/services/weight_input_validator.dart';
 import 'package:juan_tracker/training/utils/design_system.dart' as training;
 import 'package:juan_tracker/training/widgets/analysis/streak_counter.dart';
 import 'package:juan_tracker/training/providers/training_provider.dart';
@@ -76,9 +77,13 @@ class EntryScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(24),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
-                      _NutritionModeCard(onTap: () => _navigateToNutrition(context)),
+                      _NutritionModeCard(
+                        onTap: () => _navigateToNutrition(context),
+                      ),
                       const SizedBox(height: 16),
-                      _TrainingModeCard(onTap: () => _navigateToTraining(context)),
+                      _TrainingModeCard(
+                        onTap: () => _navigateToTraining(context),
+                      ),
                     ]),
                   ),
                 ),
@@ -92,9 +97,7 @@ class EntryScreen extends StatelessWidget {
                 ),
 
                 // Spacer para que el contenido no quede detrás del bottom bar
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 120),
-                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),
 
@@ -203,7 +206,9 @@ class _QuickActionsRow extends ConsumerWidget {
             children: [
               TextField(
                 controller: weightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Peso (kg)',
                   hintText: 'Ej: 75.5',
@@ -219,14 +224,18 @@ class _QuickActionsRow extends ConsumerWidget {
                       final picked = await showDatePicker(
                         context: context,
                         initialDate: selectedDate,
-                        firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                        firstDate: DateTime.now().subtract(
+                          const Duration(days: 365),
+                        ),
                         lastDate: DateTime.now(),
                       );
                       if (picked != null) {
                         setState(() => selectedDate = picked);
                       }
                     },
-                    child: Text(DateFormat('d MMM yyyy', 'es').format(selectedDate)),
+                    child: Text(
+                      DateFormat('d MMM yyyy', 'es').format(selectedDate),
+                    ),
                   ),
                 ],
               ),
@@ -239,10 +248,13 @@ class _QuickActionsRow extends ConsumerWidget {
             ),
             FilledButton(
               onPressed: () {
-                final text = weightController.text.trim();
-                final value = double.tryParse(text.replaceAll(',', '.'));
-                if (value != null && value > 0 && value < 500) {
+                final validationError = WeightInputValidator.validate(
+                  weightController.text,
+                );
+                if (validationError == null) {
                   Navigator.of(context).pop(true);
+                } else {
+                  AppSnackbar.showError(context, message: validationError);
                 }
               },
               child: const Text('GUARDAR'),
@@ -253,22 +265,19 @@ class _QuickActionsRow extends ConsumerWidget {
     );
 
     if (result == true) {
-      final text = weightController.text.trim();
-      final value = double.tryParse(text.replaceAll(',', '.'));
+      final value = WeightInputValidator.parse(weightController.text);
       if (value != null) {
         final repo = ref.read(weighInRepositoryProvider);
         final id = 'wi_${DateTime.now().millisecondsSinceEpoch}';
-        await repo.insert(WeighInModel(
-          id: id, 
-          dateTime: selectedDate, 
-          weightKg: value,
-        ));
+        await repo.insert(
+          WeighInModel(id: id, dateTime: selectedDate, weightKg: value),
+        );
         if (context.mounted) {
           AppSnackbar.show(context, message: 'Peso registrado');
         }
       }
     }
-    
+
     weightController.dispose();
   }
 
@@ -289,15 +298,17 @@ class _QuickActionsRow extends ConsumerWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 16),
-              ...MealType.values.map((meal) => ListTile(
-                leading: Icon(_getMealIcon(meal)),
-                title: Text(meal.displayName),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  ref.read(selectedMealTypeProvider.notifier).meal = meal;
-                  context.pushTo(AppRouter.nutritionFoodSearch);
-                },
-              )),
+              ...MealType.values.map(
+                (meal) => ListTile(
+                  leading: Icon(_getMealIcon(meal)),
+                  title: Text(meal.displayName),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    ref.read(selectedMealTypeProvider.notifier).meal = meal;
+                    context.pushTo(AppRouter.nutritionFoodSearch);
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -393,11 +404,7 @@ class _Stat {
   final String value;
   final String label;
 
-  const _Stat({
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
+  const _Stat({required this.icon, required this.value, required this.label});
 }
 
 /// Card de modo (Nutrición o Entrenamiento)
@@ -452,11 +459,7 @@ class _ModeCard extends StatelessWidget {
                         color: Colors.white.withAlpha((0.2 * 255).round()),
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: Icon(
-                        icon,
-                        color: Colors.white,
-                        size: 28,
-                      ),
+                      child: Icon(icon, color: Colors.white, size: 28),
                     ),
                     const Spacer(),
                     // 🎯 QW-05: Mostrar progress ring o flecha
@@ -508,7 +511,9 @@ class _ModeCard extends StatelessWidget {
                               Text(
                                 stat.label,
                                 style: AppTypography.labelSmall.copyWith(
-                                  color: Colors.white.withAlpha((0.6 * 255).round()),
+                                  color: Colors.white.withAlpha(
+                                    (0.6 * 255).round(),
+                                  ),
                                 ),
                               ),
                             ],
@@ -560,11 +565,7 @@ class _QuickActionButton extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Column(
                 children: [
-                  Icon(
-                    icon,
-                    color: colors.primary,
-                    size: 24,
-                  ),
+                  Icon(icon, color: colors.primary, size: 24),
                   const SizedBox(height: 8),
                   Text(
                     label,
@@ -616,12 +617,12 @@ class _NutritionModeCard extends ConsumerWidget {
         }
 
         final remainingKcal = s.targets!.kcalTarget - s.consumed.kcal;
-        final remainingProtein = s.targets!.proteinTarget != null 
-            ? (s.targets!.proteinTarget! - s.consumed.protein).round() 
+        final remainingProtein = s.targets!.proteinTarget != null
+            ? (s.targets!.proteinTarget! - s.consumed.protein).round()
             : 0;
 
         final progress = s.progress.kcalPercent ?? 0;
-        
+
         return (
           [
             _Stat(
@@ -641,8 +642,16 @@ class _NutritionModeCard extends ConsumerWidget {
       },
       loading: () => (
         [
-          const _Stat(icon: Icons.local_fire_department, value: '--', label: 'kcal'),
-          const _Stat(icon: Icons.fitness_center, value: '--', label: 'proteína'),
+          const _Stat(
+            icon: Icons.local_fire_department,
+            value: '--',
+            label: 'kcal',
+          ),
+          const _Stat(
+            icon: Icons.fitness_center,
+            value: '--',
+            label: 'proteína',
+          ),
         ],
         'Cargando...',
         0.0,
@@ -672,10 +681,12 @@ class _NutritionModeCard extends ConsumerWidget {
       stats: stats,
       onTap: onTap,
       // 🎯 QW-05: Progress ring mostrando % de calorías consumidas
-      trailing: progress > 0 ? _MiniProgressRing(
-        progress: progress.clamp(0.0, 1.0),
-        remaining: int.tryParse(stats[0].value) ?? 0,
-      ) : null,
+      trailing: progress > 0
+          ? _MiniProgressRing(
+              progress: progress.clamp(0.0, 1.0),
+              remaining: int.tryParse(stats[0].value) ?? 0,
+            )
+          : null,
     );
   }
 }
@@ -708,11 +719,7 @@ class _TrainingModeCard extends ConsumerWidget {
                 value: '--',
                 label: 'sin rutina',
               ),
-              _Stat(
-                icon: Icons.calendar_today,
-                value: '--',
-                label: 'hoy',
-              ),
+              _Stat(icon: Icons.calendar_today, value: '--', label: 'hoy'),
             ],
             onTap: onTap,
             isDark: true,
@@ -724,7 +731,7 @@ class _TrainingModeCard extends ConsumerWidget {
         // 🎯 QW-04: Usar formateo compacto para stat, contextual para subtítulo
         final timeSinceCompact = suggestion.timeSinceCompact;
         final timeSinceContextual = suggestion.timeSinceFormattedContextual;
-        
+
         // Subtítulo dinámico basado en contexto con mensaje motivacional
         String subtitle;
         if (suggestion.isRestDay) {
@@ -739,8 +746,8 @@ class _TrainingModeCard extends ConsumerWidget {
         return _ModeCard(
           title: suggestion.isRestDay ? 'Descanso' : 'Entrenamiento',
           subtitle: subtitle,
-          icon: suggestion.isRestDay 
-              ? Icons.bedtime_rounded 
+          icon: suggestion.isRestDay
+              ? Icons.bedtime_rounded
               : Icons.fitness_center_rounded,
           gradientColors: suggestion.isRestDay
               ? [Colors.blueGrey, Colors.blueGrey.shade700]
@@ -749,15 +756,17 @@ class _TrainingModeCard extends ConsumerWidget {
             // Stat 1: Qué toca hoy (lo más importante)
             _Stat(
               icon: suggestion.isRestDay ? Icons.bedtime : Icons.fitness_center,
-              value: dayName.length > 8 ? '${dayName.substring(0, 8)}...' : dayName,
+              value: dayName.length > 8
+                  ? '${dayName.substring(0, 8)}...'
+                  : dayName,
               label: suggestion.isRestDay ? 'hoy' : 'toca',
             ),
             // Stat 2: Tiempo desde última sesión (formato compacto)
             _Stat(
               icon: Icons.history,
               value: timeSinceCompact,
-              label: timeSinceContextual.contains('semana') 
-                  ? 'sin gym' 
+              label: timeSinceContextual.contains('semana')
+                  ? 'sin gym'
                   : 'última',
             ),
           ],
@@ -774,16 +783,8 @@ class _TrainingModeCard extends ConsumerWidget {
           training.AppColors.bloodRed,
         ],
         stats: const [
-          _Stat(
-            icon: Icons.fitness_center,
-            value: '...',
-            label: 'cargando',
-          ),
-          _Stat(
-            icon: Icons.history,
-            value: '--',
-            label: 'última',
-          ),
+          _Stat(icon: Icons.fitness_center, value: '...', label: 'cargando'),
+          _Stat(icon: Icons.history, value: '--', label: 'última'),
         ],
         onTap: onTap,
         isDark: true,
@@ -797,16 +798,8 @@ class _TrainingModeCard extends ConsumerWidget {
           training.AppColors.bloodRed,
         ],
         stats: const [
-          _Stat(
-            icon: Icons.error,
-            value: '--',
-            label: 'error',
-          ),
-          _Stat(
-            icon: Icons.history,
-            value: '--',
-            label: 'última',
-          ),
+          _Stat(icon: Icons.error, value: '--', label: 'error'),
+          _Stat(icon: Icons.history, value: '--', label: 'última'),
         ],
         onTap: onTap,
         isDark: true,
@@ -820,15 +813,12 @@ class _MiniProgressRing extends StatelessWidget {
   final double progress;
   final int remaining;
 
-  const _MiniProgressRing({
-    required this.progress,
-    required this.remaining,
-  });
+  const _MiniProgressRing({required this.progress, required this.remaining});
 
   @override
   Widget build(BuildContext context) {
     final isOverLimit = progress > 1.0;
-    
+
     return SizedBox(
       width: 48,
       height: 48,

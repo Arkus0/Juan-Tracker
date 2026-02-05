@@ -15,14 +15,14 @@ import 'habitual_food_provider.dart';
 // ============================================================================
 
 /// Estados posibles de la búsqueda
-enum SearchStatus { 
-  idle,           // Sin búsqueda activa
-  loading,        // Buscando (primera página)
-  loadingMore,    // Cargando más resultados (paginación)
-  success,        // Búsqueda exitosa con resultados
-  error,          // Error en la búsqueda
-  empty,          // Sin resultados (con sugerencias)
-  offline,        // Modo offline con resultados locales
+enum SearchStatus {
+  idle, // Sin búsqueda activa
+  loading, // Buscando (primera página)
+  loadingMore, // Cargando más resultados (paginación)
+  success, // Búsqueda exitosa con resultados
+  error, // Error en la búsqueda
+  empty, // Sin resultados (con sugerencias)
+  offline, // Modo offline con resultados locales
 }
 
 /// Estado completo de la búsqueda
@@ -34,7 +34,7 @@ class FoodSearchState {
   final int page;
   final bool hasMore;
   final bool isOnline;
-  
+
   // Para estado "sin resultados" inteligente
   final List<String> suggestions;
   final List<Food> popularAlternatives;
@@ -82,7 +82,7 @@ class FoodSearchState {
   bool get isLoading => status == SearchStatus.loading;
   bool get isLoadingMore => status == SearchStatus.loadingMore;
   bool get hasResults => results.isNotEmpty;
-  
+
   /// Obtiene los resultados como lista de Food (desempaqueta ScoredFood)
   List<Food> get foods => results.map((r) => r.food).toList();
 }
@@ -97,11 +97,12 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
   // La búsqueda local FTS5 es ~5ms, no necesita debounce
   Timer? _onlineDebounceTimer;
   CancelToken? _cancelToken;
-  
+  int _searchVersion = 0;
+
   // Debounce solo aplicado a búsqueda online (más lenta)
   // ignore: unused_field - Reservado para implementación futura de debounce en searchOnline()
   static const _onlineDebounceDuration = Duration(milliseconds: 300);
-  
+
   // Minimum query length for DB search (short queries show recents)
   static const _minQueryLength = 3;
 
@@ -117,12 +118,12 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
   }
 
   /// Inicia una búsqueda LOCAL **instantánea** (sin debounce)
-  /// 
+  ///
   /// OPT-1 PERFORMANCE: Búsqueda FTS5 es ~5ms, no necesita debounce.
   /// Esto reduce TTFR de ~160ms a ~30ms (6x más rápido).
-  /// 
+  ///
   /// Para buscar en internet, usar `searchOnline()` después.
-  /// 
+  ///
   /// OPTIMIZATION: Short queries (<3 chars) don't scan DB.
   /// Instead, we show recents/frequent foods.
   void search(String query) {
@@ -130,16 +131,17 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
     _cancelToken?.cancel();
 
     final trimmed = query.trim();
-    
+    final version = ++_searchVersion;
+
     if (trimmed.isEmpty) {
       state = const FoodSearchState();
       return;
     }
-    
+
     // SHORT QUERY POLICY: < 3 chars → show recents, no DB scan
     // This is critical for performance on large DBs
     if (trimmed.length < _minQueryLength) {
-      _handleShortQuery(trimmed);
+      _handleShortQuery(trimmed, version);
       return;
     }
 
@@ -156,21 +158,23 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
 
     // OPT-1: Ejecutar búsqueda local INMEDIATAMENTE (sin debounce)
     // FTS5 indexado es O(log n), ~5ms para 600k productos
-    _performSearchImmediate(trimmed);
+    _performSearchImmediate(trimmed, version);
   }
-  
+
   /// Ejecuta búsqueda local sin debounce (fire-and-forget async)
-  void _performSearchImmediate(String query) {
+  void _performSearchImmediate(String query, int version) {
     // Usar unawaited para no bloquear, pero manejar errores
     Future(() async {
-      if (!ref.mounted) return;
-      await _performSearch(query);
+      if (!ref.mounted || version != _searchVersion) return;
+      await _performSearch(query, version);
     });
   }
 
   /// Handles short queries (< 3 chars) by showing recents
   /// without scanning the full database
-  Future<void> _handleShortQuery(String query) async {
+  Future<void> _handleShortQuery(String query, int version) async {
+    if (!ref.mounted || version != _searchVersion) return;
+
     state = state.copyWith(
       query: query,
       status: SearchStatus.idle,
@@ -178,33 +182,32 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
       suggestions: const ['Escribe 3+ caracteres para buscar'],
       showCreateCustom: false,
     );
-    
+
     // Show recent/frequent foods as alternatives
     try {
       final repository = ref.read(alimentoRepositoryProvider);
       final recents = await repository.getRecentlyUsed(limit: 10);
-      
-      if (!ref.mounted) return;
-      
-      state = state.copyWith(
-        popularAlternatives: recents,
-      );
+
+      if (!ref.mounted || version != _searchVersion) return;
+
+      state = state.copyWith(popularAlternatives: recents);
     } catch (e) {
       debugPrint('[FoodSearch] Error loading recents for short query: $e');
     }
   }
 
   /// Ejecuta la búsqueda real (solo LOCAL - instantánea)
-  Future<void> _performSearch(String query) async {
+  Future<void> _performSearch(String query, int version) async {
     try {
       final repository = ref.read(alimentoRepositoryProvider);
-      
+
       // Búsqueda LOCAL instantánea (FTS5)
       final results = await repository.search(query, limit: 50);
+      if (!ref.mounted || version != _searchVersion) return;
 
       if (results.isEmpty) {
         // Sin resultados - generar sugerencias inteligentes
-        await _handleEmptyResults(query);
+        await _handleEmptyResults(query, version);
       } else {
         state = state.copyWith(
           status: SearchStatus.success,
@@ -218,10 +221,11 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
       }
 
       // Guardar en historial (fire-and-forget, no afecta la búsqueda)
-      repository.recordSearch(query, hasResults: results.isNotEmpty).catchError((e) {
-        debugPrint('[FoodSearch] Error recording search: $e');
-      });
-      
+      repository.recordSearch(query, hasResults: results.isNotEmpty).catchError(
+        (e) {
+          debugPrint('[FoodSearch] Error recording search: $e');
+        },
+      );
     } catch (e) {
       debugPrint('[FoodSearch] Search error: $e');
       state = state.copyWith(
@@ -231,42 +235,46 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
       );
     }
   }
-  
+
   /// Búsqueda ONLINE en Open Food Facts (acción explícita del usuario)
-  /// 
+  ///
   /// Llamar cuando el usuario pulsa "Buscar en internet"
   Future<void> searchOnline() async {
     final query = state.query;
     if (query.isEmpty) return;
-    
+
     // Cancelar búsqueda anterior
     _cancelToken?.cancel();
     _cancelToken = CancelToken();
-    
+
     // Marcar como cargando pero mantener resultados actuales
     state = state.copyWith(status: SearchStatus.loading);
-    
+
     try {
       final repository = ref.read(alimentoRepositoryProvider);
-      
+
       // Búsqueda en Open Food Facts
       final onlineResults = await repository.searchOnline(
         query,
         limit: 30,
         cancelToken: _cancelToken,
       );
-      
+
       if (onlineResults.isEmpty) {
         // No encontró nada en OFF
         state = state.copyWith(
-          status: state.results.isEmpty ? SearchStatus.empty : SearchStatus.success,
+          status: state.results.isEmpty
+              ? SearchStatus.empty
+              : SearchStatus.success,
           showCreateCustom: true,
         );
       } else {
         // Combinar con resultados existentes (sin duplicados)
         final existingIds = state.results.map((r) => r.food.id).toSet();
-        final newResults = onlineResults.where((r) => !existingIds.contains(r.food.id)).toList();
-        
+        final newResults = onlineResults
+            .where((r) => !existingIds.contains(r.food.id))
+            .toList();
+
         state = state.copyWith(
           status: SearchStatus.success,
           results: [...state.results, ...newResults],
@@ -275,30 +283,38 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
       }
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) return;
-      
+
       state = state.copyWith(
-        status: state.results.isEmpty ? SearchStatus.error : SearchStatus.success,
+        status: state.results.isEmpty
+            ? SearchStatus.error
+            : SearchStatus.success,
         errorMessage: 'Error de conexión',
       );
     } catch (e) {
       debugPrint('[FoodSearch] Online search error: $e');
       state = state.copyWith(
-        status: state.results.isEmpty ? SearchStatus.error : SearchStatus.success,
+        status: state.results.isEmpty
+            ? SearchStatus.error
+            : SearchStatus.success,
         errorMessage: 'Error al buscar en internet',
       );
     }
   }
 
   /// Maneja el caso de búsqueda sin resultados
-  Future<void> _handleEmptyResults(String query) async {
+  Future<void> _handleEmptyResults(String query, int version) async {
     try {
+      if (!ref.mounted || version != _searchVersion) return;
+
       final repository = ref.read(alimentoRepositoryProvider);
-      
+
       // Generar sugerencias basadas en términos similares
       final suggestions = await _generateSuggestions(query);
-      
+      if (!ref.mounted || version != _searchVersion) return;
+
       // Buscar alternativas populares
       final alternatives = await repository.getHabitualFoods(limit: 5);
+      if (!ref.mounted || version != _searchVersion) return;
 
       state = state.copyWith(
         status: SearchStatus.empty,
@@ -325,17 +341,20 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
     final suggestions = <String>[];
     final lowerQuery = query.toLowerCase().trim();
     final terms = lowerQuery.split(' ');
-    
+
     // Sugerir términos más genéricos
     if (terms.length > 1) {
       suggestions.add(terms.first);
     }
-    
+
     // Buscar en historial queries similares
     final repository = ref.read(alimentoRepositoryProvider);
-    final historySuggestions = await repository.getSuggestions(lowerQuery, limit: 3);
+    final historySuggestions = await repository.getSuggestions(
+      lowerQuery,
+      limit: 3,
+    );
     suggestions.addAll(historySuggestions);
-    
+
     return suggestions.take(3).toList();
   }
 
@@ -349,20 +368,19 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
 
     try {
       final repository = ref.read(alimentoRepositoryProvider);
-      
+
       // Nota: La paginación real requeriría offset en el repository
       // Por ahora simplemente indicamos que no hay más
       final moreResults = await repository.search(state.query, limit: 50);
 
       // Filtrar solo nuevos resultados
       final existingIds = state.results.map((r) => r.food.id).toSet();
-      final newResults = moreResults.where((r) => !existingIds.contains(r.food.id)).toList();
+      final newResults = moreResults
+          .where((r) => !existingIds.contains(r.food.id))
+          .toList();
 
       if (newResults.isEmpty) {
-        state = state.copyWith(
-          status: SearchStatus.success,
-          hasMore: false,
-        );
+        state = state.copyWith(status: SearchStatus.success, hasMore: false);
       } else {
         state = state.copyWith(
           status: SearchStatus.success,
@@ -372,17 +390,14 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(
-        status: SearchStatus.success,
-        hasMore: false,
-      );
+      state = state.copyWith(status: SearchStatus.success, hasMore: false);
     }
   }
 
   /// Sugerencias de autocompletado (sin debounce, para UI responsiva)
   Future<List<String>> getAutocompleteSuggestions(String prefix) async {
     if (prefix.length < 2) return [];
-    
+
     final repository = ref.read(alimentoRepositoryProvider);
     return repository.getSuggestions(prefix, limit: 8);
   }
@@ -403,6 +418,7 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
 
   /// Limpiar búsqueda actual
   void clear() {
+    _searchVersion++;
     _onlineDebounceTimer?.cancel();
     _cancelToken?.cancel();
     state = const FoodSearchState();
@@ -410,8 +426,9 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
 
   /// Fuerza una búsqueda inmediata (ya es el comportamiento por defecto)
   Future<void> searchImmediate(String query) async {
+    final version = ++_searchVersion;
     _onlineDebounceTimer?.cancel();
-    await _performSearch(query);
+    await _performSearch(query, version);
   }
 }
 
@@ -420,9 +437,10 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
 // ============================================================================
 
 /// Provider principal de búsqueda de alimentos
-final foodSearchProvider = rp.NotifierProvider<FoodSearchNotifier, FoodSearchState>(
-  FoodSearchNotifier.new,
-);
+final foodSearchProvider =
+    rp.NotifierProvider<FoodSearchNotifier, FoodSearchState>(
+      FoodSearchNotifier.new,
+    );
 
 /// Notifier simple para el query de búsqueda
 class SearchQueryNotifier extends rp.Notifier<String> {
@@ -444,28 +462,27 @@ class SearchFiltersNotifier extends rp.Notifier<SearchFilters> {
 }
 
 /// Provider de filtros de búsqueda
-final searchFiltersProvider = rp.NotifierProvider<SearchFiltersNotifier, SearchFilters>(
-  SearchFiltersNotifier.new,
-);
+final searchFiltersProvider =
+    rp.NotifierProvider<SearchFiltersNotifier, SearchFilters>(
+      SearchFiltersNotifier.new,
+    );
 
 /// Sugerencias predictivas basadas en hora/contexto
 final predictiveFoodsProvider = rp.Provider<Future<List<Food>>>((ref) async {
   final repository = ref.read(alimentoRepositoryProvider);
-  return repository.getHabitualFoods(
-    dateTime: DateTime.now(),
-    limit: 10,
-  );
+  return repository.getHabitualFoods(dateTime: DateTime.now(), limit: 10);
 });
 
 /// Historial de búsquedas recientes
 final recentSearchesProvider = rp.Provider<Future<List<String>>>((ref) async {
   final db = ref.read(appDatabaseProvider);
-  
-  final historial = await (db.select(db.searchHistory)
-    ..orderBy([(h) => OrderingTerm.desc(h.searchedAt)])
-    ..limit(20))
-    .get();
-  
+
+  final historial =
+      await (db.select(db.searchHistory)
+            ..orderBy([(h) => OrderingTerm.desc(h.searchedAt)])
+            ..limit(20))
+          .get();
+
   // Eliminar duplicados manteniendo orden
   return historial.map((h) => h.query).toSet().toList();
 });
@@ -482,7 +499,8 @@ final favoriteFoodsProvider = rp.Provider<Future<List<Food>>>((ref) async {
 
 /// Extensiones útiles para trabajar con SearchStatus
 extension SearchStatusExtension on SearchStatus {
-  bool get isLoading => this == SearchStatus.loading || this == SearchStatus.loadingMore;
+  bool get isLoading =>
+      this == SearchStatus.loading || this == SearchStatus.loadingMore;
   bool get hasError => this == SearchStatus.error;
   bool get isEmptyState => this == SearchStatus.empty;
   bool get isOffline => this == SearchStatus.offline;

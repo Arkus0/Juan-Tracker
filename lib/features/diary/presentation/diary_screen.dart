@@ -14,6 +14,7 @@ import 'package:juan_tracker/diet/providers/meal_template_providers.dart';
 import 'package:juan_tracker/diet/providers/quick_actions_provider.dart';
 import 'package:juan_tracker/diet/services/day_summary_calculator.dart';
 import 'package:juan_tracker/features/diary/presentation/edit_entry_dialog.dart';
+import 'package:juan_tracker/features/home/providers/home_providers.dart';
 import 'package:juan_tracker/training/database/database.dart' as db;
 
 enum DiaryViewMode { list, calendar }
@@ -24,27 +25,28 @@ class DiaryViewModeNotifier extends Notifier<DiaryViewMode> {
   DiaryViewMode build() => DiaryViewMode.list;
 
   void toggle() {
-    state = state == DiaryViewMode.list 
-        ? DiaryViewMode.calendar 
+    state = state == DiaryViewMode.list
+        ? DiaryViewMode.calendar
         : DiaryViewMode.list;
   }
 
   void setMode(DiaryViewMode mode) => state = mode;
 }
 
-final diaryViewModeProvider = NotifierProvider<DiaryViewModeNotifier, DiaryViewMode>(
-  DiaryViewModeNotifier.new,
-);
+final diaryViewModeProvider =
+    NotifierProvider<DiaryViewModeNotifier, DiaryViewMode>(
+      DiaryViewModeNotifier.new,
+    );
 
 /// Notifier para controlar qué secciones de comida están expandidas
 class ExpandedMealsNotifier extends Notifier<Set<MealType>> {
   @override
   Set<MealType> build() => {
-        MealType.breakfast,
-        MealType.lunch,
-        MealType.dinner,
-        MealType.snack,
-      };
+    MealType.breakfast,
+    MealType.lunch,
+    MealType.dinner,
+    MealType.snack,
+  };
 
   void toggle(MealType mealType) {
     final current = Set<MealType>.from(state);
@@ -57,9 +59,10 @@ class ExpandedMealsNotifier extends Notifier<Set<MealType>> {
   }
 }
 
-final expandedMealsProvider = NotifierProvider<ExpandedMealsNotifier, Set<MealType>>(
-  ExpandedMealsNotifier.new,
-);
+final expandedMealsProvider =
+    NotifierProvider<ExpandedMealsNotifier, Set<MealType>>(
+      ExpandedMealsNotifier.new,
+    );
 
 /// Pantalla principal del Diario con diseño estilo FatSecret
 class DiaryScreen extends ConsumerWidget {
@@ -100,7 +103,8 @@ class DiaryScreen extends ConsumerWidget {
                 button: true,
                 label: 'Ir al día de hoy',
                 child: TextButton(
-                  onPressed: () => ref.read(selectedDateProvider.notifier).goToToday(),
+                  onPressed: () =>
+                      ref.read(selectedDateProvider.notifier).goToToday(),
                   child: const Text('HOY'),
                 ),
               ),
@@ -155,65 +159,61 @@ class DiaryScreen extends ConsumerWidget {
 
           // Secciones de comidas - siempre visibles
           entriesAsync.when(
-              data: (entries) {
-                // Agrupar entradas por tipo de comida
-                final entriesByMeal = <MealType, List<DiaryEntryModel>>{};
-                for (final entry in entries) {
-                  entriesByMeal.putIfAbsent(entry.mealType, () => []).add(entry);
-                }
+            data: (entries) {
+              // Agrupar entradas por tipo de comida
+              final entriesByMeal = <MealType, List<DiaryEntryModel>>{};
+              for (final entry in entries) {
+                entriesByMeal.putIfAbsent(entry.mealType, () => []).add(entry);
+              }
 
-                return SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      // Desayuno
-                      _MealSection(
-                        mealType: MealType.breakfast,
-                        entries: entriesByMeal[MealType.breakfast] ?? [],
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      
-                      // Almuerzo
-                      _MealSection(
-                        mealType: MealType.lunch,
-                        entries: entriesByMeal[MealType.lunch] ?? [],
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      
-                      // Cena
-                      _MealSection(
-                        mealType: MealType.dinner,
-                        entries: entriesByMeal[MealType.dinner] ?? [],
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      
-                      // Snacks
-                      _MealSection(
-                        mealType: MealType.snack,
-                        entries: entriesByMeal[MealType.snack] ?? [],
-                      ),
-                      
-                      const SizedBox(height: 100),
-                    ]),
-                  ),
-                );
-              },
-              loading: () => const SliverFillRemaining(
-                child: DiarySkeleton(),
-              ),
-              error: (e, _) => SliverFillRemaining(
-                child: AppError(
-                  message: 'Error al cargar entradas',
-                  details: e.toString(),
+              return SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Desayuno
+                    _MealSection(
+                      mealType: MealType.breakfast,
+                      entries: entriesByMeal[MealType.breakfast] ?? [],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Almuerzo
+                    _MealSection(
+                      mealType: MealType.lunch,
+                      entries: entriesByMeal[MealType.lunch] ?? [],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Cena
+                    _MealSection(
+                      mealType: MealType.dinner,
+                      entries: entriesByMeal[MealType.dinner] ?? [],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Snacks
+                    _MealSection(
+                      mealType: MealType.snack,
+                      entries: entriesByMeal[MealType.snack] ?? [],
+                    ),
+
+                    const SizedBox(height: 100),
+                  ]),
                 ),
+              );
+            },
+            loading: () => const SliverFillRemaining(child: DiarySkeleton()),
+            error: (e, _) => SliverFillRemaining(
+              child: AppError(
+                message: 'Error al cargar entradas',
+                details: e.toString(),
               ),
             ),
+          ),
 
           // Espacio en vista calendario
           if (viewMode == DiaryViewMode.calendar)
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 100),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
@@ -225,17 +225,14 @@ class _MealSection extends ConsumerWidget {
   final MealType mealType;
   final List<DiaryEntryModel> entries;
 
-  const _MealSection({
-    required this.mealType,
-    required this.entries,
-  });
+  const _MealSection({required this.mealType, required this.entries});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final expandedMeals = ref.watch(expandedMealsProvider);
     final isExpanded = expandedMeals.contains(mealType);
-    
+
     // T5: Totals calculated per build. This is O(n) where n ~ 3-10 entries
     // per meal type. Total work is ~40 operations per rebuild, which is
     // acceptable. Rebuilds only occur when entries actually change.
@@ -253,7 +250,9 @@ class _MealSection extends ConsumerWidget {
             },
             borderRadius: BorderRadius.vertical(
               top: const Radius.circular(AppRadius.lg),
-              bottom: isExpanded ? Radius.zero : const Radius.circular(AppRadius.lg),
+              bottom: isExpanded
+                  ? Radius.zero
+                  : const Radius.circular(AppRadius.lg),
             ),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -263,7 +262,9 @@ class _MealSection extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
-                      color: _getMealColor(mealType).withAlpha((0.2 * 255).round()),
+                      color: _getMealColor(
+                        mealType,
+                      ).withAlpha((0.2 * 255).round()),
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Icon(
@@ -273,7 +274,7 @@ class _MealSection extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
-                  
+
                   // Nombre y totales
                   Expanded(
                     child: Column(
@@ -296,19 +297,21 @@ class _MealSection extends ConsumerWidget {
                           Text(
                             'Sin alimentos',
                             style: AppTypography.bodySmall.copyWith(
-                              color: colors.onSurfaceVariant.withAlpha((0.7 * 255).round()),
+                              color: colors.onSurfaceVariant.withAlpha(
+                                (0.7 * 255).round(),
+                              ),
                             ),
                           ),
                       ],
                     ),
                   ),
-                  
+
                   // Icono expandir/colapsar
                   Icon(
                     isExpanded ? Icons.expand_less : Icons.expand_more,
                     color: colors.onSurfaceVariant,
                   ),
-                  
+
                   // Menú de opciones (solo si hay entries)
                   if (entries.isNotEmpty)
                     PopupMenuButton<String>(
@@ -332,7 +335,12 @@ class _MealSection extends ConsumerWidget {
                       ],
                       onSelected: (value) {
                         if (value == 'save_template') {
-                          _showSaveAsTemplateDialog(context, ref, mealType, entries);
+                          _showSaveAsTemplateDialog(
+                            context,
+                            ref,
+                            mealType,
+                            entries,
+                          );
                         }
                       },
                     ),
@@ -340,11 +348,11 @@ class _MealSection extends ConsumerWidget {
               ),
             ),
           ),
-          
+
           // Contenido expandible
           if (isExpanded) ...[
             const Divider(height: 1),
-            
+
             if (entries.isEmpty)
               ListTile(
                 leading: Icon(
@@ -354,18 +362,22 @@ class _MealSection extends ConsumerWidget {
                 title: Text(
                   'Añadir ${mealType.displayName.toLowerCase()}',
                   style: TextStyle(
-                    color: colors.onSurfaceVariant.withAlpha((0.7 * 255).round()),
+                    color: colors.onSurfaceVariant.withAlpha(
+                      (0.7 * 255).round(),
+                    ),
                   ),
                 ),
                 onTap: () => _showAddEntry(context, ref, mealType),
               )
             else
-              ...entries.map((entry) => _EntryTile(
-                entry: entry,
-                onTap: () => _editEntry(context, ref, entry),
-                onDelete: () => _deleteEntry(context, ref, entry),
-              )),
-            
+              ...entries.map(
+                (entry) => _EntryTile(
+                  entry: entry,
+                  onTap: () => _editEntry(context, ref, entry),
+                  onDelete: () => _deleteEntry(context, ref, entry),
+                ),
+              ),
+
             // Botón añadir más
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
@@ -386,7 +398,11 @@ class _MealSection extends ConsumerWidget {
     context.pushTo(AppRouter.nutritionFoodSearch);
   }
 
-  void _editEntry(BuildContext context, WidgetRef ref, DiaryEntryModel entry) async {
+  void _editEntry(
+    BuildContext context,
+    WidgetRef ref,
+    DiaryEntryModel entry,
+  ) async {
     final result = await showDialog<DiaryEntryModel>(
       context: context,
       builder: (ctx) => EditEntryDialog(entry: entry),
@@ -407,7 +423,11 @@ class _MealSection extends ConsumerWidget {
     }
   }
 
-  void _deleteEntry(BuildContext context, WidgetRef ref, DiaryEntryModel entry) async {
+  void _deleteEntry(
+    BuildContext context,
+    WidgetRef ref,
+    DiaryEntryModel entry,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -453,7 +473,7 @@ class _MealSection extends ConsumerWidget {
     final nameController = TextEditingController(
       text: '${mealType.displayName} favorito',
     );
-    
+
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -469,10 +489,17 @@ class _MealSection extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            ...entries.take(3).map((e) => Padding(
-              padding: const EdgeInsets.only(left: 8, bottom: 4),
-              child: Text('• ${e.foodName}', style: AppTypography.bodySmall),
-            )),
+            ...entries
+                .take(3)
+                .map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.only(left: 8, bottom: 4),
+                    child: Text(
+                      '• ${e.foodName}',
+                      style: AppTypography.bodySmall,
+                    ),
+                  ),
+                ),
             if (entries.length > 3)
               Padding(
                 padding: const EdgeInsets.only(left: 8),
@@ -507,22 +534,18 @@ class _MealSection extends ConsumerWidget {
         ],
       ),
     );
-    
+
     if (result != null && result.trim().isNotEmpty && context.mounted) {
       // Convertir DiaryEntryModel a DiaryEntry de la DB
       final dbEntries = await _convertToDbEntries(ref, entries);
-      
+
       // Convertir MealType a db.MealType
       final dbMealType = _convertToDbMealType(mealType);
-      
+
       final template = await ref
           .read(saveMealAsTemplateProvider.notifier)
-          .save(
-            name: result.trim(),
-            mealType: dbMealType,
-            entries: dbEntries,
-          );
-          
+          .save(name: result.trim(), mealType: dbMealType, entries: dbEntries);
+
       if (context.mounted) {
         if (template != null) {
           AppSnackbar.show(
@@ -544,20 +567,22 @@ class _MealSection extends ConsumerWidget {
     WidgetRef ref,
     List<DiaryEntryModel> entries,
   ) async {
+    if (entries.isEmpty) return [];
+
     final database = ref.read(appDatabaseProvider);
-    final dbEntries = <db.DiaryEntry>[];
-    
-    for (final entry in entries) {
-      final dbEntry = await (database.select(database.diaryEntries)
-        ..where((e) => e.id.equals(entry.id)))
-        .getSingleOrNull();
-      
-      if (dbEntry != null) {
-        dbEntries.add(dbEntry);
-      }
-    }
-    
-    return dbEntries;
+    final ids = entries.map((entry) => entry.id).toSet().toList();
+    final fetchedEntries = await (database.select(
+      database.diaryEntries,
+    )..where((e) => e.id.isIn(ids))).get();
+
+    final entriesById = {
+      for (final dbEntry in fetchedEntries) dbEntry.id: dbEntry,
+    };
+
+    return entries
+        .map((entry) => entriesById[entry.id])
+        .whereType<db.DiaryEntry>()
+        .toList();
   }
 
   /// Convierte MealType de modelo a MealType de DB
@@ -646,9 +671,7 @@ class _EntryTile extends StatelessWidget {
       child: ListTile(
         title: Text(
           entry.foodName,
-          style: AppTypography.bodyMedium.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
           '${entry.amount.toStringAsFixed(0)} ${entry.unit.name} · ${entry.kcal} kcal',
@@ -731,9 +754,13 @@ class _WeekCalendar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? colors.primary
-                    : (isToday ? colors.primaryContainer : colors.surfaceContainerHighest),
+                    : (isToday
+                          ? colors.primaryContainer
+                          : colors.surfaceContainerHighest),
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: (isToday && !isSelected) ? Border.all(color: colors.primary) : null,
+                border: (isToday && !isSelected)
+                    ? Border.all(color: colors.primary)
+                    : null,
               ),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 52),
@@ -746,7 +773,9 @@ class _WeekCalendar extends StatelessWidget {
                       child: Text(
                         dayName,
                         style: AppTypography.labelSmall.copyWith(
-                          color: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
+                          color: isSelected
+                              ? colors.onPrimary
+                              : colors.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -756,7 +785,9 @@ class _WeekCalendar extends StatelessWidget {
                       child: Text(
                         '${date.day}',
                         style: AppTypography.dataSmall.copyWith(
-                          color: isSelected ? colors.onPrimary : colors.onSurface,
+                          color: isSelected
+                              ? colors.onPrimary
+                              : colors.onSurface,
                         ),
                       ),
                     ),
@@ -909,13 +940,13 @@ class _MonthCalendar extends ConsumerWidget {
   }
 }
 
-class _DailySummaryCard extends StatelessWidget {
+class _DailySummaryCard extends ConsumerWidget {
   final DaySummary summary;
 
   const _DailySummaryCard({required this.summary});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final hasTargets = summary.hasTargets;
     final kcalRemaining = summary.progress.kcalRemaining ?? 0;
@@ -942,9 +973,15 @@ class _DailySummaryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          hasTargets ? '$kcalRemaining' : '${summary.consumed.kcal}',
+                          hasTargets
+                              ? '$kcalRemaining'
+                              : '${summary.consumed.kcal}',
                           style: AppTypography.dataLarge.copyWith(
-                            color: _getKcalColor(kcalRemaining, hasTargets, colors),
+                            color: _getKcalColor(
+                              kcalRemaining,
+                              hasTargets,
+                              colors,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -980,7 +1017,7 @@ class _DailySummaryCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             InkWell(
               onTap: () {
-                context.pushTo(AppRouter.nutritionCoach);
+                ref.read(homeTabProvider.notifier).goToCoach();
               },
               borderRadius: BorderRadius.circular(AppRadius.md),
               child: Container(
@@ -1006,8 +1043,9 @@ class _DailySummaryCard extends StatelessWidget {
                           Text(
                             'Define calorías y macros',
                             style: AppTypography.bodySmall.copyWith(
-                              color: colors.onPrimaryContainer
-                                  .withAlpha((0.7 * 255).round()),
+                              color: colors.onPrimaryContainer.withAlpha(
+                                (0.7 * 255).round(),
+                              ),
                             ),
                           ),
                         ],
@@ -1037,7 +1075,10 @@ class _DailySummaryCard extends StatelessWidget {
                   color: AppColors.error,
                   progress: summary.progress.proteinPercent ?? 0,
                   showRemaining: summary.hasTargets,
-                  isOver: _isOverTarget(summary.targets?.proteinTarget, summary.consumed.protein),
+                  isOver: _isOverTarget(
+                    summary.targets?.proteinTarget,
+                    summary.consumed.protein,
+                  ),
                 ),
               ),
               Expanded(
@@ -1051,7 +1092,10 @@ class _DailySummaryCard extends StatelessWidget {
                   color: AppColors.warning,
                   progress: summary.progress.carbsPercent ?? 0,
                   showRemaining: summary.hasTargets,
-                  isOver: _isOverTarget(summary.targets?.carbsTarget, summary.consumed.carbs),
+                  isOver: _isOverTarget(
+                    summary.targets?.carbsTarget,
+                    summary.consumed.carbs,
+                  ),
                 ),
               ),
               Expanded(
@@ -1065,7 +1109,10 @@ class _DailySummaryCard extends StatelessWidget {
                   color: AppColors.info,
                   progress: summary.progress.fatPercent ?? 0,
                   showRemaining: summary.hasTargets,
-                  isOver: _isOverTarget(summary.targets?.fatTarget, summary.consumed.fat),
+                  isOver: _isOverTarget(
+                    summary.targets?.fatTarget,
+                    summary.consumed.fat,
+                  ),
                 ),
               ),
             ],
@@ -1093,7 +1140,7 @@ class _DailySummaryCard extends StatelessWidget {
     }
     return remaining.toStringAsFixed(0);
   }
-  
+
   /// Verifica si un macro está en exceso
   bool _isOverTarget(double? target, double consumed) {
     if (target == null) return false;
@@ -1105,10 +1152,7 @@ class _MacroDonut extends StatelessWidget {
   final double progress;
   final int? remaining;
 
-  const _MacroDonut({
-    required this.progress,
-    required this.remaining,
-  });
+  const _MacroDonut({required this.progress, required this.remaining});
 
   @override
   Widget build(BuildContext context) {
@@ -1175,8 +1219,8 @@ class _MacroItem extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     // Cuando hay exceso, usar color de error
     final displayColor = isOver ? AppColors.error : color;
-    final labelText = isOver 
-        ? '$label exceso' 
+    final labelText = isOver
+        ? '$label exceso'
         : (showRemaining ? '$label rest.' : label);
 
     return Column(
@@ -1253,10 +1297,7 @@ class _ViewModeToggle extends StatelessWidget {
   final DiaryViewMode viewMode;
   final ValueChanged<DiaryViewMode> onModeChanged;
 
-  const _ViewModeToggle({
-    required this.viewMode,
-    required this.onModeChanged,
-  });
+  const _ViewModeToggle({required this.viewMode, required this.onModeChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -1512,7 +1553,9 @@ class _RepeatYesterdayButton extends ConsumerWidget {
                   Text(
                     '$entryCount alimentos · $totalKcal kcal',
                     style: AppTypography.labelSmall.copyWith(
-                      color: colors.onSecondaryContainer.withAlpha((0.7 * 255).round()),
+                      color: colors.onSecondaryContainer.withAlpha(
+                        (0.7 * 255).round(),
+                      ),
                     ),
                   ),
                 ],
@@ -1527,7 +1570,7 @@ class _RepeatYesterdayButton extends ConsumerWidget {
   Future<void> _repeatYesterday(BuildContext context, WidgetRef ref) async {
     final selectedDate = ref.read(selectedDateProvider);
     final targetDateLabel = DateFormat('EEEE d', 'es').format(selectedDate);
-    
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1551,12 +1594,16 @@ class _RepeatYesterdayButton extends ConsumerWidget {
     if (confirmed == true && context.mounted) {
       final repeatFn = ref.read(repeatYesterdayProvider);
       final count = await repeatFn();
-      
+
       if (context.mounted) {
         if (count == 0) {
           AppSnackbar.show(context, message: 'Ya tienes esas comidas añadidas');
         } else if (count < entryCount) {
-          AppSnackbar.show(context, message: '$count alimentos añadidos (${entryCount - count} ya existían)');
+          AppSnackbar.show(
+            context,
+            message:
+                '$count alimentos añadidos (${entryCount - count} ya existían)',
+          );
         } else {
           AppSnackbar.show(context, message: '$count alimentos añadidos');
         }
@@ -1578,13 +1625,11 @@ class _RecentFoodChip extends ConsumerWidget {
     return Tooltip(
       message: '${food.kcal} kcal · Toca para añadir',
       child: ActionChip(
-        avatar: Icon(
-          Icons.add_circle_outline,
-          size: 14,
-          color: colors.primary,
-        ),
+        avatar: Icon(Icons.add_circle_outline, size: 14, color: colors.primary),
         label: Text(
-          food.name.length > 15 ? '${food.name.substring(0, 15)}...' : food.name,
+          food.name.length > 15
+              ? '${food.name.substring(0, 15)}...'
+              : food.name,
           style: AppTypography.labelSmall,
         ),
         onPressed: () => _showMealSelector(context, ref),
@@ -1620,14 +1665,16 @@ class _RecentFoodChip extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              ...MealType.values.map((mealType) => ListTile(
-                leading: Icon(_getMealIcon(mealType)),
-                title: Text(mealType.displayName),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _addToMeal(context, ref, mealType);
-                },
-              )),
+              ...MealType.values.map(
+                (mealType) => ListTile(
+                  leading: Icon(_getMealIcon(mealType)),
+                  title: Text(mealType.displayName),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _addToMeal(context, ref, mealType);
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -1644,10 +1691,14 @@ class _RecentFoodChip extends ConsumerWidget {
     };
   }
 
-  Future<void> _addToMeal(BuildContext context, WidgetRef ref, MealType mealType) async {
+  Future<void> _addToMeal(
+    BuildContext context,
+    WidgetRef ref,
+    MealType mealType,
+  ) async {
     final diaryRepo = ref.read(diaryRepositoryProvider);
     final selectedDate = ref.read(selectedDateProvider);
-    
+
     // Crear entrada del diario con el alimento reciente usando su última cantidad
     final entry = DiaryEntryModel(
       id: '${DateTime.now().millisecondsSinceEpoch}_quick',
@@ -1664,12 +1715,12 @@ class _RecentFoodChip extends ConsumerWidget {
       fat: food.fat,
       createdAt: DateTime.now(),
     );
-    
+
     await diaryRepo.insert(entry);
-    
+
     if (context.mounted) {
       AppSnackbar.show(
-        context, 
+        context,
         message: '${food.name} añadido a ${mealType.displayName}',
       );
     }
@@ -1689,19 +1740,17 @@ class _TemplateChip extends ConsumerWidget {
     return Tooltip(
       message: '${template.itemCount} items · ${template.totalKcal} kcal',
       child: ActionChip(
-        avatar: Icon(
-          Icons.bookmark,
-          size: 14,
-          color: colors.tertiary,
-        ),
+        avatar: Icon(Icons.bookmark, size: 14, color: colors.tertiary),
         label: Text(
-          template.name.length > 15 
-              ? '${template.name.substring(0, 15)}...' 
+          template.name.length > 15
+              ? '${template.name.substring(0, 15)}...'
               : template.name,
           style: AppTypography.labelSmall,
         ),
         onPressed: () => _showMealSelector(context, ref),
-        backgroundColor: colors.tertiaryContainer.withAlpha((0.5 * 255).round()),
+        backgroundColor: colors.tertiaryContainer.withAlpha(
+          (0.5 * 255).round(),
+        ),
         side: BorderSide.none,
         padding: const EdgeInsets.symmetric(horizontal: 4),
         visualDensity: VisualDensity.compact,
@@ -1733,14 +1782,16 @@ class _TemplateChip extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              ...MealType.values.map((mealType) => ListTile(
-                leading: Icon(_getMealIcon(mealType)),
-                title: Text(mealType.displayName),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _applyTemplate(context, ref, mealType);
-                },
-              )),
+              ...MealType.values.map(
+                (mealType) => ListTile(
+                  leading: Icon(_getMealIcon(mealType)),
+                  title: Text(mealType.displayName),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _applyTemplate(context, ref, mealType);
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -1757,9 +1808,13 @@ class _TemplateChip extends ConsumerWidget {
     };
   }
 
-  Future<void> _applyTemplate(BuildContext context, WidgetRef ref, MealType mealType) async {
+  Future<void> _applyTemplate(
+    BuildContext context,
+    WidgetRef ref,
+    MealType mealType,
+  ) async {
     final selectedDate = ref.read(selectedDateProvider);
-    
+
     // Convertir MealType de diary a db
     final dbMealType = switch (mealType) {
       MealType.breakfast => db.MealType.breakfast,
@@ -1768,17 +1823,20 @@ class _TemplateChip extends ConsumerWidget {
       MealType.snack => db.MealType.snack,
     };
 
-    final success = await ref.read(useMealTemplateProvider.notifier).apply(
-      templateId: template.id,
-      date: selectedDate,
-      mealType: dbMealType,
-    );
-    
+    final success = await ref
+        .read(useMealTemplateProvider.notifier)
+        .apply(
+          templateId: template.id,
+          date: selectedDate,
+          mealType: dbMealType,
+        );
+
     if (context.mounted) {
       if (success) {
         AppSnackbar.show(
-          context, 
-          message: '${template.itemCount} items añadidos a ${mealType.displayName}',
+          context,
+          message:
+              '${template.itemCount} items añadidos a ${mealType.displayName}',
         );
       } else {
         AppSnackbar.showError(context, message: 'Error al aplicar plantilla');

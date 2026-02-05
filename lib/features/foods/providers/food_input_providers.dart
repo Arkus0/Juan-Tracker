@@ -5,8 +5,8 @@ import '../../../../training/database/database.dart';
 
 /// Modos de entrada de alimentos
 enum FoodInputMode {
-  recent,    // Mostrar alimentos recientes
-  search,    // Modo búsqueda activa
+  recent, // Mostrar alimentos recientes
+  search, // Modo búsqueda activa
   favorites, // Mostrar favoritos
 }
 
@@ -32,22 +32,19 @@ class VoiceInputAmountNotifier extends Notifier<double?> {
 class BatchSelectionState {
   final bool isActive;
   final Set<String> selectedFoodIds;
-  
+
   const BatchSelectionState({
     this.isActive = false,
     this.selectedFoodIds = const {},
   });
-  
-  BatchSelectionState copyWith({
-    bool? isActive,
-    Set<String>? selectedFoodIds,
-  }) {
+
+  BatchSelectionState copyWith({bool? isActive, Set<String>? selectedFoodIds}) {
     return BatchSelectionState(
       isActive: isActive ?? this.isActive,
       selectedFoodIds: selectedFoodIds ?? this.selectedFoodIds,
     );
   }
-  
+
   int get count => selectedFoodIds.length;
   bool isSelected(String foodId) => selectedFoodIds.contains(foodId);
 }
@@ -56,22 +53,24 @@ class BatchSelectionState {
 class BatchSelectionNotifier extends Notifier<BatchSelectionState> {
   @override
   BatchSelectionState build() => const BatchSelectionState();
-  
+
+  /// Activa el modo batch sin selección inicial.
+  void enableBatchMode() {
+    state = const BatchSelectionState(isActive: true, selectedFoodIds: {});
+  }
+
   /// Activa el modo batch con un primer alimento seleccionado
   void startBatch(String foodId) {
-    state = BatchSelectionState(
-      isActive: true,
-      selectedFoodIds: {foodId},
-    );
+    state = BatchSelectionState(isActive: true, selectedFoodIds: {foodId});
   }
-  
+
   /// Toggle selección de un alimento
   void toggleSelection(String foodId) {
     if (!state.isActive) {
       startBatch(foodId);
       return;
     }
-    
+
     final newSet = Set<String>.from(state.selectedFoodIds);
     if (newSet.contains(foodId)) {
       newSet.remove(foodId);
@@ -85,12 +84,12 @@ class BatchSelectionNotifier extends Notifier<BatchSelectionState> {
     }
     state = state.copyWith(selectedFoodIds: newSet);
   }
-  
+
   /// Cancelar modo batch
   void cancelBatch() {
     state = const BatchSelectionState();
   }
-  
+
   /// Obtener los IDs seleccionados y limpiar
   Set<String> consumeSelection() {
     final ids = state.selectedFoodIds;
@@ -100,19 +99,22 @@ class BatchSelectionNotifier extends Notifier<BatchSelectionState> {
 }
 
 /// Provider de batch selection
-final batchSelectionProvider = NotifierProvider<BatchSelectionNotifier, BatchSelectionState>(
-  BatchSelectionNotifier.new,
-);
+final batchSelectionProvider =
+    NotifierProvider<BatchSelectionNotifier, BatchSelectionState>(
+      BatchSelectionNotifier.new,
+    );
 
 /// Provider del modo de entrada actual
-final foodInputModeProvider = NotifierProvider<FoodInputModeNotifier, FoodInputMode>(
-  FoodInputModeNotifier.new,
-);
+final foodInputModeProvider =
+    NotifierProvider<FoodInputModeNotifier, FoodInputMode>(
+      FoodInputModeNotifier.new,
+    );
 
 /// Provider para la cantidad detectada por voz
-final voiceInputAmountProvider = NotifierProvider<VoiceInputAmountNotifier, double?>(
-  VoiceInputAmountNotifier.new,
-);
+final voiceInputAmountProvider =
+    NotifierProvider<VoiceInputAmountNotifier, double?>(
+      VoiceInputAmountNotifier.new,
+    );
 
 /// Provider de alimentos recientes (usados por el usuario)
 final recentFoodsProvider = FutureProvider<List<Food>>((ref) async {

@@ -12,25 +12,23 @@ import 'training/services/timer_audio_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // UX-005: Edge-to-edge rendering para Android 15+
-  SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.edgeToEdge,
-  );
-  
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   // OPT-5: Inicializar en paralelo para reducir cold start ~20-50ms
   // DateFormat y SharedPreferences son independientes
   final initFutures = await Future.wait([
     initializeDateFormatting('es'),
     SharedPreferences.getInstance(),
   ]);
-  
+
   final prefs = initFutures[1] as SharedPreferences;
-  
+
   runApp(
     ProviderScope(
       overrides: getProviderOverrides(prefs),
-      child: const JuanTrackerAppWithLoader(),
+      child: const JuanTrackerApp(),
     ),
   );
 

@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
@@ -10,6 +9,7 @@ import 'package:juan_tracker/diet/providers/goal_projection_providers.dart';
 import 'package:juan_tracker/diet/models/weighin_model.dart';
 import 'package:juan_tracker/diet/models/goal_projection_model.dart';
 import 'package:juan_tracker/diet/services/adaptive_coach_service.dart';
+import 'package:juan_tracker/diet/services/weight_input_validator.dart';
 import 'package:juan_tracker/diet/services/weight_trend_calculator.dart';
 
 import 'package:intl/intl.dart';
@@ -38,7 +38,7 @@ class WeightScreen extends ConsumerWidget {
               child: _MainStatsSection(),
             ),
           ),
-          // Card de proyección de objetivo (Goal ETA)
+          // Card de proyecciÃƒÂ³n de objetivo (Goal ETA)
           const SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -54,7 +54,7 @@ class WeightScreen extends ConsumerWidget {
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
-          // Gráfica de evolución
+          // GrÃƒÂ¡fica de evoluciÃƒÂ³n
           const SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -67,7 +67,7 @@ class WeightScreen extends ConsumerWidget {
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: _ProgressContextCard(),
-          ),
+            ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
           _WeighInsListSliver(),
@@ -82,34 +82,10 @@ class WeightScreen extends ConsumerWidget {
           );
 
           if (result != null && context.mounted) {
-            // Mostrar confirmación más detallada
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.white),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${result.toStringAsFixed(1)} kg registrado',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const Text(
-                            'Perfil actualizado automáticamente',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                backgroundColor: AppColors.success,
-                duration: const Duration(seconds: 3),
-              ),
+            // Mostrar confirmaciÃƒÂ³n mÃƒÂ¡s detallada
+            AppSnackbar.show(
+              context,
+              message: '${result.toStringAsFixed(1)} kg registrado',
             );
             // Forzar refresco de providers
             ref.invalidate(weightTrendProvider);
@@ -162,17 +138,16 @@ class _AddWeightDialogState extends ConsumerState<AddWeightDialog> {
   }
 
   Future<void> _save() async {
-    final text = _weightController.text.trim();
-    final value = double.tryParse(text.replaceAll(',', '.'));
+    final value = WeightInputValidator.parse(_weightController.text);
+    final validationError = WeightInputValidator.validate(
+      _weightController.text,
+    );
 
-    // Validación: peso debe ser un número válido entre 20-500 kg
-    if (value == null || value < 20 || value > 500) {
+    if (value == null || validationError != null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ingresa un peso válido (20-500 kg)'),
-            duration: Duration(seconds: 2),
-          ),
+        AppSnackbar.showError(
+          context,
+          message: validationError ?? 'Ingresa un peso válido',
         );
       }
       return;
@@ -180,7 +155,9 @@ class _AddWeightDialogState extends ConsumerState<AddWeightDialog> {
 
     final repo = ref.read(weighInRepositoryProvider);
     final id = 'wi_${DateTime.now().millisecondsSinceEpoch}';
-    await repo.insert(WeighInModel(id: id, dateTime: _selectedDate, weightKg: value));
+    await repo.insert(
+      WeighInModel(id: id, dateTime: _selectedDate, weightKg: value),
+    );
     if (mounted) {
       Navigator.of(context).pop(value); // Devolver el valor del peso
     }
@@ -204,7 +181,9 @@ class _AddWeightDialogState extends ConsumerState<AddWeightDialog> {
               const Text('Fecha: '),
               TextButton(
                 onPressed: _selectDate,
-                child: Text(DateFormat('d MMM yyyy', 'es').format(_selectedDate)),
+                child: Text(
+                  DateFormat('d MMM yyyy', 'es').format(_selectedDate),
+                ),
               ),
             ],
           ),
@@ -215,16 +194,13 @@ class _AddWeightDialogState extends ConsumerState<AddWeightDialog> {
           onPressed: () => Navigator.of(context).pop(null),
           child: const Text('CANCELAR'),
         ),
-        FilledButton(
-          onPressed: _save,
-          child: const Text('GUARDAR'),
-        ),
+        FilledButton(onPressed: _save, child: const Text('GUARDAR')),
       ],
     );
   }
 }
 
-/// Card de estadísticas principales con tooltips
+/// Card de estadÃƒÂ­sticas principales con tooltips
 class _MainStatsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -243,12 +219,12 @@ class _MainStatsSection extends ConsumerWidget {
           children: [
             Expanded(
               child: _StatCardWithTooltip(
-                label: 'Último',
+                label: 'ÃƒÅ¡ltimo',
                 value: result.latestWeight.toStringAsFixed(1),
                 unit: 'kg',
                 icon: Icons.scale_outlined,
                 color: Theme.of(context).colorScheme.primary,
-                tooltip: 'Tu último peso registrado',
+                tooltip: 'Tu ÃƒÂºltimo peso registrado',
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -259,7 +235,8 @@ class _MainStatsSection extends ConsumerWidget {
                 unit: 'kg',
                 icon: Icons.trending_flat,
                 color: Theme.of(context).colorScheme.secondary,
-                tooltip: 'Media móvil de 7 días que suaviza fluctuaciones diarias',
+                tooltip:
+                    'Media mÃƒÂ³vil de 7 dÃƒÂ­as que suaviza fluctuaciones diarias',
                 onTap: () => _showTrendDetailsDialog(context, result),
               ),
             ),
@@ -267,10 +244,14 @@ class _MainStatsSection extends ConsumerWidget {
             Expanded(
               child: _StatCardWithTooltip(
                 label: 'Semana',
-                value: '${result.weeklyRate >= 0 ? '+' : ''}${result.weeklyRate.toStringAsFixed(1)}',
+                value:
+                    '${result.weeklyRate >= 0 ? '+' : ''}${result.weeklyRate.toStringAsFixed(1)}',
                 unit: 'kg',
-                icon: result.weeklyRate > 0 ? Icons.trending_up : 
-                      result.weeklyRate < 0 ? Icons.trending_down : Icons.trending_flat,
+                icon: result.weeklyRate > 0
+                    ? Icons.trending_up
+                    : result.weeklyRate < 0
+                    ? Icons.trending_down
+                    : Icons.trending_flat,
                 color: _getWeeklyRateColor(result.weeklyRate),
                 tooltip: 'Ritmo de cambio estimado en kg por semana',
                 onTap: () => _showWeekDetailsDialog(context, result),
@@ -317,14 +298,14 @@ class _MainStatsSection extends ConsumerWidget {
               ),
               const Divider(),
               _DetailRow(
-                label: 'EMA (Media Móvil)',
+                label: 'EMA (Media MÃƒÂ³vil)',
                 value: '${result.emaWeight.toStringAsFixed(2)} kg',
                 description: 'Suaviza fluctuaciones diarias',
               ),
               _DetailRow(
                 label: 'Kalman (Filtro)',
                 value: '${result.kalmanWeight.toStringAsFixed(2)} kg',
-                description: 'Estimación más precisa',
+                description: 'EstimaciÃƒÂ³n mÃƒÂ¡s precisa',
               ),
               _DetailRow(
                 label: 'Confianza Kalman',
@@ -333,14 +314,15 @@ class _MainStatsSection extends ConsumerWidget {
               ),
               const Divider(),
               _DetailRow(
-                label: 'Pendiente (R²)',
+                label: 'Pendiente (RÃ‚Â²)',
                 value: '${(result.regressionR2 * 100).round()}%',
-                description: 'Ajuste de regresión lineal',
+                description: 'Ajuste de regresiÃƒÂ³n lineal',
               ),
               _DetailRow(
                 label: 'Varianza',
-                value: '${result.variance >= 0 ? '+' : ''}${result.variance.toStringAsFixed(2)} kg',
-                description: 'Desviación del peso actual vs tendencia',
+                value:
+                    '${result.variance >= 0 ? '+' : ''}${result.variance.toStringAsFixed(2)} kg',
+                description: 'DesviaciÃƒÂ³n del peso actual vs tendencia',
               ),
             ],
           ),
@@ -364,7 +346,7 @@ class _MainStatsSection extends ConsumerWidget {
           children: [
             Icon(Icons.calendar_month, color: colors.primary),
             const SizedBox(width: 8),
-            const Text('Análisis Semanal'),
+            const Text('AnÃƒÂ¡lisis Semanal'),
           ],
         ),
         content: SingleChildScrollView(
@@ -374,33 +356,34 @@ class _MainStatsSection extends ConsumerWidget {
             children: [
               _DetailRow(
                 label: 'Ritmo semanal',
-                value: '${result.weeklyRate >= 0 ? '+' : ''}${result.weeklyRate.toStringAsFixed(2)} kg/sem',
+                value:
+                    '${result.weeklyRate >= 0 ? '+' : ''}${result.weeklyRate.toStringAsFixed(2)} kg/sem',
                 description: result.phaseDescription,
               ),
               const Divider(),
               _DetailRow(
                 label: 'Fase actual',
                 value: _getPhaseName(result.phase),
-                description: '${result.daysInPhase} días en esta fase',
+                description: '${result.daysInPhase} dÃƒÂ­as en esta fase',
               ),
               _DetailRow(
                 label: 'Tendencia diaria',
-                value: '${(result.hwTrend * 1000).round()} g/día',
+                value: '${(result.hwTrend * 1000).round()} g/dÃƒÂ­a',
                 description: 'Modelo Holt-Winters',
               ),
               if (result.hwPrediction7d != null) ...[
                 const Divider(),
                 _DetailRow(
-                  label: 'Predicción 7 días',
+                  label: 'PredicciÃƒÂ³n 7 dÃƒÂ­as',
                   value: '${result.hwPrediction7d!.toStringAsFixed(1)} kg',
                   description: 'Si mantienes este ritmo',
                 ),
               ],
               if (result.hwPrediction30d != null)
                 _DetailRow(
-                  label: 'Predicción 30 días',
+                  label: 'PredicciÃƒÂ³n 30 dÃƒÂ­as',
                   value: '${result.hwPrediction30d!.toStringAsFixed(1)} kg',
-                  description: 'Proyección a un mes',
+                  description: 'ProyecciÃƒÂ³n a un mes',
                 ),
             ],
           ),
@@ -429,7 +412,7 @@ class _MainStatsSection extends ConsumerWidget {
   }
 }
 
-/// Fila de detalle para los diálogos analíticos
+/// Fila de detalle para los diÃƒÂ¡logos analÃƒÂ­ticos
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
@@ -452,26 +435,35 @@ class _DetailRow extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: AppTypography.labelMedium.copyWith(
-                color: colors.onSurfaceVariant,
-              )),
-              Text(value, style: AppTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colors.onSurface,
-              )),
+              Text(
+                label,
+                style: AppTypography.labelMedium.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                value,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colors.onSurface,
+                ),
+              ),
             ],
           ),
-          Text(description, style: AppTypography.bodySmall.copyWith(
-            color: colors.onSurfaceVariant.withAlpha(180),
-            fontSize: 11,
-          )),
+          Text(
+            description,
+            style: AppTypography.bodySmall.copyWith(
+              color: colors.onSurfaceVariant.withAlpha(180),
+              fontSize: 11,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-/// Card de estadística con tooltip informativo
+/// Card de estadÃƒÂ­stica con tooltip informativo
 class _StatCardWithTooltip extends StatelessWidget {
   final String label;
   final String value;
@@ -494,7 +486,9 @@ class _StatCardWithTooltip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: onTap != null ? '$tooltip\n(Pulsa para más detalles)' : tooltip,
+      message: onTap != null
+          ? '$tooltip\n(Pulsa para mÃƒÂ¡s detalles)'
+          : tooltip,
       preferBelow: true,
       child: AppStatCard(
         label: label,
@@ -508,7 +502,7 @@ class _StatCardWithTooltip extends StatelessWidget {
   }
 }
 
-/// Card con gráfica de evolución de peso
+/// Card con grÃƒÂ¡fica de evoluciÃƒÂ³n de peso
 class _WeightChartCard extends ConsumerWidget {
   const _WeightChartCard();
 
@@ -524,7 +518,9 @@ class _WeightChartCard extends ConsumerWidget {
 
         return Card(
           elevation: 0,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -538,8 +534,8 @@ class _WeightChartCard extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Evolución (30 días)',
-                      style: GoogleFonts.montserrat(
+                      'EvoluciÃƒÂ³n (30 dÃƒÂ­as)',
+                      style: AppTypography.bodyMedium.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -562,9 +558,9 @@ class _WeightChartCard extends ConsumerWidget {
   }
 }
 
-/// Gráfica de línea para evolución de peso
+/// GrÃƒÂ¡fica de lÃƒÂ­nea para evoluciÃƒÂ³n de peso
 /// PERF: Uses memoized stats from weightChartStatsProvider
-/// FEATURE: Muestra línea de objetivo si hay CoachPlan activo
+/// FEATURE: Muestra lÃƒÂ­nea de objetivo si hay CoachPlan activo
 class _WeightLineChart extends ConsumerWidget {
   final List<WeighInModel> weighIns;
 
@@ -581,7 +577,7 @@ class _WeightLineChart extends ConsumerWidget {
     return statsAsync.when(
       data: (stats) {
         if (stats == null) {
-          return const Center(child: Text('Se necesitan más datos'));
+          return const Center(child: Text('Se necesitan mÃƒÂ¡s datos'));
         }
         return _buildChart(context, theme, stats, goalWeight);
       },
@@ -590,16 +586,20 @@ class _WeightLineChart extends ConsumerWidget {
     );
   }
 
-  Widget _buildChart(BuildContext context, ThemeData theme, WeightChartStats stats, double? goalWeight) {
+  Widget _buildChart(
+    BuildContext context,
+    ThemeData theme,
+    WeightChartStats stats,
+    double? goalWeight,
+  ) {
     // Filter to last 30 days for display
     final cutoffDate = DateTime.now().subtract(const Duration(days: 30));
-    final filteredWeighIns = weighIns
-        .where((w) => w.dateTime.isAfter(cutoffDate))
-        .toList()
-      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    final filteredWeighIns =
+        weighIns.where((w) => w.dateTime.isAfter(cutoffDate)).toList()
+          ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
     if (filteredWeighIns.length < 2) {
-      return const Center(child: Text('Se necesitan más datos'));
+      return const Center(child: Text('Se necesitan mÃƒÂ¡s datos'));
     }
 
     // PERF: Use pre-computed values from provider
@@ -608,11 +608,11 @@ class _WeightLineChart extends ConsumerWidget {
     final weightRange = stats.weightRange;
     final padding = stats.padding;
 
-    // Ajustar límites para incluir el peso objetivo si existe
-    final adjustedMinWeight = goalWeight != null 
+    // Ajustar lÃƒÂ­mites para incluir el peso objetivo si existe
+    final adjustedMinWeight = goalWeight != null
         ? (minWeight < goalWeight ? minWeight : goalWeight)
         : minWeight;
-    final adjustedMaxWeight = goalWeight != null 
+    final adjustedMaxWeight = goalWeight != null
         ? (maxWeight > goalWeight ? maxWeight : goalWeight)
         : maxWeight;
     final adjustedPadding = padding;
@@ -621,7 +621,7 @@ class _WeightLineChart extends ConsumerWidget {
       return FlSpot(entry.key.toDouble(), entry.value.weightKg);
     }).toList();
 
-    // Línea de objetivo (horizontal punteada)
+    // LÃƒÂ­nea de objetivo (horizontal punteada)
     final goalSpots = goalWeight != null
         ? [
             FlSpot(0, goalWeight),
@@ -668,7 +668,7 @@ class _WeightLineChart extends ConsumerWidget {
         minY: adjustedMinWeight - adjustedPadding,
         maxY: adjustedMaxWeight + adjustedPadding,
         lineBarsData: [
-          // Línea principal de peso
+          // LÃƒÂ­nea principal de peso
           LineChartBarData(
             spots: spots,
             isCurved: true,
@@ -691,7 +691,7 @@ class _WeightLineChart extends ConsumerWidget {
               color: theme.colorScheme.primary.withAlpha((0.1 * 255).round()),
             ),
           ),
-          // Línea de objetivo (punteada)
+          // LÃƒÂ­nea de objetivo (punteada)
           if (goalSpots.isNotEmpty)
             LineChartBarData(
               spots: goalSpots,
@@ -699,36 +699,43 @@ class _WeightLineChart extends ConsumerWidget {
               color: AppColors.success.withAlpha((0.7 * 255).round()),
               barWidth: 2,
               isStrokeCapRound: true,
-              dashArray: [8, 4], // Línea punteada
+              dashArray: [8, 4], // LÃƒÂ­nea punteada
               dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(show: false),
             ),
         ],
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (touchedSpot) => theme.colorScheme.surfaceContainerHighest,
+            getTooltipColor: (touchedSpot) =>
+                theme.colorScheme.surfaceContainerHighest,
             getTooltipItems: (touchedSpots) {
-              return touchedSpots.map((spot) {
-                // Solo mostrar tooltip para la línea principal (no para goal line)
-                if (spot.barIndex != 0) return null;
-                final weighIn = filteredWeighIns[spot.x.toInt()];
-                return LineTooltipItem(
-                  '${weighIn.weightKg.toStringAsFixed(1)} kg\n',
-                  TextStyle(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: DateFormat('d MMM', 'es').format(weighIn.dateTime),
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 12,
+              return touchedSpots
+                  .map((spot) {
+                    // Solo mostrar tooltip para la lÃƒÂ­nea principal (no para goal line)
+                    if (spot.barIndex != 0) return null;
+                    final weighIn = filteredWeighIns[spot.x.toInt()];
+                    return LineTooltipItem(
+                      '${weighIn.weightKg.toStringAsFixed(1)} kg\n',
+                      TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                  ],
-                );
-              }).whereType<LineTooltipItem>().toList();
+                      children: [
+                        TextSpan(
+                          text: DateFormat(
+                            'd MMM',
+                            'es',
+                          ).format(weighIn.dateTime),
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    );
+                  })
+                  .whereType<LineTooltipItem>()
+                  .toList();
             },
           ),
         ),
@@ -741,7 +748,7 @@ class _WeightLineChart extends ConsumerWidget {
 // GOAL PROJECTION CARD (NEW - Libra-style ETA)
 // ============================================================================
 
-/// Card que muestra la proyección hacia el objetivo de peso
+/// Card que muestra la proyecciÃƒÂ³n hacia el objetivo de peso
 /// Estilo Libra: muestra ETA, progreso, y ritmo actual vs objetivo
 class _GoalProjectionCard extends ConsumerWidget {
   const _GoalProjectionCard();
@@ -754,7 +761,7 @@ class _GoalProjectionCard extends ConsumerWidget {
 
     return projectionAsync.when(
       data: (projection) {
-        // Si no hay proyección (sin plan o sin datos), no mostrar
+        // Si no hay proyecciÃƒÂ³n (sin plan o sin datos), no mostrar
         if (projection == null) return const SizedBox.shrink();
 
         return Card(
@@ -775,8 +782,8 @@ class _GoalProjectionCard extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Proyección de objetivo',
-                        style: GoogleFonts.montserrat(
+                        'ProyecciÃƒÂ³n de objetivo',
+                        style: AppTypography.bodyMedium.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -798,7 +805,8 @@ class _GoalProjectionCard extends ConsumerWidget {
                     Expanded(
                       child: _GoalMetric(
                         label: 'Meta',
-                        value: '${projection.goalWeightKg.toStringAsFixed(1)} kg',
+                        value:
+                            '${projection.goalWeightKg.toStringAsFixed(1)} kg',
                         icon: Icons.flag_outlined,
                       ),
                     ),
@@ -859,27 +867,27 @@ class _GoalProjectionCard extends ConsumerWidget {
   }
 
   String _formatEta(GoalProjection projection) {
-    // Para mantener peso, mostrar texto diferente cuando está en objetivo
+    // Para mantener peso, mostrar texto diferente cuando estÃƒÂ¡ en objetivo
     if (projection.goal == WeightGoal.maintain) {
       if (projection.goalReached) return 'En objetivo';
       return 'Ajustando...';
     }
-    
-    if (projection.goalReached) return '¡Logrado!';
-    
+
+    if (projection.goalReached) return 'Ã‚Â¡Logrado!';
+
     final date = projection.estimatedGoalDate;
-    if (date == null) return '—';
-    
+    if (date == null) return 'Ã¢â‚¬â€';
+
     final days = projection.estimatedDaysToGoal;
     if (days != null && days < 14) {
-      return '$days días';
+      return '$days dÃƒÂ­as';
     }
-    
+
     return DateFormat('MMM yyyy', 'es').format(date);
   }
 }
 
-/// Badge que indica si está on track o no
+/// Badge que indica si estÃƒÂ¡ on track o no
 class _StatusBadge extends StatelessWidget {
   final bool isOnTrack;
   final bool goalReached;
@@ -899,7 +907,9 @@ class _StatusBadge extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: (isMaintaining ? AppColors.success : Colors.orange).withAlpha(51),
+          color: (isMaintaining ? AppColors.success : Colors.orange).withAlpha(
+            51,
+          ),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -923,7 +933,7 @@ class _StatusBadge extends StatelessWidget {
         ),
       );
     }
-    
+
     if (goalReached) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -978,7 +988,7 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-/// Métrica de objetivo individual
+/// MÃƒÂ©trica de objetivo individual
 class _GoalMetric extends StatelessWidget {
   final String label;
   final String value;
@@ -1000,7 +1010,11 @@ class _GoalMetric extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: colorScheme.onPrimaryContainer.withAlpha(153)),
+            Icon(
+              icon,
+              size: 16,
+              color: colorScheme.onPrimaryContainer.withAlpha(153),
+            ),
             const SizedBox(width: 4),
             Text(
               label,
@@ -1013,7 +1027,7 @@ class _GoalMetric extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: GoogleFonts.montserrat(
+          style: AppTypography.bodyMedium.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: colorScheme.onPrimaryContainer,
@@ -1029,15 +1043,12 @@ class _ProgressBar extends StatelessWidget {
   final double progress; // 0.0 - 1.0+
   final ColorScheme colorScheme;
 
-  const _ProgressBar({
-    required this.progress,
-    required this.colorScheme,
-  });
+  const _ProgressBar({required this.progress, required this.colorScheme});
 
   @override
   Widget build(BuildContext context) {
     final clampedProgress = progress.clamp(0.0, 1.0);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1100,7 +1111,9 @@ class _ProgressContextCard extends ConsumerWidget {
 
         return Card(
           elevation: 0,
-          color: theme.colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+          color: theme.colorScheme.surfaceContainerHighest.withAlpha(
+            (0.5 * 255).round(),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -1108,14 +1121,11 @@ class _ProgressContextCard extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.insights,
-                      color: theme.colorScheme.primary,
-                    ),
+                    Icon(Icons.insights, color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
                       'Tu progreso',
-                      style: GoogleFonts.montserrat(
+                      style: AppTypography.bodyMedium.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1126,18 +1136,21 @@ class _ProgressContextCard extends ConsumerWidget {
                 _ProgressItem(
                   icon: Icons.calendar_today,
                   label: 'Llevas registrando',
-                  value: '$daysCount días',
+                  value: '$daysCount dÃƒÂ­as',
                 ),
                 const SizedBox(height: 8),
                 _ProgressItem(
-                  icon: totalChange <= 0 ? Icons.trending_down : Icons.trending_up,
-                  label: 'Variación total',
-                  value: '${totalChange >= 0 ? '+' : ''}${totalChange.toStringAsFixed(1)} kg',
-                  valueColor: totalChange < 0 
-                      ? Colors.green 
-                      : totalChange > 0 
-                          ? Colors.orange 
-                          : theme.colorScheme.onSurface,
+                  icon: totalChange <= 0
+                      ? Icons.trending_down
+                      : Icons.trending_up,
+                  label: 'VariaciÃƒÂ³n total',
+                  value:
+                      '${totalChange >= 0 ? '+' : ''}${totalChange.toStringAsFixed(1)} kg',
+                  valueColor: totalChange < 0
+                      ? Colors.green
+                      : totalChange > 0
+                      ? Colors.orange
+                      : theme.colorScheme.onSurface,
                 ),
                 if (weeklyAvg != null) ...[
                   const SizedBox(height: 8),
@@ -1175,21 +1188,15 @@ class _ProgressItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
         Text(
@@ -1204,7 +1211,7 @@ class _ProgressItem extends StatelessWidget {
   }
 }
 
-/// Card con análisis avanzado: velocidad, consistencia, volatilidad
+/// Card con anÃƒÂ¡lisis avanzado: velocidad, consistencia, volatilidad
 class _EnhancedAnalyticsCard extends ConsumerWidget {
   const _EnhancedAnalyticsCard();
 
@@ -1230,21 +1237,28 @@ class _EnhancedAnalyticsCard extends ConsumerWidget {
                   children: [
                     Icon(Icons.analytics, color: colors.primary),
                     const SizedBox(width: 8),
-                    Text('Análisis de tendencias', style: AppTypography.titleMedium),
+                    Text(
+                      'AnÃƒÂ¡lisis de tendencias',
+                      style: AppTypography.titleMedium,
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
 
-                // Grid de métricas
+                // Grid de mÃƒÂ©tricas
                 Row(
                   children: [
                     Expanded(
                       child: _AnalyticsMetric(
                         label: 'Velocidad',
-                        value: '${stats.velocity > 0 ? '+' : ''}${stats.velocity.toStringAsFixed(1)}',
+                        value:
+                            '${stats.velocity > 0 ? '+' : ''}${stats.velocity.toStringAsFixed(1)}',
                         unit: 'kg/sem',
-                        icon: stats.velocity > 0 ? Icons.trending_up : 
-                              stats.velocity < 0 ? Icons.trending_down : Icons.trending_flat,
+                        icon: stats.velocity > 0
+                            ? Icons.trending_up
+                            : stats.velocity < 0
+                            ? Icons.trending_down
+                            : Icons.trending_flat,
                         color: _getVelocityColor(stats.velocity, colors),
                       ),
                     ),
@@ -1290,7 +1304,7 @@ class _EnhancedAnalyticsCard extends ConsumerWidget {
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: _WeekComparison(
-                          label: 'Semana más desafiante',
+                          label: 'Semana mÃƒÂ¡s desafiante',
                           change: stats.worstWeek!,
                           icon: Icons.arrow_downward,
                           color: Colors.orange,
@@ -1336,46 +1350,54 @@ class _EnhancedAnalyticsCard extends ConsumerWidget {
   }
 
   Color _getVelocityColor(double velocity, ColorScheme colors) {
-    // Para pérdida de peso, velocidad negativa es buena
-    // Asumimos que la meta es perder peso (ajustar según el caso)
+    // Para pÃƒÂ©rdida de peso, velocidad negativa es buena
+    // Asumimos que la meta es perder peso (ajustar segÃƒÂºn el caso)
     final absVelocity = velocity.abs();
     if (absVelocity < 0.25) return colors.primary; // Mantenimiento
     if (absVelocity < 0.5) return AppColors.success; // Ritmo saludable
-    if (absVelocity < 1.0) return Colors.orange; // Rápido
-    return colors.error; // Muy rápido, posiblemente no saludable
+    if (absVelocity < 1.0) return Colors.orange; // RÃƒÂ¡pido
+    return colors.error; // Muy rÃƒÂ¡pido, posiblemente no saludable
   }
 
   _StatsResult _calculateStats(List<WeighInModel> weighIns) {
     // Ordenar por fecha
-    final sorted = [...weighIns]..sort((a, b) => a.dateTime.compareTo(b.dateTime));
-    
-    // Calcular velocidad (cambio por semana en últimos 30 días)
-    final recent = sorted.where((w) => 
-      w.dateTime.isAfter(DateTime.now().subtract(const Duration(days: 30)))
-    ).toList();
-    
+    final sorted = [...weighIns]
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    // Calcular velocidad (cambio por semana en ÃƒÂºltimos 30 dÃƒÂ­as)
+    final recent = sorted
+        .where(
+          (w) => w.dateTime.isAfter(
+            DateTime.now().subtract(const Duration(days: 30)),
+          ),
+        )
+        .toList();
+
     double velocity = 0;
     if (recent.length >= 2) {
       final first = recent.first.weightKg;
       final last = recent.last.weightKg;
-      final days = recent.last.dateTime.difference(recent.first.dateTime).inDays;
+      final days = recent.last.dateTime
+          .difference(recent.first.dateTime)
+          .inDays;
       if (days > 0) {
         velocity = ((last - first) / days) * 7; // kg por semana
       }
     }
 
-    // Calcular consistencia (% de días con registro en últimos 30 días)
-    final daysWithData = recent.map((w) => 
-      DateTime(w.dateTime.year, w.dateTime.month, w.dateTime.day)
-    ).toSet().length;
+    // Calcular consistencia (% de dÃƒÂ­as con registro en ÃƒÂºltimos 30 dÃƒÂ­as)
+    final daysWithData = recent
+        .map((w) => DateTime(w.dateTime.year, w.dateTime.month, w.dateTime.day))
+        .toSet()
+        .length;
     final consistency = ((daysWithData / 30.0 * 100).clamp(0, 100)).toDouble();
 
-    // Calcular volatilidad (desviación estándar de cambios diarios)
+    // Calcular volatilidad (desviaciÃƒÂ³n estÃƒÂ¡ndar de cambios diarios)
     double volatility = 0;
     if (sorted.length >= 2) {
       final changes = <double>[];
       for (var i = 1; i < sorted.length; i++) {
-        changes.add(sorted[i].weightKg - sorted[i-1].weightKg);
+        changes.add(sorted[i].weightKg - sorted[i - 1].weightKg);
       }
       final mean = changes.reduce((a, b) => a + b) / changes.length;
       final squaredDiffs = changes.map((c) => (c - mean) * (c - mean));
@@ -1389,24 +1411,31 @@ class _EnhancedAnalyticsCard extends ConsumerWidget {
     if (sorted.length >= 7) {
       final weeklyChanges = <double>[];
       for (var i = 7; i < sorted.length; i += 7) {
-        weeklyChanges.add(sorted[i].weightKg - sorted[i-7].weightKg);
+        weeklyChanges.add(sorted[i].weightKg - sorted[i - 7].weightKg);
       }
       if (weeklyChanges.isNotEmpty) {
-        bestWeek = weeklyChanges.reduce((a, b) => a < b ? a : b); // Menor cambio = mejor (pérdida)
-        worstWeek = weeklyChanges.reduce((a, b) => a > b ? a : b); // Mayor cambio = peor (ganancia)
+        bestWeek = weeklyChanges.reduce(
+          (a, b) => a < b ? a : b,
+        ); // Menor cambio = mejor (pÃƒÂ©rdida)
+        worstWeek = weeklyChanges.reduce(
+          (a, b) => a > b ? a : b,
+        ); // Mayor cambio = peor (ganancia)
       }
     }
 
     // Generar insight
     String? insight;
     if (consistency < 50) {
-      insight = '💡 Intenta pesarte más regularmente para mejores datos';
+      insight =
+          'Ã°Å¸â€™Â¡ Intenta pesarte mÃƒÂ¡s regularmente para mejores datos';
     } else if (volatility > 1.0) {
-      insight = '💡 Tus pesos fluctúan bastante. Considera pesarte a la misma hora cada día';
+      insight =
+          'Ã°Å¸â€™Â¡ Tus pesos fluctÃƒÂºan bastante. Considera pesarte a la misma hora cada dÃƒÂ­a';
     } else if (velocity.abs() > 1.5) {
-      insight = '⚡ Estás progresando rápido. Asegúrate de mantener buenos hábitos';
+      insight =
+          'Ã¢Å¡Â¡ EstÃƒÂ¡s progresando rÃƒÂ¡pido. AsegÃƒÂºrate de mantener buenos hÃƒÂ¡bitos';
     } else if (velocity.abs() < 0.1 && consistency > 70) {
-      insight = '🎯 Estás manteniendo tu peso consistentemente';
+      insight = 'Ã°Å¸Å½Â¯ EstÃƒÂ¡s manteniendo tu peso consistentemente';
     }
 
     return _StatsResult(
@@ -1564,41 +1593,38 @@ class _WeighInsListSliver extends ConsumerWidget {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
         return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final w = weighIns[index];
-              return Dismissible(
-                key: Key(w.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  child: const Icon(Icons.delete, color: Colors.white),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final w = weighIns[index];
+            return Dismissible(
+              key: Key(w.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                child: const Icon(Icons.delete, color: Colors.white),
+              ),
+              onDismissed: (_) async {
+                await ref.read(weighInRepositoryProvider).delete(w.id);
+                if (context.mounted) {
+                  AppSnackbar.show(context, message: 'Peso eliminado');
+                }
+              },
+              child: ListTile(
+                leading: Icon(
+                  Icons.scale,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                onDismissed: (_) async {
-                  await ref.read(weighInRepositoryProvider).delete(w.id);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Peso eliminado')),
-                    );
-                  }
-                },
-                child: ListTile(
-                  leading: Icon(Icons.scale, color: Theme.of(context).colorScheme.primary),
-                  title: Text('${w.weightKg.toStringAsFixed(1)} kg'),
-                  subtitle: Text(DateFormat('d MMM', 'es').format(w.dateTime)),
-                ),
-              );
-            },
-            childCount: weighIns.length,
-          ),
+                title: Text('${w.weightKg.toStringAsFixed(1)} kg'),
+                subtitle: Text(DateFormat('d MMM', 'es').format(w.dateTime)),
+              ),
+            );
+          }, childCount: weighIns.length),
         );
       },
       loading: () => const SliverToBoxAdapter(child: AppLoading()),
-      error: (e, _) => SliverToBoxAdapter(
-        child: AppError(message: 'Error: $e'),
-      ),
+      error: (e, _) =>
+          SliverToBoxAdapter(child: AppError(message: 'Error: $e')),
     );
   }
 }

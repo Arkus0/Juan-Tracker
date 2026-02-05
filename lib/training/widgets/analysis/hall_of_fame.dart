@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/design_system/design_system.dart' show AppTypography;
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
 
@@ -26,13 +26,12 @@ class HallOfFame extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: scheme.tertiary.withValues(alpha: 0.2),
+                  color: scheme.tertiary.withAlpha((0.2 * 255).round()),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
@@ -45,8 +44,7 @@ class HallOfFame extends ConsumerWidget {
               Expanded(
                 child: Text(
                   'HALL OF FAME',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
+                  style: AppTypography.labelLarge.copyWith(
                     fontWeight: FontWeight.w700,
                     color: scheme.onSurfaceVariant,
                     letterSpacing: 1.2,
@@ -55,33 +53,23 @@ class HallOfFame extends ConsumerWidget {
               ),
               Text(
                 'PRs',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+                style: AppTypography.labelLarge.copyWith(
                   color: scheme.tertiary,
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
           Text(
-            'Récords personales en ejercicios clave',
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
+            'Records personales en ejercicios clave',
+            style: AppTypography.bodySmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),
           ),
-
           const SizedBox(height: 16),
-
-          // PR Grid
           prsAsync.when(
             data: (prs) {
-              if (prs.isEmpty) {
-                return _buildEmptyState(scheme);
-              }
+              if (prs.isEmpty) return _buildEmptyState(scheme);
               return _buildPRGrid(prs);
             },
             loading: () => _buildLoading(scheme),
@@ -102,7 +90,7 @@ class HallOfFame extends ConsumerWidget {
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
       ),
-      itemCount: prs.length.clamp(0, 6), // Max 6 PRs
+      itemCount: prs.length.clamp(0, 6),
       itemBuilder: (context, index) {
         return _PRCard(pr: prs[index], rank: index + 1);
       },
@@ -119,17 +107,15 @@ class HallOfFame extends ConsumerWidget {
           Icon(Icons.emoji_events_outlined, color: scheme.outline, size: 40),
           const SizedBox(height: 12),
           Text(
-            'Sin récords aún',
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+            'Sin records aun',
+            style: AppTypography.titleMedium.copyWith(
               color: scheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             'Completa entrenamientos para registrar PRs',
-            style: GoogleFonts.montserrat(fontSize: 12, color: scheme.outline),
+            style: AppTypography.bodySmall.copyWith(color: scheme.outline),
             textAlign: TextAlign.center,
           ),
         ],
@@ -151,7 +137,7 @@ class HallOfFame extends ConsumerWidget {
       itemBuilder: (context, index) {
         return Container(
           decoration: BoxDecoration(
-            color: scheme.surface,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(10),
           ),
         );
@@ -169,9 +155,8 @@ class _PRCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    // Gold/Silver/Bronze styling for top 3
     final isTop3 = rank <= 3;
-    final gradientColors = _getGradientColors(rank);
+    final gradientColors = _getGradientColors(rank, scheme);
 
     return GestureDetector(
       onTap: () {
@@ -191,21 +176,22 @@ class _PRCard extends StatelessWidget {
           color: isTop3 ? null : scheme.surface,
           borderRadius: BorderRadius.circular(10),
           border: isTop3
-              ? Border.all(color: gradientColors.first.withValues(alpha: 0.5))
-              : null,
+              ? Border.all(
+                  color: gradientColors.first.withAlpha((0.5 * 255).round()),
+                )
+              : Border.all(
+                  color: scheme.outline.withAlpha((0.3 * 255).round()),
+                ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Exercise name & icon
             Row(
               children: [
                 Expanded(
                   child: Text(
                     pr.exerciseName,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                    style: AppTypography.labelMedium.copyWith(
                       color: scheme.onSurface,
                     ),
                     maxLines: 1,
@@ -219,18 +205,13 @@ class _PRCard extends StatelessWidget {
                   ),
               ],
             ),
-
             const Spacer(),
-
-            // Max weight
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   pr.maxWeight.toStringAsFixed(1),
-                  style: GoogleFonts.montserrat(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
+                  style: AppTypography.dataMedium.copyWith(
                     color: scheme.onSurface,
                     height: 1,
                   ),
@@ -240,8 +221,7 @@ class _PRCard extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 3),
                   child: Text(
                     'kg',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12,
+                    style: AppTypography.bodySmall.copyWith(
                       fontWeight: FontWeight.w600,
                       color: scheme.onSurfaceVariant,
                     ),
@@ -249,16 +229,12 @@ class _PRCard extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 4),
-
-            // Reps and estimated 1RM
             Row(
               children: [
                 Text(
                   'x${pr.repsAtMax}',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
+                  style: AppTypography.bodySmall.copyWith(
                     fontWeight: FontWeight.w600,
                     color: scheme.onSurfaceVariant,
                   ),
@@ -270,14 +246,12 @@ class _PRCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: scheme.tertiary.withValues(alpha: 0.2),
+                    color: scheme.tertiary.withAlpha((0.2 * 255).round()),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     '1RM: ${pr.estimated1RM.toStringAsFixed(0)}',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
+                    style: AppTypography.labelSmall.copyWith(
                       color: scheme.tertiary,
                     ),
                   ),
@@ -290,27 +264,27 @@ class _PRCard extends StatelessWidget {
     );
   }
 
-  List<Color> _getGradientColors(int rank) {
+  List<Color> _getGradientColors(int rank, ColorScheme scheme) {
     switch (rank) {
       case 1:
-        return [const Color(0xFF3D3D1D), const Color(0xFF2D2D15)]; // Gold
+        return [const Color(0xFF3D3D1D), const Color(0xFF2D2D15)];
       case 2:
-        return [const Color(0xFF3D3D3D), const Color(0xFF2D2D2D)]; // Silver
+        return [const Color(0xFF3D3D3D), const Color(0xFF2D2D2D)];
       case 3:
-        return [const Color(0xFF3D2D1D), const Color(0xFF2D2015)]; // Bronze
+        return [const Color(0xFF3D2D1D), const Color(0xFF2D2015)];
       default:
-        return [const Color(0xFF252525), const Color(0xFF1E1E1E)];
+        return [scheme.surfaceContainerHighest, scheme.surface];
     }
   }
 
   String _getTrophyEmoji(int rank) {
     switch (rank) {
       case 1:
-        return '🥇';
+        return '\u{1F947}';
       case 2:
-        return '🥈';
+        return '\u{1F948}';
       case 3:
-        return '🥉';
+        return '\u{1F949}';
       default:
         return '';
     }
@@ -320,18 +294,17 @@ class _PRCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: scheme.surface,
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: scheme.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle
               Container(
                 width: 40,
                 height: 4,
@@ -341,8 +314,6 @@ class _PRCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // PR display
               Row(
                 children: [
                   Container(
@@ -350,13 +321,16 @@ class _PRCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          scheme.tertiary.withValues(alpha: 0.3),
-                          scheme.tertiary.withValues(alpha: 0.1),
+                          scheme.tertiary.withAlpha((0.3 * 255).round()),
+                          scheme.tertiary.withAlpha((0.1 * 255).round()),
                         ],
                       ),
                       shape: BoxShape.circle,
                     ),
-                    child: const Text('🏆', style: TextStyle(fontSize: 32)),
+                    child: const Text(
+                      '\u{1F3C6}',
+                      style: TextStyle(fontSize: 32),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -364,18 +338,15 @@ class _PRCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'RÉCORD PERSONAL',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                          'RECORD PERSONAL',
+                          style: AppTypography.labelSmall.copyWith(
                             color: scheme.tertiary,
                             letterSpacing: 1.5,
                           ),
                         ),
                         Text(
                           pr.exerciseName,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 22,
+                          style: AppTypography.headlineLarge.copyWith(
                             fontWeight: FontWeight.w800,
                             color: scheme.onSurface,
                           ),
@@ -385,19 +356,18 @@ class _PRCard extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 24),
-
-              // Stats
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: scheme.surface,
+                  color: scheme.surfaceContainerHighest.withAlpha(
+                    (0.25 * 255).round(),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   children: [
-                    _buildStatRow(context, 'Peso máximo', pr.formattedWeight),
+                    _buildStatRow(context, 'Peso maximo', pr.formattedWeight),
                     Divider(color: scheme.outline, height: 24),
                     _buildStatRow(
                       context,
@@ -407,7 +377,7 @@ class _PRCard extends StatelessWidget {
                     Divider(color: scheme.outline, height: 24),
                     _buildStatRow(
                       context,
-                      '1RM Estimado',
+                      '1RM estimado',
                       pr.formattedEstimated1RM,
                     ),
                     Divider(color: scheme.outline, height: 24),
@@ -419,7 +389,6 @@ class _PRCard extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
             ],
           ),
@@ -435,15 +404,13 @@ class _PRCard extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.montserrat(
-            fontSize: 14,
+          style: AppTypography.bodyMedium.copyWith(
             color: scheme.onSurfaceVariant,
           ),
         ),
         Text(
           value,
-          style: GoogleFonts.montserrat(
-            fontSize: 16,
+          style: AppTypography.titleMedium.copyWith(
             fontWeight: FontWeight.w700,
             color: scheme.onSurface,
           ),

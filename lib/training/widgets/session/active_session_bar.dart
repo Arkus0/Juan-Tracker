@@ -14,19 +14,23 @@ class ActiveSessionBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trainingState = ref.watch(trainingSessionProvider);
+    final startTime = ref.watch(
+      trainingSessionProvider.select((s) => s.startTime),
+    );
+    final rutinaName = ref.watch(
+      trainingSessionProvider.select(
+        (s) => s.activeRutina?.nombre ?? 'Entrenamiento Libre',
+      ),
+    );
+    final restTimer = ref.watch(
+      trainingSessionProvider.select((s) => s.restTimer),
+    );
 
-    // Si no hay sesión activa con startTime, no mostramos nada
-    if (trainingState.startTime == null) return const SizedBox.shrink();
+    // Si no hay sesiÃ³n activa con startTime, no mostramos nada
+    if (startTime == null) return const SizedBox.shrink();
 
-    final rutinaName =
-        trainingState.activeRutina?.nombre ?? 'Entrenamiento Libre';
-
-    final duration = DateTime.now().difference(trainingState.startTime!);
-    final minutes = duration.inMinutes;
-
-    // 🎯 ESTADO CRÍTICO: Barra prominente, imposible de ignorar
-    // El usuario NUNCA debe pensar que perdió su sesión
+    // ðŸŽ¯ ESTADO CRÃTICO: Barra prominente, imposible de ignorar
+    // El usuario NUNCA debe pensar que perdiÃ³ su sesiÃ³n
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -36,14 +40,14 @@ class ActiveSessionBar extends ConsumerWidget {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          // Fondo más visible
+          // Fondo mÃ¡s visible
           color: AppColors.darkRed,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: AppColors.bloodRed.withValues(alpha: 0.6),
             width: 1.5,
           ),
-          // Sombra sutil para elevación
+          // Sombra sutil para elevaciÃ³n
           boxShadow: [
             BoxShadow(
               color: AppColors.bloodRed.withValues(alpha: 0.2),
@@ -54,7 +58,7 @@ class ActiveSessionBar extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            // Icono pulsante más grande
+            // Icono pulsante mÃ¡s grande
             Container(
               width: 12,
               height: 12,
@@ -78,7 +82,7 @@ class ActiveSessionBar extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Label explícito
+                  // Label explÃ­cito
                   const Text(
                     'ENTRENAMIENTO EN CURSO',
                     style: TextStyle(
@@ -90,25 +94,36 @@ class ActiveSessionBar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   // Rutina y tiempo
-                  Text(
-                    '$rutinaName • ${minutes}min',
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                  StreamBuilder<int>(
+                    stream: Stream<int>.periodic(
+                      const Duration(seconds: 30),
+                      (tick) => tick,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    initialData: 0,
+                    builder: (context, _) {
+                      final duration = DateTime.now().difference(startTime);
+                      final minutes = duration.inMinutes;
+                      return Text(
+                        '$rutinaName - ${minutes}min',
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    },
                   ),
                 ],
               ),
             ),
 
-            // Timer embebido si está activo
-            if (trainingState.restTimer.isActive) ...[
+            // Timer embebido si estÃ¡ activo
+            if (restTimer.isActive) ...[
               const SizedBox(width: 8),
               _EmbeddedTimerBubble(
-                timerState: trainingState.restTimer,
+                timerState: restTimer,
                 onPause: () =>
                     ref.read(trainingSessionProvider.notifier).pauseRest(),
                 onResume: () =>
@@ -120,14 +135,14 @@ class ActiveSessionBar extends ConsumerWidget {
             ],
 
             // Flecha para indicar que es tappable (solo si no hay timer)
-            if (!trainingState.restTimer.isActive)
+            if (!restTimer.isActive)
               const Icon(
                 Icons.chevron_right_rounded,
                 color: AppColors.textSecondary,
                 size: 20,
               ),
 
-            // Botón descartar (sutil, pequeño)
+            // BotÃ³n descartar (sutil, pequeÃ±o)
             GestureDetector(
               onTap: () async {
                 HapticFeedback.mediumImpact();
@@ -136,11 +151,11 @@ class ActiveSessionBar extends ConsumerWidget {
                   builder: (ctx) => AlertDialog(
                     backgroundColor: AppColors.bgElevated,
                     title: const Text(
-                      'DESCARTAR SESIÓN',
+                      'DESCARTAR SESIÃ“N',
                       style: TextStyle(color: AppColors.textPrimary),
                     ),
                     content: const Text(
-                      '¿Descartar sin guardar?',
+                      'Â¿Descartar sin guardar?',
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                     actions: [
@@ -184,7 +199,7 @@ class ActiveSessionBar extends ConsumerWidget {
   }
 }
 
-// Embedded timer bubble (encajado en la barra) - replica acciones y animación del floating timer
+// Embedded timer bubble (encajado en la barra) - replica acciones y animaciÃ³n del floating timer
 class _EmbeddedTimerBubble extends StatefulWidget {
   final RestTimerState timerState;
   final VoidCallback onPause;

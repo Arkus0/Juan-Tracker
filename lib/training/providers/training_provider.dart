@@ -19,7 +19,6 @@ import '../services/error_tolerance_system.dart';
 import '../services/rest_timer_controller.dart';
 import '../services/session_history_manager.dart';
 import '../services/session_persistence_service.dart';
-import 'main_provider.dart';
 import 'session_tolerance_provider.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
@@ -44,11 +43,12 @@ final sesionesHistoryStreamProvider = StreamProvider<List<Sesion>>((ref) {
 ///
 /// Uso: ref.watch(sesionesHistoryPaginatedProvider(page))
 /// page 0 = primeras 20, page 1 = siguientes 20, etc.
-final sesionesHistoryPaginatedProvider = StreamProvider.family<List<Sesion>, int>((ref, page) {
-  final repo = ref.watch(trainingRepositoryProvider);
-  // Cada página trae 20 sesiones, acumulando con páginas anteriores
-  return repo.watchSesionesHistory(limit: (page + 1) * 20);
-});
+final sesionesHistoryPaginatedProvider =
+    StreamProvider.family<List<Sesion>, int>((ref, page) {
+      final repo = ref.watch(trainingRepositoryProvider);
+      // Cada página trae 20 sesiones, acumulando con páginas anteriores
+      return repo.watchSesionesHistory(limit: (page + 1) * 20);
+    });
 
 /// Notifier para controlar la paginación del historial
 class HistoryPaginationNotifier extends Notifier<int> {
@@ -59,9 +59,10 @@ class HistoryPaginationNotifier extends Notifier<int> {
   void reset() => state = 0;
 }
 
-final historyPaginationProvider = NotifierProvider<HistoryPaginationNotifier, int>(
-  HistoryPaginationNotifier.new,
-);
+final historyPaginationProvider =
+    NotifierProvider<HistoryPaginationNotifier, int>(
+      HistoryPaginationNotifier.new,
+    );
 
 final activeSessionStreamProvider = StreamProvider<ActiveSessionData?>((ref) {
   final repo = ref.watch(trainingRepositoryProvider);
@@ -161,9 +162,9 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
 
   /// Servicio de persistencia (delegación de responsabilidad)
   late final SessionPersistenceService _persistenceService;
-  
+
   /// Manager de historial de ejercicios (delegación de responsabilidad)
-  /// 
+  ///
   /// Extraído del God Object para mejorar testabilidad y separación de responsabilidades
   SessionHistoryManager? _historyManager;
 
@@ -191,7 +192,7 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     // Inicializar servicio de persistencia
     _persistenceService = SessionPersistenceService(_repository);
     _persistenceService.getSessionData = _getCurrentSessionData;
-    
+
     // Inicializar manager de historial
     _historyManager = SessionHistoryManager(_repository);
   }
@@ -260,7 +261,8 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
 
     // Build History Map usando SessionHistoryManager (extraído del God Object)
     // Esto mejora testabilidad y permite cacheo LRU del historial
-    final historyMap = await _historyManager?.loadHistoryForExercises(sessionExercises) ?? {};
+    final historyMap =
+        await _historyManager?.loadHistoryForExercises(sessionExercises) ?? {};
 
     state = TrainingState(
       activeRutina: rutina,
@@ -278,7 +280,7 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
   }
 
   /// Inicia una sesión de entrenamiento libre sin rutina predefinida.
-  /// 
+  ///
   /// Permite al usuario empezar a entrenar inmediatamente y añadir
   /// ejercicios sobre la marcha. Reduce TTV de 14 clics a 2.
   void startFreeSession() {
@@ -352,13 +354,15 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
         // Evitar sobrescribir si ya hay un diálogo mostrándose y programar la notificación
         if (!currentSuspicious.dialogShowing) {
           Future.microtask(() {
-            ref.read(suspiciousDataProvider.notifier).setSuspiciousData(
-              exerciseName: exercise.nombre,
-              enteredWeight: peso,
-              suggestedWeight: suggestedWeight,
-              exerciseIndex: exerciseIndex,
-              setIndex: setIndex,
-            );
+            ref
+                .read(suspiciousDataProvider.notifier)
+                .setSuspiciousData(
+                  exerciseName: exercise.nombre,
+                  enteredWeight: peso,
+                  suggestedWeight: suggestedWeight,
+                  exerciseIndex: exerciseIndex,
+                  setIndex: setIndex,
+                );
           });
         }
         Logger().w(
@@ -407,13 +411,15 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
   }
 
   /// Obtiene el último peso conocido para un ejercicio (del historial)
-  /// 
+  ///
   /// Ahora delega a SessionHistoryManager para mejor separación de responsabilidades
   double _getLastKnownWeight(Ejercicio exercise) {
     // Primero intentar con el cache del manager
-    final managerWeight = _historyManager?.getLastKnownWeight(exercise.historyKey);
+    final managerWeight = _historyManager?.getLastKnownWeight(
+      exercise.historyKey,
+    );
     if (managerWeight != null && managerWeight > 0) return managerWeight;
-    
+
     // Fallback al estado actual (para compatibilidad con sesiones restauradas)
     final key = exercise.historyKey;
     final historyLogs = state.history[key] ?? state.history[exercise.nombre];
@@ -595,8 +601,9 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     // Calcular cuántas series preservar (las completadas, hasta un máximo razonable)
     final completedSetsCount = originalLogs.where((l) => l.completed).length;
     final targetSets = preserveCompletedSets && completedSetsCount > 0
-        ? originalLogs.length  // Mantener misma cantidad de series
-        : originalExercise.series;  // O usar el default del ejercicio
+        ? originalLogs
+              .length // Mantener misma cantidad de series
+        : originalExercise.series; // O usar el default del ejercicio
 
     // Crear logs para el nuevo ejercicio
     // Si preservamos, copiamos peso/reps de las series completadas como sugerencia
@@ -609,7 +616,7 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
         return SerieLog(
           peso: originalLog.peso,
           reps: originalLog.reps,
-          completed: false,  // Resetear estado de completado
+          completed: false, // Resetear estado de completado
           rpe: originalLog.rpe,
           notas: index == 0
               ? 'Sustituido desde: ${originalExercise.nombre}'
@@ -621,13 +628,13 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
 
     // Crear el nuevo ejercicio con los logs preparados
     final swappedExercise = Ejercicio(
-      id: const Uuid().v4(),  // Nuevo ID de instancia
+      id: const Uuid().v4(), // Nuevo ID de instancia
       libraryId: newExercise.id.toString(),
       nombre: newExercise.name,
       musculosPrincipales: newExercise.muscles,
       musculosSecundarios: newExercise.secondaryMuscles,
       series: targetSets,
-      reps: originalExercise.reps,  // Preservar target de reps
+      reps: originalExercise.reps, // Preservar target de reps
       notas: 'Sustituido desde: ${originalExercise.nombre}',
       logs: newLogs,
     );
@@ -859,7 +866,6 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     );
 
     state = TrainingState();
-    ref.read(bottomNavIndexProvider.notifier).state = 2;
   }
 
   /// Descarta la sesión activa sin guardarla
@@ -947,12 +953,16 @@ class SessionSaveResult {
 enum WorkoutUrgency {
   /// Descanso sugerido (entrenó hace <20h)
   rest,
+
   /// Listo para entrenar (20h-48h desde última sesión)
   ready,
+
   /// Deberías entrenar (48h-72h)
   shouldTrain,
+
   /// Urgente, perdiendo momentum (>72h)
   urgent,
+
   /// Nuevo usuario o reinicio (sin historial)
   fresh,
 }
@@ -1006,13 +1016,13 @@ class SmartWorkoutSuggestion {
     if (timeSinceLastSession == null) return 'Primera vez';
     final days = timeSinceLastSession!.inDays;
     final hours = timeSinceLastSession!.inHours;
-    
+
     if (isRestDay) {
-      return hours < 24 
-          ? 'Hace ${hours}h (recuperando)' 
+      return hours < 24
+          ? 'Hace ${hours}h (recuperando)'
           : 'Ayer (lista para otra)';
     }
-    
+
     if (days == 0) return hours < 12 ? 'Esta mañana' : 'Hoy temprano';
     if (days == 1) return 'Ayer';
     if (days <= 3) return 'Hace $days días';
@@ -1034,7 +1044,7 @@ class SmartWorkoutSuggestion {
   String get motivationalMessage {
     if (timeSinceLastSession == null) return '¡Comienza tu viaje!';
     if (isRestDay) return 'Descansa, mañana más 💪';
-    
+
     final days = timeSinceLastSession!.inDays;
     switch (urgency) {
       case WorkoutUrgency.ready:
@@ -1141,7 +1151,8 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((
       // ═══════════════════════════════════════════════════════════════════════
       urgency = WorkoutUrgency.rest;
       reason = 'Día de recuperación';
-      contextualSubtitle = 'Entrenaste hace ${hoursSince}h. Los músculos crecen descansando.';
+      contextualSubtitle =
+          'Entrenaste hace ${hoursSince}h. Los músculos crecen descansando.';
       isRestDay = true;
     } else if (hoursSince < 48) {
       // ═══════════════════════════════════════════════════════════════════════
@@ -1150,7 +1161,8 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((
       urgency = WorkoutUrgency.ready;
       if (daysSince == 0) {
         reason = 'Recuperado y listo';
-        contextualSubtitle = 'Entrenaste hoy temprano, pero ya pasaron ${hoursSince}h';
+        contextualSubtitle =
+            'Entrenaste hoy temprano, pero ya pasaron ${hoursSince}h';
       } else {
         reason = 'Toca ${nextDay.nombre}';
         contextualSubtitle = 'Última sesión: ayer';

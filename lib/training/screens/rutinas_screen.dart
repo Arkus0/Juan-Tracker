@@ -77,21 +77,19 @@ class RutinasScreen extends ConsumerWidget {
   void _navigateToCreate(BuildContext context) {
     HapticFeedback.mediumImpact();
     // Navegar a crear nueva rutina (sin parámetro = modo creación)
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const CreateEditRoutineScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const CreateEditRoutineScreen()));
   }
 
   Future<void> _showTemplates(BuildContext context, WidgetRef ref) async {
     HapticFeedback.selectionClick();
     final rutina = await RoutineTemplateSheet.show(context);
-    
+
     if (rutina != null && context.mounted) {
       // Guardar la rutina en el repositorio
       await ref.read(trainingRepositoryProvider).saveRutina(rutina);
-      
+
       // Mostrar confirmación
       if (context.mounted) {
         AppSnackbar.show(
@@ -104,7 +102,34 @@ class RutinasScreen extends ConsumerWidget {
 
   Future<void> _showImportFlow(BuildContext context, WidgetRef ref) async {
     HapticFeedback.selectionClick();
-    // Implementation would go here
+    final openCreator = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Importar rutina'),
+        content: const Text(
+          'La importación directa desde esta pantalla aún no está disponible.\n\n'
+          'Puedes importar ejercicios desde "Nueva Rutina" usando Smart Import.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Abrir creador'),
+          ),
+        ],
+      ),
+    );
+
+    if (openCreator == true && context.mounted) {
+      _navigateToCreate(context);
+      AppSnackbar.show(
+        context,
+        message: 'En el creador usa el botón + para importar ejercicios',
+      );
+    }
   }
 }
 
@@ -255,10 +280,7 @@ class _RutinaCard extends StatelessWidget {
   final dynamic rutina;
   final VoidCallback onTap;
 
-  const _RutinaCard({
-    required this.rutina,
-    required this.onTap,
-  });
+  const _RutinaCard({required this.rutina, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -286,10 +308,7 @@ class _RutinaCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: colors.onSurfaceVariant,
-                ),
+                Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -315,10 +334,7 @@ class _RutinaCard extends StatelessWidget {
                 runSpacing: AppSpacing.sm,
                 children: rutina.dias.take(4).map<Widget>((dia) {
                   return Chip(
-                    label: Text(
-                      dia.nombre,
-                      style: AppTypography.labelSmall,
-                    ),
+                    label: Text(dia.nombre, style: AppTypography.labelSmall),
                     padding: EdgeInsets.zero,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
@@ -336,10 +352,7 @@ class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-  });
+  const _InfoChip({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {

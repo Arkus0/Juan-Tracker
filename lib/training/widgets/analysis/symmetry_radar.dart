@@ -1,8 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/design_system/design_system.dart' show AppTypography;
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
 
@@ -25,13 +25,12 @@ class SymmetryRadar extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: scheme.tertiary.withValues(alpha: 0.2),
+                  color: scheme.tertiary.withAlpha((0.2 * 255).round()),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(Icons.radar, color: scheme.tertiary, size: 18),
@@ -39,73 +38,61 @@ class SymmetryRadar extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'RADAR DE SIMETRÍA',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
+                  'RADAR DE SIMETRIA',
+                  style: AppTypography.labelLarge.copyWith(
                     fontWeight: FontWeight.w700,
                     color: scheme.onSurfaceVariant,
                     letterSpacing: 1.2,
                   ),
                 ),
               ),
-              // Imbalance warning
               symmetryAsync.when(
                 data: (data) {
-                  if (data.hasImbalance) {
-                    return Tooltip(
-                      message: data.imbalanceWarnings.join('\n'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: scheme.tertiary.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              color: scheme.tertiary,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Desequilibrio',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: scheme.tertiary,
-                              ),
-                            ),
-                          ],
-                        ),
+                  if (!data.hasImbalance) return const SizedBox.shrink();
+                  return Tooltip(
+                    message: data.imbalanceWarnings.join('\n'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                    );
-                  }
-                  return const SizedBox.shrink();
+                      decoration: BoxDecoration(
+                        color: scheme.tertiary.withAlpha((0.2 * 255).round()),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: scheme.tertiary,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Desequilibrio',
+                            style: AppTypography.labelSmall.copyWith(
+                              color: scheme.tertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 },
                 loading: () => const SizedBox.shrink(),
                 error: (_, _) => const SizedBox.shrink(),
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
           Text(
-            'Volumen últimos 30 días',
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
+            'Volumen ultimos 30 dias',
+            style: AppTypography.bodySmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),
           ),
-
           const SizedBox(height: 16),
-
-          // Radar Chart
           symmetryAsync.when(
             data: (data) => _buildRadarChart(scheme, data),
             loading: () => _buildLoading(scheme),
@@ -121,15 +108,10 @@ class SymmetryRadar extends ConsumerWidget {
       return _buildEmptyState(scheme);
     }
 
-    // Prepare data for radar chart
     const muscleGroups = kMuscleGroups;
-    final values = muscleGroups.map((m) {
-      return data.getNormalized(m);
-    }).toList();
+    final values = muscleGroups.map(data.getNormalized).toList();
 
-    // Check if all values are 0
-    final hasData = values.any((v) => v > 0);
-    if (!hasData) {
+    if (!values.any((v) => v > 0)) {
       return _buildEmptyState(scheme);
     }
 
@@ -142,7 +124,7 @@ class SymmetryRadar extends ConsumerWidget {
               dataEntries: values
                   .map((v) => RadarEntry(value: v * 100))
                   .toList(),
-              fillColor: scheme.primary.withValues(alpha: 0.3),
+              fillColor: scheme.primary.withAlpha((0.3 * 255).round()),
               borderColor: scheme.primary,
               borderWidth: 2,
               entryRadius: 3,
@@ -157,12 +139,11 @@ class SymmetryRadar extends ConsumerWidget {
           ),
           tickBorderData: BorderSide(color: scheme.outline),
           gridBorderData: BorderSide(color: scheme.outline),
-          titleTextStyle: GoogleFonts.montserrat(
+          titleTextStyle: AppTypography.labelSmall.copyWith(
             color: scheme.onSurfaceVariant,
-            fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
-          getTitle: (index, angle) {
+          getTitle: (index, _) {
             final muscle = muscleGroups[index];
             final volume = data.volumes[muscle];
             final volumeStr = volume != null
@@ -184,7 +165,7 @@ class SymmetryRadar extends ConsumerWidget {
       height: 250,
       child: Center(
         child: CircularProgressIndicator(
-          color: scheme.primary.withValues(alpha: 0.5),
+          color: scheme.primary.withAlpha((0.5 * 255).round()),
           strokeWidth: 2,
         ),
       ),
@@ -202,16 +183,14 @@ class SymmetryRadar extends ConsumerWidget {
           const SizedBox(height: 12),
           Text(
             'Sin datos de entrenamiento',
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+            style: AppTypography.titleMedium.copyWith(
               color: scheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             'Entrena para ver tu equilibrio muscular',
-            style: GoogleFonts.montserrat(fontSize: 12, color: scheme.outline),
+            style: AppTypography.bodySmall.copyWith(color: scheme.outline),
           ),
         ],
       ),
@@ -240,7 +219,6 @@ class SymmetryRadarCompact extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              // Mini radar
               SizedBox(
                 width: 80,
                 height: 80,
@@ -255,7 +233,9 @@ class SymmetryRadarCompact extends ConsumerWidget {
                               ),
                             )
                             .toList(),
-                        fillColor: scheme.primary.withValues(alpha: 0.3),
+                        fillColor: scheme.primary.withAlpha(
+                          (0.3 * 255).round(),
+                        ),
                         borderColor: scheme.primary,
                         borderWidth: 1.5,
                         entryRadius: 2,
@@ -281,17 +261,13 @@ class SymmetryRadarCompact extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // Stats
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Simetría',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                      'Simetria',
+                      style: AppTypography.labelLarge.copyWith(
                         color: scheme.onSurface,
                       ),
                     ),
@@ -308,8 +284,7 @@ class SymmetryRadarCompact extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               data.imbalanceWarnings.first,
-                              style: GoogleFonts.montserrat(
-                                fontSize: 10,
+                              style: AppTypography.bodySmall.copyWith(
                                 color: scheme.tertiary,
                               ),
                               maxLines: 1,
@@ -321,17 +296,16 @@ class SymmetryRadarCompact extends ConsumerWidget {
                     else
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.check_circle,
-                            color: Colors.green,
+                            color: scheme.primary,
                             size: 14,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             'Equilibrado',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 10,
-                              color: Colors.green,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: scheme.primary,
                             ),
                           ),
                         ],

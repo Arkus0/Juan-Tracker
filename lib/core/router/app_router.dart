@@ -1,6 +1,6 @@
 // Router configuration usando go_router para deep linking (Fase B)
 //
-// Soporta navegación declarativa y deep links para:
+// Soporta navegaciÃ³n declarativa y deep links para:
 // - juantracker://nutrition/diary
 // - juantracker://training/session/123
 // - https://juantracker.app/nutrition/weight
@@ -22,6 +22,7 @@ import '../../features/summary/presentation/summary_screen.dart';
 import '../../training/models/sesion.dart';
 import '../../training/providers/analysis_provider.dart';
 import '../../training/providers/main_provider.dart';
+import '../../training/providers/training_provider.dart';
 import '../../training/screens/search_exercise_screen.dart';
 import '../../training/screens/session_detail_screen.dart';
 import '../../training/screens/training_session_screen.dart';
@@ -37,11 +38,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return AppRouter.router;
 });
 
-/// Clase estática con la configuración del router
+final trainingSessionByIdProvider = FutureProvider.family<Sesion?, String>((
+  ref,
+  sessionId,
+) async {
+  final repository = ref.watch(trainingRepositoryProvider);
+  return repository.getSesionById(sessionId);
+});
+
+/// Clase estÃ¡tica con la configuraciÃ³n del router
 class AppRouter {
   AppRouter._();
 
-  // Nombres de rutas para navegación tipada
+  // Nombres de rutas para navegaciÃ³n tipada
   static const String root = '/';
   static const String entry = '/entry';
   static const String nutrition = '/nutrition';
@@ -67,7 +76,7 @@ class AppRouter {
   // Debug routes (only available in debug mode)
   static const String debugSearchBenchmark = '/debug/search-benchmark';
 
-  /// Helper para crear páginas con transición fade
+  /// Helper para crear pÃ¡ginas con transiciÃ³n fade
   static CustomTransitionPage<void> _fadePage({
     required LocalKey key,
     required Widget child,
@@ -76,10 +85,7 @@ class AppRouter {
       key: key,
       child: child,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
       },
       transitionDuration: const Duration(milliseconds: 400),
     );
@@ -90,37 +96,28 @@ class AppRouter {
     initialLocation: root,
     debugLogDiagnostics: true,
     routes: [
-      // Ruta raíz con splash wrapper
+      // Ruta raÃ­z con splash wrapper
       GoRoute(
         path: root,
-        builder: (context, state) => const SplashWrapper(
-          child: EntryScreen(),
-        ),
+        builder: (context, state) => const SplashWrapper(child: EntryScreen()),
       ),
 
       // Entry screen (selector de modo)
-      GoRoute(
-        path: entry,
-        builder: (context, state) => const EntryScreen(),
-      ),
+      GoRoute(path: entry, builder: (context, state) => const EntryScreen()),
 
       // Today screen (vista unificada HOY) - FASE 6
       GoRoute(
         path: '/today',
-        pageBuilder: (context, state) => _fadePage(
-          key: state.pageKey,
-          child: const TodayScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _fadePage(key: state.pageKey, child: const TodayScreen()),
       ),
 
-      // === NUTRICIÓN ===
-      // Transición fade desde EntryScreen
+      // === NUTRICIÃ“N ===
+      // TransiciÃ³n fade desde EntryScreen
       GoRoute(
         path: nutrition,
-        pageBuilder: (context, state) => _fadePage(
-          key: state.pageKey,
-          child: const HomeScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _fadePage(key: state.pageKey, child: const HomeScreen()),
       ),
 
       GoRoute(
@@ -172,13 +169,11 @@ class AppRouter {
         ),
 
       // === ENTRENAMIENTO ===
-      // Transición fade desde EntryScreen (usa TrainingShell internamente)
+      // TransiciÃ³n fade desde EntryScreen (usa TrainingShell internamente)
       GoRoute(
         path: training,
-        pageBuilder: (context, state) => _fadePage(
-          key: state.pageKey,
-          child: const TrainingShell(),
-        ),
+        pageBuilder: (context, state) =>
+            _fadePage(key: state.pageKey, child: const TrainingShell()),
       ),
 
       GoRoute(
@@ -199,7 +194,10 @@ class AppRouter {
 
       GoRoute(
         path: trainingLibrary,
-        builder: (context, state) => const SearchExerciseScreen(),
+        builder: (context, state) {
+          final mode = state.uri.queryParameters['mode'];
+          return SearchExerciseScreen(isPickerMode: mode == 'picker');
+        },
       ),
 
       GoRoute(
@@ -218,14 +216,14 @@ class AppRouter {
         ),
       ),
 
-      // Sesión de entrenamiento activa
+      // SesiÃ³n de entrenamiento activa
       // Nota: TrainingSessionScreen no acepta sessionId, maneja su propio estado
       GoRoute(
         path: trainingSession,
         builder: (context, state) => const TrainingSessionScreen(),
       ),
 
-      // Detalle de sesión completada
+      // Detalle de sesiÃ³n completada
       // Requiere el objeto Sesion completo, no solo ID
       // Por ahora redirige a historial (deep link complejo requiere provider)
       GoRoute(
@@ -238,6 +236,18 @@ class AppRouter {
           return const _MissingSessionDetailScreen();
         },
       ),
+
+      // Detalle de sesión completada por ID (deep link estable)
+      GoRoute(
+        path: '$trainingSessionDetail/:sessionId',
+        builder: (context, state) {
+          final sessionId = state.pathParameters['sessionId'];
+          if (sessionId == null || sessionId.isEmpty) {
+            return const _MissingSessionDetailScreen();
+          }
+          return _SessionDetailByIdScreen(sessionId: sessionId);
+        },
+      ),
     ],
 
     // Manejo de errores (ruta no encontrada)
@@ -246,22 +256,18 @@ class AppRouter {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.error_outline, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              'Página no encontrada',
+              'PÃ¡gina no encontrada',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
               state.uri.path,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -275,15 +281,15 @@ class AppRouter {
   );
 }
 
-/// Extensiones útiles para navegación
+/// Extensiones Ãºtiles para navegaciÃ³n
 extension GoRouterExtension on BuildContext {
-  /// Navega a una ruta específica (reemplaza la ruta actual)
+  /// Navega a una ruta especÃ­fica (reemplaza la ruta actual)
   void goTo(String location) => go(location);
 
   /// Navega a una ruta manteniendo el stack (push)
   void pushTo(String location) => push(location);
 
-  /// Navega a nutrición
+  /// Navega a nutriciÃ³n
   void goToNutrition() => go(AppRouter.nutrition);
 
   /// Navega al diario
@@ -292,10 +298,10 @@ extension GoRouterExtension on BuildContext {
   /// Navega a los alimentos
   void goToFoods() => go(AppRouter.nutritionFoods);
 
-  /// Navega a búsqueda de alimentos
+  /// Navega a bÃºsqueda de alimentos
   void goToFoodSearch() => push(AppRouter.nutritionFoodSearch);
 
-  /// Navega a búsqueda externa (Open Food Facts)
+  /// Navega a bÃºsqueda externa (Open Food Facts)
   void goToExternalSearch({String? barcode}) {
     final uri = barcode != null
         ? '${AppRouter.nutritionExternalSearch}?barcode=$barcode'
@@ -309,20 +315,28 @@ extension GoRouterExtension on BuildContext {
   /// Navega al historial de entrenamiento
   void goToTrainingHistory() => go(AppRouter.trainingHistory);
 
-  /// Navega a la pantalla de sesión de entrenamiento
+  /// Navega a la pantalla de sesiÃ³n de entrenamiento
   void goToTrainingSession() => go(AppRouter.trainingSession);
 
-  /// Navega al detalle de sesión (push con extra)
+  /// Navega al detalle de sesiÃ³n (push con extra)
   void pushToTrainingSessionDetail(Sesion sesion) =>
       push(AppRouter.trainingSessionDetail, extra: sesion);
+
+  /// Navega al detalle por ID (útil para deep links estables).
+  void goToTrainingSessionDetailById(String sessionId) =>
+      go('${AppRouter.trainingSessionDetail}/$sessionId');
 
   /// Navega a la biblioteca de ejercicios
   void goToTrainingLibrary() => go(AppRouter.trainingLibrary);
 
+  /// Navega a biblioteca en modo selector (retorna ejercicio al hacer pop).
+  void goToTrainingLibraryPicker() =>
+      go('${AppRouter.trainingLibrary}?mode=picker');
+
   /// Navega a las rutinas
   void goToTrainingRoutines() => go(AppRouter.trainingRoutines);
 
-  /// Navega a análisis de entrenamiento
+  /// Navega a anÃ¡lisis de entrenamiento
   void goToTrainingAnalysis() => go(AppRouter.trainingAnalysis);
 
   /// Navega a ajustes de entrenamiento
@@ -342,10 +356,11 @@ extension GoRouterExtension on BuildContext {
 
   /// Navega a la pantalla de peso
   void goToWeight() => go(AppRouter.nutritionWeight);
+
   /// Navega a Today Screen (vista HOY unificada)
   void goToToday() => go('/today');
 
-  /// Vuelve atrás
+  /// Vuelve atrÃ¡s
   void goBack() => pop();
 }
 
@@ -355,17 +370,42 @@ class _MissingSessionDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalle de sesión')),
+      appBar: AppBar(title: const Text('Detalle de sesiÃ³n')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Sesión no encontrada. Abre el historial y selecciona una sesión.',
+            'SesiÃ³n no encontrada. Abre el historial y selecciona una sesiÃ³n.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SessionDetailByIdScreen extends ConsumerWidget {
+  final String sessionId;
+
+  const _SessionDetailByIdScreen({required this.sessionId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sessionAsync = ref.watch(trainingSessionByIdProvider(sessionId));
+
+    return sessionAsync.when(
+      data: (session) {
+        if (session == null) {
+          return const _MissingSessionDetailScreen();
+        }
+        return SessionDetailScreen(sesion: session);
+      },
+      loading: () => Scaffold(
+        appBar: AppBar(title: const Text('Detalle de sesiÃ³n')),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stackTrace) => const _MissingSessionDetailScreen(),
     );
   }
 }

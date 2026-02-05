@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 
 import '../../diet/utils/spanish_text_utils.dart';
 import 'database_connection.dart';
@@ -63,7 +63,9 @@ class MealTypeConverter extends TypeConverter<MealType, String> {
     try {
       return MealType.values.byName(fromDb);
     } catch (e) {
-      debugPrint('[MealTypeConverter] Unknown value "$fromDb", defaulting to snack');
+      debugPrint(
+        '[MealTypeConverter] Unknown value "$fromDb", defaulting to snack',
+      );
       return MealType.snack; // Default seguro
     }
   }
@@ -89,7 +91,9 @@ class ServingUnitConverter extends TypeConverter<ServingUnit, String> {
     try {
       return ServingUnit.values.byName(fromDb);
     } catch (e) {
-      debugPrint('[ServingUnitConverter] Unknown value "$fromDb", defaulting to grams');
+      debugPrint(
+        '[ServingUnitConverter] Unknown value "$fromDb", defaulting to grams',
+      );
       return ServingUnit.grams; // Default seguro
     }
   }
@@ -109,13 +113,12 @@ class Routines extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
   DateTimeColumn get createdAt => dateTime()();
-  
+
   // 🆕 Schema v9: Modo de scheduling para sugerencias inteligentes
   // 'sequential' (default), 'weeklyAnchored', 'floatingCycle'
-  TextColumn get schedulingMode => text().withDefault(
-    const Constant('sequential'),
-  )();
-  
+  TextColumn get schedulingMode =>
+      text().withDefault(const Constant('sequential'))();
+
   // 🆕 Schema v9: Configuración JSON adicional para scheduling
   // Ej: {"minRestHours": 20, "autoAlternate": true}
   TextColumn get schedulingConfig => text().nullable()();
@@ -134,10 +137,10 @@ class RoutineDays extends Table {
     const Constant('none'),
   )(); // 'none', 'lineal', 'double', 'percentage1RM'
   IntColumn get dayIndex => integer()();
-  
+
   // 🆕 Schema v9: Días de la semana asignados (JSON array [1,3,5] = Lunes, Miércoles, Viernes)
   TextColumn get weekdays => text().nullable()();
-  
+
   // 🆕 Schema v9: Horas mínimas de descanso después de este día específico
   IntColumn get minRestHours => integer().nullable()();
 
@@ -264,7 +267,8 @@ class UserProfiles extends Table {
   TextColumn get gender => text().nullable()(); // 'male', 'female'
   RealColumn get heightCm => real().nullable()();
   RealColumn get currentWeightKg => real().nullable()();
-  TextColumn get activityLevel => text().withDefault(const Constant('moderatelyActive'))();
+  TextColumn get activityLevel =>
+      text().withDefault(const Constant('moderatelyActive'))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -293,25 +297,31 @@ class Foods extends Table {
   RealColumn get fatPer100g => real().nullable()();
 
   // Valores nutricionales por porción (opcional)
-  TextColumn get portionName => text().nullable()(); // ej: "taza", "unidad", "rebanada"
-  RealColumn get portionGrams => real().nullable()(); // gramos que representa 1 porción
+  TextColumn get portionName =>
+      text().nullable()(); // ej: "taza", "unidad", "rebanada"
+  RealColumn get portionGrams =>
+      real().nullable()(); // gramos que representa 1 porción
 
   // Flags de origen y verificación
-  BoolColumn get userCreated =>
-      boolean().withDefault(const Constant(true))();
-  TextColumn get verifiedSource => text().nullable()(); // 'usda', 'edamam', etc.
-  TextColumn get sourceMetadata =>
-      text().map(const JsonMapConverter()).nullable()(); // datos crudos de la fuente
+  BoolColumn get userCreated => boolean().withDefault(const Constant(true))();
+  TextColumn get verifiedSource =>
+      text().nullable()(); // 'usda', 'edamam', etc.
+  TextColumn get sourceMetadata => text()
+      .map(const JsonMapConverter())
+      .nullable()(); // datos crudos de la fuente
 
   // 🆕 NUEVO: Campos para sistema de búsqueda inteligente
-  TextColumn get normalizedName => text().nullable()(); // nombre normalizado para búsqueda
-  IntColumn get useCount => integer().withDefault(const Constant(0))(); // contador de uso
+  TextColumn get normalizedName =>
+      text().nullable()(); // nombre normalizado para búsqueda
+  IntColumn get useCount =>
+      integer().withDefault(const Constant(0))(); // contador de uso
   DateTimeColumn get lastUsedAt => dateTime().nullable()(); // última vez usado
   TextColumn get nutriScore => text().nullable()(); // Nutri-Score (a-e)
   IntColumn get novaGroup => integer().nullable()(); // Grupo NOVA (1-4)
-  
+
   // 🆕 NUEVO: Campo para favoritos
-  BoolColumn get isFavorite => boolean().withDefault(const Constant(false))(); // marcado como favorito
+  BoolColumn get isFavorite =>
+      boolean().withDefault(const Constant(false))(); // marcado como favorito
 
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -362,7 +372,8 @@ class DiaryEntries extends Table {
 @TableIndex(name: 'weighin_date_idx', columns: {#measuredAt})
 class WeighIns extends Table {
   TextColumn get id => text()();
-  DateTimeColumn get measuredAt => dateTime()(); // Fecha y hora exacta del pesaje
+  DateTimeColumn get measuredAt =>
+      dateTime()(); // Fecha y hora exacta del pesaje
   RealColumn get weightKg => real()();
   TextColumn get note => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
@@ -406,8 +417,7 @@ class Recipes extends Table {
   IntColumn get servings => integer().withDefault(const Constant(1))();
   TextColumn get servingName => text().nullable()(); // ej: "porción", "taza"
 
-  BoolColumn get userCreated =>
-      boolean().withDefault(const Constant(true))();
+  BoolColumn get userCreated => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -424,8 +434,7 @@ class RecipeItems extends Table {
       text().references(Foods, #id, onDelete: KeyAction.cascade)();
 
   RealColumn get amount => real()(); // cantidad en gramos o unidades
-  TextColumn get unit =>
-      text().map(const ServingUnitConverter())();
+  TextColumn get unit => text().map(const ServingUnitConverter())();
 
   // Datos snapshot del food en el momento de agregarlo
   TextColumn get foodNameSnapshot => text()();
@@ -450,7 +459,7 @@ class RecipeItems extends Table {
 class FoodsFts extends Table {
   TextColumn get name => text()();
   TextColumn get brand => text().nullable()();
-  
+
   // rowid se mapea automáticamente al id de Foods
 }
 
@@ -460,22 +469,30 @@ class FoodsFts extends Table {
 class SearchHistory extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get query => text()(); // Query original
-  TextColumn get normalizedQuery => text()(); // Query normalizado (lowercase, trimmed)
-  TextColumn get selectedFoodId => text().nullable()(); // ID del alimento seleccionado (si aplica)
+  TextColumn get normalizedQuery =>
+      text()(); // Query normalizado (lowercase, trimmed)
+  TextColumn get selectedFoodId =>
+      text().nullable()(); // ID del alimento seleccionado (si aplica)
   DateTimeColumn get searchedAt => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get hasResults => boolean().withDefault(const Constant(true))();
 }
 
 /// Patrones de consumo para ML predictivo
 /// Almacena cuándo y qué alimentos consume el usuario para sugerencias inteligentes
-@TableIndex(name: 'consumption_patterns_unique_idx', columns: {#foodId, #hourOfDay, #dayOfWeek})
+@TableIndex(
+  name: 'consumption_patterns_unique_idx',
+  columns: {#foodId, #hourOfDay, #dayOfWeek},
+)
 class ConsumptionPatterns extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get foodId => text().references(Foods, #id, onDelete: KeyAction.cascade)();
+  TextColumn get foodId =>
+      text().references(Foods, #id, onDelete: KeyAction.cascade)();
   IntColumn get hourOfDay => integer()(); // 0-23
   IntColumn get dayOfWeek => integer()(); // 1-7 (lunes=1, domingo=7)
   TextColumn get mealType => text().map(const MealTypeConverter()).nullable()();
-  IntColumn get frequency => integer().withDefault(const Constant(1))(); // Cuántas veces se ha consumido
+  IntColumn get frequency => integer().withDefault(
+    const Constant(1),
+  )(); // Cuántas veces se ha consumido
   DateTimeColumn get lastConsumedAt => dateTime()();
 }
 
@@ -489,8 +506,10 @@ class ConsumptionPatterns extends Table {
 class MealTemplates extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()(); // Nombre de la plantilla: "Desayuno típico"
-  TextColumn get mealType => text().map(const MealTypeConverter())(); // Tipo de comida sugerido
-  IntColumn get useCount => integer().withDefault(const Constant(0))(); // Para ordenar por uso
+  TextColumn get mealType =>
+      text().map(const MealTypeConverter())(); // Tipo de comida sugerido
+  IntColumn get useCount =>
+      integer().withDefault(const Constant(0))(); // Para ordenar por uso
   DateTimeColumn get lastUsedAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -503,19 +522,21 @@ class MealTemplates extends Table {
 /// Cada item representa un alimento con su cantidad
 class MealTemplateItems extends Table {
   TextColumn get id => text()();
-  TextColumn get templateId => text().references(MealTemplates, #id, onDelete: KeyAction.cascade)();
-  TextColumn get foodId => text().references(Foods, #id, onDelete: KeyAction.cascade)();
-  
+  TextColumn get templateId =>
+      text().references(MealTemplates, #id, onDelete: KeyAction.cascade)();
+  TextColumn get foodId =>
+      text().references(Foods, #id, onDelete: KeyAction.cascade)();
+
   RealColumn get amount => real()(); // Cantidad en gramos
   TextColumn get unit => text().map(const ServingUnitConverter())();
-  
+
   // Snapshot del alimento al momento de crear la plantilla (para mostrar aunque se borre el food)
   TextColumn get foodNameSnapshot => text()();
   IntColumn get kcalPer100gSnapshot => integer()();
   RealColumn get proteinPer100gSnapshot => real().nullable()();
   RealColumn get carbsPer100gSnapshot => real().nullable()();
   RealColumn get fatPer100gSnapshot => real().nullable()();
-  
+
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 
   @override
@@ -532,9 +553,10 @@ class MealTemplateItems extends Table {
 class BodyMeasurements extends Table {
   TextColumn get id => text()();
   DateTimeColumn get date => dateTime()(); // Fecha de la medición
-  
+
   // Medidas principales (todas en cm)
-  RealColumn get weightKg => real().nullable()(); // Peso al momento de la medición
+  RealColumn get weightKg =>
+      real().nullable()(); // Peso al momento de la medición
   RealColumn get waistCm => real().nullable()(); // Cintura
   RealColumn get chestCm => real().nullable()(); // Pecho
   RealColumn get hipsCm => real().nullable()(); // Cadera
@@ -545,10 +567,10 @@ class BodyMeasurements extends Table {
   RealColumn get leftCalfCm => real().nullable()(); // Pantorrilla izquierda
   RealColumn get rightCalfCm => real().nullable()(); // Pantorrilla derecha
   RealColumn get neckCm => real().nullable()(); // Cuello
-  
+
   // Cálculo automático de grasa corporal (opcional)
   RealColumn get bodyFatPercentage => real().nullable()();
-  
+
   // Metadatos
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
@@ -563,20 +585,24 @@ class BodyMeasurements extends Table {
 class ProgressPhotos extends Table {
   TextColumn get id => text()();
   DateTimeColumn get date => dateTime()(); // Fecha de la foto
-  
+
   // Ruta de la imagen guardada localmente
   TextColumn get imagePath => text()();
-  
+
   // Categoría de la foto (front, side, back, etc.)
   TextColumn get category => text().withDefault(const Constant('front'))();
   // Valores posibles: 'front', 'side', 'back', 'upper', 'lower', 'other'
-  
+
   // Notas opcionales
   TextColumn get notes => text().nullable()();
-  
+
   // Relación opcional con medidas del mismo día
-  TextColumn get measurementId => text().nullable().references(BodyMeasurements, #id, onDelete: KeyAction.setNull)();
-  
+  TextColumn get measurementId => text().nullable().references(
+    BodyMeasurements,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+
   DateTimeColumn get createdAt => dateTime()();
 
   @override
@@ -719,7 +745,7 @@ class AppDatabase extends _$AppDatabase {
           // Añadir columnas de scheduling a Routines
           await m.addColumn(routines, routines.schedulingMode);
           await m.addColumn(routines, routines.schedulingConfig);
-          
+
           // Añadir columnas de scheduling a RoutineDays
           await m.addColumn(routineDays, routineDays.weekdays);
           await m.addColumn(routineDays, routineDays.minRestHours);
@@ -732,7 +758,7 @@ class AppDatabase extends _$AppDatabase {
         try {
           // Añadir columna isFavorite a foods
           await m.addColumn(foods, foods.isFavorite);
-          
+
           // Recrear tabla FTS5 con estructura correcta
           await customStatement('DROP TABLE IF EXISTS foods_fts');
           await _createFts5Tables(m);
@@ -756,7 +782,9 @@ class AppDatabase extends _$AppDatabase {
         try {
           await m.createTable(mealTemplates);
           await m.createTable(mealTemplateItems);
-          debugPrint('Migration v12: MealTemplates tables created successfully');
+          debugPrint(
+            'Migration v12: MealTemplates tables created successfully',
+          );
         } catch (e) {
           debugPrint('Migration v12 MealTemplates error: $e');
         }
@@ -766,7 +794,9 @@ class AppDatabase extends _$AppDatabase {
         try {
           await m.createTable(bodyMeasurements);
           await m.createTable(progressPhotos);
-          debugPrint('Migration v13: BodyMeasurements and ProgressPhotos tables created successfully');
+          debugPrint(
+            'Migration v13: BodyMeasurements and ProgressPhotos tables created successfully',
+          );
         } catch (e) {
           debugPrint('Migration v13 BodyProgress error: $e');
         }
@@ -785,27 +815,31 @@ class AppDatabase extends _$AppDatabase {
 
   /// 🆕 Crea tabla FTS5 virtual para búsqueda de alimentos
   /// Usa un enfoque external content con sincronización manual
-  /// 
+  ///
   /// SEGURIDAD: Realiza backup de datos existentes antes de recrear la tabla
   /// para permitir recuperación en caso de error durante la migración.
   Future<void> _createFts5Tables(Migrator m) async {
     // Verificar si existe tabla previa para backup
     List<QueryRow> existingData = [];
     try {
-      existingData = await customSelect('SELECT food_id, name, brand FROM foods_fts LIMIT 10000').get();
+      existingData = await customSelect(
+        'SELECT food_id, name, brand FROM foods_fts LIMIT 10000',
+      ).get();
       if (existingData.isNotEmpty) {
-        debugPrint('[FTS] Backing up ${existingData.length} existing FTS entries before migration');
+        debugPrint(
+          '[FTS] Backing up ${existingData.length} existing FTS entries before migration',
+        );
       }
     } catch (e) {
       // Tabla no existe o está corrupta - continuar sin backup
       debugPrint('[FTS] No existing table to backup: $e');
     }
-    
+
     try {
       // Eliminar tabla si existe para asegurar estructura correcta
       // ( FTS5 no permite ALTER TABLE, así que recreamos siempre )
       await customStatement('DROP TABLE IF EXISTS foods_fts');
-      
+
       // Crear tabla virtual FTS5 sin content_rowid
       // Usamos 'food_id' como columna UNINDEXED para almacenar el UUID
       await customStatement('''
@@ -818,13 +852,17 @@ class AppDatabase extends _$AppDatabase {
 
       // Poblar índice FTS con datos existentes
       await rebuildFtsIndex();
-      
+
       // Verificar que la migración fue exitosa
-      final countResult = await customSelect('SELECT COUNT(*) as cnt FROM foods_fts').getSingle();
+      final countResult = await customSelect(
+        'SELECT COUNT(*) as cnt FROM foods_fts',
+      ).getSingle();
       final newCount = countResult.data['cnt'] as int;
-      
+
       if (newCount == 0 && existingData.isNotEmpty) {
-        debugPrint('[FTS] WARNING: Migration resulted in empty index, attempting restore from backup');
+        debugPrint(
+          '[FTS] WARNING: Migration resulted in empty index, attempting restore from backup',
+        );
         // Intentar restaurar desde backup
         for (final row in existingData) {
           try {
@@ -838,7 +876,7 @@ class AppDatabase extends _$AppDatabase {
           }
         }
       }
-      
+
       debugPrint('[FTS] Migration successful: $newCount entries in index');
     } catch (e) {
       debugPrint('[FTS] CRITICAL ERROR during FTS migration: $e');
@@ -859,13 +897,16 @@ class AppDatabase extends _$AppDatabase {
       }
     }
   }
-  
+
   /// 🆕 Inserta o actualiza entrada en FTS5 para un alimento
   Future<void> insertFoodFts(String foodId, String name, String? brand) async {
-    await customStatement('''
+    await customStatement(
+      '''
       INSERT OR REPLACE INTO foods_fts(food_id, name, brand)
       VALUES (?, ?, ?)
-    ''', [foodId, name, brand ?? '']);
+    ''',
+      [foodId, name, brand ?? ''],
+    );
   }
 
   /// Reconstruye el índice FTS desde la tabla foods
@@ -889,8 +930,12 @@ class AppDatabase extends _$AppDatabase {
     ''');
 
     // Verify the rebuild
-    final count = await customSelect('SELECT COUNT(*) as cnt FROM foods_fts').getSingle();
-    debugPrint('[rebuildFtsIndex] FTS index rebuilt with ${count.data['cnt']} entries');
+    final count = await customSelect(
+      'SELECT COUNT(*) as cnt FROM foods_fts',
+    ).getSingle();
+    debugPrint(
+      '[rebuildFtsIndex] FTS index rebuilt with ${count.data['cnt']} entries',
+    );
   }
 
   @override
@@ -901,7 +946,7 @@ class AppDatabase extends _$AppDatabase {
   // ============================================================================
 
   /// Búsqueda FTS5 con ranking por relevancia
-  /// 
+  ///
   /// Optimizations applied:
   /// - Multi-word queries use AND semantics (all terms must match)
   /// - Single-word queries use prefix matching
@@ -913,7 +958,7 @@ class AppDatabase extends _$AppDatabase {
 
     // Normalizar query para FTS5
     // Remove special characters that could break FTS syntax
-    // FTS5 special chars que causan errores: ' " - * ( ) : \ % _ [ ] ^ ~ { } | & < > = ! @ # $ 
+    // FTS5 special chars que causan errores: ' " - * ( ) : \ % _ [ ] ^ ~ { } | & < > = ! @ # $
     var sanitized = query.trim().toLowerCase();
     // Remover caracteres especiales de FTS5 reemplazándolos por espacio
     const specialChars = "\"'\\-*():;%_[]^~{}|&<>!=@#\$";
@@ -924,59 +969,86 @@ class AppDatabase extends _$AppDatabase {
 
     if (sanitized.isEmpty) return [];
 
-    final terms = sanitized.split(' ').where((t) => t.isNotEmpty && t.length >= 2).toList();
+    final terms = sanitized
+        .split(' ')
+        .where((t) => t.isNotEmpty && t.length >= 2)
+        .toList();
     if (terms.isEmpty) return [];
 
-    debugPrint('[searchFoodsFTS] Query: "$query" -> terms: $terms');
+    if (kDebugMode) {
+      debugPrint('[searchFoodsFTS] Query: "$query" -> terms: $terms');
+    }
 
     try {
       // Strategy: Progressive fallback for maximum findability
       // 1. AND exact (most precise) - "leche desnatada" finds items with BOTH terms
       // 2. OR fallback (any term) - relaxes to items with ANY term
       // 3. Synonym expansion (final fallback) - expands with Spanish food synonyms
-      
+
       // 1. Try AND semantics first (space = AND in FTS5)
       final andQuery = terms.map((t) => '$t*').join(' ');
-      debugPrint('[searchFoodsFTS] Step 1 - AND query: "$andQuery"');
+      if (kDebugMode) {
+        debugPrint('[searchFoodsFTS] Step 1 - AND query: "$andQuery"');
+      }
       var results = await _executeFtsQuery(andQuery, limit);
-      
+
       if (results.isNotEmpty) {
-        debugPrint('[searchFoodsFTS] AND found ${results.length} results');
+        if (kDebugMode) {
+          debugPrint('[searchFoodsFTS] AND found ${results.length} results');
+        }
         return results;
       }
-      
+
       // 2. Try OR fallback (any term matches)
       if (terms.length > 1) {
         final orQuery = terms.map((t) => '$t*').join(' OR ');
-        debugPrint('[searchFoodsFTS] Step 2 - OR query: "$orQuery"');
+        if (kDebugMode) {
+          debugPrint('[searchFoodsFTS] Step 2 - OR query: "$orQuery"');
+        }
         results = await _executeFtsQuery(orQuery, limit);
-        
+
         if (results.isNotEmpty) {
-          debugPrint('[searchFoodsFTS] OR found ${results.length} results');
+          if (kDebugMode) {
+            debugPrint('[searchFoodsFTS] OR found ${results.length} results');
+          }
           return results;
         }
       }
-      
+
       // 3. Try with synonyms expanded (finds "descremada" when searching "desnatada")
       final enhanced = enhanceQuery(query);
       if (enhanced.withSynonyms.isNotEmpty) {
-        debugPrint('[searchFoodsFTS] Step 3 - Synonym query: "${enhanced.withSynonyms}"');
+        if (kDebugMode) {
+          debugPrint(
+            '[searchFoodsFTS] Step 3 - Synonym query: "${enhanced.withSynonyms}"',
+          );
+        }
         results = await _executeFtsQuery(enhanced.withSynonyms, limit);
-        
+
         if (results.isNotEmpty) {
-          debugPrint('[searchFoodsFTS] Synonyms found ${results.length} results');
+          if (kDebugMode) {
+            debugPrint(
+              '[searchFoodsFTS] Synonyms found ${results.length} results',
+            );
+          }
           return results;
         }
       }
-      
-      debugPrint('[searchFoodsFTS] All strategies returned 0 results');
+
+      if (kDebugMode) {
+        debugPrint('[searchFoodsFTS] All strategies returned 0 results');
+      }
       return results;
     } catch (e) {
-      debugPrint('[searchFoodsFTS] FTS search error: $e, falling back to LIKE');
+      if (kDebugMode) {
+        debugPrint(
+          '[searchFoodsFTS] FTS search error: $e, falling back to LIKE',
+        );
+      }
       return _searchFoodsLike(query, limit: limit);
     }
   }
-  
+
   /// Helper to execute FTS query and map results
   Future<List<Food>> _executeFtsQuery(String ftsQuery, int limit) async {
     // FTS5 con food_id UNINDEXED: buscamos en FTS y obtenemos food_ids
@@ -984,13 +1056,13 @@ class AppDatabase extends _$AppDatabase {
       'SELECT food_id FROM foods_fts WHERE foods_fts MATCH ? LIMIT ?',
       variables: [Variable(ftsQuery), Variable(limit)],
     ).get();
-    
+
     if (ftsResults.isEmpty) return [];
-    
+
     // Obtener los alimentos por sus IDs
     final foodIds = ftsResults.map((r) => r.data['food_id'] as String).toList();
     final placeholders = List.filled(foodIds.length, '?').join(',');
-    
+
     final results = await customSelect(
       'SELECT id, name, normalized_name, brand, barcode, '
       'kcal_per100g, protein_per100g, carbs_per100g, fat_per100g, '
@@ -1000,43 +1072,47 @@ class AppDatabase extends _$AppDatabase {
       'FROM foods WHERE id IN ($placeholders)',
       variables: foodIds.map((id) => Variable(id)).toList(),
     ).get();
-    
+
     return results.map((row) => _mapRowToFood(row)).toList();
   }
-  
+
   /// Búsqueda fallback usando LIKE (cuando FTS falla)
-  /// 
+  ///
   /// SEGURIDAD: Todos los parámetros de usuario están completamente parametrizados
   /// para prevenir SQL injection. Los términos se escapan mediante placeholders ?
   Future<List<Food>> _searchFoodsLike(String query, {int limit = 50}) async {
     final normalized = query.toLowerCase().trim();
     final terms = normalized.split(' ').where((t) => t.isNotEmpty).toList();
-    
+
     if (terms.isEmpty) return [];
-    
-    debugPrint('[_searchFoodsLike] Fallback LIKE search for: $normalized (${terms.length} terms)');
+
+    if (kDebugMode) {
+      debugPrint(
+        '[_searchFoodsLike] Fallback LIKE search for: $normalized (${terms.length} terms)',
+      );
+    }
 
     // Construir WHERE clause con placeholders parametrizados
     // Cada término necesita 2 placeholders: uno para name, uno para brand
     final whereConditions = <String>[];
     final variables = <Variable<Object>>[];
-    
+
     for (final term in terms) {
       // Escapar caracteres especiales de LIKE para evitar comportamiento inesperado
       final escapedTerm = term.replaceAll('%', '\\%').replaceAll('_', '\\_');
       whereConditions.add(
-        "(LOWER(name) LIKE ? ESCAPE '\\' OR LOWER(COALESCE(brand, '')) LIKE ? ESCAPE '\\')"
+        "(LOWER(name) LIKE ? ESCAPE '\\' OR LOWER(COALESCE(brand, '')) LIKE ? ESCAPE '\\')",
       );
       // Dos placeholders por término
       variables.add(Variable('%$escapedTerm%'));
       variables.add(Variable('%$escapedTerm%'));
     }
-    
+
     final whereClause = whereConditions.join(' AND ');
-    
+
     // Añadir límite al final (con tipo explícito para type safety)
     variables.add(Variable<int>(limit));
-    
+
     final results = await customSelect(
       'SELECT id, name, normalized_name, brand, barcode, '
       'kcal_per100g, protein_per100g, carbs_per100g, fat_per100g, '
@@ -1049,10 +1125,12 @@ class AppDatabase extends _$AppDatabase {
       variables: variables,
     ).get();
 
-    debugPrint('[_searchFoodsLike] Found ${results.length} results');
+    if (kDebugMode) {
+      debugPrint('[_searchFoodsLike] Found ${results.length} results');
+    }
     return results.map((row) => _mapRowToFood(row)).toList();
   }
-  
+
   /// Mapea una fila de query a Food
   Food _mapRowToFood(QueryRow row) {
     return Food(
@@ -1079,7 +1157,7 @@ class AppDatabase extends _$AppDatabase {
       updatedAt: DateTime.parse(row.read<String>('updated_at')),
     );
   }
-  
+
   /// Helper para convertir string JSON a Map
   Map<String, dynamic>? _jsonFromString(String? json) {
     if (json == null || json.isEmpty) return null;
@@ -1089,7 +1167,7 @@ class AppDatabase extends _$AppDatabase {
       return null;
     }
   }
-  
+
   /// Helper para convertir string a DateTime
   DateTime? _dateTimeFromString(String? value) {
     if (value == null) return null;
@@ -1101,20 +1179,24 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Búsqueda por prefijo (para autocompletado rápido)
-  Future<List<Food>> searchFoodsByPrefix(String prefix, {int limit = 10}) async {
+  Future<List<Food>> searchFoodsByPrefix(
+    String prefix, {
+    int limit = 10,
+  }) async {
     final normalized = prefix.toLowerCase().trim();
 
     return (select(foods)
-      ..where((f) =>
-        f.normalizedName.like('$normalized%') |
-        f.name.lower().like('$normalized%')
-      )
-      ..orderBy([
-        (f) => OrderingTerm.desc(f.useCount),
-        (f) => OrderingTerm.asc(f.name),
-      ])
-      ..limit(limit))
-      .get();
+          ..where(
+            (f) =>
+                f.normalizedName.like('$normalized%') |
+                f.name.lower().like('$normalized%'),
+          )
+          ..orderBy([
+            (f) => OrderingTerm.desc(f.useCount),
+            (f) => OrderingTerm.asc(f.name),
+          ])
+          ..limit(limit))
+        .get();
   }
 
   /// Búsqueda offline completa (FTS + fallback a LIKE)
@@ -1128,25 +1210,30 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Sugerencias de autocompletado basadas en historial y alimentos populares
-  Future<List<String>> getSearchSuggestions(String prefix, {int limit = 10}) async {
+  Future<List<String>> getSearchSuggestions(
+    String prefix, {
+    int limit = 10,
+  }) async {
     final normalized = prefix.toLowerCase().trim();
-    
+
     // 1. Buscar en historial de búsquedas
-    final historial = await (select(searchHistory)
-      ..where((h) => h.normalizedQuery.like('$normalized%'))
-      ..orderBy([(h) => OrderingTerm.desc(h.searchedAt)])
-      ..limit(limit))
-      .map((h) => h.query)
-      .get();
-    
+    final historial =
+        await (select(searchHistory)
+              ..where((h) => h.normalizedQuery.like('$normalized%'))
+              ..orderBy([(h) => OrderingTerm.desc(h.searchedAt)])
+              ..limit(limit))
+            .map((h) => h.query)
+            .get();
+
     // 2. Buscar en nombres de alimentos populares
-    final populares = await (select(foods)
-      ..where((f) => f.normalizedName.like('$normalized%'))
-      ..orderBy([(f) => OrderingTerm.desc(f.useCount)])
-      ..limit(limit))
-      .map((f) => f.name)
-      .get();
-    
+    final populares =
+        await (select(foods)
+              ..where((f) => f.normalizedName.like('$normalized%'))
+              ..orderBy([(f) => OrderingTerm.desc(f.useCount)])
+              ..limit(limit))
+            .map((f) => f.name)
+            .get();
+
     // Combinar sin duplicados manteniendo orden
     return {...historial, ...populares}.take(limit).toList();
   }
@@ -1159,54 +1246,64 @@ class AppDatabase extends _$AppDatabase {
   }) async {
     // Si tenemos contexto temporal, buscar patrones de consumo
     if (hourOfDay != null && dayOfWeek != null) {
-      final patrones = await (select(consumptionPatterns)
-        ..where((p) => p.hourOfDay.equals(hourOfDay) & p.dayOfWeek.equals(dayOfWeek))
-        ..orderBy([(p) => OrderingTerm.desc(p.frequency)])
-        ..limit(limit))
-        .get();
-      
+      final patrones =
+          await (select(consumptionPatterns)
+                ..where(
+                  (p) =>
+                      p.hourOfDay.equals(hourOfDay) &
+                      p.dayOfWeek.equals(dayOfWeek),
+                )
+                ..orderBy([(p) => OrderingTerm.desc(p.frequency)])
+                ..limit(limit))
+              .get();
+
       if (patrones.isNotEmpty) {
         final foodIds = patrones.map((p) => p.foodId).toList();
-        return (select(foods)
-          ..where((f) => f.id.isIn(foodIds)))
-          .get();
+        return (select(foods)..where((f) => f.id.isIn(foodIds))).get();
       }
     }
-    
+
     // Fallback: alimentos más usados globalmente
     return (select(foods)
-      ..where((f) => f.useCount.isBiggerThanValue(0))
-      ..orderBy([
-        (f) => OrderingTerm.desc(f.useCount),
-        (f) => OrderingTerm.desc(f.lastUsedAt),
-      ])
-      ..limit(limit))
-      .get();
+          ..where((f) => f.useCount.isBiggerThanValue(0))
+          ..orderBy([
+            (f) => OrderingTerm.desc(f.useCount),
+            (f) => OrderingTerm.desc(f.lastUsedAt),
+          ])
+          ..limit(limit))
+        .get();
   }
 
   /// Registrar uso de un alimento (para estadísticas y ML predictivo)
   Future<void> recordFoodUsage(String foodId, {MealType? mealType}) async {
     final now = DateTime.now();
-    
+
     // Actualizar contador del alimento con SQL directo
     await customStatement(
       'UPDATE foods SET use_count = use_count + 1, last_used_at = ? WHERE id = ?',
       [now.toIso8601String(), foodId],
     );
-    
+
     // Actualizar patrón de consumo con SQL directo (UPSERT)
-    await customStatement('''
+    await customStatement(
+      '''
       INSERT INTO consumption_patterns (food_id, hour_of_day, day_of_week, meal_type, frequency, last_consumed_at)
       VALUES (?, ?, ?, ?, 1, ?)
       ON CONFLICT(food_id, hour_of_day, day_of_week) DO UPDATE SET
         frequency = frequency + 1,
         last_consumed_at = excluded.last_consumed_at,
         meal_type = excluded.meal_type
-    ''', [foodId, now.hour, now.weekday, mealType?.name, now.toIso8601String()]);
+    ''',
+      [foodId, now.hour, now.weekday, mealType?.name, now.toIso8601String()],
+    );
   }
 
   /// Guardar búsqueda en historial
-  Future<void> saveSearchHistory(String query, {String? selectedFoodId, bool hasResults = true}) async {
+  Future<void> saveSearchHistory(
+    String query, {
+    String? selectedFoodId,
+    bool hasResults = true,
+  }) async {
     await into(searchHistory).insert(
       SearchHistoryCompanion(
         query: Value(query),
@@ -1234,7 +1331,7 @@ class AppDatabase extends _$AppDatabase {
   // ============================================================================
 
   /// Modelo para representar un grupo de duplicados
-  /// 
+  ///
   /// Retorna grupos de alimentos con el mismo nombre normalizado y marca.
   /// Cada grupo tiene: nombre, marca, lista de IDs duplicados, y el ID del "maestro"
   /// (el que tiene mayor useCount).
@@ -1254,47 +1351,53 @@ class AppDatabase extends _$AppDatabase {
     ''').get();
 
     final groups = <DuplicateGroup>[];
-    
+
     for (final row in results) {
       final ids = (row.data['ids'] as String).split(',');
       final normName = row.data['norm_name'] as String;
       final normBrand = row.data['norm_brand'] as String;
       final maxUse = row.data['max_use'] as int? ?? 0;
-      
+
       // Encontrar el ID maestro (el con mayor useCount)
       String? masterId;
       for (final id in ids) {
-        final food = await (select(foods)..where((f) => f.id.equals(id))).getSingleOrNull();
+        final food = await (select(
+          foods,
+        )..where((f) => f.id.equals(id))).getSingleOrNull();
         if (food != null && food.useCount == maxUse) {
           masterId = id;
           break;
         }
       }
-      
-      groups.add(DuplicateGroup(
-        normalizedName: normName,
-        normalizedBrand: normBrand,
-        foodIds: ids,
-        masterId: masterId ?? ids.first,
-        count: ids.length,
-      ));
+
+      groups.add(
+        DuplicateGroup(
+          normalizedName: normName,
+          normalizedBrand: normBrand,
+          foodIds: ids,
+          masterId: masterId ?? ids.first,
+          count: ids.length,
+        ),
+      );
     }
-    
+
     return groups;
   }
 
   /// Fusionar un grupo de duplicados
-  /// 
+  ///
   /// 1. Actualiza todas las referencias en diary_entries al ID maestro
   /// 2. Suma los useCount de todos los duplicados al maestro
   /// 3. Elimina los duplicados (excepto el maestro)
   /// 4. Actualiza el índice FTS
   Future<int> mergeDuplicateGroup(DuplicateGroup group) async {
     if (group.foodIds.length < 2) return 0;
-    
-    final duplicateIds = group.foodIds.where((id) => id != group.masterId).toList();
+
+    final duplicateIds = group.foodIds
+        .where((id) => id != group.masterId)
+        .toList();
     if (duplicateIds.isEmpty) return 0;
-    
+
     // 1. Actualizar diary_entries para apuntar al maestro
     for (final dupId in duplicateIds) {
       await customStatement(
@@ -1302,13 +1405,13 @@ class AppDatabase extends _$AppDatabase {
         [group.masterId, dupId],
       );
     }
-    
+
     // 2. Sumar useCount al maestro
     final totalUseCount = await customSelect(
       'SELECT SUM(use_count) as total FROM foods WHERE id IN (${duplicateIds.map((_) => '?').join(',')})',
       variables: duplicateIds.map((id) => Variable(id)).toList(),
     ).getSingle();
-    
+
     final additionalCount = (totalUseCount.data['total'] as int?) ?? 0;
     if (additionalCount > 0) {
       await customStatement(
@@ -1316,36 +1419,33 @@ class AppDatabase extends _$AppDatabase {
         [additionalCount, group.masterId],
       );
     }
-    
+
     // 3. Eliminar duplicados del índice FTS
     for (final dupId in duplicateIds) {
-      await customStatement(
-        'DELETE FROM foods_fts WHERE food_id = ?',
-        [dupId],
-      );
+      await customStatement('DELETE FROM foods_fts WHERE food_id = ?', [dupId]);
     }
-    
+
     // 4. Eliminar duplicados de la tabla foods
     final placeholders = duplicateIds.map((_) => '?').join(',');
     await customStatement(
       'DELETE FROM foods WHERE id IN ($placeholders)',
       duplicateIds,
     );
-    
+
     return duplicateIds.length;
   }
 
   /// Limpiar todos los duplicados de la base de datos
-  /// 
+  ///
   /// Retorna el número total de registros eliminados.
   Future<int> cleanupAllDuplicates() async {
     final groups = await findDuplicateFoods();
     var totalRemoved = 0;
-    
+
     for (final group in groups) {
       totalRemoved += await mergeDuplicateGroup(group);
     }
-    
+
     return totalRemoved;
   }
 }
@@ -1365,7 +1465,8 @@ class DuplicateGroup {
     required this.masterId,
     required this.count,
   });
-  
+
   @override
-  String toString() => 'DuplicateGroup($normalizedName, $normalizedBrand, $count duplicados)';
+  String toString() =>
+      'DuplicateGroup($normalizedName, $normalizedBrand, $count duplicados)';
 }

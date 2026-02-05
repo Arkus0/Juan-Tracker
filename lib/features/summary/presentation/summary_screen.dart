@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/design_system/design_system.dart';
-import '../../../core/router/app_router.dart';
 import '../../../core/widgets/home_button.dart';
 import '../../../diet/providers/coach_providers.dart';
 import '../../../diet/providers/diet_providers.dart';
 import '../../../diet/providers/weekly_insights_provider.dart';
 import '../../../diet/services/day_summary_calculator.dart';
+import '../../home/providers/home_providers.dart';
 
 /// Pantalla de resumen tipo "budget" con progreso detallado.
 ///
 /// Muestra:
-/// - Consumo del día vs objetivos
+/// - Consumo del dÃ­a vs objetivos
 /// - Barras de progreso visuales
 /// - Historial reciente
-/// - Acceso rápido a gestión de objetivos
+/// - Acceso rÃ¡pido a gestiÃ³n de objetivos
 class SummaryScreen extends ConsumerWidget {
   const SummaryScreen({super.key});
 
@@ -43,9 +42,7 @@ class SummaryScreen extends ConsumerWidget {
           coachPlan: coachPlan,
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(
-          child: Text('Error: $e'),
-        ),
+        error: (e, st) => Center(child: Text('Error: $e')),
       ),
     );
   }
@@ -78,20 +75,14 @@ class _SummaryContent extends StatelessWidget {
           _BudgetCard(summary: summary),
           const SizedBox(height: 24),
 
-          // Gráfico de tendencia semanal
-          Text(
-            'TENDENCIA SEMANAL',
-            style: _sectionStyle(context),
-          ),
+          // GrÃ¡fico de tendencia semanal
+          Text('TENDENCIA SEMANAL', style: _sectionStyle(context)),
           const SizedBox(height: 12),
           const _WeeklyTrendChart(),
           const SizedBox(height: 24),
 
-          // Weekly Insights: adherencia y comparación
-          Text(
-            'RESUMEN SEMANAL',
-            style: _sectionStyle(context),
-          ),
+          // Weekly Insights: adherencia y comparaciÃ³n
+          Text('RESUMEN SEMANAL', style: _sectionStyle(context)),
           const SizedBox(height: 12),
           const _WeeklyInsightsCard(),
           const SizedBox(height: 24),
@@ -101,7 +92,7 @@ class _SummaryContent extends StatelessWidget {
             _CreateTargetsCTA(),
             const SizedBox(height: 24),
           ],
-          
+
           // Si hay coach plan, mostrar indicador
           if (coachPlan != null) ...[
             _CoachPlanIndicator(plan: coachPlan),
@@ -109,19 +100,13 @@ class _SummaryContent extends StatelessWidget {
           ],
 
           // Desglose detallado
-          Text(
-            'DESGLOSE',
-            style: _sectionStyle(context),
-          ),
+          Text('DESGLOSE', style: _sectionStyle(context)),
           const SizedBox(height: 12),
           _MacroBreakdown(summary: summary),
           const SizedBox(height: 24),
 
-          // Estado del día
-          Text(
-            'ESTADO DEL DÍA',
-            style: _sectionStyle(context),
-          ),
+          // Estado del dÃ­a
+          Text('ESTADO DEL DÃA', style: _sectionStyle(context)),
           const SizedBox(height: 12),
           _DayStatusCard(summary: summary),
         ],
@@ -130,7 +115,7 @@ class _SummaryContent extends StatelessWidget {
   }
 
   TextStyle _sectionStyle(BuildContext context) {
-    return GoogleFonts.montserrat(
+    return AppTypography.bodyMedium.copyWith(
       fontSize: 12,
       fontWeight: FontWeight.w700,
       letterSpacing: 1.5,
@@ -162,7 +147,7 @@ class _DateHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           dateText,
-          style: GoogleFonts.montserrat(
+          style: AppTypography.bodyMedium.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -176,7 +161,7 @@ class _DateHeader extends StatelessWidget {
   }
 }
 
-/// Card principal de budget con calorías y progreso.
+/// Card principal de budget con calorÃ­as y progreso.
 class _BudgetCard extends StatelessWidget {
   final DaySummary summary;
 
@@ -191,8 +176,12 @@ class _BudgetCard extends StatelessWidget {
     final targetKcal = summary.targets?.kcalTarget ?? 0;
     final consumedKcal = summary.consumed.kcal;
     final remainingKcal = hasTarget ? targetKcal - consumedKcal : 0;
-    final progress = hasTarget ? (consumedKcal / targetKcal).clamp(0.0, 1.0) : 0.0;
-    final percentage = hasTarget ? ((consumedKcal / targetKcal) * 100).round() : 0;
+    final progress = hasTarget
+        ? (consumedKcal / targetKcal).clamp(0.0, 1.0)
+        : 0.0;
+    final percentage = hasTarget
+        ? ((consumedKcal / targetKcal) * 100).round()
+        : 0;
 
     return Card(
       elevation: 2,
@@ -200,15 +189,18 @@ class _BudgetCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Título
+            // TÃ­tulo
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.local_fire_department, color: Colors.orange.shade600),
+                Icon(
+                  Icons.local_fire_department,
+                  color: Colors.orange.shade600,
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  'CALORÍAS',
-                  style: GoogleFonts.montserrat(
+                  'CALORÃAS',
+                  style: AppTypography.bodyMedium.copyWith(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1,
@@ -218,14 +210,14 @@ class _BudgetCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            // Números principales
+            // NÃºmeros principales
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   '$consumedKcal',
-                  style: GoogleFonts.montserrat(
+                  style: AppTypography.bodyMedium.copyWith(
                     fontSize: 56,
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
@@ -237,7 +229,7 @@ class _BudgetCard extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
                       '/ $targetKcal',
-                      style: GoogleFonts.montserrat(
+                      style: AppTypography.bodyMedium.copyWith(
                         fontSize: 20,
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -248,9 +240,7 @@ class _BudgetCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               hasTarget ? 'consumidas' : 'kcal consumidas',
-              style: TextStyle(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 20),
             // Barra de progreso
@@ -267,7 +257,7 @@ class _BudgetCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              // Información de progreso
+              // InformaciÃ³n de progreso
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -289,22 +279,19 @@ class _BudgetCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.secondaryContainer.withAlpha((0.5 * 255).round()),
+                  color: colorScheme.secondaryContainer.withAlpha(
+                    (0.5 * 255).round(),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: colorScheme.primary,
-                    ),
+                    Icon(Icons.info_outline, color: colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
                       'Sin objetivo configurado',
-                      style: TextStyle(
-                        color: colorScheme.onSecondaryContainer,
-                      ),
+                      style: TextStyle(color: colorScheme.onSecondaryContainer),
                     ),
                   ],
                 ),
@@ -324,7 +311,7 @@ class _BudgetCard extends StatelessWidget {
   }
 }
 
-/// Estadística individual del budget.
+/// EstadÃ­stica individual del budget.
 class _BudgetStat extends StatelessWidget {
   final String label;
   final String value;
@@ -354,20 +341,14 @@ class _BudgetStat extends StatelessWidget {
           children: [
             Text(
               value,
-              style: GoogleFonts.montserrat(
+              style: AppTypography.bodyMedium.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
             const SizedBox(width: 2),
-            Text(
-              unit,
-              style: TextStyle(
-                fontSize: 12,
-                color: color,
-              ),
-            ),
+            Text(unit, style: TextStyle(fontSize: 12, color: color)),
           ],
         ),
       ],
@@ -376,16 +357,16 @@ class _BudgetStat extends StatelessWidget {
 }
 
 /// CTA para crear objetivos cuando no hay ninguno.
-class _CreateTargetsCTA extends StatelessWidget {
+class _CreateTargetsCTA extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Card(
       color: theme.colorScheme.primaryContainer,
       elevation: 0,
       child: InkWell(
-        onTap: () => context.pushTo(AppRouter.nutritionCoach),
+        onTap: () => ref.read(homeTabProvider.notifier).goToCoach(),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -410,14 +391,14 @@ class _CreateTargetsCTA extends StatelessWidget {
                   children: [
                     Text(
                       'Configura tus objetivos',
-                      style: GoogleFonts.montserrat(
+                      style: AppTypography.bodyMedium.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Define calorías y macros para ver tu progreso y mantenerte en track.',
+                      'Define calorÃ­as y macros para ver tu progreso y mantenerte en track.',
                       style: TextStyle(
                         fontSize: 13,
                         color: theme.colorScheme.onSurfaceVariant,
@@ -439,14 +420,14 @@ class _CreateTargetsCTA extends StatelessWidget {
   }
 }
 
-/// Indicador de que se está usando el Coach Adaptativo.
-class _CoachPlanIndicator extends StatelessWidget {
+/// Indicador de que se estÃ¡ usando el Coach Adaptativo.
+class _CoachPlanIndicator extends ConsumerWidget {
   final dynamic plan; // CoachPlan
 
   const _CoachPlanIndicator({required this.plan});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -454,7 +435,7 @@ class _CoachPlanIndicator extends StatelessWidget {
       color: colorScheme.secondaryContainer.withAlpha(128),
       elevation: 0,
       child: InkWell(
-        onTap: () => context.pushTo(AppRouter.nutritionCoach),
+        onTap: () => ref.read(homeTabProvider.notifier).goToCoach(),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -479,7 +460,7 @@ class _CoachPlanIndicator extends StatelessWidget {
                   children: [
                     Text(
                       'Coach Adaptativo',
-                      style: GoogleFonts.montserrat(
+                      style: AppTypography.bodyMedium.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -499,7 +480,7 @@ class _CoachPlanIndicator extends StatelessWidget {
                 Icons.arrow_forward_ios,
                 color: colorScheme.secondary,
                 size: 14,
-            ),
+              ),
             ],
           ),
         ),
@@ -521,7 +502,7 @@ class _MacroBreakdown extends StatelessWidget {
     return Column(
       children: [
         _MacroProgressBar(
-          label: 'Proteína',
+          label: 'ProteÃ­na',
           icon: Icons.fitness_center,
           consumed: summary.consumed.protein,
           target: targets?.proteinTarget,
@@ -623,7 +604,7 @@ class _MacroProgressBar extends StatelessWidget {
   }
 }
 
-/// Card con estado del día (análisis rápido).
+/// Card con estado del dÃ­a (anÃ¡lisis rÃ¡pido).
 class _DayStatusCard extends StatelessWidget {
   final DaySummary summary;
 
@@ -654,7 +635,7 @@ class _DayStatusCard extends StatelessWidget {
                 children: [
                   Text(
                     status.title,
-                    style: GoogleFonts.montserrat(
+                    style: AppTypography.bodyMedium.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -682,7 +663,7 @@ class _DayStatusCard extends StatelessWidget {
         icon: Icons.info_outline,
         color: Colors.blue,
         title: 'Sin objetivo',
-        message: 'Configura un objetivo para ver análisis del día.',
+        message: 'Configura un objetivo para ver anÃ¡lisis del dÃ­a.',
       );
     }
 
@@ -690,8 +671,8 @@ class _DayStatusCard extends StatelessWidget {
       return _StatusInfo(
         icon: Icons.restaurant_outlined,
         color: Colors.orange,
-        title: 'Día vacío',
-        message: 'Aún no has registrado consumo para este día.',
+        title: 'DÃ­a vacÃ­o',
+        message: 'AÃºn no has registrado consumo para este dÃ­a.',
       );
     }
 
@@ -701,28 +682,28 @@ class _DayStatusCard extends StatelessWidget {
         icon: Icons.trending_down,
         color: Colors.green,
         title: 'Por debajo del objetivo',
-        message: 'Tienes muchas calorías disponibles para el resto del día.',
+        message: 'Tienes muchas calorÃ­as disponibles para el resto del dÃ­a.',
       );
     } else if (kcalPercent < 0.9) {
       return _StatusInfo(
         icon: Icons.trending_flat,
         color: Colors.orange,
         title: 'En rango',
-        message: 'Vas bien, mantén el control para llegar a tu objetivo.',
+        message: 'Vas bien, mantÃ©n el control para llegar a tu objetivo.',
       );
     } else if (kcalPercent <= 1.0) {
       return _StatusInfo(
         icon: Icons.check_circle_outline,
         color: Colors.green,
         title: 'Cerca del objetivo',
-        message: '¡Bien! Estás muy cerca de tu objetivo diario.',
+        message: 'Â¡Bien! EstÃ¡s muy cerca de tu objetivo diario.',
       );
     } else {
       return _StatusInfo(
         icon: Icons.warning_amber,
         color: Colors.red,
         title: 'Por encima del objetivo',
-        message: 'Has superado tu objetivo calórico para hoy.',
+        message: 'Has superado tu objetivo calÃ³rico para hoy.',
       );
     }
   }
@@ -742,7 +723,7 @@ class _StatusInfo {
   });
 }
 
-/// Gráfico de barras de la tendencia semanal de calorías.
+/// GrÃ¡fico de barras de la tendencia semanal de calorÃ­as.
 class _WeeklyTrendChart extends ConsumerWidget {
   const _WeeklyTrendChart();
 
@@ -756,15 +737,13 @@ class _WeeklyTrendChart extends ConsumerWidget {
         height: 160,
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (e, st) => SizedBox(
-        height: 160,
-        child: Center(child: Text('Error: $e')),
-      ),
+      error: (e, st) =>
+          SizedBox(height: 160, child: Center(child: Text('Error: $e'))),
     );
   }
 }
 
-/// Contenido del gráfico de tendencia.
+/// Contenido del grÃ¡fico de tendencia.
 class _TrendChartContent extends StatelessWidget {
   final List<DayTrendData> data;
 
@@ -776,7 +755,7 @@ class _TrendChartContent extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final hasTarget = data.isNotEmpty && data.first.kcalTarget != null;
 
-    // Calcular el máximo para escalar las barras
+    // Calcular el mÃ¡ximo para escalar las barras
     final maxKcal = data.fold<int>(
       hasTarget ? (data.first.kcalTarget! * 1.2).round() : 2500,
       (max, d) => d.kcalConsumed > max ? d.kcalConsumed : max,
@@ -823,12 +802,16 @@ class _TrendChartContent extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2),
                       child: _DayBar(
-                        dayName: DateFormat('E', 'es').format(d.date).substring(0, 2),
+                        dayName: DateFormat(
+                          'E',
+                          'es',
+                        ).format(d.date).substring(0, 2),
                         kcal: d.kcalConsumed,
                         barHeight: barHeight,
                         targetHeight: targetHeight,
                         isToday: isToday,
-                        isOverTarget: hasTarget && d.kcalConsumed > d.kcalTarget!,
+                        isOverTarget:
+                            hasTarget && d.kcalConsumed > d.kcalTarget!,
                         colorScheme: colorScheme,
                       ),
                     ),
@@ -858,9 +841,10 @@ class _TrendChartContent extends StatelessWidget {
     final daysWithData = data.where((d) => d.kcalConsumed > 0).toList();
     if (daysWithData.isEmpty) return 'Sin datos esta semana';
 
-    final avg = daysWithData.fold<int>(0, (sum, d) => sum + d.kcalConsumed) ~/
+    final avg =
+        daysWithData.fold<int>(0, (sum, d) => sum + d.kcalConsumed) ~/
         daysWithData.length;
-    return 'Promedio: $avg kcal/día (${daysWithData.length} días con registro)';
+    return 'Promedio: $avg kcal/dÃ­a (${daysWithData.length} dÃ­as con registro)';
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -868,7 +852,7 @@ class _TrendChartContent extends StatelessWidget {
   }
 }
 
-/// Barra individual de un día.
+/// Barra individual de un dÃ­a.
 class _DayBar extends StatelessWidget {
   final String dayName;
   final int kcal;
@@ -899,7 +883,7 @@ class _DayBar extends StatelessWidget {
           child: Stack(
             alignment: Alignment.bottomCenter,
             children: [
-              // Línea de objetivo
+              // LÃ­nea de objetivo
               if (targetHeight > 0)
                 Positioned(
                   bottom: targetHeight * 0.8,
@@ -922,8 +906,8 @@ class _DayBar extends StatelessWidget {
                   color: kcal == 0
                       ? Colors.grey.shade200
                       : isOverTarget
-                          ? Colors.red.shade400
-                          : colorScheme.primary,
+                      ? Colors.red.shade400
+                      : colorScheme.primary,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -931,7 +915,7 @@ class _DayBar extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        // Nombre del día
+        // Nombre del dÃ­a
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           decoration: isToday
@@ -945,7 +929,9 @@ class _DayBar extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-              color: isToday ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              color: isToday
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -996,7 +982,7 @@ class _LegendItem extends StatelessWidget {
 // WEEKLY INSIGHTS CARD
 // ============================================================================
 
-/// Card con insights de la semana actual y comparación con anterior
+/// Card con insights de la semana actual y comparaciÃ³n con anterior
 class _WeeklyInsightsCard extends ConsumerWidget {
   const _WeeklyInsightsCard();
 
@@ -1012,7 +998,7 @@ class _WeeklyInsightsCard extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Text(
-                'Sin datos suficientes para análisis semanal',
+                'Sin datos suficientes para anÃ¡lisis semanal',
                 style: TextStyle(color: colors.onSurfaceVariant),
               ),
             ),
@@ -1035,8 +1021,10 @@ class _WeeklyInsightsCard extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        current.isCurrentWeek ? 'Esta semana' : current.weekLabel,
-                        style: GoogleFonts.montserrat(
+                        current.isCurrentWeek
+                            ? 'Esta semana'
+                            : current.weekLabel,
+                        style: AppTypography.bodyMedium.copyWith(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1047,13 +1035,13 @@ class _WeeklyInsightsCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
 
-                // Métricas principales
+                // MÃ©tricas principales
                 Row(
                   children: [
                     Expanded(
                       child: _InsightMetric(
                         icon: Icons.restaurant,
-                        label: 'Días registrados',
+                        label: 'DÃ­as registrados',
                         value: '${current.daysLogged}/7',
                         color: colors.primary,
                       ),
@@ -1070,8 +1058,10 @@ class _WeeklyInsightsCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
 
-                // Comparación con semana anterior
-                if (previous != null && previous.daysLogged > 0 && current.kcalChangeVsLastWeek != null) ...[
+                // ComparaciÃ³n con semana anterior
+                if (previous != null &&
+                    previous.daysLogged > 0 &&
+                    current.kcalChangeVsLastWeek != null) ...[
                   const Divider(height: 24),
                   _WeekComparison(
                     change: current.kcalChangeVsLastWeek!,
@@ -1146,7 +1136,7 @@ class _AdherenceBadge extends StatelessWidget {
   }
 }
 
-/// Métrica individual del insight
+/// MÃ©trica individual del insight
 class _InsightMetric extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1173,17 +1163,14 @@ class _InsightMetric extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 11,
-                color: colors.onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
             ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: GoogleFonts.montserrat(
+          style: AppTypography.bodyMedium.copyWith(
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: colors.onSurface,
@@ -1194,15 +1181,12 @@ class _InsightMetric extends StatelessWidget {
   }
 }
 
-/// Comparación con semana anterior
+/// ComparaciÃ³n con semana anterior
 class _WeekComparison extends StatelessWidget {
   final int change;
   final int previousAvg;
 
-  const _WeekComparison({
-    required this.change,
-    required this.previousAvg,
-  });
+  const _WeekComparison({required this.change, required this.previousAvg});
 
   @override
   Widget build(BuildContext context) {
@@ -1213,18 +1197,11 @@ class _WeekComparison extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          changeIcon,
-          size: 16,
-          color: changeColor,
-        ),
+        Icon(changeIcon, size: 16, color: changeColor),
         const SizedBox(width: 4),
         Text(
-          '${change.abs()} kcal/día vs semana anterior',
-          style: TextStyle(
-            fontSize: 12,
-            color: colors.onSurfaceVariant,
-          ),
+          '${change.abs()} kcal/dÃ­a vs semana anterior',
+          style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
         ),
         const Spacer(),
         Text(
@@ -1264,9 +1241,24 @@ class _MacrosSummaryRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _MacroItem(label: 'Prot', value: protein, unit: 'g', color: Colors.blue),
-          _MacroItem(label: 'Carbs', value: carbs, unit: 'g', color: Colors.orange),
-          _MacroItem(label: 'Grasa', value: fat, unit: 'g', color: Colors.purple),
+          _MacroItem(
+            label: 'Prot',
+            value: protein,
+            unit: 'g',
+            color: Colors.blue,
+          ),
+          _MacroItem(
+            label: 'Carbs',
+            value: carbs,
+            unit: 'g',
+            color: Colors.orange,
+          ),
+          _MacroItem(
+            label: 'Grasa',
+            value: fat,
+            unit: 'g',
+            color: Colors.purple,
+          ),
         ],
       ),
     );
@@ -1301,7 +1293,7 @@ class _MacroItem extends StatelessWidget {
         ),
         Text(
           '${value.toStringAsFixed(0)}$unit',
-          style: GoogleFonts.montserrat(
+          style: AppTypography.bodyMedium.copyWith(
             fontSize: 13,
             fontWeight: FontWeight.w700,
           ),

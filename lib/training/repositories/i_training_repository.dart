@@ -37,6 +37,7 @@ abstract class ITrainingRepository {
 
   // Sesiones
   Stream<List<Sesion>> watchSesionesHistory({int limit = 50});
+  Future<Sesion?> getSesionById(String id);
   Future<void> saveSesion(Sesion sesion);
   Future<void> deleteSesion(String id);
   Future<List<Sesion>> getHistoryForExercise(String exerciseName);

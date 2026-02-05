@@ -46,6 +46,9 @@ class DriftTrainingRepository implements ITrainingRepository {
       _sessionRepo.watchSesionesHistory(limit: limit);
 
   @override
+  Future<Sesion?> getSesionById(String id) => _sessionRepo.getSesionById(id);
+
+  @override
   Future<void> saveSesion(Sesion sesion) async {
     await _sessionRepo.saveSesion(sesion);
     // Invalidar cache de actividad anual para el año de la sesión

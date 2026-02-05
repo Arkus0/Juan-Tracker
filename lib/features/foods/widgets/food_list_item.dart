@@ -115,8 +115,10 @@ void _cacheEmoji(String foodId, String emoji) {
 class FoodListItem extends StatelessWidget {
   final Food food;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final VoidCallback? onFavoriteToggle;
   final bool showFavoriteButton;
+  final bool showSelectionCheckbox;
   final bool isSelected;
   final VoidCallback? onSelectionToggle;
 
@@ -124,8 +126,10 @@ class FoodListItem extends StatelessWidget {
     super.key,
     required this.food,
     required this.onTap,
+    this.onLongPress,
     this.onFavoriteToggle,
     this.showFavoriteButton = false,
+    this.showSelectionCheckbox = false,
     this.isSelected = false,
     this.onSelectionToggle,
   });
@@ -133,62 +137,55 @@ class FoodListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     // Determinar color de calorías
     final kcalColor = _getKcalColor(food.kcalPer100g.toDouble());
 
     // PERF: Use optimized emoji lookup with caching
     final emoji = _getEmojiForFoodFast(food);
-    
-    // Check if batch selection mode is active
-    final isBatchMode = onSelectionToggle != null;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       // Highlight selected items
       color: isSelected ? theme.colorScheme.primaryContainer : null,
       child: InkWell(
-        onTap: isBatchMode ? onSelectionToggle : onTap,
-        onLongPress: isBatchMode ? null : onSelectionToggle, // Long-press to enter batch mode
+        onTap: showSelectionCheckbox ? onSelectionToggle : onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               // Checkbox for batch mode OR Emoji icon
-              if (isBatchMode) ...
-                [
-                  SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Checkbox(
-                      value: isSelected,
-                      onChanged: (_) => onSelectionToggle?.call(),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+              if (showSelectionCheckbox) ...[
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Checkbox(
+                    value: isSelected,
+                    onChanged: (_) => onSelectionToggle?.call(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   ),
-                ]
-              else ...
-                [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
-                      borderRadius: BorderRadius.circular(12),
+                ),
+              ] else ...[
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withAlpha(
+                      (0.3 * 255).round(),
                     ),
-                    child: Center(
-                      child: Text(
-                        emoji,
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
+                  child: Center(
+                    child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                  ),
+                ),
+              ],
               const SizedBox(width: 16),
-              
+
               // Información principal
               Expanded(
                 child: Column(
@@ -203,7 +200,7 @@ class FoodListItem extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    
+
                     // Marca (si existe) + indicador OFF
                     if (food.brand != null && food.brand!.isNotEmpty) ...[
                       const SizedBox(height: 2),
@@ -234,7 +231,11 @@ class FoodListItem extends StatelessWidget {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.cloud_done_outlined, size: 12, color: Colors.grey[500]),
+                          Icon(
+                            Icons.cloud_done_outlined,
+                            size: 12,
+                            color: Colors.grey[500],
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Open Food Facts',
@@ -246,31 +247,35 @@ class FoodListItem extends StatelessWidget {
                         ],
                       ),
                     ],
-                    
+
                     const SizedBox(height: 4),
-                    
+
                     // Macros
                     _buildMacrosRow(theme),
                   ],
                 ),
               ),
-              
+
               // Favorito toggle (si está habilitado)
-              if (showFavoriteButton && onFavoriteToggle != null) ...
-                [
-                  IconButton(
-                    icon: Icon(
-                      food.isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: food.isFavorite ? Colors.red : Colors.grey,
-                    ),
-                    onPressed: onFavoriteToggle,
-                    tooltip: food.isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos',
+              if (showFavoriteButton && onFavoriteToggle != null) ...[
+                IconButton(
+                  icon: Icon(
+                    food.isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: food.isFavorite ? Colors.red : Colors.grey,
                   ),
-                ],
-              
+                  onPressed: onFavoriteToggle,
+                  tooltip: food.isFavorite
+                      ? 'Quitar de favoritos'
+                      : 'Añadir a favoritos',
+                ),
+              ],
+
               // Calorías
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: kcalColor.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(8),
@@ -306,7 +311,7 @@ class FoodListItem extends StatelessWidget {
     final protein = food.proteinPer100g;
     final carbs = food.carbsPer100g;
     final fat = food.fatPer100g;
-    
+
     return Row(
       children: [
         if (protein != null) _buildMacroChip('P', protein, Colors.green),

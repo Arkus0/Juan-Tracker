@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:juan_tracker/core/providers/database_provider.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/feedback/haptics.dart';
 import 'package:juan_tracker/core/providers/today_providers.dart';
 import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
+import 'package:juan_tracker/diet/models/models.dart' as diet;
 
 /// 🎯 FASE 6: Pantalla "HOY" unificada
-/// 
+///
 /// Muestra en una sola vista:
 /// - Estado de entrenamiento (qué toca hoy)
 /// - Macros restantes
@@ -31,7 +33,7 @@ class TodayScreen extends ConsumerWidget {
   /// Obtiene mensaje contextual según hora del día
   String _getContextualMessage(TodaySummary summary, int hour) {
     if (summary.isLoading) return 'Cargando tu día...';
-    
+
     if (hour < 10) {
       // Mañana
       if (!summary.hasTrainingData) {
@@ -138,21 +140,15 @@ class TodayScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: _QuickActionsSection(
-                    summary: summary,
-                  ),
+                  child: _QuickActionsSection(summary: summary),
                 ),
               ),
 
               // Espacio al final
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 100),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
-          loading: () => const Center(
-            child: CircularProgressIndicator(),
-          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: AppError(
               message: 'Error al cargar tu día',
@@ -181,23 +177,19 @@ class _TrainingTodayCard extends StatelessWidget {
   final TodaySummary summary;
   final VoidCallback onTap;
 
-  const _TrainingTodayCard({
-    required this.summary,
-    required this.onTap,
-  });
+  const _TrainingTodayCard({required this.summary, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-
     // Determinar estado visual
     final bool isRestDay = summary.isRestDaySuggested;
     final bool hasWorkout = summary.hasTrainingData;
-    
+
     final gradientColors = isRestDay
         ? [Colors.blueGrey, Colors.blueGrey.shade700]
         : hasWorkout
-            ? [Colors.red.shade800, Colors.red.shade600]
-            : [Colors.grey.shade700, Colors.grey.shade600];
+        ? [Colors.red.shade800, Colors.red.shade600]
+        : [Colors.grey.shade700, Colors.grey.shade600];
 
     final icon = isRestDay
         ? Icons.bedtime_rounded
@@ -206,14 +198,15 @@ class _TrainingTodayCard extends StatelessWidget {
     final title = isRestDay
         ? 'Día de Descanso'
         : hasWorkout
-            ? summary.suggestedWorkout ?? 'Entrenamiento'
-            : 'Sin Rutina';
+        ? summary.suggestedWorkout ?? 'Entrenamiento'
+        : 'Sin Rutina';
 
-    final subtitle = summary.workoutMotivationalMessage ?? 
-        (hasWorkout 
+    final subtitle =
+        summary.workoutMotivationalMessage ??
+        (hasWorkout
             ? summary.daysSinceLastSession != null
-                ? 'Última: hace ${summary.daysSinceLastSession} días'
-                : 'Configura tu primera rutina'
+                  ? 'Última: hace ${summary.daysSinceLastSession} días'
+                  : 'Configura tu primera rutina'
             : 'Crea tu rutina para empezar');
 
     return AppCard(
@@ -241,11 +234,7 @@ class _TrainingTodayCard extends StatelessWidget {
                       color: Colors.white.withAlpha((0.2 * 255).round()),
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: Icon(
-                      icon,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    child: Icon(icon, color: Colors.white, size: 28),
                   ),
                   const Spacer(),
                   if (hasWorkout && !isRestDay)
@@ -301,10 +290,7 @@ class _NutritionTodayCard extends StatelessWidget {
   final TodaySummary summary;
   final VoidCallback onTap;
 
-  const _NutritionTodayCard({
-    required this.summary,
-    required this.onTap,
-  });
+  const _NutritionTodayCard({required this.summary, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -349,10 +335,7 @@ class _NutritionTodayCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.arrow_forward_rounded,
-              color: colors.onSurfaceVariant,
-            ),
+            Icon(Icons.arrow_forward_rounded, color: colors.onSurfaceVariant),
           ],
         ),
       );
@@ -481,10 +464,7 @@ class _MacroChip extends StatelessWidget {
   final String label;
   final String value;
 
-  const _MacroChip({
-    required this.label,
-    required this.value,
-  });
+  const _MacroChip({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -519,13 +499,13 @@ class _MacroChip extends StatelessWidget {
 }
 
 /// Sección de accesos rápidos contextuales
-class _QuickActionsSection extends StatelessWidget {
+class _QuickActionsSection extends ConsumerWidget {
   final TodaySummary summary;
 
   const _QuickActionsSection({required this.summary});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final hour = DateTime.now().hour;
 
@@ -547,8 +527,7 @@ class _QuickActionsSection extends StatelessWidget {
                 icon: Icons.add_rounded,
                 label: 'Desayuno',
                 onTap: () {
-                  // Navegar a diario con desayuno seleccionado
-                  context.goToDiary();
+                  _openDiaryForMeal(context, ref, diet.MealType.breakfast);
                 },
               ),
             ] else if (hour < 15) ...[
@@ -556,7 +535,7 @@ class _QuickActionsSection extends StatelessWidget {
                 icon: Icons.add_rounded,
                 label: 'Almuerzo',
                 onTap: () {
-                  context.goToDiary();
+                  _openDiaryForMeal(context, ref, diet.MealType.lunch);
                 },
               ),
             ] else if (hour < 19) ...[
@@ -564,7 +543,7 @@ class _QuickActionsSection extends StatelessWidget {
                 icon: Icons.add_rounded,
                 label: 'Merienda',
                 onTap: () {
-                  context.goToDiary();
+                  _openDiaryForMeal(context, ref, diet.MealType.snack);
                 },
               ),
             ] else ...[
@@ -572,7 +551,7 @@ class _QuickActionsSection extends StatelessWidget {
                 icon: Icons.add_rounded,
                 label: 'Cena',
                 onTap: () {
-                  context.goToDiary();
+                  _openDiaryForMeal(context, ref, diet.MealType.dinner);
                 },
               ),
             ],
@@ -584,6 +563,7 @@ class _QuickActionsSection extends StatelessWidget {
                 label: 'Entrenar',
                 isPrimary: true,
                 onTap: () {
+                  AppHaptics.buttonPressed();
                   context.goToTraining();
                 },
               )
@@ -592,6 +572,7 @@ class _QuickActionsSection extends StatelessWidget {
                 icon: Icons.add_chart_rounded,
                 label: 'Peso',
                 onTap: () {
+                  AppHaptics.buttonPressed();
                   context.goToWeight();
                 },
               ),
@@ -599,6 +580,17 @@ class _QuickActionsSection extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  void _openDiaryForMeal(
+    BuildContext context,
+    WidgetRef ref,
+    diet.MealType mealType,
+  ) {
+    AppHaptics.buttonPressed();
+    ref.read(selectedDateProvider.notifier).goToToday();
+    ref.read(selectedMealTypeProvider.notifier).meal = mealType;
+    context.goToDiary();
   }
 }
 

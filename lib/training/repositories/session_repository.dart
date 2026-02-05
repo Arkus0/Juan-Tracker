@@ -209,6 +209,29 @@ class SessionRepository {
         });
   }
 
+  Future<Sesion?> getSesionById(String sessionId) async {
+    final sessionRow =
+        await (db.select(
+              db.sessions,
+            )..where((s) => s.id.equals(sessionId) & s.completedAt.isNotNull()))
+            .getSingleOrNull();
+
+    if (sessionRow == null) return null;
+
+    final sessionExercises = await (db.select(
+      db.sessionExercises,
+    )..where((e) => e.sessionId.equals(sessionRow.id))).get();
+
+    final sessionExerciseIds = sessionExercises.map((e) => e.id).toList();
+    final sets = sessionExerciseIds.isEmpty
+        ? <WorkoutSet>[]
+        : await (db.select(
+            db.workoutSets,
+          )..where((s) => s.sessionExerciseId.isIn(sessionExerciseIds))).get();
+
+    return _mapSesion(sessionRow, sessionExercises, sets);
+  }
+
   Future<void> saveSesion(Sesion sesion) async {
     await db.transaction(() async {
       await _saveSessionInternal(sesion, isCompleted: true);

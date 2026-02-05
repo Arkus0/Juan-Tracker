@@ -4,7 +4,7 @@ import 'package:juan_tracker/diet/providers/summary_providers.dart';
 import 'package:juan_tracker/training/providers/training_provider.dart';
 
 /// 🎯 FASE 4: Resumen unificado de "HOY" combinando nutrición y entrenamiento
-/// 
+///
 /// Este provider combina:
 /// - Sugerencia de entrenamiento del día
 /// - Resumen nutricional con macros restantes
@@ -18,7 +18,7 @@ class TodaySummary {
   final DateTime? lastSessionDate;
   final bool isRestDaySuggested;
   final String? workoutMotivationalMessage;
-  
+
   // Nutrición
   final int kcalRemaining;
   final int kcalTarget;
@@ -28,7 +28,7 @@ class TodaySummary {
   final double carbsRemaining;
   final double fatRemaining;
   final bool hasNutritionTargets;
-  
+
   // Estado general
   final bool isLoading;
   final String? error;
@@ -64,31 +64,34 @@ class TodaySummary {
 
   /// Formato legible de calorías restantes
   String get kcalRemainingText => '$kcalRemaining kcal';
-  
+
   /// Porcentaje como texto
   String get kcalProgressText => '${(kcalProgress * 100).toInt()}%';
-  
+
   /// Indica si hay datos de entrenamiento disponibles
   bool get hasTrainingData => suggestedWorkout != null;
-  
+
   /// Indica si hay datos de nutrición disponibles
   bool get hasNutritionData => hasNutritionTargets;
 }
 
 /// Provider del resumen de hoy - combina entrenamiento y nutrición
 final todaySummaryProvider = FutureProvider<TodaySummary>((ref) async {
+  final today = DateTime.now();
+  final normalizedToday = DateTime(today.year, today.month, today.day);
+
   // Obtener datos de entrenamiento
   final training = await ref.watch(smartSuggestionProvider.future);
-  
+
   // Obtener datos de nutrición (AsyncValue)
-  final nutritionAsync = ref.watch(daySummaryProvider);
+  final nutritionAsync = ref.watch(daySummaryForDateProvider(normalizedToday));
   final nutrition = nutritionAsync.whenOrNull(data: (d) => d);
-  
+
   // Valores por defecto si no hay datos
   final hasTargets = nutrition?.hasTargets ?? false;
   final kcalTarget = nutrition?.targets?.kcalTarget ?? 0;
   final kcalConsumed = nutrition?.consumed.kcal ?? 0;
-  final kcalRemaining = hasTargets 
+  final kcalRemaining = hasTargets
       ? (kcalTarget - kcalConsumed).clamp(0, double.infinity).toInt()
       : 0;
   final kcalProgress = hasTargets && kcalTarget > 0
@@ -98,17 +101,23 @@ final todaySummaryProvider = FutureProvider<TodaySummary>((ref) async {
   // Calcular macros restantes
   final proteinTarget = nutrition?.targets?.proteinTarget ?? 0;
   final proteinRemaining = hasTargets && proteinTarget > 0
-      ? (proteinTarget - (nutrition?.consumed.protein ?? 0)).clamp(0, double.infinity).toDouble()
+      ? (proteinTarget - (nutrition?.consumed.protein ?? 0))
+            .clamp(0, double.infinity)
+            .toDouble()
       : 0.0;
-      
+
   final carbsTarget = nutrition?.targets?.carbsTarget ?? 0;
   final carbsRemaining = hasTargets && carbsTarget > 0
-      ? (carbsTarget - (nutrition?.consumed.carbs ?? 0)).clamp(0, double.infinity).toDouble()
+      ? (carbsTarget - (nutrition?.consumed.carbs ?? 0))
+            .clamp(0, double.infinity)
+            .toDouble()
       : 0.0;
-      
+
   final fatTarget = nutrition?.targets?.fatTarget ?? 0;
   final fatRemaining = hasTargets && fatTarget > 0
-      ? (fatTarget - (nutrition?.consumed.fat ?? 0)).clamp(0, double.infinity).toDouble()
+      ? (fatTarget - (nutrition?.consumed.fat ?? 0))
+            .clamp(0, double.infinity)
+            .toDouble()
       : 0.0;
 
   return TodaySummary(
@@ -120,7 +129,7 @@ final todaySummaryProvider = FutureProvider<TodaySummary>((ref) async {
     lastSessionDate: training?.lastSessionDate,
     isRestDaySuggested: training?.isRestDay ?? false,
     workoutMotivationalMessage: training?.motivationalMessage,
-    
+
     // Nutrición
     kcalRemaining: kcalRemaining,
     kcalTarget: kcalTarget,
@@ -138,7 +147,7 @@ final todaySummaryStreamProvider = StreamProvider<TodaySummary>((ref) async* {
   // Obtener valor inicial
   final initial = await ref.watch(todaySummaryProvider.future);
   yield initial;
-  
+
   // Este provider se reconstruirá automáticamente cuando cambien las dependencias
   // gracias a la naturaleza reactiva de Riverpod
 });

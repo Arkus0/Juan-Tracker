@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design_system/design_system.dart';
+import '../../core/widgets/widgets.dart';
 import '../models/library_exercise.dart';
 import '../providers/exercise_search_providers.dart';
 import '../providers/exercise_usage_provider.dart';
 import '../utils/exercise_colors.dart';
+import '../widgets/exercise_detail_dialog.dart';
 import '../widgets/common/create_exercise_dialog.dart';
-import '../widgets/smart_import_sheet_v2.dart';
 
 class SearchExerciseScreen extends ConsumerStatefulWidget {
-  const SearchExerciseScreen({super.key});
+  final bool isPickerMode;
+
+  const SearchExerciseScreen({super.key, this.isPickerMode = false});
 
   @override
   ConsumerState<SearchExerciseScreen> createState() =>
@@ -25,7 +28,9 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      ref.read(exerciseSearchQueryProvider.notifier).setQuery(_searchController.text);
+      ref
+          .read(exerciseSearchQueryProvider.notifier)
+          .setQuery(_searchController.text);
     });
   }
 
@@ -37,7 +42,13 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
 
   void _onExerciseSelected(LibraryExercise exercise) {
     ref.read(exerciseUsageProvider.notifier).recordUsage(exercise.id);
-    Navigator.of(context).pop(exercise);
+
+    if (widget.isPickerMode) {
+      Navigator.of(context).pop(exercise);
+      return;
+    }
+
+    _showExerciseDetails(exercise);
   }
 
   @override
@@ -50,7 +61,9 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Biblioteca'),
+        title: Text(
+          widget.isPickerMode ? 'Seleccionar ejercicio' : 'Biblioteca',
+        ),
         centerTitle: true,
         scrolledUnderElevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle(
@@ -72,7 +85,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                   ref.read(exerciseSearchQueryProvider.notifier).setQuery('');
                 },
               ),
-              
+
               // Muscle Group Filters
               _MuscleGroupFilters(
                 selected: filters.muscleGroup,
@@ -80,7 +93,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                   muscle == filters.muscleGroup ? null : muscle,
                 ),
               ),
-              
+
               // Equipment Filters
               _EquipmentFilters(
                 selected: filters.equipment,
@@ -88,7 +101,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                   equip == filters.equipment ? null : equip,
                 ),
               ),
-              
+
               // Main Content
               Expanded(
                 child: query.isEmpty
@@ -97,7 +110,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
               ),
             ],
           ),
-          
+
           // FAB Menu Overlay
           if (_isFabMenuOpen)
             GestureDetector(
@@ -108,7 +121,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                 height: double.infinity,
               ),
             ),
-          
+
           if (_isFabMenuOpen)
             Positioned(
               right: 16,
@@ -142,30 +155,43 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
       builder: (ctx) => const CreateExerciseDialog(),
     ).then((exercise) {
       if (exercise != null && mounted) {
-        Navigator.of(context).pop(exercise);
+        if (widget.isPickerMode) {
+          Navigator.of(context).pop(exercise);
+          return;
+        }
+
+        AppSnackbar.show(context, message: 'Ejercicio creado en tu biblioteca');
+        _showExerciseDetails(exercise);
       }
     });
   }
 
   void _showSmartImportDialog() {
     setState(() => _isFabMenuOpen = false);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => SmartImportSheetV2(
-        onConfirm: (exercises) {
-          // TODO: Procesar ejercicios importados
-          Navigator.of(ctx).pop();
-        },
-        onCancel: () => Navigator.of(ctx).pop(),
-      ),
+    AppSnackbar.show(
+      context,
+      message: 'ImportaciÃ³n Smart disponible al crear o editar rutinas',
     );
   }
 
   void _showOcrImportDialog() {
     setState(() => _isFabMenuOpen = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('OCR en desarrollo')),
+    AppSnackbar.show(
+      context,
+      message: 'ImportaciÃ³n OCR disponible al crear o editar rutinas',
+    );
+  }
+
+  void _showExerciseDetails(LibraryExercise exercise) {
+    ExerciseDetailDialog.show(
+      context,
+      exercise: exercise,
+      onAdd: () {
+        AppSnackbar.show(
+          context,
+          message: 'Abre una rutina para aÃ±adir este ejercicio',
+        );
+      },
     );
   }
 }
@@ -181,7 +207,7 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: TextField(
@@ -210,7 +236,10 @@ class _SearchBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.lg),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );
@@ -227,12 +256,17 @@ class _MuscleGroupFilters extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final muscleGroups = ref.watch(availableMuscleGroupsProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     final priorityMuscles = [
-      'Pecho', 'Espalda', 'Piernas', 'Hombros', 
-      'Biceps', 'Triceps', 'Core'
+      'Pecho',
+      'Espalda',
+      'Piernas',
+      'Hombros',
+      'Biceps',
+      'Triceps',
+      'Core',
     ];
-    
+
     // muscleGroups es List<String>, no AsyncValue
     final muscles = muscleGroups;
     final sortedMuscles = muscles.toList()
@@ -244,7 +278,7 @@ class _MuscleGroupFilters extends ConsumerWidget {
         if (bIndex != -1) return 1;
         return a.compareTo(b);
       });
-    
+
     return SizedBox(
       height: 44,
       child: ListView.separated(
@@ -256,16 +290,14 @@ class _MuscleGroupFilters extends ConsumerWidget {
           final muscle = sortedMuscles[index];
           final isSelected = selected == muscle;
           final color = ExerciseColors.forMuscleGroup(muscle);
-          
+
           return FilterChip(
             selected: isSelected,
             onSelected: (_) => onSelected(muscle),
             backgroundColor: color.withAlpha(30),
             selectedColor: color.withAlpha(100),
             checkmarkColor: color,
-            side: BorderSide(
-              color: isSelected ? color : color.withAlpha(50),
-            ),
+            side: BorderSide(color: isSelected ? color : color.withAlpha(50)),
             label: Text(
               muscle,
               style: AppTypography.labelMedium.copyWith(
@@ -291,7 +323,13 @@ class _EquipmentFilters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final equipment = ['Barra', 'Mancuernas', 'Máquina', 'Peso corporal', 'Cable'];
+    final equipment = [
+      'Barra',
+      'Mancuernas',
+      'Máquina',
+      'Peso corporal',
+      'Cable',
+    ];
     final icons = {
       'Barra': Icons.linear_scale,
       'Mancuernas': Icons.fitness_center,
@@ -299,7 +337,7 @@ class _EquipmentFilters extends StatelessWidget {
       'Peso corporal': Icons.person,
       'Cable': Icons.architecture,
     };
-    
+
     return SizedBox(
       height: 36,
       child: ListView.separated(
@@ -310,21 +348,23 @@ class _EquipmentFilters extends StatelessWidget {
         itemBuilder: (context, index) {
           final equip = equipment[index];
           final isSelected = selected == equip;
-          
+
           return ActionChip(
             onPressed: () => onSelected(equip),
-            backgroundColor: isSelected 
-                ? colorScheme.primaryContainer 
+            backgroundColor: isSelected
+                ? colorScheme.primaryContainer
                 : colorScheme.surfaceContainerHighest,
             side: BorderSide(
-              color: isSelected 
-                  ? colorScheme.primary 
+              color: isSelected
+                  ? colorScheme.primary
                   : colorScheme.outline.withAlpha(50),
             ),
             avatar: Icon(
               icons[equip],
               size: 16,
-              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
             ),
             label: Text(
               equip,
@@ -350,13 +390,13 @@ class _SmartSectionsContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sectionsAsync = ref.watch(smartExerciseSectionsProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return sectionsAsync.when(
       data: (sections) {
         if (!sections.hasRecent && !sections.hasPopular) {
           return const _EmptyLibraryView();
         }
-        
+
         return ListView(
           padding: const EdgeInsets.only(bottom: 100),
           children: [
@@ -366,34 +406,38 @@ class _SmartSectionsContent extends ConsumerWidget {
                 icon: Icons.history,
                 color: colorScheme.primary,
               ),
-              ...sections.recent.map((e) => _ExerciseListTile(
-                exercise: e,
-                onTap: () => onExerciseTap(e),
-                isRecent: true,
-              )),
+              ...sections.recent.map(
+                (e) => _ExerciseListTile(
+                  exercise: e,
+                  onTap: () => onExerciseTap(e),
+                  isRecent: true,
+                ),
+              ),
               const SizedBox(height: 16),
             ],
-            
+
             if (sections.hasPopular) ...[
               _SectionHeader(
                 title: 'Tus favoritos',
                 icon: Icons.trending_up,
                 color: AppColors.success,
               ),
-              ...sections.popular.map((e) => _ExerciseListTile(
-                exercise: e,
-                onTap: () => onExerciseTap(e),
-                isPopular: true,
-              )),
+              ...sections.popular.map(
+                (e) => _ExerciseListTile(
+                  exercise: e,
+                  onTap: () => onExerciseTap(e),
+                  isPopular: true,
+                ),
+              ),
               const SizedBox(height: 16),
             ],
-            
+
             _SectionHeader(
               title: 'Todos los ejercicios',
               icon: Icons.list,
               color: colorScheme.onSurfaceVariant,
             ),
-            const _AllExercisesList(),
+            _AllExercisesList(onExerciseTap: onExerciseTap),
           ],
         );
       },
@@ -414,7 +458,7 @@ class _SearchResultsContent extends ConsumerWidget {
     final suggestionsAsync = ref.watch(exerciseSearchSuggestionsProvider);
     final query = ref.watch(exerciseSearchQueryProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return resultsAsync.when(
       data: (exercises) {
         if (exercises.isEmpty) {
@@ -425,7 +469,7 @@ class _SearchResultsContent extends ConsumerWidget {
             onSuggestionTap: onExerciseTap,
           );
         }
-        
+
         return ListView.separated(
           padding: const EdgeInsets.only(bottom: 100),
           itemCount: exercises.length,
@@ -508,7 +552,7 @@ class _ExerciseListTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final color = ExerciseColors.forMuscleGroup(exercise.muscleGroup);
     final icon = ExerciseColors.iconFor(exercise.muscleGroup);
-    
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: Container(
@@ -577,11 +621,7 @@ class _ExerciseListTile extends StatelessWidget {
           color: colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          Icons.add,
-          color: colorScheme.primary,
-          size: 20,
-        ),
+        child: Icon(Icons.add, color: colorScheme.primary, size: 20),
       ),
       onTap: onTap,
     );
@@ -602,15 +642,15 @@ class _HighlightedText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     final lowerText = text.toLowerCase();
     final lowerQuery = query.toLowerCase();
     final index = lowerText.indexOf(lowerQuery);
-    
+
     if (index == -1) {
       return Text(text, style: style);
     }
-    
+
     return RichText(
       text: TextSpan(
         style: style.copyWith(color: colorScheme.onSurface),
@@ -636,7 +676,7 @@ class _EmptyLibraryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -681,7 +721,7 @@ class _EmptySearchView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -694,24 +734,18 @@ class _EmptySearchView extends StatelessWidget {
                 color: colorScheme.onSurfaceVariant.withAlpha(100),
               ),
               const SizedBox(height: 16),
-              Text(
-                'No se encontró "$query"',
-                style: AppTypography.titleMedium,
-              ),
+              Text('No se encontró "$query"', style: AppTypography.titleMedium),
             ],
           ),
         ),
         if (suggestions.isNotEmpty) ...[
           const SizedBox(height: 24),
-          Text(
-            '¿Quizás quisiste decir?',
-            style: AppTypography.titleSmall,
-          ),
+          Text('¿Quizás quisiste decir?', style: AppTypography.titleSmall),
           const SizedBox(height: 8),
-          ...suggestions.map((e) => _ExerciseListTile(
-            exercise: e,
-            onTap: () => onSuggestionTap(e),
-          )),
+          ...suggestions.map(
+            (e) =>
+                _ExerciseListTile(exercise: e, onTap: () => onSuggestionTap(e)),
+          ),
         ],
       ],
     );
@@ -719,19 +753,26 @@ class _EmptySearchView extends StatelessWidget {
 }
 
 class _AllExercisesList extends ConsumerWidget {
-  const _AllExercisesList();
+  final Function(LibraryExercise) onExerciseTap;
+
+  const _AllExercisesList({required this.onExerciseTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercisesAsync = ref.watch(exercisesProvider);
-    
+
     return exercisesAsync.when(
       data: (exercises) {
         return Column(
-          children: exercises.take(30).map((e) => _ExerciseListTile(
-            exercise: e,
-            onTap: () => Navigator.of(context).pop(e),
-          )).toList(),
+          children: exercises
+              .take(30)
+              .map(
+                (e) => _ExerciseListTile(
+                  exercise: e,
+                  onTap: () => onExerciseTap(e),
+                ),
+              )
+              .toList(),
         );
       },
       loading: () => const Padding(

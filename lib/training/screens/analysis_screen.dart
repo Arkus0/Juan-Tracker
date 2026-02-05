@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/design_system.dart';
-import '../../../core/widgets/home_button.dart';
 import '../models/external_session.dart';
 import '../providers/analysis_provider.dart';
 import '../providers/training_provider.dart';
@@ -73,9 +72,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
               if (value == 'export_csv') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ExportScreen()),
-                );
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const ExportScreen()));
               }
             },
             itemBuilder: (ctx) => [
@@ -148,12 +147,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
       await repo.saveSesion(session.toSesion());
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al guardar: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      AppSnackbar.showError(context, message: 'Error al guardar: $e');
       return;
     }
 
@@ -166,32 +160,10 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
     dynamic repo,
     ExternalSession session,
   ) {
-    final colors = Theme.of(context).colorScheme;
-    
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: colors.primary, size: 20),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                'Sesión guardada (${session.exercises.length} ejercicios)',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: colors.onInverseSurface,
-                ),
-              ),
-            ),
-          ],
-        ),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'DESHACER',
-          onPressed: () => repo.deleteSesion(session.id),
-        ),
-        duration: const Duration(seconds: 10),
-      ),
+    AppSnackbar.showWithUndo(
+      context,
+      message: 'Sesión guardada (${session.exercises.length} ejercicios)',
+      onUndo: () => repo.deleteSesion(session.id),
     );
   }
 }
@@ -262,10 +234,7 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
               children: [
                 Icon(Icons.fitness_center, color: colors.primary),
                 const SizedBox(width: 8),
-                Text(
-                  'Calculadora 1RM',
-                  style: AppTypography.titleMedium,
-                ),
+                Text('Calculadora 1RM', style: AppTypography.titleMedium),
               ],
             ),
             const SizedBox(height: 16),
@@ -290,7 +259,10 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
                 ),
                 Container(
                   width: 60,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
@@ -327,7 +299,10 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
                 ),
                 Container(
                   width: 60,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.secondaryContainer,
                     borderRadius: BorderRadius.circular(8),
@@ -355,10 +330,7 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              'Tu 1RM Estimado',
-              style: AppTypography.titleMedium,
-            ),
+            Text('Tu 1RM Estimado', style: AppTypography.titleMedium),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -389,10 +361,14 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
               alignment: WrapAlignment.center,
               spacing: 8,
               children: _result!.results.entries.map((e) {
-                final name = e.key.name.substring(0, 1).toUpperCase() + 
-                            e.key.name.substring(1, 3);
+                final name =
+                    e.key.name.substring(0, 1).toUpperCase() +
+                    e.key.name.substring(1, 3);
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(4),
@@ -426,10 +402,7 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
               children: [
                 Icon(Icons.table_chart, color: colors.primary),
                 const SizedBox(width: 8),
-                Text(
-                  'Porcentajes de Carga',
-                  style: AppTypography.titleMedium,
-                ),
+                Text('Porcentajes de Carga', style: AppTypography.titleMedium),
               ],
             ),
             const SizedBox(height: 12),
@@ -440,13 +413,16 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
               children: percentages.map((pct) {
                 final load = loads[pct]!;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: pct >= 90
                         ? colors.errorContainer
                         : pct >= 80
-                            ? colors.tertiaryContainer
-                            : colors.surfaceContainerHighest,
+                        ? colors.tertiaryContainer
+                        : colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: colors.outline.withAlpha((0.3 * 255).round()),
@@ -468,8 +444,8 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
                           color: pct >= 90
                               ? colors.onErrorContainer
                               : pct >= 80
-                                  ? colors.onTertiaryContainer
-                                  : colors.onSurface,
+                              ? colors.onTertiaryContainer
+                              : colors.onSurface,
                         ),
                       ),
                     ],
@@ -487,8 +463,8 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
     final confidenceColor = _result!.confidence / 100 > 0.8
         ? colors.tertiary
         : _result!.confidence / 100 > 0.5
-            ? colors.secondary
-            : colors.error;
+        ? colors.secondary
+        : colors.error;
 
     return Card(
       child: Padding(
@@ -531,8 +507,8 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
                   _reps <= 5
                       ? 'Excelente rango (≤5 reps)'
                       : _reps <= 8
-                          ? 'Buen rango (6-8 reps)'
-                          : 'Rango moderado (≥9 reps)',
+                      ? 'Buen rango (6-8 reps)'
+                      : 'Rango moderado (≥9 reps)',
                   style: AppTypography.labelMedium.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
@@ -542,7 +518,10 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
             const SizedBox(height: 8),
 
             Text(
-              OneRMCalculator.recommend(oneRM: _result!.average, goal: TrainingGoal.hypertrophy).description,
+              OneRMCalculator.recommend(
+                oneRM: _result!.average,
+                goal: TrainingGoal.hypertrophy,
+              ).description,
               style: AppTypography.bodySmall.copyWith(
                 color: colors.onSurfaceVariant,
                 fontStyle: FontStyle.italic,
@@ -629,6 +608,11 @@ class _LaboratorioTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final activeTabIndex = ref.watch(analysisTabIndexProvider);
+    if (activeTabIndex != 1) {
+      return const SizedBox.shrink();
+    }
+
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
@@ -681,12 +665,14 @@ class _ViewModeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: colors.outline.withAlpha((0.5 * 255).round())),
+        border: Border.all(
+          color: colors.outline.withAlpha((0.5 * 255).round()),
+        ),
       ),
       padding: const EdgeInsets.all(AppSpacing.xs),
       child: Row(
@@ -710,7 +696,8 @@ class _ViewModeSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildOption(BuildContext context, {
+  Widget _buildOption(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required bool isSelected,
@@ -734,14 +721,18 @@ class _ViewModeSelector extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: isSelected ? colors.onPrimaryContainer : colors.onSurfaceVariant,
+                color: isSelected
+                    ? colors.onPrimaryContainer
+                    : colors.onSurfaceVariant,
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 label,
                 style: AppTypography.labelMedium.copyWith(
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? colors.onPrimaryContainer : colors.onSurfaceVariant,
+                  color: isSelected
+                      ? colors.onPrimaryContainer
+                      : colors.onSurfaceVariant,
                 ),
               ),
             ],

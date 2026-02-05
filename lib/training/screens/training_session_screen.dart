@@ -319,17 +319,12 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               const SizedBox(height: 2),
               Text(
                 'Siguiente: $currentExercise (Serie ${nextSet.setIndex + 1})',
-                style: AppTypography.meta.copyWith(
-                  color: AppColors.success,
-                ),
+                style: AppTypography.meta.copyWith(color: AppColors.success),
               ),
             ],
           ],
         ),
-        leading: const Icon(
-          Icons.fitness_center,
-          color: AppColors.success,
-        ),
+        leading: const Icon(Icons.fitness_center, color: AppColors.success),
         backgroundColor: AppColors.bgElevated,
         actions: [
           TextButton(
@@ -338,9 +333,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             },
             child: Text(
               'CONTINUAR',
-              style: AppTypography.button.copyWith(
-                color: AppColors.success,
-              ),
+              style: AppTypography.button.copyWith(color: AppColors.success),
             ),
           ),
         ],
@@ -505,10 +498,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             const Padding(
               padding: EdgeInsets.only(right: 8.0),
               child: Center(
-                child: SessionTimerDisplay(
-                  showIcon: true,
-                  compact: true,
-                ),
+                child: SessionTimerDisplay(showIcon: true, compact: true),
               ),
             ),
             // 🎯 NEON IRON: Control de música compacto (antes era barra completa)
@@ -562,7 +552,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                       child: Icon(Icons.save_outlined, size: 16),
                     ),
                     Text(
-                      progress.isComplete ? 'GUARDAR' : 'GUARDAR',
+                      progress.isComplete ? 'GUARDAR' : 'TERMINAR',
                       style: AppTypography.button.copyWith(
                         color: Theme.of(context).colorScheme.onPrimary,
                       ),
@@ -817,7 +807,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
     if (nextSet != null) {
       // Marcar la serie como completada (toggle done)
-      notifier.updateLog(nextSet.exerciseIndex, nextSet.setIndex, completed: true);
+      notifier.updateLog(
+        nextSet.exerciseIndex,
+        nextSet.setIndex,
+        completed: true,
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -899,7 +893,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final nextSet = state.nextIncompleteSet;
 
     if (nextSet != null) {
-      notifier.updateLog(nextSet.exerciseIndex, nextSet.setIndex, rpe: rpe.toInt());
+      notifier.updateLog(
+        nextSet.exerciseIndex,
+        nextSet.setIndex,
+        rpe: rpe.toInt(),
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -917,11 +915,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 }
 
 /// MD-001: Sección de Timer aislada para evitar rebuilds de la pantalla completa
-/// 
-/// Este widget ConsumerWidget aísla todo el estado del timer del resto de la 
+///
+/// Este widget ConsumerWidget aísla todo el estado del timer del resto de la
 /// pantalla de entrenamiento. Cuando el timer actualiza (cada 100ms), solo
 /// este widget se reconstruye, no toda la TrainingSessionScreen.
-/// 
+///
 /// Optimizaciones:
 /// - Usa select() para escuchar solo cambios específicos del timer
 /// - Envuelto en RepaintBoundary para aislar repaints
@@ -938,9 +936,9 @@ class _TimerSection extends ConsumerWidget {
     final showTimerBar = ref.watch(
       trainingSessionProvider.select((s) => s.showTimerBar),
     );
-    
+
     final notifier = ref.read(trainingSessionProvider.notifier);
-    
+
     // Callback que necesita acceso al context para scroll
     void onTimerFinished({int? lastExerciseIndex, int? lastSetIndex}) {
       // La vibración ya se maneja en el TimerBar
