@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -248,6 +249,63 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         backgroundColor: AppColors.error,
       ),
     );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: GoogleFonts.montserrat()),
+        backgroundColor: AppColors.completedGreen,
+      ),
+    );
+  }
+
+  String _buildImportSummary(ImportResult result) {
+    final parts = <String>[];
+    if (result.routinesImported > 0) {
+      parts.add('${result.routinesImported} rutina(s)');
+    }
+    if (result.sessionsImported > 0) {
+      parts.add('${result.sessionsImported} sesión(es)');
+    }
+    if (result.setsImported > 0) {
+      parts.add('${result.setsImported} serie(s)');
+    }
+    if (parts.isEmpty) {
+      parts.add('sin cambios');
+    }
+    final source = result.source != null ? ' (${result.source})' : '';
+    return 'Importación completada$source: ${parts.join(', ')}';
+  }
+
+  Future<String?> _pickFileContent({
+    required List<String> allowedExtensions,
+  }) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: allowedExtensions,
+      withData: kIsWeb,
+    );
+    if (result == null || result.files.isEmpty) {
+      return null;
+    }
+
+    final file = result.files.single;
+    if (kIsWeb) {
+      final bytes = file.bytes;
+      if (bytes == null) {
+        _showError('No se pudo leer el archivo');
+        return null;
+      }
+      return utf8.decode(bytes, allowMalformed: true);
+    }
+
+    final path = file.path;
+    if (path == null) {
+      _showError('No se pudo acceder al archivo');
+      return null;
+    }
+    return File(path).readAsString(encoding: utf8);
   }
 
   @override
@@ -1060,13 +1118,59 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   }
 
   Future<void> _importFromJson() async {
-    // TODO: Implementar file picker y importación
-    _showError('Función en desarrollo - usa CSV por ahora');
+    HapticFeedback.selectionClick();
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final content = await _pickFileContent(allowedExtensions: ['json']);
+      if (content == null) return;
+
+      final repo = ref.read(trainingRepositoryProvider);
+      final backupService = BackupService(repo);
+      final result = await backupService.importFromJson(content);
+
+      if (!context.mounted) return;
+
+      if (result.success) {
+        _showSuccess(_buildImportSummary(result));
+        await _loadAvailableExercises();
+      } else {
+        _showError('Error al importar: ${result.error}');
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      _showError('Error al importar: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _importFromStrong() async {
-    // TODO: Implementar file picker para CSV de Strong
-    _showError('Función en desarrollo');
+    HapticFeedback.selectionClick();
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final content = await _pickFileContent(allowedExtensions: ['csv']);
+      if (content == null) return;
+
+      final repo = ref.read(trainingRepositoryProvider);
+      final backupService = BackupService(repo);
+      final result = await backupService.importFromStrongApp(content);
+
+      if (!context.mounted) return;
+
+      if (result.success) {
+        _showSuccess(_buildImportSummary(result));
+        await _loadAvailableExercises();
+      } else {
+        _showError('Error al importar: ${result.error}');
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      _showError('Error al importar: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }
 
