@@ -355,9 +355,9 @@ ThemeData buildNutritionTheme() {
     scaffoldBackgroundColor: AppColors.lightBackground,
 
     // Accessibility: visible focus ring for keyboard/switch navigation
-    focusColor: AppColors.primary.withAlpha((0.2 * 255).round()),
-    hoverColor: AppColors.primary.withAlpha((0.08 * 255).round()),
-    splashColor: AppColors.primary.withAlpha((0.12 * 255).round()),
+    focusColor: AppColors.primary.withValues(alpha: 0.2),
+    hoverColor: AppColors.primary.withValues(alpha: 0.08),
+    splashColor: AppColors.primary.withValues(alpha: 0.12),
 
     // Typography
     textTheme: AppTypography.textTheme.apply(
@@ -548,19 +548,19 @@ ThemeData buildTrainingTheme() {
     brightness: Brightness.dark,
     primary: AppColors.ironRed,
     onPrimary: Colors.white,
-    primaryContainer: AppColors.ironRed.withAlpha((0.2 * 255).round()),
+    primaryContainer: AppColors.ironRed.withValues(alpha: 0.2),
     onPrimaryContainer: AppColors.ironRedLight,
     secondary: AppColors.ironTeal,
     onSecondary: Colors.white,
-    secondaryContainer: AppColors.ironTeal.withAlpha((0.2 * 255).round()),
+    secondaryContainer: AppColors.ironTeal.withValues(alpha: 0.2),
     onSecondaryContainer: AppColors.ironTeal,
     tertiary: AppColors.ironGreen,
     onTertiary: Colors.white,
-    tertiaryContainer: AppColors.ironGreen.withAlpha((0.2 * 255).round()),
+    tertiaryContainer: AppColors.ironGreen.withValues(alpha: 0.2),
     onTertiaryContainer: AppColors.ironGreen,
     error: AppColors.errorLight,
     onError: Colors.white,
-    errorContainer: AppColors.error.withAlpha((0.3 * 255).round()),
+    errorContainer: AppColors.error.withValues(alpha: 0.3),
     onErrorContainer: AppColors.errorLight,
     surface: AppColors.darkSurface,
     onSurface: AppColors.darkTextPrimary,
@@ -569,7 +569,7 @@ ThemeData buildTrainingTheme() {
     outline: AppColors.darkBorder,
     outlineVariant: AppColors.darkDivider,
     shadow: Colors.black,
-    scrim: Colors.black.withAlpha((0.8 * 255).round()),
+    scrim: Colors.black.withValues(alpha: 0.8),
     inverseSurface: AppColors.lightSurface,
     onInverseSurface: AppColors.lightTextPrimary,
     inversePrimary: AppColors.primary,
@@ -583,9 +583,9 @@ ThemeData buildTrainingTheme() {
     scaffoldBackgroundColor: AppColors.darkBackground,
 
     // Accessibility: visible focus ring for keyboard/switch navigation
-    focusColor: AppColors.ironRed.withAlpha((0.3 * 255).round()),
-    hoverColor: AppColors.ironRed.withAlpha((0.1 * 255).round()),
-    splashColor: AppColors.ironRed.withAlpha((0.15 * 255).round()),
+    focusColor: AppColors.ironRed.withValues(alpha: 0.3),
+    hoverColor: AppColors.ironRed.withValues(alpha: 0.1),
+    splashColor: AppColors.ironRed.withValues(alpha: 0.15),
 
     // Typography
     textTheme: GoogleFonts.montserratTextTheme().apply(

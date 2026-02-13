@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/home_button.dart';
 import '../../providers/coach_providers.dart';
 import '../../providers/weight_trend_providers.dart';
@@ -532,35 +533,20 @@ class _ActiveCoachState extends ConsumerWidget {
     );
   }
 
-  void _confirmDeletePlan(BuildContext context) {
-    showDialog(
+  void _confirmDeletePlan(BuildContext context) async {
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('¿Eliminar plan?'),
-        content: const Text(
-          'Se eliminará tu plan actual y el historial de check-ins. '
+      title: '¿Eliminar plan?',
+      message: 'Se eliminará tu plan actual y el historial de check-ins. '
           'Los targets guardados no se verán afectados.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('CANCELAR'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Ejecutar eliminación
-              final container = ProviderScope.containerOf(context);
-              container.read(coachPlanProvider.notifier).deletePlan();
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('ELIMINAR'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
+
+    if (confirmed && context.mounted) {
+      final container = ProviderScope.containerOf(context);
+      container.read(coachPlanProvider.notifier).deletePlan();
+    }
   }
 }
 
