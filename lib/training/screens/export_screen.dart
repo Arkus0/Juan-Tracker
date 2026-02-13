@@ -968,9 +968,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: scheme.primaryContainer.withAlpha((0.1 * 255).round()),
+        color: scheme.primaryContainer.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: scheme.primary.withAlpha((0.3 * 255).round())),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1079,7 +1079,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withAlpha((0.15 * 255).round()),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color),

@@ -114,7 +114,7 @@ class TrainingCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: BorderSide(color: colors.outline.withAlpha((0.5 * 255).round())),
+        side: BorderSide(color: colors.outline.withValues(alpha: 0.5)),
       ),
       child: InkWell(
         onTap: onTap,
@@ -449,7 +449,7 @@ class TrainingLoadingOverlay extends StatelessWidget {
     if (!isOverlay) return content;
 
     return Container(
-      color: colors.surface.withAlpha((0.8 * 255).round()),
+      color: colors.surface.withValues(alpha: 0.8),
       child: content,
     );
   }

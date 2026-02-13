@@ -228,12 +228,12 @@ class _ConfettiCelebrationOverlayState extends State<_ConfettiCelebrationOverlay
                       color: AppColors.bgElevated,
                       borderRadius: BorderRadius.circular(AppRadius.xl),
                       border: Border.all(
-                        color: widget.primaryColor.withAlpha((0.5 * 255).round()),
+                        color: widget.primaryColor.withValues(alpha: 0.5),
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: widget.primaryColor.withAlpha((0.3 * 255).round()),
+                          color: widget.primaryColor.withValues(alpha: 0.3),
                           blurRadius: 30,
                           spreadRadius: 5,
                         ),
@@ -342,11 +342,11 @@ class _SetCompleteOverlayState extends State<_SetCompleteOverlay>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.success.withAlpha((0.9 * 255).round()),
+                color: AppColors.success.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(AppRadius.round),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.success.withAlpha((0.4 * 255).round()),
+                    color: AppColors.success.withValues(alpha: 0.4),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),

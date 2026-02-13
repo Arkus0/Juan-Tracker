@@ -906,7 +906,7 @@ class _FoodSearchUnifiedScreenState
           filled: true,
           fillColor: Theme.of(
             context,
-          ).colorScheme.surfaceContainerHighest.withAlpha((0.3 * 255).round()),
+          ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         ),
         onChanged: _onSearchChanged,
       ),
@@ -965,8 +965,8 @@ class _FoodSearchUnifiedScreenState
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isError
-              ? theme.colorScheme.error.withAlpha((0.4 * 255).round())
-              : theme.colorScheme.outline.withAlpha((0.2 * 255).round()),
+              ? theme.colorScheme.error.withValues(alpha: 0.4)
+              : theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -1048,9 +1048,9 @@ class _FoodSearchUnifiedScreenState
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.red.withAlpha((0.1 * 255).round()),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withAlpha((0.3 * 255).round())),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

@@ -30,7 +30,7 @@ class SymmetryRadar extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: scheme.tertiary.withAlpha((0.2 * 255).round()),
+                  color: scheme.tertiary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(Icons.radar, color: scheme.tertiary, size: 18),
@@ -57,7 +57,7 @@ class SymmetryRadar extends ConsumerWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: scheme.tertiary.withAlpha((0.2 * 255).round()),
+                        color: scheme.tertiary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
@@ -124,7 +124,7 @@ class SymmetryRadar extends ConsumerWidget {
               dataEntries: values
                   .map((v) => RadarEntry(value: v * 100))
                   .toList(),
-              fillColor: scheme.primary.withAlpha((0.3 * 255).round()),
+              fillColor: scheme.primary.withValues(alpha: 0.3),
               borderColor: scheme.primary,
               borderWidth: 2,
               entryRadius: 3,
@@ -165,7 +165,7 @@ class SymmetryRadar extends ConsumerWidget {
       height: 250,
       child: Center(
         child: CircularProgressIndicator(
-          color: scheme.primary.withAlpha((0.5 * 255).round()),
+          color: scheme.primary.withValues(alpha: 0.5),
           strokeWidth: 2,
         ),
       ),

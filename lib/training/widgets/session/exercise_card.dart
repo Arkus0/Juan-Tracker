@@ -206,7 +206,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: colors.primaryContainer.withAlpha((0.3 * 255).round()),
+                  color: colors.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -1348,7 +1348,7 @@ class _SeriesIndicator extends StatelessWidget {
             '/',
             style: AppTypography.labelMedium.copyWith(
               fontWeight: FontWeight.w500,
-              color: textColor.withAlpha((0.6 * 255).round()),
+              color: textColor.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(width: 4),
@@ -1357,7 +1357,7 @@ class _SeriesIndicator extends StatelessWidget {
             '$totalSets',
             style: AppTypography.labelMedium.copyWith(
               fontWeight: FontWeight.w600,
-              color: textColor.withAlpha((0.8 * 255).round()),
+              color: textColor.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(width: 6),

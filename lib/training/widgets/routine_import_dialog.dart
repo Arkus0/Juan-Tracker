@@ -473,10 +473,10 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                             ),
                             decoration: BoxDecoration(
                               color: confidence >= 70
-                                  ? Colors.green.withAlpha((0.2 * 255).round())
+                                  ? Colors.green.withValues(alpha: 0.2)
                                   : confidence >= 50
-                                  ? Colors.orange.withAlpha((0.2 * 255).round())
-                                  : Colors.red.withAlpha((0.2 * 255).round()),
+                                  ? Colors.orange.withValues(alpha: 0.2)
+                                  : Colors.red.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -546,7 +546,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red.withAlpha((0.15 * 255).round()),
+                      color: Colors.red.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

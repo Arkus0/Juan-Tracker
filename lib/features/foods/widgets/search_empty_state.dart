@@ -41,7 +41,7 @@ class SearchEmptyState extends StatelessWidget {
             Icon(
               hasQuery ? Icons.search_off : Icons.restaurant_menu,
               size: 80,
-              color: theme.colorScheme.primary.withAlpha((0.3 * 255).round()),
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 24),
 
@@ -185,7 +185,7 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withAlpha((0.1 * 255).round()),
+      color: color.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,

@@ -111,7 +111,7 @@ class EntryScreen extends StatelessWidget {
                   color: colors.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: colors.shadow.withAlpha((0.1 * 255).round()),
+                      color: colors.shadow.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, -2),
                     ),
@@ -374,7 +374,7 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
           gradient: LinearGradient(
             colors: [
               colors.primary,
-              colors.primary.withAlpha((0.7 * 255).round()),
+              colors.primary.withValues(alpha: 0.7),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -382,7 +382,7 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
           borderRadius: BorderRadius.circular(AppRadius.lg),
           boxShadow: [
             BoxShadow(
-              color: colors.primary.withAlpha((0.3 * 255).round()),
+              color: colors.primary.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -456,7 +456,7 @@ class _ModeCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withAlpha((0.2 * 255).round()),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: Icon(icon, color: Colors.white, size: 28),
@@ -468,7 +468,7 @@ class _ModeCard extends StatelessWidget {
                     else
                       Icon(
                         Icons.arrow_forward_rounded,
-                        color: Colors.white.withAlpha((0.7 * 255).round()),
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                   ],
                 ),
@@ -484,7 +484,7 @@ class _ModeCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppTypography.bodyMedium.copyWith(
-                    color: Colors.white.withAlpha((0.8 * 255).round()),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -495,7 +495,7 @@ class _ModeCard extends StatelessWidget {
                         children: [
                           Icon(
                             stat.icon,
-                            color: Colors.white.withAlpha((0.6 * 255).round()),
+                            color: Colors.white.withValues(alpha: 0.6),
                             size: 16,
                           ),
                           const SizedBox(width: 6),
@@ -628,7 +628,7 @@ class _NutritionModeCard extends ConsumerWidget {
       icon: Icons.restaurant_rounded,
       gradientColors: [
         Theme.of(context).colorScheme.primary,
-        Theme.of(context).colorScheme.primary.withAlpha((0.7 * 255).round()),
+        Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
       ],
       stats: stats,
       onTap: onTap,

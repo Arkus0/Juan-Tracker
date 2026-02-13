@@ -41,7 +41,7 @@ class BlockTimelineWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: activeBlock != null
-              ? AppColors.ironRed.withAlpha((0.3 * 255).round())
+              ? AppColors.ironRed.withValues(alpha: 0.3)
               : AppColors.darkBorder,
         ),
       ),
@@ -112,7 +112,7 @@ class _AddBlockButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.ironRed.withAlpha((0.15 * 255).round()),
+      color: AppColors.ironRed.withValues(alpha: 0.15),
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
@@ -325,15 +325,15 @@ class _BlockCard extends StatelessWidget {
   });
 
   Color get _backgroundColor {
-    if (isActive) return AppColors.ironRed.withAlpha((0.2 * 255).round());
-    if (block.isCompleted) return AppColors.ironRed.withAlpha((0.1 * 255).round());
+    if (isActive) return AppColors.ironRed.withValues(alpha: 0.2);
+    if (block.isCompleted) return AppColors.ironRed.withValues(alpha: 0.1);
     if (block.isPending) return AppColors.darkSurfaceContainer;
     return AppColors.darkSurfaceContainer;
   }
 
   Color get _borderColor {
     if (isActive) return AppColors.ironRed;
-    if (block.isCompleted) return AppColors.ironRed.withAlpha((0.5 * 255).round());
+    if (block.isCompleted) return AppColors.ironRed.withValues(alpha: 0.5);
     return AppColors.darkBorder;
   }
 
@@ -473,10 +473,10 @@ class _ActiveBlockInfo extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.ironRed.withAlpha((0.1 * 255).round()),
+        color: AppColors.ironRed.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: AppColors.ironRed.withAlpha((0.3 * 255).round()),
+          color: AppColors.ironRed.withValues(alpha: 0.3),
         ),
       ),
       child: Column(

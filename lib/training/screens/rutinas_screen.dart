@@ -143,7 +143,7 @@ class _EmptyRoutinesState extends StatelessWidget {
           Icon(
             Icons.fitness_center_outlined,
             size: 72,
-            color: colors.onSurfaceVariant.withAlpha((0.5 * 255).round()),
+            color: colors.onSurfaceVariant.withValues(alpha: 0.5),
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
@@ -193,7 +193,7 @@ class _EmptyRoutinesState extends StatelessWidget {
             children: [
               Expanded(
                 child: Divider(
-                  color: colors.outline.withAlpha((0.5 * 255).round()),
+                  color: colors.outline.withValues(alpha: 0.5),
                 ),
               ),
               Padding(
@@ -207,7 +207,7 @@ class _EmptyRoutinesState extends StatelessWidget {
               ),
               Expanded(
                 child: Divider(
-                  color: colors.outline.withAlpha((0.5 * 255).round()),
+                  color: colors.outline.withValues(alpha: 0.5),
                 ),
               ),
             ],

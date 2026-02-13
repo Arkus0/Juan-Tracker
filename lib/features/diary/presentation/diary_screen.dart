@@ -270,7 +270,7 @@ class _MealSection extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: _getMealColor(
                         mealType,
-                      ).withAlpha((0.2 * 255).round()),
+                      ).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Icon(
@@ -363,7 +363,7 @@ class _MealSection extends ConsumerWidget {
               ListTile(
                 leading: Icon(
                   Icons.add_circle_outline,
-                  color: colors.onSurfaceVariant.withAlpha((0.5 * 255).round()),
+                  color: colors.onSurfaceVariant.withValues(alpha: 0.5),
                 ),
                 title: Text(
                   'Añadir ${mealType.displayName.toLowerCase()}',
@@ -1275,7 +1275,7 @@ class _MacroItem extends StatelessWidget {
           Text(
             'obj: ${target}g',
             style: AppTypography.labelSmall.copyWith(
-              color: AppColors.error.withAlpha((0.7 * 255).round()),
+              color: AppColors.error.withValues(alpha: 0.7),
             ),
           ),
         const SizedBox(height: 6),
@@ -1285,8 +1285,8 @@ class _MacroItem extends StatelessWidget {
             value: (progress ?? 0).clamp(0.0, 1.0),
             minHeight: 4,
             backgroundColor: Theme.of(context).brightness == Brightness.light
-                ? color.withAlpha((0.3 * 255).round())
-                : color.withAlpha((0.2 * 255).round()),
+                ? color.withValues(alpha: 0.3)
+                : color.withValues(alpha: 0.2),
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
         ),
@@ -1567,7 +1567,7 @@ class _RepeatYesterdayButton extends ConsumerWidget {
     final dayLabel = DateFormat('E d', 'es').format(sourceDate);
 
     return Material(
-      color: colors.secondaryContainer.withAlpha((0.5 * 255).round()),
+      color: colors.secondaryContainer.withValues(alpha: 0.5),
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: () => _repeatYesterday(context, ref),

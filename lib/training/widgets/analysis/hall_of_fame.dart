@@ -31,7 +31,7 @@ class HallOfFame extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: scheme.tertiary.withAlpha((0.2 * 255).round()),
+                  color: scheme.tertiary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
@@ -177,10 +177,10 @@ class _PRCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           border: isTop3
               ? Border.all(
-                  color: gradientColors.first.withAlpha((0.5 * 255).round()),
+                  color: gradientColors.first.withValues(alpha: 0.5),
                 )
               : Border.all(
-                  color: scheme.outline.withAlpha((0.3 * 255).round()),
+                  color: scheme.outline.withValues(alpha: 0.3),
                 ),
         ),
         child: Column(
@@ -246,7 +246,7 @@ class _PRCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: scheme.tertiary.withAlpha((0.2 * 255).round()),
+                    color: scheme.tertiary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -321,8 +321,8 @@ class _PRCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          scheme.tertiary.withAlpha((0.3 * 255).round()),
-                          scheme.tertiary.withAlpha((0.1 * 255).round()),
+                          scheme.tertiary.withValues(alpha: 0.3),
+                          scheme.tertiary.withValues(alpha: 0.1),
                         ],
                       ),
                       shape: BoxShape.circle,

@@ -753,7 +753,7 @@ class _TimerStateLabel extends StatelessWidget {
           isPaused ? 'Toca para reanudar' : 'Toca para pausar',
           style: AppTypography.bodySmall.copyWith(
             color: isPaused
-                ? AppColors.warning.withAlpha((0.7 * 255).round())
+                ? AppColors.warning.withValues(alpha: 0.7)
                 : AppColors.textSecondary,
           ),
         ),

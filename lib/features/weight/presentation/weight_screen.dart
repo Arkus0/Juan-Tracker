@@ -520,7 +520,7 @@ class _WeightChartCard extends ConsumerWidget {
           elevation: 0,
           color: Theme.of(
             context,
-          ).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+          ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -688,7 +688,7 @@ class _WeightLineChart extends ConsumerWidget {
             ),
             belowBarData: BarAreaData(
               show: true,
-              color: theme.colorScheme.primary.withAlpha((0.1 * 255).round()),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
             ),
           ),
           // LÃƒÂ­nea de objetivo (punteada)
@@ -696,7 +696,7 @@ class _WeightLineChart extends ConsumerWidget {
             LineChartBarData(
               spots: goalSpots,
               isCurved: false,
-              color: AppColors.success.withAlpha((0.7 * 255).round()),
+              color: AppColors.success.withValues(alpha: 0.7),
               barWidth: 2,
               isStrokeCapRound: true,
               dashArray: [8, 4], // LÃƒÂ­nea punteada
@@ -766,7 +766,7 @@ class _GoalProjectionCard extends ConsumerWidget {
 
         return Card(
           elevation: 0,
-          color: colorScheme.primaryContainer.withAlpha((0.4 * 255).round()),
+          color: colorScheme.primaryContainer.withValues(alpha: 0.4),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -1489,7 +1489,7 @@ class _AnalyticsMetric extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: color.withAlpha((0.1 * 255).round()),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(

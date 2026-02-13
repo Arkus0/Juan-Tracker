@@ -252,7 +252,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history_toggle_off, size: 80, color: colors.onSurfaceVariant.withAlpha((0.5 * 255).round())),
+            Icon(Icons.history_toggle_off, size: 80, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
             const SizedBox(height: AppSpacing.xl),
             Text(
               'Tu historia empieza hoy',
@@ -274,7 +274,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 color: colors.primaryContainer,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 border: Border.all(
-                  color: colors.primary.withAlpha((0.3 * 255).round()),
+                  color: colors.primary.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -457,7 +457,7 @@ class _WeekSection extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: colors.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: colors.outline.withAlpha((0.5 * 255).round())),
+                border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

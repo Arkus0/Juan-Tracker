@@ -129,7 +129,7 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -180,10 +180,10 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withAlpha((0.3 * 255).round()),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: statusColor.withAlpha((0.3 * 255).round()),
+          color: statusColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -209,7 +209,7 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: statusColor.withAlpha((0.15 * 255).round()),
+                  color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -303,7 +303,7 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
                 child: Container(
                   height: 8,
                   decoration: BoxDecoration(
-                    color: Colors.green.withAlpha((0.3 * 255).round()),
+                    color: Colors.green.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -322,7 +322,7 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
                     border: Border.all(color: scheme.surface, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: statusColor.withAlpha((0.4 * 255).round()),
+                        color: statusColor.withValues(alpha: 0.4),
                         blurRadius: 4,
                         spreadRadius: 1,
                       ),
@@ -374,9 +374,9 @@ class MuscleImbalanceDashboard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: scheme.errorContainer.withAlpha((0.2 * 255).round()),
+        color: scheme.errorContainer.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: scheme.error.withAlpha((0.3 * 255).round())),
+        border: Border.all(color: scheme.error.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -26,7 +26,7 @@ class RecoveryMonitor extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: scheme.secondary.withAlpha((0.2 * 255).round()),
+                  color: scheme.secondary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
@@ -85,7 +85,7 @@ class RecoveryMonitor extends ConsumerWidget {
       height: 120,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withAlpha((0.35 * 255).round()),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: scheme.outline),
       ),
@@ -160,15 +160,15 @@ class _RecoveryCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              status.color.withAlpha((0.15 * 255).round()),
-              scheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+              status.color.withValues(alpha: 0.15),
+              scheme.surfaceContainerHighest.withValues(alpha: 0.5),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: status.color.withAlpha((0.3 * 255).round()),
+            color: status.color.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -189,7 +189,7 @@ class _RecoveryCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: status.color.withAlpha((0.5 * 255).round()),
+                        color: status.color.withValues(alpha: 0.5),
                         blurRadius: 6,
                       ),
                     ],
@@ -216,7 +216,7 @@ class _RecoveryCard extends StatelessWidget {
               backgroundColor: scheme.surfaceContainerHighest,
               linearGradient: LinearGradient(
                 colors: [
-                  status.color.withAlpha((0.7 * 255).round()),
+                  status.color.withValues(alpha: 0.7),
                   status.color,
                 ],
               ),
@@ -346,10 +346,10 @@ class _RecoveryCard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: status.color.withAlpha((0.1 * 255).round()),
+                  color: status.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: status.color.withAlpha((0.3 * 255).round()),
+                    color: status.color.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(

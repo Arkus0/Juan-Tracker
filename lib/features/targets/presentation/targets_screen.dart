@@ -132,7 +132,7 @@ class _EmptyState extends StatelessWidget {
             Icon(
               Icons.track_changes_outlined,
               size: 64,
-              color: theme.colorScheme.primary.withAlpha((0.3 * 255).round()),
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
@@ -580,13 +580,13 @@ class _MacroValidationBanner extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isClose
-            ? Colors.green.withAlpha((0.1 * 255).round())
-            : Colors.orange.withAlpha((0.1 * 255).round()),
+            ? Colors.green.withValues(alpha: 0.1)
+            : Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isClose
-              ? Colors.green.withAlpha((0.3 * 255).round())
-              : Colors.orange.withAlpha((0.3 * 255).round()),
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.orange.withValues(alpha: 0.3),
         ),
       ),
       child: Row(

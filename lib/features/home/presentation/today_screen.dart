@@ -231,7 +231,7 @@ class _TrainingTodayCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha((0.2 * 255).round()),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Icon(icon, color: Colors.white, size: 28),
@@ -244,7 +244,7 @@ class _TrainingTodayCard extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withAlpha((0.2 * 255).round()),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                       child: Text(
@@ -258,7 +258,7 @@ class _TrainingTodayCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Icon(
                     Icons.arrow_forward_rounded,
-                    color: Colors.white.withAlpha((0.7 * 255).round()),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ],
               ),
@@ -274,7 +274,7 @@ class _TrainingTodayCard extends StatelessWidget {
               Text(
                 subtitle,
                 style: AppTypography.bodyMedium.copyWith(
-                  color: Colors.white.withAlpha((0.8 * 255).round()),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -353,7 +353,7 @@ class _NutritionTodayCard extends StatelessWidget {
           gradient: LinearGradient(
             colors: [
               colors.primary,
-              colors.primary.withAlpha((0.7 * 255).round()),
+              colors.primary.withValues(alpha: 0.7),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -370,7 +370,7 @@ class _NutritionTodayCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha((0.2 * 255).round()),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: const Icon(
@@ -392,7 +392,7 @@ class _NutritionTodayCard extends StatelessWidget {
                           strokeWidth: 4,
                           backgroundColor: Colors.transparent,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white.withAlpha((0.2 * 255).round()),
+                            Colors.white.withValues(alpha: 0.2),
                           ),
                         ),
                         CircularProgressIndicator(
@@ -428,7 +428,7 @@ class _NutritionTodayCard extends StatelessWidget {
               Text(
                 '${summary.kcalConsumed}/${summary.kcalTarget} consumidas',
                 style: AppTypography.bodyMedium.copyWith(
-                  color: Colors.white.withAlpha((0.8 * 255).round()),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
               ),
               const SizedBox(height: 12),
@@ -471,7 +471,7 @@ class _MacroChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha((0.2 * 255).round()),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Column(
@@ -488,7 +488,7 @@ class _MacroChip extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withAlpha((0.7 * 255).round()),
+              color: Colors.white.withValues(alpha: 0.7),
               fontSize: 10,
             ),
           ),

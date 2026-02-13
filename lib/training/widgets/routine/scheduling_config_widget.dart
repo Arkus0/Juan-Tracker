@@ -389,7 +389,7 @@ class _DayWeekdaySelector extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.neonPrimary
-                          : colorScheme.onSurface.withAlpha((0.1 * 255).round()),
+                          : colorScheme.onSurface.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Center(

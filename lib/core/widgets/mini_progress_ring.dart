@@ -31,7 +31,7 @@ class MiniProgressRing extends StatelessWidget {
             strokeWidth: 4,
             backgroundColor: Colors.transparent,
             valueColor: AlwaysStoppedAnimation<Color>(
-              Colors.white.withAlpha((0.2 * 255).round()),
+              Colors.white.withValues(alpha: 0.2),
             ),
           ),
           // Progress arc

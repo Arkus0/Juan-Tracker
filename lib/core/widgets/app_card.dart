@@ -45,7 +45,7 @@ class AppCard extends StatelessWidget {
           border: Border.all(
             color: isSelected
                 ? colors.primary
-                : colors.outline.withAlpha((0.5 * 255).round()),
+                : colors.outline.withValues(alpha: 0.5),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: elevation != null ? AppElevation.level2 : null,

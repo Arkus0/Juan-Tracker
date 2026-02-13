@@ -334,7 +334,7 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.ironRed.withAlpha((0.1 * 255).round()),
+              color: AppColors.ironRed.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Row(
@@ -421,7 +421,7 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
             color: AppColors.darkSurface,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha((0.2 * 255).round()),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: const Offset(0, -4),
               ),
@@ -462,7 +462,7 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
             Icon(
               Icons.flag,
               size: 18,
-              color: AppColors.ironRed.withAlpha((0.7 * 255).round()),
+              color: AppColors.ironRed.withValues(alpha: 0.7),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -494,7 +494,7 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
               onPressed: () => _removeGoal(index),
               icon: Icon(
                 Icons.delete_outline,
-                color: AppColors.error.withAlpha((0.7 * 255).round()),
+                color: AppColors.error.withValues(alpha: 0.7),
               ),
             ),
           ],

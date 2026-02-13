@@ -151,7 +151,7 @@ class _SplashScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.xl),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withAlpha((0.3 * 255).round()),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),

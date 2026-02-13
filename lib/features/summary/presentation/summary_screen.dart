@@ -556,7 +556,7 @@ class _MacroProgressBar extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withAlpha((0.1 * 255).round()),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 20),
@@ -591,7 +591,7 @@ class _MacroProgressBar extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 8,
-                    backgroundColor: color.withAlpha((0.2 * 255).round()),
+                    backgroundColor: color.withValues(alpha: 0.2),
                     valueColor: AlwaysStoppedAnimation(color),
                   ),
                 ),
@@ -623,7 +623,7 @@ class _DayStatusCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: status.color.withAlpha((0.1 * 255).round()),
+                color: status.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(status.icon, color: status.color, size: 28),
@@ -1112,7 +1112,7 @@ class _AdherenceBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: colors.$1.withAlpha((0.15 * 255).round()),
+        color: colors.$1.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
@@ -1208,7 +1208,7 @@ class _WeekComparison extends StatelessWidget {
           'Antes: $previousAvg',
           style: TextStyle(
             fontSize: 11,
-            color: colors.onSurfaceVariant.withAlpha((0.7 * 255).round()),
+            color: colors.onSurfaceVariant.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -1235,7 +1235,7 @@ class _MacrosSummaryRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(

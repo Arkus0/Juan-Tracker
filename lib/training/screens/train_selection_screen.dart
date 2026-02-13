@@ -347,7 +347,7 @@ class _ZeroThoughtHome extends StatelessWidget {
                           suggestion.contextualSubtitle!,
                           style: AppTypography.bodySmall.copyWith(
                             color: isRestDay
-                                ? AppColors.success.withAlpha((0.8 * 255).round())
+                                ? AppColors.success.withValues(alpha: 0.8)
                                 : colors.onSurfaceVariant,
                             fontStyle: FontStyle.italic,
                           ),
@@ -369,10 +369,10 @@ class _ZeroThoughtHome extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withAlpha((0.1 * 255).round()),
+                          color: AppColors.success.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(AppRadius.xl),
                           border: Border.all(
-                            color: AppColors.success.withAlpha((0.3 * 255).round()),
+                            color: AppColors.success.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Column(
@@ -388,7 +388,7 @@ class _ZeroThoughtHome extends StatelessWidget {
                             Text(
                               'Duerme bien, hidrátate, come proteína',
                               style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.success.withAlpha((0.8 * 255).round()),
+                                color: AppColors.success.withValues(alpha: 0.8),
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -634,7 +634,7 @@ class _ActiveSessionState extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Divider(color: colors.outline.withAlpha((0.5 * 255).round())),
+                  child: Divider(color: colors.outline.withValues(alpha: 0.5)),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -646,7 +646,7 @@ class _ActiveSessionState extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: Divider(color: colors.outline.withAlpha((0.5 * 255).round())),
+                  child: Divider(color: colors.outline.withValues(alpha: 0.5)),
                 ),
               ],
             ),
@@ -692,7 +692,7 @@ class _EmptyState extends ConsumerWidget {
             Icon(
               Icons.fitness_center_outlined,
               size: 64,
-              color: colors.onSurfaceVariant.withAlpha((0.5 * 255).round()),
+              color: colors.onSurfaceVariant.withValues(alpha: 0.5),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
@@ -745,7 +745,7 @@ class _EmptyState extends ConsumerWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: colors.primary.withAlpha((0.2 * 255).round()),
+                        color: colors.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(AppRadius.xs),
                       ),
                       child: Text(
@@ -861,7 +861,7 @@ class _AlternativesPanel extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest.withAlpha((0.8 * 255).round()),
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.8),
         borderRadius: fullScreen
             ? null
             : const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
@@ -926,7 +926,7 @@ class _CompactRutinaCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: BorderSide(color: colors.outline.withAlpha((0.5 * 255).round())),
+        side: BorderSide(color: colors.outline.withValues(alpha: 0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -962,7 +962,7 @@ class _CompactRutinaCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: colors.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(color: colors.outline.withAlpha((0.5 * 255).round())),
+                      border: Border.all(color: colors.outline.withValues(alpha: 0.5)),
                     ),
                     child: Text(
                       entry.value.nombre.toUpperCase(),

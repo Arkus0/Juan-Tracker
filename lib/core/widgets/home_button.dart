@@ -29,19 +29,19 @@ class HomeButton extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 colors.primary,
-                colors.primary.withAlpha((0.7 * 255).round()),
+                colors.primary.withValues(alpha: 0.7),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: colors.onPrimary.withAlpha((0.3 * 255).round()),
+              color: colors.onPrimary.withValues(alpha: 0.3),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: colors.primary.withAlpha((0.4 * 255).round()),
+                color: colors.primary.withValues(alpha: 0.4),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),

@@ -165,10 +165,10 @@ class _ProgressionChipContent extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.primary.withAlpha((0.15 * 255).round()),
+          color: AppColors.primary.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
-            color: AppColors.primary.withAlpha((0.30 * 255).round()),
+            color: AppColors.primary.withValues(alpha: 0.30),
             width: 1.5,
           ),
         ),
@@ -178,7 +178,7 @@ class _ProgressionChipContent extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withAlpha((0.20 * 255).round()),
+                color: AppColors.primary.withValues(alpha: 0.20),
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Icon(
@@ -213,7 +213,7 @@ class _ProgressionChipContent extends StatelessWidget {
                       style: GoogleFonts.montserrat(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.primary.withAlpha((0.80 * 255).round()),
+                        color: AppColors.primary.withValues(alpha: 0.80),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

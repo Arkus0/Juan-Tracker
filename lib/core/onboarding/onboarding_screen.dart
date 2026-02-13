@@ -135,7 +135,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: AppTypography.labelLarge.copyWith(
                         color: _currentPage >= 1 
                             ? colors.onSurfaceVariant 
-                            : colors.onSurfaceVariant.withAlpha((0.3 * 255).round()),
+                            : colors.onSurfaceVariant.withValues(alpha: 0.3),
                       ),
                     ),
                   ),
@@ -172,7 +172,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     decoration: BoxDecoration(
                       color: isActive
                           ? colors.primary
-                          : colors.onSurfaceVariant.withAlpha((0.3 * 255).round()),
+                          : colors.onSurfaceVariant.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   );
@@ -235,15 +235,15 @@ class _OnboardingPage extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  data.color.withAlpha((0.3 * 255).round()),
-                  data.color.withAlpha((0.1 * 255).round()),
+                  data.color.withValues(alpha: 0.3),
+                  data.color.withValues(alpha: 0.1),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(AppRadius.xl),
               border: Border.all(
-                color: data.color.withAlpha((0.3 * 255).round()),
+                color: data.color.withValues(alpha: 0.3),
                 width: 2,
               ),
             ),

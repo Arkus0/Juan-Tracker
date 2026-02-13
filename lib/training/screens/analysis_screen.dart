@@ -425,7 +425,7 @@ class _FuerzaTabState extends ConsumerState<_FuerzaTab> {
                         : colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: colors.outline.withAlpha((0.3 * 255).round()),
+                      color: colors.outline.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
@@ -671,7 +671,7 @@ class _ViewModeSelector extends StatelessWidget {
         color: colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color: colors.outline.withAlpha((0.5 * 255).round()),
+          color: colors.outline.withValues(alpha: 0.5),
         ),
       ),
       padding: const EdgeInsets.all(AppSpacing.xs),

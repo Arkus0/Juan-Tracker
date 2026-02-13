@@ -79,7 +79,7 @@ class AppEmpty extends StatelessWidget {
             Icon(
               icon,
               size: 64,
-              color: colors.onSurfaceVariant.withAlpha((0.5 * 255).round()),
+              color: colors.onSurfaceVariant.withValues(alpha: 0.5),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
@@ -245,7 +245,7 @@ class _AppSkeletonState extends State<AppSkeleton>
               end: Alignment.centerRight,
               colors: [
                 colors.surfaceContainerHighest,
-                colors.surfaceContainerHighest.withAlpha((0.7 * 255).round()),
+                colors.surfaceContainerHighest.withValues(alpha: 0.7),
                 colors.surfaceContainerHighest,
               ],
               stops: [
