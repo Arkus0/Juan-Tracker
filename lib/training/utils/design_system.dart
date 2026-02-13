@@ -604,6 +604,48 @@ abstract class AppTypography {
     height: 1.5,
     letterSpacing: 0.1,
   );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TOKENS ADDED IN SPRINT 2 — Replace inline TextStyle constructors
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Column header labels (#, PREV, KG, REPS, check) in session set rows
+  static TextStyle get columnHeader => GoogleFonts.montserrat(
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textTertiary,
+    letterSpacing: 0.5,
+  );
+
+  /// Secondary column labels (KG, REPS) — slightly more prominent
+  static TextStyle get columnLabel => GoogleFonts.montserrat(
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textSecondary,
+  );
+
+  /// Small subtitle text (12px secondary)
+  static TextStyle get subtitle => GoogleFonts.montserrat(
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textSecondary,
+  );
+
+  /// Tiny meta text (11px tertiary) — for "ÚLTIMAS 3 SESIONES" etc.
+  static TextStyle get metaTiny => GoogleFonts.montserrat(
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textSecondary,
+    letterSpacing: 0.3,
+  );
+
+  /// Compact action label (10px bold) — for "ACCIONES" button text
+  static TextStyle get actionLabel => GoogleFonts.montserrat(
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textSecondary,
+    letterSpacing: 0.5,
+  );
 }
 
 /// ============================================================================

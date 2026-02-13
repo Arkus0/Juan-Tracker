@@ -13,6 +13,9 @@ class AppCard extends StatelessWidget {
   final BorderRadius? borderRadius;
   final VoidCallback? onTap;
   final bool isSelected;
+  /// Optional accessibility label for screen readers.
+  /// If provided, wraps the card in [Semantics].
+  final String? semanticLabel;
 
   const AppCard({
     super.key,
@@ -23,36 +26,40 @@ class AppCard extends StatelessWidget {
     this.borderRadius,
     this.onTap,
     this.isSelected = false,
+    this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    
-    return AnimatedContainer(
-      duration: AppDurations.fast,
-      decoration: BoxDecoration(
-        color: backgroundColor ?? colors.surface,
-        borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: isSelected 
-            ? colors.primary 
-            : colors.outline.withAlpha((0.5 * 255).round()),
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: elevation != null 
-          ? AppElevation.level2 
-          : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.lg),
-        child: InkWell(
-          onTap: onTap,
+
+    return Semantics(
+      button: onTap != null,
+      selected: isSelected,
+      label: semanticLabel,
+      child: AnimatedContainer(
+        duration: AppDurations.fast,
+        decoration: BoxDecoration(
+          color: backgroundColor ?? colors.surface,
           borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.lg),
-          child: Padding(
-            padding: padding,
-            child: child,
+          border: Border.all(
+            color: isSelected
+                ? colors.primary
+                : colors.outline.withAlpha((0.5 * 255).round()),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: elevation != null ? AppElevation.level2 : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.lg),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.lg),
+            child: Padding(
+              padding: padding,
+              child: child,
+            ),
           ),
         ),
       ),
@@ -130,6 +137,7 @@ class AppStatCard extends StatelessWidget {
 
     return AppCard(
       onTap: onTap,
+      semanticLabel: '$label: $value${unit ?? ''}${subtitle != null ? ', $subtitle' : ''}',
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         mainAxisSize: MainAxisSize.min,

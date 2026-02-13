@@ -10,6 +10,7 @@ import '../services/haptics_controller.dart';
 import '../services/media_control_service.dart';
 import '../services/media_session_service.dart';
 import '../utils/design_system.dart';
+import '../utils/training_snackbar.dart';
 import '../widgets/session/exercise_card.dart';
 import '../widgets/session/haptics_observer.dart';
 import '../widgets/session/music_launcher_bar.dart';
@@ -138,30 +139,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
       await ref.read(trainingSessionProvider.notifier).finishSession();
 
-      // 🎯 FIX: Mostrar feedback de sesión guardada ANTES de pop
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.textOnAccent,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '¡Sesión guardada!',
-                style: AppTypography.labelEmphasis.copyWith(
-                  color: AppColors.textOnAccent,
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.completedGreen,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      TrainingSnackbar.success(context, '¡Sesión guardada!');
 
       navigator.pop();
       return;
@@ -236,30 +214,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
       await ref.read(trainingSessionProvider.notifier).finishSession();
 
-      // 🎯 FIX: Mostrar feedback de sesión guardada
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.textOnAccent,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '¡Sesión guardada!',
-                style: AppTypography.labelEmphasis.copyWith(
-                  color: AppColors.textOnAccent,
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.completedGreen,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      TrainingSnackbar.success(context, '¡Sesión guardada!');
 
       navigator.pop();
     }
@@ -489,9 +444,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         appBar: AppBar(
           title: Text(
             (activeRutinaName ?? 'Entrenando').toUpperCase(),
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontSize: 20),
+            style: AppTypography.sectionTitle,
           ),
           actions: [
             // ⏱️ CRONÓMETRO TOTAL DE SESIÓN
@@ -773,31 +726,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       // Añadir nota a la serie actual
       notifier.updateLog(nextSet.exerciseIndex, nextSet.setIndex, notas: note);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.note_add,
-                color: AppColors.textPrimary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Nota: $note',
-                  style: AppTypography.labelEmphasis,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.info,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      TrainingSnackbar.voiceNote(context, 'Nota: $note');
     }
   }
 
@@ -813,24 +742,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         completed: true,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.textPrimary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text('¡Serie completada!', style: AppTypography.labelEmphasis),
-            ],
-          ),
-          backgroundColor: AppColors.success,
-          duration: const Duration(seconds: 1),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      TrainingSnackbar.success(context, '¡Serie completada!');
     }
   }
 
@@ -856,17 +768,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     if (nextSet != null) {
       notifier.updateLog(nextSet.exerciseIndex, nextSet.setIndex, peso: weight);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Peso: ${weight.toStringAsFixed(1)} kg',
-            style: AppTypography.labelEmphasis,
-          ),
-          backgroundColor: AppColors.bgElevated,
-          duration: const Duration(seconds: 1),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      TrainingSnackbar.info(context, 'Peso: ${weight.toStringAsFixed(1)} kg');
     }
   }
 
@@ -877,14 +779,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     if (nextSet != null) {
       notifier.updateLog(nextSet.exerciseIndex, nextSet.setIndex, reps: reps);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Reps: $reps', style: AppTypography.labelEmphasis),
-          backgroundColor: AppColors.bgElevated,
-          duration: const Duration(seconds: 1),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      TrainingSnackbar.info(context, 'Reps: $reps');
     }
   }
 
@@ -899,17 +794,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         rpe: rpe.toInt(),
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'RPE: ${rpe.toStringAsFixed(1)}',
-            style: AppTypography.labelEmphasis,
-          ),
-          backgroundColor: AppColors.bgElevated,
-          duration: const Duration(seconds: 1),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      TrainingSnackbar.info(context, 'RPE: ${rpe.toStringAsFixed(1)}');
     }
   }
 }

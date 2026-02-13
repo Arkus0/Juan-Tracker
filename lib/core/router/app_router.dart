@@ -29,6 +29,7 @@ import '../../diet/screens/coach/weekly_check_in_screen.dart';
 import '../../diet/screens/search_benchmark_screen.dart';
 import '../../core/onboarding/splash_wrapper.dart';
 import '../../training/training_shell.dart';
+import '../../training/widgets/training_theme_wrapper.dart';
 
 /// Provider para acceder al router desde cualquier parte de la app
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -205,7 +206,9 @@ class AppRouter {
         path: trainingLibrary,
         builder: (context, state) {
           final mode = state.uri.queryParameters['mode'];
-          return SearchExerciseScreen(isPickerMode: mode == 'picker');
+          return TrainingThemeWrapper(
+            child: SearchExerciseScreen(isPickerMode: mode == 'picker'),
+          );
         },
       ),
 
@@ -226,21 +229,24 @@ class AppRouter {
       ),
 
       // Sesión de entrenamiento activa
-      // Nota: TrainingSessionScreen no acepta sessionId, maneja su propio estado
+      // Wrapped in TrainingThemeWrapper for consistent dark theme
       GoRoute(
         path: trainingSession,
-        builder: (context, state) => const TrainingSessionScreen(),
+        builder: (context, state) => const TrainingThemeWrapper(
+          child: TrainingSessionScreen(),
+        ),
       ),
 
       // Detalle de sesión completada
-      // Requiere el objeto Sesion completo, no solo ID
-      // Por ahora redirige a historial (deep link complejo requiere provider)
+      // Wrapped in TrainingThemeWrapper so Navigator.push + Theme() is no longer needed
       GoRoute(
         path: trainingSessionDetail,
         builder: (context, state) {
           final extra = state.extra;
           if (extra is Sesion) {
-            return SessionDetailScreen(sesion: extra);
+            return TrainingThemeWrapper(
+              child: SessionDetailScreen(sesion: extra),
+            );
           }
           return const _MissingSessionDetailScreen();
         },
@@ -254,7 +260,9 @@ class AppRouter {
           if (sessionId == null || sessionId.isEmpty) {
             return const _MissingSessionDetailScreen();
           }
-          return _SessionDetailByIdScreen(sessionId: sessionId);
+          return TrainingThemeWrapper(
+            child: _SessionDetailByIdScreen(sessionId: sessionId),
+          );
         },
       ),
     ],

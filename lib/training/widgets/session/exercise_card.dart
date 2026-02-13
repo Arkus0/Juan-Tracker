@@ -20,6 +20,7 @@ import '../../services/alternativas_service.dart';
 import '../../services/exercise_library_service.dart';
 import '../../../core/design_system/design_system.dart' show AppTypography;
 import '../../utils/design_system.dart' show AppColors;
+import '../../utils/design_system.dart' as training show AppTypography;
 import '../../widgets/common/alternativas_dialog.dart';
 import 'advanced_options_modal.dart';
 import 'exercise_swap_bottom_sheet.dart'; // 🆕 Quick Swap
@@ -295,7 +296,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   ),
                   title: const Text(
                     'Ver Historial',
-                    style: TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500),
                   ),
                   onTap: () {
                     Navigator.pop(sheetContext);
@@ -323,10 +324,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     libId != null
                         ? 'Cambiar por alternativa (solo esta sesión)'
                         : 'Ejercicio personalizado - no se puede sustituir',
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
-                      fontSize: 12,
-                    ),
+                    style: training.AppTypography.subtitle,
                   ),
                   onTap: () {
                     if (libId == null) return;
@@ -355,10 +353,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     hasAlternativas
                         ? 'Ver ejercicios similares'
                         : 'Sin alternativas registradas',
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
-                      fontSize: 12,
-                    ),
+                    style: training.AppTypography.subtitle,
                   ),
                   onTap: () {
                     if (!hasAlternativas) return;
@@ -416,10 +411,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     libId != null
                         ? 'Auto-generar 2-3 sets de calentamiento'
                         : 'Solo para ejercicios de la biblioteca',
-                    style: const TextStyle(
-                      color: AppColors.textTertiary,
-                      fontSize: 12,
-                    ),
+                    style: training.AppTypography.subtitle,
                   ),
                   onTap: () {
                     if (libId == null) return;
@@ -435,7 +427,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   ),
                   title: const Text(
                     'Comentarios del ejercicio',
-                    style: TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500),
                   ),
                   onTap: () {
                     Navigator.pop(sheetContext);
@@ -1101,12 +1093,7 @@ class ExerciseCard extends ConsumerWidget {
                                   SizedBox(width: 4),
                                   Text(
                                     'ACCIONES',
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.5,
-                                    ),
+                                    style: training.AppTypography.actionLabel,
                                   ),
                                 ],
                               ),
@@ -1183,11 +1170,7 @@ class ExerciseCard extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               empatheticBannerMessage!,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+              style: training.AppTypography.meta,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -1204,63 +1187,7 @@ class ExerciseCard extends ConsumerWidget {
 
         // Header Row - solo mostrar si NO es modo focalizado
         if (!useFocusedInputMode)
-          const Row(
-            children: [
-              SizedBox(
-                width: 30,
-                child: Center(
-                  child: Text(
-                    '#',
-                    style: TextStyle(color: AppColors.textTertiary),
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 50,
-                child: Center(
-                  child: Text(
-                    'PREV',
-                    style: TextStyle(
-                      color: AppColors.textTertiary,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'KG',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'REPS',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 40,
-                child: Center(
-                  child: Icon(
-                    Icons.check,
-                    size: 16,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          _SetRowHeader(),
         if (!useFocusedInputMode) const SizedBox(height: 8),
 
         // 🎯 REDISEÑO: Usar FocusedSetRow en modo focalizado
@@ -1511,10 +1438,7 @@ class _HistorySheetContent extends ConsumerWidget {
             const SizedBox(height: 4),
             const Text(
               'ÚLTIMAS 3 SESIONES',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-              ),
+              style: training.AppTypography.metaTiny,
             ),
             const SizedBox(height: 12),
             ConstrainedBox(
@@ -1581,6 +1505,46 @@ class _HistorySheetContent extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Extracted header row for set columns (#, PREV, KG, REPS, check).
+/// Uses training design tokens instead of inline TextStyles.
+class _SetRowHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 30,
+          child: Center(
+            child: Text('#', style: training.AppTypography.columnHeader),
+          ),
+        ),
+        SizedBox(
+          width: 50,
+          child: Center(
+            child: Text('PREV', style: training.AppTypography.columnHeader),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: Text('KG', style: training.AppTypography.columnLabel),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: Text('REPS', style: training.AppTypography.columnLabel),
+          ),
+        ),
+        const SizedBox(
+          width: 40,
+          child: Center(
+            child: Icon(Icons.check, size: 16, color: AppColors.textTertiary),
+          ),
+        ),
+      ],
     );
   }
 }

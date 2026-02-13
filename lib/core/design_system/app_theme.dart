@@ -353,7 +353,12 @@ ThemeData buildNutritionTheme() {
     brightness: Brightness.light,
     colorScheme: scheme,
     scaffoldBackgroundColor: AppColors.lightBackground,
-    
+
+    // Accessibility: visible focus ring for keyboard/switch navigation
+    focusColor: AppColors.primary.withAlpha((0.2 * 255).round()),
+    hoverColor: AppColors.primary.withAlpha((0.08 * 255).round()),
+    splashColor: AppColors.primary.withAlpha((0.12 * 255).round()),
+
     // Typography
     textTheme: AppTypography.textTheme.apply(
       bodyColor: AppColors.lightTextPrimary,
@@ -576,7 +581,12 @@ ThemeData buildTrainingTheme() {
     brightness: Brightness.dark,
     colorScheme: scheme,
     scaffoldBackgroundColor: AppColors.darkBackground,
-    
+
+    // Accessibility: visible focus ring for keyboard/switch navigation
+    focusColor: AppColors.ironRed.withAlpha((0.3 * 255).round()),
+    hoverColor: AppColors.ironRed.withAlpha((0.1 * 255).round()),
+    splashColor: AppColors.ironRed.withAlpha((0.15 * 255).round()),
+
     // Typography
     textTheme: GoogleFonts.montserratTextTheme().apply(
       bodyColor: AppColors.darkTextPrimary,
