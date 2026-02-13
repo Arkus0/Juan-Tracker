@@ -163,19 +163,19 @@ class _QuickActionsRow extends ConsumerWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            _QuickActionButton(
+            QuickActionButton(
               icon: Icons.add_rounded,
               label: 'Peso',
               onTap: () => _showAddWeightDialog(context, ref),
             ),
             const SizedBox(width: 12),
-            _QuickActionButton(
+            QuickActionButton(
               icon: Icons.play_arrow_rounded,
               label: 'Entrenar',
               onTap: () => _navigateToTraining(context),
             ),
             const SizedBox(width: 12),
-            _QuickActionButton(
+            QuickActionButton(
               icon: Icons.restaurant_rounded,
               label: 'Comida',
               onTap: () => _showAddFoodDialog(context, ref),
@@ -533,55 +533,7 @@ class _ModeCard extends StatelessWidget {
 }
 
 /// Botón de acción rápida
-class _QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _QuickActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Expanded(
-      child: Semantics(
-        button: true,
-        label: label,
-        child: Material(
-          color: colors.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          child: InkWell(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onTap();
-            },
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Column(
-                children: [
-                  Icon(icon, color: colors.primary, size: 24),
-                  const SizedBox(height: 8),
-                  Text(
-                    label,
-                    style: AppTypography.labelMedium.copyWith(
-                      color: colors.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+// QuickActionButton consolidated into core/widgets/quick_action_button.dart
 
 /// Nutrition card that uses providers to show remaining kcal and protein
 class _NutritionModeCard extends ConsumerWidget {
@@ -682,9 +634,8 @@ class _NutritionModeCard extends ConsumerWidget {
       onTap: onTap,
       // 🎯 QW-05: Progress ring mostrando % de calorías consumidas
       trailing: progress > 0
-          ? _MiniProgressRing(
+          ? MiniProgressRing(
               progress: progress.clamp(0.0, 1.0),
-              remaining: int.tryParse(stats[0].value) ?? 0,
             )
           : null,
     );
@@ -808,57 +759,4 @@ class _TrainingModeCard extends ConsumerWidget {
   }
 }
 
-/// 🎯 QW-05: Mini progress ring para cards
-class _MiniProgressRing extends StatelessWidget {
-  final double progress;
-  final int remaining;
-
-  const _MiniProgressRing({required this.progress, required this.remaining});
-
-  @override
-  Widget build(BuildContext context) {
-    final isOverLimit = progress > 1.0;
-
-    return SizedBox(
-      width: 48,
-      height: 48,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Background track
-          CircularProgressIndicator(
-            value: 1,
-            strokeWidth: 4,
-            backgroundColor: Colors.transparent,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Colors.white.withAlpha((0.2 * 255).round()),
-            ),
-          ),
-          // Progress arc
-          CircularProgressIndicator(
-            value: progress.clamp(0.0, 1.0),
-            strokeWidth: 4,
-            backgroundColor: Colors.transparent,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              isOverLimit ? Colors.red.shade300 : Colors.white,
-            ),
-          ),
-          // Percentage text
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${(progress * 100).toInt()}%',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
+// MiniProgressRing consolidated into core/widgets/mini_progress_ring.dart

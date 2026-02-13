@@ -7,10 +7,8 @@ import '../../../core/router/app_router.dart';
 import '../../../diet/providers/coach_providers.dart';
 import '../../../features/diary/presentation/diary_screen.dart';
 import '../../../features/home/providers/home_providers.dart';
-import '../../../features/weight/presentation/weight_screen.dart';
-import '../../../features/summary/presentation/summary_screen.dart';
+import '../../../features/progress/presentation/progress_screen.dart';
 import '../../../features/settings/presentation/settings_screen.dart';
-import '../../../diet/screens/coach/coach_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -23,13 +21,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     with WidgetsBindingObserver {
   bool _checkInReminderShown = false;
 
-  // Usamos IndexedStack para preservar el estado de cada tab
-  // y evitar rebuilds innecesarios al cambiar entre tabs
+  // 3 tabs: Diario, Progreso (Weight+Summary+Coach), Perfil
   static const _tabs = <Widget>[
     DiaryScreen(),
-    WeightScreen(),
-    SummaryScreen(),
-    CoachScreen(),
+    ProgressScreen(),
     SettingsScreen(),
   ];
 
@@ -37,7 +32,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Refresh meal type provider to get current time-based value
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(currentMealTypeProvider);
       _checkForPendingCheckIn();
@@ -66,7 +60,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+      // UX fix: allow dismissal — forced modals frustrate users
+      barrierDismissible: true,
       builder: (ctx) {
         final colors = Theme.of(ctx).colorScheme;
         return AlertDialog(
@@ -123,7 +118,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Refresh meal type when app resumes from background
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(currentMealTypeProvider);
     }
@@ -134,9 +128,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final currentTab = ref.watch(homeTabProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Juan Tracker')),
-      // IndexedStack mantiene todos los tabs en memoria pero solo muestra uno
-      // Esto preserva el scroll position y evita re-fetch de datos
+      // No AppBar here — each tab provides its own AppBar/SliverAppBar
+      // to avoid double headers and allow per-tab customization
       body: SafeArea(
         child: IndexedStack(index: currentTab.index, children: _tabs),
       ),
@@ -147,16 +140,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         onTap: (i) =>
             ref.read(homeTabProvider.notifier).setTab(HomeTab.values[i]),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Diario'),
-          BottomNavigationBarItem(icon: Icon(Icons.scale), label: 'Peso'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Resumen',
+            icon: Icon(Icons.book_rounded),
+            label: 'Diario',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'Coach'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.insights_rounded),
+            label: 'Progreso',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_rounded),
+            label: 'Perfil',
+          ),
         ],
       ),
     );
   }
+
 }

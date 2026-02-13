@@ -37,6 +37,7 @@
 /// ============================================================================
 library;
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -149,7 +150,13 @@ abstract class AppColors {
   static const Color metalGrayLight = Color(0xFF5A5A5A);
   static const Color metalGrayDark = Color(0xFF363636);
 
-  // Aliases para compatibilidad (todos apuntan a rojo Ferrari)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SEMANTIC ALIASES — Readable names that map to functional colors
+  // ═══════════════════════════════════════════════════════════════════════════
+  // techCyan/neonCyan → restTeal (focus, active state, timer)
+  // neonPrimary → bloodRed (CTA, progress, action)
+  // Do NOT add misleading names (e.g. "forestGreen" for a red color)
+  // ═══════════════════════════════════════════════════════════════════════════
   static const Color techCyan = restTeal;
   static const Color techCyanHover = restTealHover;
   static const Color techCyanPressed = restTealPressed;
@@ -163,11 +170,6 @@ abstract class AppColors {
   static const Color actionPrimary = bloodRed;
   static const Color actionHover = bloodRedHover;
   static const Color actionPressed = bloodRedPressed;
-  static const Color forestGreen = bloodRed; // Legacy alias
-  static const Color forestGreenHover = bloodRedHover;
-  static const Color forestGreenPressed = bloodRedPressed;
-  static const Color forestGreenSubtle = bloodRedSubtle;
-  static const Color forestGreenGlow = bloodRedGlow;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TIMER DESCANSO: Teal Frío — Calma post-set
@@ -196,13 +198,6 @@ abstract class AppColors {
 
   /// Glow para animaciones
   static const Color restTealGlow = Color(0x4D38BDF8);
-
-  // Legacy aliases
-  static const Color slateGreen = restTeal;
-  static const Color slateGreenHover = restTealHover;
-  static const Color slateGreenPressed = restTealPressed;
-  static const Color slateGreenSubtle = restTealSubtle;
-  static const Color slateGreenGlow = restTealGlow;
 
   // Timer usa teal (calma, descanso)
   static const Color timerActive = restTeal;
@@ -398,8 +393,7 @@ abstract class AppColors {
     colors: [goldDark, goldAccent],
   );
 
-  // Alias removido: neonGradient no debe usarse
-  static const LinearGradient neonGradient = subtleGradient;
+  // neonGradient removed — use subtleGradient directly
 }
 
 /// ============================================================================
@@ -631,13 +625,14 @@ abstract class AppSpacing {
 /// ============================================================================
 
 abstract class AppRadius {
-  static const double xs = 2.0;
-  static const double sm = 4.0;
-  static const double md = 8.0;
-  static const double lg = 12.0;
-  static const double xl = 16.0;
-  static const double full = 100.0;
-  static const double round = 100.0;
+  // Aligned with core/design_system/app_theme.dart for cross-module consistency
+  static const double xs = 4.0;
+  static const double sm = 8.0;
+  static const double md = 12.0;
+  static const double lg = 16.0;
+  static const double xl = 24.0;
+  static const double full = 9999.0;
+  static const double round = 9999.0;
 }
 
 /// ============================================================================
@@ -1217,16 +1212,8 @@ abstract class AppAccessibility {
   }
 
   static double _linearize(double value) {
-    return value <= 0.03928
-        ? value / 12.92
-        : ((value + 0.055) / 1.055).pow(2.4);
-  }
-}
-
-extension _PowExtension on double {
-  double pow(double exponent) {
-    if (this < 0) return 0;
-    return this == 0 ? 0 : (this as num).toDouble();
+    if (value <= 0.03928) return value / 12.92;
+    return math.pow((value + 0.055) / 1.055, 2.4).toDouble();
   }
 }
 

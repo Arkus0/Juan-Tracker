@@ -166,13 +166,5 @@ class _PulseAnimationState extends State<PulseAnimation>
   }
 }
 
-/// Curvas y duraciones estandarizadas
-abstract class AppAnimations {
-  static const Duration fast = Duration(milliseconds: 150);
-  static const Duration normal = Duration(milliseconds: 250);
-  static const Duration slow = Duration(milliseconds: 400);
-  
-  static const Curve easeOut = Curves.easeOutCubic;
-  static const Curve easeIn = Curves.easeInCubic;
-  static const Curve spring = Curves.elasticOut;
-}
+// AppAnimations removed — use AppDurations and AppCurves from app_theme.dart instead.
+// This avoids duplicate token definitions.

@@ -523,7 +523,7 @@ class _QuickActionsSection extends ConsumerWidget {
           children: [
             // Acción principal según hora
             if (hour < 11) ...[
-              _QuickActionButton(
+              QuickActionButton(
                 icon: Icons.add_rounded,
                 label: 'Desayuno',
                 onTap: () {
@@ -531,7 +531,7 @@ class _QuickActionsSection extends ConsumerWidget {
                 },
               ),
             ] else if (hour < 15) ...[
-              _QuickActionButton(
+              QuickActionButton(
                 icon: Icons.add_rounded,
                 label: 'Almuerzo',
                 onTap: () {
@@ -539,7 +539,7 @@ class _QuickActionsSection extends ConsumerWidget {
                 },
               ),
             ] else if (hour < 19) ...[
-              _QuickActionButton(
+              QuickActionButton(
                 icon: Icons.add_rounded,
                 label: 'Merienda',
                 onTap: () {
@@ -547,7 +547,7 @@ class _QuickActionsSection extends ConsumerWidget {
                 },
               ),
             ] else ...[
-              _QuickActionButton(
+              QuickActionButton(
                 icon: Icons.add_rounded,
                 label: 'Cena',
                 onTap: () {
@@ -558,7 +558,7 @@ class _QuickActionsSection extends ConsumerWidget {
             const SizedBox(width: 12),
             // Acción secundaria: Entrenar si toca
             if (summary.hasTrainingData && !summary.isRestDaySuggested)
-              _QuickActionButton(
+              QuickActionButton(
                 icon: Icons.fitness_center_rounded,
                 label: 'Entrenar',
                 isPrimary: true,
@@ -568,7 +568,7 @@ class _QuickActionsSection extends ConsumerWidget {
                 },
               )
             else
-              _QuickActionButton(
+              QuickActionButton(
                 icon: Icons.add_chart_rounded,
                 label: 'Peso',
                 onTap: () {
@@ -594,52 +594,4 @@ class _QuickActionsSection extends ConsumerWidget {
   }
 }
 
-/// Botón de acción rápida
-class _QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isPrimary;
-
-  const _QuickActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.isPrimary = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return Expanded(
-      child: Material(
-        color: isPrimary ? colors.primary : colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
-              children: [
-                Icon(
-                  icon,
-                  color: isPrimary ? colors.onPrimary : colors.onSurface,
-                  size: 24,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: isPrimary ? colors.onPrimary : colors.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+// QuickActionButton consolidated into core/widgets/quick_action_button.dart

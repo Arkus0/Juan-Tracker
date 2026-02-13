@@ -135,11 +135,12 @@ class AppRouter {
         builder: (context, state) => const FoodSearchUnifiedScreen(),
       ),
 
+      // Weight, Summary, Coach all consolidated into Progress tab
       GoRoute(
         path: nutritionWeight,
         pageBuilder: (context, state) => _fadePage(
           key: state.pageKey,
-          child: const _NutritionTabEntry(tab: HomeTab.weight),
+          child: const _NutritionTabEntry(tab: HomeTab.progress),
         ),
       ),
 
@@ -147,16 +148,15 @@ class AppRouter {
         path: nutritionSummary,
         pageBuilder: (context, state) => _fadePage(
           key: state.pageKey,
-          child: const _NutritionTabEntry(tab: HomeTab.summary),
+          child: const _NutritionTabEntry(tab: HomeTab.progress),
         ),
       ),
 
-      // Coach Adaptativo
       GoRoute(
         path: nutritionCoach,
         pageBuilder: (context, state) => _fadePage(
           key: state.pageKey,
-          child: const _NutritionTabEntry(tab: HomeTab.coach),
+          child: const _NutritionTabEntry(tab: HomeTab.progress),
         ),
       ),
 
