@@ -38,15 +38,21 @@ final diaryViewModeProvider =
       DiaryViewModeNotifier.new,
     );
 
-/// Notifier para controlar qué secciones de comida están expandidas
+/// Notifier para controlar qué secciones de comida están expandidas.
+///
+/// Progressive disclosure: only the "current" meal (based on time of day)
+/// starts expanded. Users can expand others on demand. This reduces
+/// initial visual density from ~4 expanded sections to ~1.
 class ExpandedMealsNotifier extends Notifier<Set<MealType>> {
   @override
-  Set<MealType> build() => {
-    MealType.breakfast,
-    MealType.lunch,
-    MealType.dinner,
-    MealType.snack,
-  };
+  Set<MealType> build() {
+    // Smart default: expand only the meal that's relevant right now
+    final hour = DateTime.now().hour;
+    if (hour < 11) return {MealType.breakfast};
+    if (hour < 15) return {MealType.lunch};
+    if (hour < 20) return {MealType.dinner};
+    return {MealType.snack};
+  }
 
   void toggle(MealType mealType) {
     final current = Set<MealType>.from(state);
@@ -428,28 +434,15 @@ class _MealSection extends ConsumerWidget {
     WidgetRef ref,
     DiaryEntryModel entry,
   ) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar entrada'),
-        content: Text('¿Eliminar "${entry.foodName}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      title: 'Eliminar entrada',
+      message: '¿Eliminar "${entry.foodName}"?',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       // T2 FIX: Add error handling to prevent silent failures
       try {
         await ref.read(diaryRepositoryProvider).delete(entry.id);
@@ -658,9 +651,18 @@ class _EntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    return Dismissible(
+    return Semantics(
+      label: '${entry.foodName}, ${entry.kcal} calorías, deslizar para eliminar',
+      child: Dismissible(
       key: Key(entry.id),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => ConfirmDialog.show(
+        context: context,
+        title: 'Eliminar',
+        message: '¿Eliminar "${entry.foodName}"?',
+        confirmLabel: 'Eliminar',
+        isDestructive: true,
+      ),
       background: Container(
         color: colors.error,
         alignment: Alignment.centerRight,
@@ -701,6 +703,7 @@ class _EntryTile extends StatelessWidget {
         ),
         onTap: onTap,
       ),
+      ), // end Semantics
     );
   }
 }
@@ -1375,27 +1378,42 @@ class _ToggleButton extends StatelessWidget {
 // QUICK ACTIONS CARD (Repetir ayer + Recientes)
 // ============================================================================
 
-/// Card con acciones rápidas: Repetir ayer + chips de alimentos recientes
-class _QuickActionsCard extends ConsumerWidget {
+/// Card con acciones rápidas: Repetir ayer + chips de alimentos recientes.
+///
+/// Progressive disclosure: "Repetir ayer" is always visible (primary action).
+/// Templates and recent foods are collapsed under an expandable section
+/// to reduce initial visual density.
+class _QuickActionsCard extends ConsumerStatefulWidget {
   const _QuickActionsCard();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_QuickActionsCard> createState() => _QuickActionsCardState();
+}
+
+class _QuickActionsCardState extends ConsumerState<_QuickActionsCard> {
+  bool _showExtras = false;
+
+  @override
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final selectedDate = ref.watch(selectedDateProvider);
     final yesterdayAsync = ref.watch(yesterdayMealsProvider);
     final recentsAsync = ref.watch(quickRecentFoodsProvider);
     final templatesAsync = ref.watch(topMealTemplatesProvider);
 
+    // Check if there's anything to show in the expandable section
+    final hasTemplates = templatesAsync.valueOrNull?.isNotEmpty ?? false;
+    final hasRecents = recentsAsync.valueOrNull?.isNotEmpty ?? false;
+    final hasExtras = hasTemplates || hasRecents;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Botón Repetir ayer
+        // Primary action: Repetir ayer — always visible
         yesterdayAsync.when(
           data: (yesterday) {
             if (yesterday.isEmpty) return const SizedBox.shrink();
 
-            // Calcular la fecha del "ayer" relativo a la fecha seleccionada
             final yesterdayDate = DateTime(
               selectedDate.year,
               selectedDate.month,
@@ -1415,88 +1433,116 @@ class _QuickActionsCard extends ConsumerWidget {
           error: (_, _) => const SizedBox.shrink(),
         ),
 
-        // Chips de plantillas guardadas
-        templatesAsync.when(
-          data: (templates) {
-            if (templates.isEmpty) return const SizedBox.shrink();
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.bookmark_outline,
-                      size: 14,
+        // Expand/collapse toggle for secondary actions
+        if (hasExtras)
+          GestureDetector(
+            onTap: () => setState(() => _showExtras = !_showExtras),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Icon(
+                    _showExtras ? Icons.expand_less : Icons.expand_more,
+                    size: 16,
+                    color: colors.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _showExtras
+                        ? 'Ocultar atajos'
+                        : 'Plantillas y recientes',
+                    style: AppTypography.labelSmall.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Plantillas guardadas',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: colors.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        // Expandable section: templates + recents
+        if (_showExtras) ...[
+          // Templates
+          templatesAsync.when(
+            data: (templates) {
+              if (templates.isEmpty) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.bookmark_outline,
+                        size: 14,
+                        color: colors.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Plantillas guardadas',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: templates.take(4).map((template) {
-                    return _TemplateChip(template: template);
-                  }).toList(),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: templates.take(4).map((template) {
+                      return _TemplateChip(template: template);
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
 
-        // Chips de alimentos recientes
-        recentsAsync.when(
-          data: (recents) {
-            if (recents.isEmpty) return const SizedBox.shrink();
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.history,
-                      size: 14,
-                      color: colors.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Añadir rápido (toca para elegir comida)',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: colors.onSurfaceVariant,
+          // Recents
+          recentsAsync.when(
+            data: (recents) {
+              if (recents.isEmpty) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.history,
+                        size: 14,
+                        color: colors.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Añadir rápido (toca para elegir comida)',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: recents.take(6).map((food) {
-                    return _RecentFoodChip(food: food);
-                  }).toList(),
-                ),
-              ],
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: recents.take(6).map((food) {
+                      return _RecentFoodChip(food: food);
+                    }).toList(),
+                  ),
+                ],
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
+        ],
       ],
     );
   }
@@ -1571,27 +1617,14 @@ class _RepeatYesterdayButton extends ConsumerWidget {
     final selectedDate = ref.read(selectedDateProvider);
     final targetDateLabel = DateFormat('EEEE d', 'es').format(selectedDate);
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Copiar comidas'),
-        content: Text(
-          '¿Añadir $entryCount alimentos ($totalKcal kcal) al $targetDateLabel?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Añadir'),
-          ),
-        ],
-      ),
+      title: 'Copiar comidas',
+      message: '¿Añadir $entryCount alimentos ($totalKcal kcal) al $targetDateLabel?',
+      confirmLabel: 'Añadir',
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed && context.mounted) {
       final repeatFn = ref.read(repeatYesterdayProvider);
       final count = await repeatFn();
 

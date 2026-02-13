@@ -401,28 +401,15 @@ class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButt
   }
 
   Future<void> _cleanupDuplicates() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Limpiar duplicados'),
-        content: Text(
-          'Se fusionarán $_duplicatesFound alimentos duplicados. '
+      title: 'Limpiar duplicados',
+      message: 'Se fusionarán $_duplicatesFound alimentos duplicados. '
           'El alimento más usado se mantendrá y las referencias se actualizarán.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('CANCELAR'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('LIMPIAR'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Limpiar',
     );
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     setState(() => _isLoading = true);
     try {

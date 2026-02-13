@@ -240,7 +240,7 @@ class _BudgetCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               hasTarget ? 'consumidas' : 'kcal consumidas',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
+              style: AppTypography.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 20),
             // Barra de progreso
@@ -348,7 +348,7 @@ class _BudgetStat extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 2),
-            Text(unit, style: TextStyle(fontSize: 12, color: color)),
+            Text(unit, style: AppTypography.labelSmall.copyWith(color: color)),
           ],
         ),
       ],
@@ -999,7 +999,7 @@ class _WeeklyInsightsCard extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Text(
                 'Sin datos suficientes para anÃ¡lisis semanal',
-                style: TextStyle(color: colors.onSurfaceVariant),
+                style: AppTypography.bodyMedium.copyWith(color: colors.onSurfaceVariant),
               ),
             ),
           );
@@ -1163,7 +1163,7 @@ class _InsightMetric extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
+              style: AppTypography.labelSmall.copyWith(color: colors.onSurfaceVariant),
             ),
           ],
         ),
@@ -1201,7 +1201,7 @@ class _WeekComparison extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           '${change.abs()} kcal/dÃ­a vs semana anterior',
-          style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+          style: AppTypography.bodySmall.copyWith(color: colors.onSurfaceVariant),
         ),
         const Spacer(),
         Text(

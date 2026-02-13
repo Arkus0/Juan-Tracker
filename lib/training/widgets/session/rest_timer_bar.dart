@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/design_system.dart' show AppTypography;
+import '../../../core/widgets/confirm_dialog.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/haptics_controller.dart' show HapticEvent, HapticsController;
 import '../../services/rest_timer_controller.dart';
@@ -421,7 +422,9 @@ class _InactiveTimerBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Semantics(
+      label: 'Barra de descanso: ${seconds} segundos configurados',
+      child: Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: const BoxDecoration(
         color: AppColors.bgElevated,
@@ -475,31 +478,19 @@ class _InactiveTimerBar extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 
   Future<void> _showDiscardDialog(BuildContext context) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await ConfirmDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Descartar sesión?'),
-        content: const Text('Se perderán los datos.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('NO'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('SÍ'),
-          ),
-        ],
-      ),
+      title: '¿Descartar sesión?',
+      message: 'Se perderán los datos.',
+      confirmLabel: 'Descartar',
+      isDestructive: true,
     );
-    if (confirm == true) {
+    if (confirm) {
       HapticsController.instance.trigger(HapticEvent.inputSubmit);
       onDiscardSession!();
     }
@@ -719,27 +710,14 @@ class _ActiveTimerBar extends StatelessWidget {
   }
 
   Future<void> _showDiscardDialog(BuildContext context) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await ConfirmDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Descartar sesión?'),
-        content: const Text('Se perderán los datos.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('NO'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('SÍ'),
-          ),
-        ],
-      ),
+      title: '¿Descartar sesión?',
+      message: 'Se perderán los datos.',
+      confirmLabel: 'Descartar',
+      isDestructive: true,
     );
-    if (confirm == true) {
+    if (confirm) {
       HapticsController.instance.trigger(HapticEvent.inputSubmit);
       onDiscardSession!();
     }
@@ -852,7 +830,10 @@ class _StartRestButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // UX-003: Aumentado a 52dp para consistencia
     const size = 52.0;
-    return Tooltip(
+    return Semantics(
+      button: true,
+      label: 'Iniciar descanso',
+      child: Tooltip(
       message: 'Iniciar descanso',
       child: Material(
         color: AppColors.bloodRed,
@@ -874,6 +855,7 @@ class _StartRestButton extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }

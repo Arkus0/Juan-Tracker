@@ -102,28 +102,15 @@ class RutinasScreen extends ConsumerWidget {
 
   Future<void> _showImportFlow(BuildContext context, WidgetRef ref) async {
     HapticFeedback.selectionClick();
-    final openCreator = await showDialog<bool>(
+    final openCreator = await ConfirmDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Importar rutina'),
-        content: const Text(
-          'La importación directa desde esta pantalla aún no está disponible.\n\n'
+      title: 'Importar rutina',
+      message: 'La importación directa desde esta pantalla aún no está disponible.\n\n'
           'Puedes importar ejercicios desde "Nueva Rutina" usando Smart Import.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Abrir creador'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Abrir creador',
     );
 
-    if (openCreator == true && context.mounted) {
+    if (openCreator && context.mounted) {
       _navigateToCreate(context);
       AppSnackbar.show(
         context,

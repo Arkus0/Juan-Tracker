@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/widgets/confirm_dialog.dart';
 import '../../providers/training_provider.dart';
 import '../../services/rest_timer_controller.dart';
 import '../../utils/design_system.dart';
@@ -31,7 +32,10 @@ class ActiveSessionBar extends ConsumerWidget {
 
     // ðŸŽ¯ ESTADO CRÃTICO: Barra prominente, imposible de ignorar
     // El usuario NUNCA debe pensar que perdiÃ³ su sesiÃ³n
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: 'Entrenamiento en curso: $rutinaName. Toca para volver a la sesión.',
+      child: GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
         context.goToTrainingSession();
@@ -146,34 +150,14 @@ class ActiveSessionBar extends ConsumerWidget {
             GestureDetector(
               onTap: () async {
                 HapticFeedback.mediumImpact();
-                final confirm = await showDialog<bool>(
+                final confirm = await ConfirmDialog.show(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    backgroundColor: AppColors.bgElevated,
-                    title: const Text(
-                      'DESCARTAR SESIÃ“N',
-                      style: TextStyle(color: AppColors.textPrimary),
-                    ),
-                    content: const Text(
-                      'Â¿Descartar sin guardar?',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('CANCELAR'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        child: const Text(
-                          'DESCARTAR',
-                          style: TextStyle(color: AppColors.bloodRed),
-                        ),
-                      ),
-                    ],
-                  ),
+                  title: 'Descartar sesión',
+                  message: '¿Descartar sin guardar?',
+                  confirmLabel: 'Descartar',
+                  isDestructive: true,
                 );
-                if (confirm == true) {
+                if (confirm) {
                   await ref
                       .read(trainingSessionProvider.notifier)
                       .discardSession();
@@ -195,6 +179,7 @@ class ActiveSessionBar extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -284,7 +269,10 @@ class _EmbeddedTimerBubbleState extends State<_EmbeddedTimerBubble>
     final isCritical = seconds <= 10;
     final isPaused = widget.timerState.isPaused;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: 'Timer: $seconds segundos${isPaused ? ", pausado" : ""}. Toca para ${isPaused ? "reanudar" : "pausar"}.',
+      child: GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
         if (isPaused) {
@@ -354,6 +342,7 @@ class _EmbeddedTimerBubbleState extends State<_EmbeddedTimerBubble>
           ],
         ),
       ),
+    ),
     );
   }
 }

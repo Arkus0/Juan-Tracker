@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/confirm_dialog.dart';
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
 
@@ -535,28 +536,15 @@ class _TargetForm extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref, String id) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar objetivo'),
-        content: const Text(
-          '¿Estás seguro? Los días pasados que usaban este objetivo mantendrán sus valores históricos.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      title: 'Eliminar objetivo',
+      message: '¿Estás seguro? Los días pasados que usaban este objetivo mantendrán sus valores históricos.',
+      confirmLabel: 'Eliminar',
+      isDestructive: true,
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed && context.mounted) {
       final repo = ref.read(targetsRepositoryProvider);
       try {
         await repo.delete(id);

@@ -12,3 +12,4 @@ export 'app_snackbar.dart';
 export 'home_button.dart';
 export 'quick_action_button.dart';
 export 'mini_progress_ring.dart';
+export 'confirm_dialog.dart';
