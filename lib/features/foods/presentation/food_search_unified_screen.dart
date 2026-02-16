@@ -7,7 +7,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/design_system/design_system.dart' show AppTypography;
 import '../../../../core/providers/database_provider.dart';
+import '../../../../core/services/user_error_message.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../diet/models/models.dart';
 // Hide MealType from database.dart - we use the one from diet/models
@@ -106,6 +108,7 @@ class _FoodSearchUnifiedScreenState
   );
   final ImagePicker _imagePicker = ImagePicker();
   bool _isProcessingOcr = false;
+  bool _isResolvingBarcode = false;
 
   @override
   void initState() {
@@ -146,7 +149,12 @@ class _FoodSearchUnifiedScreenState
       onError: (error) {
         if (!mounted) return;
         setState(() => _isListening = false);
-        _showError('Error en reconocimiento de voz: $error');
+        _showError(
+          userErrorMessage(
+            error,
+            fallback: 'No se pudo iniciar el reconocimiento de voz.',
+          ),
+        );
       },
     );
     if (!mounted) return;
@@ -196,29 +204,14 @@ class _FoodSearchUnifiedScreenState
 
       // Mostrar snackbar con opción de añadir rápido
       final hasAmount = parsed.amount != null;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.mic, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  hasAmount
-                      ? '${parsed.foodName} (${parsed.amount!.toStringAsFixed(0)}g)'
-                      : parsed.foodName,
-                ),
-              ),
-            ],
-          ),
-          action: SnackBarAction(
-            label: hasAmount ? '✓ AÑADIR' : 'BUSCAR',
-            textColor: Colors.amber,
-            onPressed: () => _quickAddFromVoice(parsed),
-          ),
-          duration: const Duration(seconds: 4),
-          behavior: SnackBarBehavior.floating,
-        ),
+      final message = hasAmount
+          ? '${parsed.foodName} (${parsed.amount!.toStringAsFixed(0)}g)'
+          : parsed.foodName;
+      AppSnackbar.show(
+        context,
+        message: message,
+        actionLabel: hasAmount ? '✓ AÑADIR' : 'BUSCAR',
+        onAction: () => _quickAddFromVoice(parsed),
       );
     } else {
       // No se pudo parsear el texto
@@ -288,7 +281,13 @@ class _FoodSearchUnifiedScreenState
           Navigator.of(context).pop();
         } catch (e) {
           if (mounted) {
-            AppSnackbar.showError(context, message: 'Error al guardar: $e');
+            AppSnackbar.showError(
+              context,
+              message: userErrorMessage(
+                e,
+                fallback: 'No se pudo guardar la entrada.',
+              ),
+            );
           }
         }
       }
@@ -359,7 +358,7 @@ class _FoodSearchUnifiedScreenState
                     return ListTile(
                       title: Text(food.name),
                       subtitle: Text(
-                        '${food.kcalPer100g} kcal/100g${food.brand != null ? ' • ${food.brand}' : ''}',
+                        '${food.kcalPer100g} kcal/100g${food.brand != null ? ' - ${food.brand}' : ''}',
                       ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () async {
@@ -388,7 +387,10 @@ class _FoodSearchUnifiedScreenState
                             if (mounted) {
                               AppSnackbar.showError(
                                 this.context,
-                                message: 'Error: $e',
+                                message: userErrorMessage(
+                                  e,
+                                  fallback: 'No se pudo guardar la entrada.',
+                                ),
                               );
                             }
                           }
@@ -456,7 +458,9 @@ class _FoodSearchUnifiedScreenState
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessingOcr = false);
-        _showError('Error al procesar imagen: $e');
+        _showError(
+          userErrorMessage(e, fallback: 'No se pudo procesar la imagen.'),
+        );
       }
     }
   }
@@ -547,39 +551,41 @@ class _FoodSearchUnifiedScreenState
   // ============================================================================
 
   Future<void> _scanBarcode() async {
+    if (_isResolvingBarcode) {
+      AppSnackbar.showWarning(
+        context,
+        message: 'Ya se esta buscando un codigo de barras.',
+      );
+      return;
+    }
+
     final result = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (ctx) => const _BarcodeScannerScreen()),
     );
 
     if (result != null && result.isNotEmpty) {
-      _processBarcode(result);
+      await _processBarcode(result);
     }
   }
 
-  void _processBarcode(String barcode) async {
-    // Mostrar loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(child: CircularProgressIndicator()),
-    );
+  Future<void> _processBarcode(String barcode) async {
+    if (_isResolvingBarcode) return;
+    setState(() => _isResolvingBarcode = true);
 
     try {
-      // Primero buscar en local
+      // Primero buscar en local.
       final localResults = await ref
           .read(alimentoRepositoryProvider)
           .searchByBarcode(barcode);
 
-      // T1 FIX: Check mounted before Navigator operations after async gap
       if (!mounted) return;
 
       if (localResults != null) {
-        Navigator.of(context).pop(); // Cerrar loading
         _selectFood(localResults);
         return;
       }
 
-      // Si no está en local, buscar online via el provider híbrido
+      // Si no esta en local, buscar online via provider hibrido.
       debugPrint('[Barcode] No encontrado local, buscando online: $barcode');
       final onlineResult = await ref.read(
         onlineBarcodeSearchProvider(barcode).future,
@@ -588,43 +594,25 @@ class _FoodSearchUnifiedScreenState
       if (!mounted) return;
 
       if (onlineResult != null) {
-        Navigator.of(context).pop(); // Cerrar loading
         _selectFood(onlineResult);
         return;
       }
 
-      // No encontrado ni local ni online
-      Navigator.of(context).pop(); // Cerrar loading
-
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Producto no encontrado'),
-          content: Text(
-            'No se encontró información para el código: $barcode\n\nNo está en la base local ni en Open Food Facts.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                _showManualAddSheet(
-                  prefillData: _OcrExtractedData(name: 'Producto $barcode'),
-                );
-              },
-              child: const Text('Añadir manual'),
-            ),
-          ],
+      AppSnackbar.showWarning(
+        context,
+        message: 'No se encontro informacion para el codigo $barcode.',
+        actionLabel: 'ANADIR',
+        onAction: () => _showManualAddSheet(
+          prefillData: _OcrExtractedData(name: 'Producto $barcode'),
         ),
       );
     } catch (e) {
-      // T1 FIX: Check mounted before Navigator operations after async gap
       if (!mounted) return;
-      Navigator.of(context).pop(); // Cerrar loading
-      _showError('Error al buscar producto: $e');
+      _showError('No se pudo buscar el producto en este momento.');
+    } finally {
+      if (mounted) {
+        setState(() => _isResolvingBarcode = false);
+      }
     }
   }
 
@@ -733,7 +721,13 @@ class _FoodSearchUnifiedScreenState
         Navigator.of(context).pop();
       } catch (e) {
         if (mounted) {
-          AppSnackbar.showError(context, message: 'Error al guardar: $e');
+          AppSnackbar.showError(
+            context,
+            message: userErrorMessage(
+              e,
+              fallback: 'No se pudo guardar la entrada.',
+            ),
+          );
         }
       }
     }
@@ -784,7 +778,9 @@ class _FoodSearchUnifiedScreenState
           : amount.toStringAsFixed(1);
       final unitLabel = unitKey == 'portion'
           ? (food.portionName ?? 'porción')
-          : unitKey == 'ml' ? 'ml' : 'g';
+          : unitKey == 'ml'
+          ? 'ml'
+          : 'g';
 
       AppSnackbar.show(
         context,
@@ -793,7 +789,13 @@ class _FoodSearchUnifiedScreenState
       // NO hacer pop: el usuario puede seguir logueando más alimentos
     } catch (e) {
       if (mounted) {
-        AppSnackbar.showError(context, message: 'Error al guardar: $e');
+        AppSnackbar.showError(
+          context,
+          message: userErrorMessage(
+            e,
+            fallback: 'No se pudo guardar la entrada.',
+          ),
+        );
       }
     }
   }
@@ -813,9 +815,7 @@ class _FoodSearchUnifiedScreenState
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
+    AppSnackbar.showError(context, message: message);
   }
 
   // ============================================================================
@@ -883,6 +883,9 @@ class _FoodSearchUnifiedScreenState
           // Indicador de procesamiento OCR
           if (_isProcessingOcr) _buildOcrProcessingIndicator(),
 
+          // Indicador de busqueda por barcode (no bloqueante)
+          if (_isResolvingBarcode) _buildBarcodeLookupIndicator(),
+
           // Lista de resultados
           Expanded(
             child: _buildResultsList(
@@ -916,16 +919,20 @@ class _FoodSearchUnifiedScreenState
               onVoiceInput: _startListening,
               onOcrScan: () => _scanLabel(),
               onBarcodeScan: _scanBarcode,
+              isBusy: _isResolvingBarcode || _isProcessingOcr,
             ),
     );
   }
 
   Widget _buildSearchBar(String searchQuery) {
+    final colors = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: TextField(
         controller: _searchController,
         focusNode: _searchFocusNode,
+        textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: 'Buscar alimentos...',
           prefixIcon: const Icon(Icons.search),
@@ -936,7 +943,7 @@ class _FoodSearchUnifiedScreenState
               IconButton(
                 icon: Icon(
                   _isListening ? Icons.mic : Icons.mic_none,
-                  color: _isListening ? Colors.red : null,
+                  color: _isListening ? colors.error : null,
                 ),
                 onPressed: _isListening ? _stopListening : _startListening,
                 tooltip: 'Dictar con voz',
@@ -963,6 +970,7 @@ class _FoodSearchUnifiedScreenState
           ).colorScheme.surfaceContainerHighest.withAlpha((0.3 * 255).round()),
         ),
         onChanged: _onSearchChanged,
+        onSubmitted: _onSearchChanged,
       ),
     );
   }
@@ -1029,35 +1037,39 @@ class _FoodSearchUnifiedScreenState
     );
   }
 
-
-
   Widget _buildVoiceListeningIndicator() {
+    final colors = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.red.withAlpha((0.1 * 255).round()),
+        color: colors.errorContainer.withAlpha((0.5 * 255).round()),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withAlpha((0.3 * 255).round())),
+        border: Border.all(color: colors.error.withAlpha((0.35 * 255).round())),
       ),
       child: Row(
         children: [
-          const Icon(Icons.mic, color: Colors.red),
+          Icon(Icons.mic, color: colors.error),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Escuchando...',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                  style: AppTypography.titleSmall.copyWith(
+                    color: colors.onErrorContainer,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
                   'Di algo como "200 gramos de pechuga de pollo"',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.onErrorContainer.withAlpha(
+                      (0.7 * 255).round(),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1086,6 +1098,41 @@ class _FoodSearchUnifiedScreenState
     );
   }
 
+  Widget _buildBarcodeLookupIndicator() {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.secondaryContainer.withAlpha((0.5 * 255).round()),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: colors.onSecondaryContainer,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Buscando codigo en base local y online...',
+              style: AppTypography.bodySmall.copyWith(
+                color: colors.onSecondaryContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildResultsList({
     required AsyncValue<List<ScoredFood>> searchResults,
     required FoodInputMode inputMode,
@@ -1109,6 +1156,7 @@ class _FoodSearchUnifiedScreenState
               onVoiceInput: _startListening,
               onOcrScan: () => _scanLabel(),
               onBarcodeScan: _scanBarcode,
+              isBusy: _isResolvingBarcode || _isProcessingOcr,
             );
           }
           return _buildFoodList(
@@ -1149,6 +1197,7 @@ class _FoodSearchUnifiedScreenState
               onOcrScan: () => _scanLabel(),
               onBarcodeScan: _scanBarcode,
               onSearchOnline: () => _searchOnline(searchQuery),
+              isBusy: _isResolvingBarcode || _isProcessingOcr,
             );
           }
           if (scoredFoods.isEmpty) {
@@ -1157,6 +1206,7 @@ class _FoodSearchUnifiedScreenState
               onVoiceInput: _startListening,
               onOcrScan: () => _scanLabel(),
               onBarcodeScan: _scanBarcode,
+              isBusy: _isResolvingBarcode || _isProcessingOcr,
             );
           }
           // Convertir ScoredFood a Food - pasar searchQuery para botón online
@@ -1889,18 +1939,20 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colors.inverseSurface,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: colors.inverseSurface,
+        foregroundColor: colors.onInverseSurface,
         title: const Text('Escanear código'),
         actions: [
           IconButton(
             icon: Icon(_flashOn ? Icons.flash_on : Icons.flash_off),
-            color: _flashOn ? Colors.amber : Colors.white,
+            color: _flashOn ? colors.tertiary : colors.onInverseSurface,
             onPressed: _toggleFlash,
+            tooltip: _flashOn ? 'Apagar flash' : 'Encender flash',
           ),
         ],
       ),
@@ -1955,18 +2007,26 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black54,
+                    color: colors.onInverseSurface.withAlpha(
+                      (0.12 * 255).round(),
+                    ),
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Apunta al código de barras',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    style: AppTypography.titleSmall.copyWith(
+                      color: colors.onInverseSurface,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'EAN-13, EAN-8, UPC-A, UPC-E',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.onInverseSurface.withAlpha(
+                      (0.7 * 255).round(),
+                    ),
+                  ),
                 ),
               ],
             ),

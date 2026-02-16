@@ -6,7 +6,7 @@ import 'package:juan_tracker/training/database/database.dart';
 import 'package:drift/native.dart';
 
 /// Tests de estrés para AlimentoRepository
-/// 
+///
 /// Verifica:
 /// 1. CancelToken cancela requests correctamente
 /// 2. No hay race conditions en búsquedas concurrentes
@@ -49,13 +49,13 @@ void main() {
       test('debe manejar cancelación manual correctamente', () async {
         // Iniciar búsqueda
         unawaited(repository.searchOnline('arroz'));
-        
+
         // Cancelar inmediatamente
         repository.cancelPendingRequests();
-        
+
         // Verificar que no hay crash
         await Future.delayed(const Duration(milliseconds: 100));
-        
+
         // La búsqueda debería haber sido cancelada o completada
         // No debería lanzar unhandled exception
       });
@@ -63,12 +63,9 @@ void main() {
       test('debe permitir búsquedas después de cancelación', () async {
         // Cancelar primero
         repository.cancelPendingRequests();
-        
+
         // Intentar nueva búsqueda - no debería fallar
-        expect(
-          () => repository.searchOnline('pollo'),
-          returnsNormally,
-        );
+        expect(() => repository.searchOnline('pollo'), returnsNormally);
       });
 
       test('debe manejar múltiples cancelaciones seguidas', () async {
@@ -76,29 +73,28 @@ void main() {
         for (var i = 0; i < 10; i++) {
           repository.cancelPendingRequests();
         }
-        
+
         // Aún debería funcionar después
-        expect(
-          () => repository.searchOnline('atún'),
-          returnsNormally,
-        );
+        expect(() => repository.searchOnline('atún'), returnsNormally);
       });
     });
 
     group('Rate Limiting', () {
       test('debe respetar rate limit de 10 requests/minuto', () async {
         final stopwatch = Stopwatch()..start();
-        
+
         // Intentar múltiples búsquedas rápidas
         final requests = <Future>[];
         for (var i = 0; i < 5; i++) {
           requests.add(
-            repository.searchOnline('comida $i').catchError((_) => <ScoredFood>[]),
+            repository
+                .searchOnline('comida $i')
+                .catchError((_) => <ScoredFood>[]),
           );
         }
-        
+
         await Future.wait(requests);
-        
+
         // Si se respetó el rate limit, debería haber tomado tiempo
         // o las requests deberían haber sido manejadas correctamente
         expect(stopwatch.elapsed, isA<Duration>());
@@ -139,11 +135,11 @@ void main() {
 
       test('debe retornar resultados locales instantáneamente', () async {
         final stopwatch = Stopwatch()..start();
-        
+
         final results = await repository.search('pollo');
-        
+
         stopwatch.stop();
-        
+
         // Búsqueda local debería ser muy rápida (< 100ms)
         expect(stopwatch.elapsedMilliseconds, lessThan(100));
         expect(results, isNotEmpty);
@@ -155,9 +151,21 @@ void main() {
           repository.search('arroz'),
           repository.search('pollo asado'),
         ]);
-        
+
         expect(searches.length, 3);
         expect(searches[0], isA<List<ScoredFood>>());
+      });
+
+      test('debe paginar con offset sin duplicar resultados', () async {
+        final page1 = await repository.search('pollo', limit: 2, offset: 0);
+        final page2 = await repository.search('pollo', limit: 2, offset: 2);
+
+        expect(page1, isNotEmpty);
+        expect(page2, isNotEmpty);
+
+        final idsPage1 = page1.map((r) => r.food.id).toSet();
+        final idsPage2 = page2.map((r) => r.food.id).toSet();
+        expect(idsPage1.intersection(idsPage2), isEmpty);
       });
     });
 
@@ -165,16 +173,19 @@ void main() {
       test('debe manejar timeout de red gracefulmente', () async {
         // Esta prueba depende de la red real, podría fallar sin conexión
         // Es más un smoke test que una prueba determinística
-        
+
         try {
           await repository.searchOnline('xyz123nonexistent');
         } on DioException catch (e) {
           // Timeout o error de red es aceptable
-          expect(e.type, anyOf(
-            DioExceptionType.connectionTimeout,
-            DioExceptionType.receiveTimeout,
-            DioExceptionType.connectionError,
-          ));
+          expect(
+            e.type,
+            anyOf(
+              DioExceptionType.connectionTimeout,
+              DioExceptionType.receiveTimeout,
+              DioExceptionType.connectionError,
+            ),
+          );
         }
       });
     });

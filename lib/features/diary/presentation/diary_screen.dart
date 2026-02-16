@@ -6,6 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/router/app_router.dart';
+import 'package:juan_tracker/core/services/user_error_message.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/models/meal_template.dart';
 import 'package:juan_tracker/diet/models/models.dart';
@@ -66,8 +67,7 @@ class ExpandedMealsNotifier extends Notifier<Set<MealType>> {
     for (final entry in entries) {
       withEntries.add(entry.mealType);
     }
-    if (withEntries.length != state.length ||
-        !withEntries.containsAll(state)) {
+    if (withEntries.length != state.length || !withEntries.containsAll(state)) {
       state = withEntries;
     }
   }
@@ -90,25 +90,24 @@ class DiaryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
-    final entriesAsync = ref.watch(dayEntriesStreamProvider);
-    final summaryAsync = ref.watch(daySummaryProvider);
     final viewMode = ref.watch(diaryViewModeProvider);
 
     // Auto-apply check-in: escuchar resultado y mostrar snackbar
-    ref.listen<AsyncValue<AutoApplyResult?>>(
-      autoApplyCheckInProvider,
-      (prev, next) {
-        next.whenData((result) {
-          if (result != null && context.mounted) {
-            AppSnackbar.show(
-              context,
-              message: '🤖 Coach actualizó targets: '
-                  '${result.previousKcal} → ${result.newKcal} kcal',
-            );
-          }
-        });
-      },
-    );
+    ref.listen<AsyncValue<AutoApplyResult?>>(autoApplyCheckInProvider, (
+      prev,
+      next,
+    ) {
+      next.whenData((result) {
+        if (result != null && context.mounted) {
+          AppSnackbar.show(
+            context,
+            message:
+                'Coach actualizó targets: '
+                '${result.previousKcal} -> ${result.newKcal} kcal',
+          );
+        }
+      });
+    });
 
     // Reset auto-expansión al cambiar de fecha
     ref.listen<DateTime>(selectedDateProvider, (prev, next) {
@@ -185,24 +184,10 @@ class DiaryScreen extends ConsumerWidget {
             ),
 
           // Resumen del día
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: summaryAsync.when(
-                data: (summary) => _DailySummaryCard(summary: summary),
-                loading: () => const DiarySkeleton(),
-                error: (_, _) => AppError(
-                  message: 'Error al cargar resumen',
-                  onRetry: () => ref.invalidate(daySummaryProvider),
-                ),
-              ),
-            ),
-          ),
+          const _DiarySummarySliver(),
 
           // Coach Smart Nudges
-          const SliverToBoxAdapter(
-            child: _CoachNudgesSection(),
-          ),
+          const SliverToBoxAdapter(child: _CoachNudgesSection()),
 
           // Acciones rápidas
           const SliverToBoxAdapter(
@@ -214,97 +199,7 @@ class DiaryScreen extends ConsumerWidget {
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
 
           // Secciones de comidas - siempre visibles
-          entriesAsync.when(
-            data: (entries) {
-              ref
-                  .read(expandedMealsProvider.notifier)
-                  .autoSetFromEntries(entries);
-              // Vista timeline: orden cronológico
-              if (viewMode == DiaryViewMode.timeline) {
-                final sorted = List<DiaryEntryModel>.from(entries)
-                  ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-
-                if (sorted.isEmpty) {
-                  return const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(AppSpacing.xl),
-                      child: AppEmpty(
-                        icon: Icons.schedule,
-                        title: 'Sin registros hoy',
-                        subtitle: 'Añade tu primera comida del día',
-                      ),
-                    ),
-                  );
-                }
-
-                return SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final entry = sorted[index];
-                        return _TimelineEntryTile(
-                          entry: entry,
-                          isFirst: index == 0,
-                          isLast: index == sorted.length - 1,
-                        );
-                      },
-                      childCount: sorted.length,
-                    ),
-                  ),
-                );
-              }
-
-              // Vista clásica: agrupar por tipo de comida
-              final entriesByMeal = <MealType, List<DiaryEntryModel>>{};
-              for (final entry in entries) {
-                entriesByMeal.putIfAbsent(entry.mealType, () => []).add(entry);
-              }
-
-              return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    // Desayuno
-                    _MealSection(
-                      mealType: MealType.breakfast,
-                      entries: entriesByMeal[MealType.breakfast] ?? [],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Almuerzo
-                    _MealSection(
-                      mealType: MealType.lunch,
-                      entries: entriesByMeal[MealType.lunch] ?? [],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Cena
-                    _MealSection(
-                      mealType: MealType.dinner,
-                      entries: entriesByMeal[MealType.dinner] ?? [],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Snacks
-                    _MealSection(
-                      mealType: MealType.snack,
-                      entries: entriesByMeal[MealType.snack] ?? [],
-                    ),
-
-                    const SizedBox(height: 100),
-                  ]),
-                ),
-              );
-            },
-            loading: () => const SliverFillRemaining(child: DiarySkeleton()),
-            error: (e, _) => SliverFillRemaining(
-              child: AppError(
-                message: 'Error al cargar entradas',
-                details: e.toString(),
-              ),
-            ),
-          ),
+          _DiaryEntriesSliver(viewMode: viewMode),
 
           // Espacio en vista calendario
           if (viewMode == DiaryViewMode.calendar)
@@ -316,6 +211,121 @@ class DiaryScreen extends ConsumerWidget {
 }
 
 /// Sección de comida expandible (estilo FatSecret)
+class _DiarySummarySliver extends ConsumerWidget {
+  const _DiarySummarySliver();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summaryAsync = ref.watch(daySummaryProvider);
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: summaryAsync.when(
+          data: (summary) => _DailySummaryCard(summary: summary),
+          loading: () => const DiarySkeleton(),
+          error: (_, _) => AppError(
+            message: 'Error al cargar resumen',
+            onRetry: () => ref.invalidate(daySummaryProvider),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DiaryEntriesSliver extends ConsumerWidget {
+  final DiaryViewMode viewMode;
+
+  const _DiaryEntriesSliver({required this.viewMode});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entriesAsync = ref.watch(dayEntriesStreamProvider);
+
+    return entriesAsync.when(
+      data: (entries) {
+        ref.read(expandedMealsProvider.notifier).autoSetFromEntries(entries);
+
+        if (viewMode == DiaryViewMode.timeline) {
+          final sorted = List<DiaryEntryModel>.from(entries)
+            ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+          if (sorted.isEmpty) {
+            return const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.xl),
+                child: AppEmpty(
+                  icon: Icons.schedule,
+                  title: 'Sin registros hoy',
+                  subtitle: 'Añade tu primera comida del día',
+                ),
+              ),
+            );
+          }
+
+          return SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final entry = sorted[index];
+                return _TimelineEntryTile(
+                  entry: entry,
+                  isFirst: index == 0,
+                  isLast: index == sorted.length - 1,
+                );
+              }, childCount: sorted.length),
+            ),
+          );
+        }
+
+        final entriesByMeal = <MealType, List<DiaryEntryModel>>{};
+        for (final entry in entries) {
+          entriesByMeal.putIfAbsent(entry.mealType, () => []).add(entry);
+        }
+
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              _MealSection(
+                mealType: MealType.breakfast,
+                entries: entriesByMeal[MealType.breakfast] ?? [],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _MealSection(
+                mealType: MealType.lunch,
+                entries: entriesByMeal[MealType.lunch] ?? [],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _MealSection(
+                mealType: MealType.dinner,
+                entries: entriesByMeal[MealType.dinner] ?? [],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _MealSection(
+                mealType: MealType.snack,
+                entries: entriesByMeal[MealType.snack] ?? [],
+              ),
+              const SizedBox(height: 100),
+            ]),
+          ),
+        );
+      },
+      loading: () => const SliverFillRemaining(child: DiarySkeleton()),
+      error: (e, _) => SliverFillRemaining(
+        child: AppError(
+          message: 'Error al cargar entradas',
+          details: userErrorMessage(
+            e,
+            fallback: 'No se pudieron cargar las entradas del día.',
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _MealSection extends ConsumerWidget {
   final MealType mealType;
   final List<DiaryEntryModel> entries;
@@ -332,8 +342,9 @@ class _MealSection extends ConsumerWidget {
     // per meal type. Total work is ~40 operations per rebuild, which is
     // acceptable. Rebuilds only occur when entries actually change.
     final totals = _calculateTotals(entries);
-    final countLabel =
-        entries.length == 1 ? '1 alimento' : '${entries.length} alimentos';
+    final countLabel = entries.length == 1
+        ? '1 alimento'
+        : '${entries.length} alimentos';
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -407,8 +418,7 @@ class _MealSection extends ConsumerWidget {
                   if (!isExpanded)
                     IconButton(
                       icon: const Icon(Icons.add, size: 20),
-                      tooltip:
-                          'Añadir a ${mealType.displayName.toLowerCase()}',
+                      tooltip: 'Añadir a ${mealType.displayName.toLowerCase()}',
                       visualDensity: VisualDensity.compact,
                       onPressed: () => _showAddEntry(context, ref, mealType),
                       color: colors.primary,
@@ -1181,7 +1191,9 @@ class _MonthCalendar extends ConsumerWidget {
                         final status = adherenceData.dayStatus[normalizedDay];
                         final dotColor = status != null
                             ? MonthAdherenceData.colorForStatus(
-                                status, colorScheme)
+                                status,
+                                colorScheme,
+                              )
                             : colorScheme.tertiary;
 
                         return Positioned(
@@ -1271,10 +1283,7 @@ class _LegendDot extends StatelessWidget {
         Container(
           width: 6,
           height: 6,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
         Text(
@@ -1410,7 +1419,9 @@ class _DailySummaryCardState extends ConsumerState<_DailySummaryCard> {
                 _expanded ? Icons.expand_less : Icons.expand_more,
                 size: 18,
               ),
-              label: Text(_expanded ? 'Ocultar detalles' : 'Ver macros y micros'),
+              label: Text(
+                _expanded ? 'Ocultar detalles' : 'Ver macros y micros',
+              ),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
@@ -1455,7 +1466,9 @@ class _DailySummaryCardState extends ConsumerState<_DailySummaryCard> {
                           summary.targets?.proteinTarget,
                           summary.consumed.protein,
                         ),
-                        target: summary.targets?.proteinTarget?.toStringAsFixed(0),
+                        target: summary.targets?.proteinTarget?.toStringAsFixed(
+                          0,
+                        ),
                         color: AppColors.error,
                         progress: summary.progress.proteinPercent ?? 0,
                         showRemaining: summary.hasTargets,
@@ -1472,7 +1485,9 @@ class _DailySummaryCardState extends ConsumerState<_DailySummaryCard> {
                           summary.targets?.carbsTarget,
                           summary.consumed.carbs,
                         ),
-                        target: summary.targets?.carbsTarget?.toStringAsFixed(0),
+                        target: summary.targets?.carbsTarget?.toStringAsFixed(
+                          0,
+                        ),
                         color: AppColors.warning,
                         progress: summary.progress.carbsPercent ?? 0,
                         showRemaining: summary.hasTargets,
@@ -1668,8 +1683,9 @@ class _MicronutrientSectionState extends State<_MicronutrientSection>
               ],
             ),
           ),
-          crossFadeState:
-              _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          crossFadeState: _expanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 200),
         ),
       ],
@@ -1686,7 +1702,8 @@ class _MicroRow extends StatelessWidget {
   final String unit;
   final double? percent;
   final Color color;
-  final bool isLimit; // true = límite (rojo al exceder), false = objetivo (verde al alcanzar)
+  final bool
+  isLimit; // true = límite (rojo al exceder), false = objetivo (verde al alcanzar)
 
   const _MicroRow({
     required this.icon,
@@ -1991,10 +2008,8 @@ class _QuickActionsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final yesterday = ref.watch(yesterdayMealsProvider).asData?.value;
-    final templates =
-        ref.watch(topMealTemplatesProvider).asData?.value ?? [];
-    final recents =
-        ref.watch(quickRecentFoodsProvider).asData?.value ?? [];
+    final templates = ref.watch(topMealTemplatesProvider).asData?.value ?? [];
+    final recents = ref.watch(quickRecentFoodsProvider).asData?.value ?? [];
 
     final subtitleParts = <String>[];
     if (yesterday != null && yesterday.entryCount > 0) {
@@ -2006,8 +2021,9 @@ class _QuickActionsCard extends ConsumerWidget {
     if (recents.isNotEmpty) {
       subtitleParts.add('${recents.length} recientes');
     }
-    final subtitle =
-        subtitleParts.isEmpty ? 'Plantillas y recientes' : subtitleParts.join(' · ');
+    final subtitle = subtitleParts.isEmpty
+        ? 'Plantillas y recientes'
+        : subtitleParts.join(' · ');
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -2083,7 +2099,8 @@ class _QuickActionsSheet extends ConsumerWidget {
     final yesterday = yesterdayAsync.asData?.value;
     final templates = templatesAsync.asData?.value ?? [];
     final recents = recentsAsync.asData?.value ?? [];
-    final hasAny = (yesterday != null && !yesterday.isEmpty) ||
+    final hasAny =
+        (yesterday != null && !yesterday.isEmpty) ||
         templates.isNotEmpty ||
         recents.isNotEmpty;
 
@@ -2186,10 +2203,7 @@ class _QuickActionsSectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
 
-  const _QuickActionsSectionHeader({
-    required this.icon,
-    required this.title,
-  });
+  const _QuickActionsSectionHeader({required this.icon, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -2565,62 +2579,41 @@ class _TemplateChip extends ConsumerWidget {
 
 /// Sección que muestra nudges inteligentes del coach.
 /// Se oculta automáticamente si no hay nudges activos.
-class _CoachNudgesSection extends ConsumerWidget {
+class _CoachNudgesSection extends ConsumerStatefulWidget {
   const _CoachNudgesSection();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final nudges = ref.watch(coachNudgesProvider);
+  ConsumerState<_CoachNudgesSection> createState() =>
+      _CoachNudgesSectionState();
+}
 
-    if (nudges.isEmpty) return const SizedBox.shrink();
+class _CoachNudgesSectionState extends ConsumerState<_CoachNudgesSection> {
+  final Set<String> _dismissedNudges = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
+    final nudges = ref.watch(coachNudgesProvider);
+    final visibleNudges = nudges
+        .where((nudge) => !_dismissedNudges.contains(_nudgeKey(nudge)))
+        .toList(growable: false);
+
+    if (visibleNudges.isEmpty) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
         children: [
           const SizedBox(height: AppSpacing.sm),
-          ...nudges.map((nudge) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                child: _CoachNudgeTile(nudge: nudge),
-              )),
-        ],
-      ),
-    );
-  }
-}
-
-/// Tile individual de un nudge del coach.
-/// Color de fondo sutil según el tipo de nudge.
-class _CoachNudgeTile extends StatelessWidget {
-  final CoachNudge nudge;
-
-  const _CoachNudgeTile({required this.nudge});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final (bgColor, fgColor) = _nudgeColors(cs);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Row(
-        children: [
-          Text(nudge.emoji, style: const TextStyle(fontSize: 20)),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              nudge.message,
-              style: AppTypography.bodySmall.copyWith(
-                color: fgColor,
-                fontWeight: FontWeight.w500,
+          ...visibleNudges.map(
+            (nudge) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: _CoachNudgeTile(
+                nudge: nudge,
+                onDismiss: () {
+                  setState(() {
+                    _dismissedNudges.add(_nudgeKey(nudge));
+                  });
+                },
               ),
             ),
           ),
@@ -2629,24 +2622,87 @@ class _CoachNudgeTile extends StatelessWidget {
     );
   }
 
+  String _nudgeKey(CoachNudge nudge) => '${nudge.type.name}:${nudge.message}';
+}
+
+/// Tile individual de un nudge del coach.
+/// Color de fondo sutil según el tipo de nudge.
+class _CoachNudgeTile extends StatelessWidget {
+  final CoachNudge nudge;
+  final VoidCallback onDismiss;
+
+  const _CoachNudgeTile({required this.nudge, required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final (bgColor, fgColor) = _nudgeColors(cs);
+    final icon = _nudgeIcon();
+
+    return Semantics(
+      label: 'Consejo del coach',
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: fgColor),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                nudge.message,
+                style: AppTypography.bodySmall.copyWith(
+                  color: fgColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: onDismiss,
+              tooltip: 'Ocultar consejo',
+              visualDensity: VisualDensity.compact,
+              icon: Icon(Icons.close, size: 18, color: fgColor),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   (Color, Color) _nudgeColors(ColorScheme cs) {
     return switch (nudge.type) {
       NudgeType.warning => (
-          cs.errorContainer.withAlpha((0.6 * 255).round()),
-          cs.onErrorContainer,
-        ),
+        cs.errorContainer.withAlpha((0.6 * 255).round()),
+        cs.onErrorContainer,
+      ),
       NudgeType.info => (
-          cs.primaryContainer.withAlpha((0.5 * 255).round()),
-          cs.onPrimaryContainer,
-        ),
+        cs.primaryContainer.withAlpha((0.5 * 255).round()),
+        cs.onPrimaryContainer,
+      ),
       NudgeType.positive => (
-          cs.tertiaryContainer.withAlpha((0.6 * 255).round()),
-          cs.onTertiaryContainer,
-        ),
+        cs.tertiaryContainer.withAlpha((0.6 * 255).round()),
+        cs.onTertiaryContainer,
+      ),
       NudgeType.reminder => (
-          cs.secondaryContainer.withAlpha((0.5 * 255).round()),
-          cs.onSecondaryContainer,
-        ),
+        cs.secondaryContainer.withAlpha((0.5 * 255).round()),
+        cs.onSecondaryContainer,
+      ),
+    };
+  }
+
+  IconData _nudgeIcon() {
+    return switch (nudge.type) {
+      NudgeType.warning => Icons.warning_amber_rounded,
+      NudgeType.info => Icons.info_outline_rounded,
+      NudgeType.positive => Icons.check_circle_outline_rounded,
+      NudgeType.reminder => Icons.notifications_active_outlined,
     };
   }
 }
@@ -2740,7 +2796,11 @@ class _TimelineEntryTile extends ConsumerWidget {
                           Row(
                             children: [
                               Text(
-                                '${entry.amount.round()}${entry.unit == ServingUnit.grams ? 'g' : entry.unit == ServingUnit.milliliter ? 'ml' : ' porc'}',
+                                '${entry.amount.round()}${entry.unit == ServingUnit.grams
+                                    ? 'g'
+                                    : entry.unit == ServingUnit.milliliter
+                                    ? 'ml'
+                                    : ' porc'}',
                                 style: AppTypography.labelSmall.copyWith(
                                   color: colors.onSurfaceVariant,
                                 ),
@@ -2787,18 +2847,18 @@ class _TimelineEntryTile extends ConsumerWidget {
   }
 
   Color get _mealColor => switch (entry.mealType) {
-        MealType.breakfast => const Color(0xFFFF9800),
-        MealType.lunch => const Color(0xFF4CAF50),
-        MealType.dinner => const Color(0xFF2196F3),
-        MealType.snack => const Color(0xFF9C27B0),
-      };
+    MealType.breakfast => const Color(0xFFFF9800),
+    MealType.lunch => const Color(0xFF4CAF50),
+    MealType.dinner => const Color(0xFF2196F3),
+    MealType.snack => const Color(0xFF9C27B0),
+  };
 
   IconData get _mealIcon => switch (entry.mealType) {
-        MealType.breakfast => Icons.free_breakfast,
-        MealType.lunch => Icons.lunch_dining,
-        MealType.dinner => Icons.dinner_dining,
-        MealType.snack => Icons.cookie,
-      };
+    MealType.breakfast => Icons.free_breakfast,
+    MealType.lunch => Icons.lunch_dining,
+    MealType.dinner => Icons.dinner_dining,
+    MealType.snack => Icons.cookie,
+  };
 
   void _onTap(BuildContext context, WidgetRef ref) {
     // Mismo comportamiento que en la vista por comidas

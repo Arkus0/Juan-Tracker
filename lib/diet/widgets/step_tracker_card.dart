@@ -211,13 +211,8 @@ class StepTrackerCard extends ConsumerWidget {
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: InputDecoration(
-            hintText: 'N?mero de pasos',
+            hintText: 'Número de pasos',
             suffixText: 'pasos',
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              borderSide: BorderSide(color: colors.primary, width: 2),
-            ),
-          ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.sm),
               borderSide: BorderSide(color: colors.primary, width: 2),

@@ -369,9 +369,11 @@ class FoodSearchNotifier extends rp.Notifier<FoodSearchState> {
     try {
       final repository = ref.read(alimentoRepositoryProvider);
 
-      // Nota: La paginación real requeriría offset en el repository
-      // Por ahora simplemente indicamos que no hay más
-      final moreResults = await repository.search(state.query, limit: 50);
+      final moreResults = await repository.search(
+        state.query,
+        limit: 50,
+        offset: state.results.length,
+      );
 
       // Filtrar solo nuevos resultados
       final existingIds = state.results.map((r) => r.food.id).toSet();

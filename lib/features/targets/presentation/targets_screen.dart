@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/design_system/design_system.dart' show AppTypography;
+import '../../../core/widgets/app_snackbar.dart';
 
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
@@ -516,9 +517,7 @@ class _TargetForm extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        AppSnackbar.showError(context, message: 'Error: $e');
       }
     }
   }
@@ -526,23 +525,29 @@ class _TargetForm extends ConsumerWidget {
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref, String id) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar objetivo'),
-        content: const Text(
-          '¿Estás seguro? Los días pasados que usaban este objetivo mantendrán sus valores históricos.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+      builder: (context) {
+        final colors = Theme.of(context).colorScheme;
+        return AlertDialog(
+          title: const Text('Eliminar objetivo'),
+          content: const Text(
+            '¿Estás seguro? Los días pasados que usaban este objetivo mantendrán sus valores históricos.',
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.error,
+                foregroundColor: colors.onError,
+              ),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed == true && context.mounted) {
@@ -554,9 +559,7 @@ class _TargetForm extends ConsumerWidget {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al eliminar: $e')),
-          );
+          AppSnackbar.showError(context, message: 'Error al eliminar: $e');
         }
       }
     }
@@ -574,27 +577,25 @@ class _MacroValidationBanner extends StatelessWidget {
     final diff = state.kcalDifference;
     if (diff == null) return const SizedBox.shrink();
 
+    final colors = Theme.of(context).colorScheme;
     final isClose = diff.abs() < 50;
     final isOver = diff < 0;
+    final accent = isClose ? colors.secondary : colors.tertiary;
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isClose
-            ? Colors.green.withAlpha((0.1 * 255).round())
-            : Colors.orange.withAlpha((0.1 * 255).round()),
+        color: accent.withAlpha((0.12 * 255).round()),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isClose
-              ? Colors.green.withAlpha((0.3 * 255).round())
-              : Colors.orange.withAlpha((0.3 * 255).round()),
+          color: accent.withAlpha((0.4 * 255).round()),
         ),
       ),
       child: Row(
         children: [
           Icon(
             isClose ? Icons.check_circle : Icons.info,
-            color: isClose ? Colors.green : Colors.orange,
+            color: accent,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -605,9 +606,8 @@ class _MacroValidationBanner extends StatelessWidget {
                   : isOver
                       ? 'Los macros suman ${diff.abs()} kcal más que el objetivo.'
                       : 'Los macros suman ${diff.abs()} kcal menos que el objetivo.',
-              style: TextStyle(
-                fontSize: 12,
-                color: isClose ? Colors.green.shade700 : Colors.orange.shade800,
+              style: AppTypography.bodySmall.copyWith(
+                color: colors.onSurface,
               ),
             ),
           ),

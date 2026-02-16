@@ -37,9 +37,6 @@ class SummaryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(daySummaryProvider);
     final selectedDate = ref.watch(selectedDateProvider);
-    final dayColor = isActive
-        ? _getDayColor(config, selectedDate, ref, colors)
-        : colors.onSurfaceVariant;
     final coachPlan = ref.watch(coachPlanProvider);
 
     return Scaffold(

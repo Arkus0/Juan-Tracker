@@ -8,6 +8,12 @@ import 'database_connection.dart';
 
 part 'database.g.dart';
 
+void _logDebug(String message) {
+  if (kDebugMode) {
+    debugPrint(message);
+  }
+}
+
 // ============================================================================
 // TYPE CONVERTERS
 // ============================================================================
@@ -22,7 +28,7 @@ class StringListConverter extends TypeConverter<List<String>, String> {
     try {
       return List<String>.from(json.decode(fromDb));
     } catch (e) {
-      debugPrint('[StringListConverter] JSON parse error: $e | Data: $fromDb');
+      _logDebug('[StringListConverter] JSON parse error: $e | Data: $fromDb');
       return [];
     }
   }
@@ -43,7 +49,7 @@ class JsonMapConverter extends TypeConverter<Map<String, dynamic>, String> {
     try {
       return Map<String, dynamic>.from(json.decode(fromDb));
     } catch (e) {
-      debugPrint('[JsonMapConverter] JSON parse error: $e | Data: $fromDb');
+      _logDebug('[JsonMapConverter] JSON parse error: $e | Data: $fromDb');
       return {};
     }
   }
@@ -63,7 +69,7 @@ class MealTypeConverter extends TypeConverter<MealType, String> {
     try {
       return MealType.values.byName(fromDb);
     } catch (e) {
-      debugPrint(
+      _logDebug(
         '[MealTypeConverter] Unknown value "$fromDb", defaulting to snack',
       );
       return MealType.snack; // Default seguro
@@ -91,7 +97,7 @@ class ServingUnitConverter extends TypeConverter<ServingUnit, String> {
     try {
       return ServingUnit.values.byName(fromDb);
     } catch (e) {
-      debugPrint(
+      _logDebug(
         '[ServingUnitConverter] Unknown value "$fromDb", defaulting to grams',
       );
       return ServingUnit.grams; // Default seguro
@@ -168,8 +174,7 @@ class RoutineExercises extends Table {
   TextColumn get repsRange => text()();
   IntColumn get suggestedRestSeconds => integer().nullable()();
   TextColumn get notes => text().nullable()();
-  TextColumn get setType =>
-      text().withDefault(const Constant('normal'))();
+  TextColumn get setType => text().withDefault(const Constant('normal'))();
 
   TextColumn get supersetId => text().nullable()();
   IntColumn get exerciseIndex => integer()();
@@ -772,7 +777,7 @@ class AppDatabase extends _$AppDatabase {
           // Recrear con estructura correcta
           await _createFts5Tables(m);
         } catch (e) {
-          debugPrint('Migration v8 FTS rebuild error: $e');
+          _logDebug('Migration v8 FTS rebuild error: $e');
         }
       }
       // 🆕 Migration path to version 9: Add scheduling mode columns
@@ -786,7 +791,7 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(routineDays, routineDays.weekdays);
           await m.addColumn(routineDays, routineDays.minRestHours);
         } catch (e) {
-          debugPrint('Migration v9 scheduling columns error: $e');
+          _logDebug('Migration v9 scheduling columns error: $e');
         }
       }
       // 🆕 Migration path to version 10: Fix FTS5 table and add isFavorite column
@@ -799,7 +804,7 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('DROP TABLE IF EXISTS foods_fts');
           await _createFts5Tables(m);
         } catch (e) {
-          debugPrint('Migration v10 FTS fix error: $e');
+          _logDebug('Migration v10 FTS fix error: $e');
         }
       }
       // 🆕 Migration path to version 11: Recreate FTS5 with fixes
@@ -808,9 +813,9 @@ class AppDatabase extends _$AppDatabase {
           // Forzar recreación completa de FTS5 con el nuevo formato de búsqueda
           await customStatement('DROP TABLE IF EXISTS foods_fts');
           await _createFts5Tables(m);
-          debugPrint('Migration v11: FTS5 table recreated successfully');
+          _logDebug('Migration v11: FTS5 table recreated successfully');
         } catch (e) {
-          debugPrint('Migration v11 FTS recreate error: $e');
+          _logDebug('Migration v11 FTS recreate error: $e');
         }
       }
       // 🆕 Migration path to version 12: Add Meal Templates tables
@@ -818,11 +823,9 @@ class AppDatabase extends _$AppDatabase {
         try {
           await m.createTable(mealTemplates);
           await m.createTable(mealTemplateItems);
-          debugPrint(
-            'Migration v12: MealTemplates tables created successfully',
-          );
+          _logDebug('Migration v12: MealTemplates tables created successfully');
         } catch (e) {
-          debugPrint('Migration v12 MealTemplates error: $e');
+          _logDebug('Migration v12 MealTemplates error: $e');
         }
       }
       // 🆕 Migration path to version 13: Add Body Progress tables (measurements and photos)
@@ -830,96 +833,109 @@ class AppDatabase extends _$AppDatabase {
         try {
           await m.createTable(bodyMeasurements);
           await m.createTable(progressPhotos);
-          debugPrint(
+          _logDebug(
             'Migration v13: BodyMeasurements and ProgressPhotos tables created successfully',
           );
         } catch (e) {
-          debugPrint('Migration v13 BodyProgress error: $e');
+          _logDebug('Migration v13 BodyProgress error: $e');
         }
       }
       // 🆕 Migration path to version 14: Add isRestPause column to WorkoutSets
-        if (from < 14) {
-          try {
-            await m.addColumn(workoutSets, workoutSets.isRestPause);
-            debugPrint('Migration v14: isRestPause column added successfully');
-          } catch (e) {
-            debugPrint('Migration v14 isRestPause error: $e');
-          }
+      if (from < 14) {
+        try {
+          await m.addColumn(workoutSets, workoutSets.isRestPause);
+          _logDebug('Migration v14: isRestPause column added successfully');
+        } catch (e) {
+          _logDebug('Migration v14 isRestPause error: $e');
         }
-        // ðŸ†• Migration path to version 15: Add setType to RoutineExercises and Myo/AMRAP flags
-        if (from < 15) {
-          try {
-            await m.addColumn(routineExercises, routineExercises.setType);
-            await m.addColumn(workoutSets, workoutSets.isMyoReps);
-            await m.addColumn(workoutSets, workoutSets.isAmrap);
-            debugPrint(
-              'Migration v15: setType + myo/amrap columns added successfully',
-            );
-          } catch (e) {
-            debugPrint('Migration v15 setType/myo/amrap error: $e');
-          }
+      }
+      // ðŸ†• Migration path to version 15: Add setType to RoutineExercises and Myo/AMRAP flags
+      if (from < 15) {
+        try {
+          await m.addColumn(routineExercises, routineExercises.setType);
+          await m.addColumn(workoutSets, workoutSets.isMyoReps);
+          await m.addColumn(workoutSets, workoutSets.isAmrap);
+          _logDebug(
+            'Migration v15: setType + myo/amrap columns added successfully',
+          );
+        } catch (e) {
+          _logDebug('Migration v15 setType/myo/amrap error: $e');
         }
-        // 🆕 Migration path to version 16: Micronutrients expansion
-        if (from < 16) {
-          try {
-            // Foods: añadir micronutrientes por 100g
-            await m.addColumn(foods, foods.fiberPer100g);
-            await m.addColumn(foods, foods.sugarPer100g);
-            await m.addColumn(foods, foods.saturatedFatPer100g);
-            await m.addColumn(foods, foods.sodiumPer100g);
+      }
+      // 🆕 Migration path to version 16: Micronutrients expansion
+      if (from < 16) {
+        try {
+          // Foods: añadir micronutrientes por 100g
+          await m.addColumn(foods, foods.fiberPer100g);
+          await m.addColumn(foods, foods.sugarPer100g);
+          await m.addColumn(foods, foods.saturatedFatPer100g);
+          await m.addColumn(foods, foods.sodiumPer100g);
 
-            // DiaryEntries: añadir micronutrientes por entrada
-            await m.addColumn(diaryEntries, diaryEntries.fiber);
-            await m.addColumn(diaryEntries, diaryEntries.sugar);
-            await m.addColumn(diaryEntries, diaryEntries.saturatedFat);
-            await m.addColumn(diaryEntries, diaryEntries.sodium);
+          // DiaryEntries: añadir micronutrientes por entrada
+          await m.addColumn(diaryEntries, diaryEntries.fiber);
+          await m.addColumn(diaryEntries, diaryEntries.sugar);
+          await m.addColumn(diaryEntries, diaryEntries.saturatedFat);
+          await m.addColumn(diaryEntries, diaryEntries.sodium);
 
-            // Targets: añadir objetivos de micronutrientes
-            await m.addColumn(targets, targets.fiberTarget);
-            await m.addColumn(targets, targets.sugarLimit);
-            await m.addColumn(targets, targets.saturatedFatLimit);
-            await m.addColumn(targets, targets.sodiumLimit);
+          // Targets: añadir objetivos de micronutrientes
+          await m.addColumn(targets, targets.fiberTarget);
+          await m.addColumn(targets, targets.sugarLimit);
+          await m.addColumn(targets, targets.saturatedFatLimit);
+          await m.addColumn(targets, targets.sodiumLimit);
 
-            // RecipeItems: añadir snapshots de micronutrientes
-            await m.addColumn(recipeItems, recipeItems.fiberPer100gSnapshot);
-            await m.addColumn(recipeItems, recipeItems.sugarPer100gSnapshot);
-            await m.addColumn(recipeItems, recipeItems.saturatedFatPer100gSnapshot);
-            await m.addColumn(recipeItems, recipeItems.sodiumPer100gSnapshot);
+          // RecipeItems: añadir snapshots de micronutrientes
+          await m.addColumn(recipeItems, recipeItems.fiberPer100gSnapshot);
+          await m.addColumn(recipeItems, recipeItems.sugarPer100gSnapshot);
+          await m.addColumn(
+            recipeItems,
+            recipeItems.saturatedFatPer100gSnapshot,
+          );
+          await m.addColumn(recipeItems, recipeItems.sodiumPer100gSnapshot);
 
-            // MealTemplateItems: añadir snapshots de micronutrientes
-            await m.addColumn(mealTemplateItems, mealTemplateItems.fiberPer100gSnapshot);
-            await m.addColumn(mealTemplateItems, mealTemplateItems.sugarPer100gSnapshot);
-            await m.addColumn(mealTemplateItems, mealTemplateItems.saturatedFatPer100gSnapshot);
-            await m.addColumn(mealTemplateItems, mealTemplateItems.sodiumPer100gSnapshot);
+          // MealTemplateItems: añadir snapshots de micronutrientes
+          await m.addColumn(
+            mealTemplateItems,
+            mealTemplateItems.fiberPer100gSnapshot,
+          );
+          await m.addColumn(
+            mealTemplateItems,
+            mealTemplateItems.sugarPer100gSnapshot,
+          );
+          await m.addColumn(
+            mealTemplateItems,
+            mealTemplateItems.saturatedFatPer100gSnapshot,
+          );
+          await m.addColumn(
+            mealTemplateItems,
+            mealTemplateItems.sodiumPer100gSnapshot,
+          );
 
-            debugPrint(
-              'Migration v16: Micronutrient columns added successfully',
-            );
-          } catch (e) {
-            debugPrint('Migration v16 micronutrients error: $e');
-          }
+          _logDebug('Migration v16: Micronutrient columns added successfully');
+        } catch (e) {
+          _logDebug('Migration v16 micronutrients error: $e');
         }
-        // 🆕 Migration path to version 17: Recipe micronutrient totals + portionGramsSnapshot
-        if (from < 17) {
-          try {
-            // Recipes: añadir totales de micronutrientes
-            await m.addColumn(recipes, recipes.totalFiber);
-            await m.addColumn(recipes, recipes.totalSugar);
-            await m.addColumn(recipes, recipes.totalSaturatedFat);
-            await m.addColumn(recipes, recipes.totalSodium);
+      }
+      // 🆕 Migration path to version 17: Recipe micronutrient totals + portionGramsSnapshot
+      if (from < 17) {
+        try {
+          // Recipes: añadir totales de micronutrientes
+          await m.addColumn(recipes, recipes.totalFiber);
+          await m.addColumn(recipes, recipes.totalSugar);
+          await m.addColumn(recipes, recipes.totalSaturatedFat);
+          await m.addColumn(recipes, recipes.totalSodium);
 
-            // RecipeItems: añadir portionGramsSnapshot
-            await m.addColumn(recipeItems, recipeItems.portionGramsSnapshot);
+          // RecipeItems: añadir portionGramsSnapshot
+          await m.addColumn(recipeItems, recipeItems.portionGramsSnapshot);
 
-            debugPrint(
-              'Migration v17: Recipe micro columns + portionGramsSnapshot added',
-            );
-          } catch (e) {
-            debugPrint('Migration v17 error: $e');
-          }
+          _logDebug(
+            'Migration v17: Recipe micro columns + portionGramsSnapshot added',
+          );
+        } catch (e) {
+          _logDebug('Migration v17 error: $e');
         }
-      },
-    );
+      }
+    },
+  );
 
   /// 🆕 Crea tabla FTS5 virtual para búsqueda de alimentos
   /// Usa un enfoque external content con sincronización manual
@@ -934,13 +950,13 @@ class AppDatabase extends _$AppDatabase {
         'SELECT food_id, name, brand FROM foods_fts LIMIT 10000',
       ).get();
       if (existingData.isNotEmpty) {
-        debugPrint(
+        _logDebug(
           '[FTS] Backing up ${existingData.length} existing FTS entries before migration',
         );
       }
     } catch (e) {
       // Tabla no existe o está corrupta - continuar sin backup
-      debugPrint('[FTS] No existing table to backup: $e');
+      _logDebug('[FTS] No existing table to backup: $e');
     }
 
     try {
@@ -968,7 +984,7 @@ class AppDatabase extends _$AppDatabase {
       final newCount = countResult.data['cnt'] as int;
 
       if (newCount == 0 && existingData.isNotEmpty) {
-        debugPrint(
+        _logDebug(
           '[FTS] WARNING: Migration resulted in empty index, attempting restore from backup',
         );
         // Intentar restaurar desde backup
@@ -980,14 +996,14 @@ class AppDatabase extends _$AppDatabase {
               row.data['brand'] as String?,
             );
           } catch (e) {
-            debugPrint('[FTS] Failed to restore entry: $e');
+            _logDebug('[FTS] Failed to restore entry: $e');
           }
         }
       }
 
-      debugPrint('[FTS] Migration successful: $newCount entries in index');
+      _logDebug('[FTS] Migration successful: $newCount entries in index');
     } catch (e) {
-      debugPrint('[FTS] CRITICAL ERROR during FTS migration: $e');
+      _logDebug('[FTS] CRITICAL ERROR during FTS migration: $e');
       // Intentar recuperación con estructura mínima
       try {
         await customStatement('DROP TABLE IF EXISTS foods_fts');
@@ -998,9 +1014,9 @@ class AppDatabase extends _$AppDatabase {
             brand
           )
         ''');
-        debugPrint('[FTS] Recovered with empty index');
+        _logDebug('[FTS] Recovered with empty index');
       } catch (recoveryError) {
-        debugPrint('[FTS] FAILED TO RECOVER: $recoveryError');
+        _logDebug('[FTS] FAILED TO RECOVER: $recoveryError');
         rethrow; // No podemos continuar sin FTS
       }
     }
@@ -1022,7 +1038,7 @@ class AppDatabase extends _$AppDatabase {
   /// Público para poder llamarlo desde FoodDatabaseLoader después de la carga inicial.
   /// Also fixes any foods missing normalizedName for LIKE fallback search.
   Future<void> rebuildFtsIndex() async {
-    debugPrint('[rebuildFtsIndex] Starting FTS index rebuild...');
+    _logDebug('[rebuildFtsIndex] Starting FTS index rebuild...');
 
     // First, fix any foods missing normalizedName (for LIKE fallback)
     await customStatement('''
@@ -1041,7 +1057,7 @@ class AppDatabase extends _$AppDatabase {
     final count = await customSelect(
       'SELECT COUNT(*) as cnt FROM foods_fts',
     ).getSingle();
-    debugPrint(
+    _logDebug(
       '[rebuildFtsIndex] FTS index rebuilt with ${count.data['cnt']} entries',
     );
   }
@@ -1061,8 +1077,13 @@ class AppDatabase extends _$AppDatabase {
   /// - Results ordered by FTS5 rank (relevance)
   /// - Uses AND-first strategy with OR fallback for zero results
   /// - Synonym expansion as final fallback
-  Future<List<Food>> searchFoodsFTS(String query, {int limit = 50}) async {
+  Future<List<Food>> searchFoodsFTS(
+    String query, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
     if (query.trim().isEmpty) return [];
+    final safeOffset = offset < 0 ? 0 : offset;
 
     // Normalizar query para FTS5
     // Remove special characters that could break FTS syntax
@@ -1084,7 +1105,7 @@ class AppDatabase extends _$AppDatabase {
     if (terms.isEmpty) return [];
 
     if (kDebugMode) {
-      debugPrint('[searchFoodsFTS] Query: "$query" -> terms: $terms');
+      _logDebug('[searchFoodsFTS] Query: "$query" -> terms: $terms');
     }
 
     try {
@@ -1096,13 +1117,13 @@ class AppDatabase extends _$AppDatabase {
       // 1. Try AND semantics first (space = AND in FTS5)
       final andQuery = terms.map((t) => '$t*').join(' ');
       if (kDebugMode) {
-        debugPrint('[searchFoodsFTS] Step 1 - AND query: "$andQuery"');
+        _logDebug('[searchFoodsFTS] Step 1 - AND query: "$andQuery"');
       }
-      var results = await _executeFtsQuery(andQuery, limit);
+      var results = await _executeFtsQuery(andQuery, limit, safeOffset);
 
       if (results.isNotEmpty) {
         if (kDebugMode) {
-          debugPrint('[searchFoodsFTS] AND found ${results.length} results');
+          _logDebug('[searchFoodsFTS] AND found ${results.length} results');
         }
         return results;
       }
@@ -1111,13 +1132,13 @@ class AppDatabase extends _$AppDatabase {
       if (terms.length > 1) {
         final orQuery = terms.map((t) => '$t*').join(' OR ');
         if (kDebugMode) {
-          debugPrint('[searchFoodsFTS] Step 2 - OR query: "$orQuery"');
+          _logDebug('[searchFoodsFTS] Step 2 - OR query: "$orQuery"');
         }
-        results = await _executeFtsQuery(orQuery, limit);
+        results = await _executeFtsQuery(orQuery, limit, safeOffset);
 
         if (results.isNotEmpty) {
           if (kDebugMode) {
-            debugPrint('[searchFoodsFTS] OR found ${results.length} results');
+            _logDebug('[searchFoodsFTS] OR found ${results.length} results');
           }
           return results;
         }
@@ -1127,15 +1148,19 @@ class AppDatabase extends _$AppDatabase {
       final enhanced = enhanceQuery(query);
       if (enhanced.withSynonyms.isNotEmpty) {
         if (kDebugMode) {
-          debugPrint(
+          _logDebug(
             '[searchFoodsFTS] Step 3 - Synonym query: "${enhanced.withSynonyms}"',
           );
         }
-        results = await _executeFtsQuery(enhanced.withSynonyms, limit);
+        results = await _executeFtsQuery(
+          enhanced.withSynonyms,
+          limit,
+          safeOffset,
+        );
 
         if (results.isNotEmpty) {
           if (kDebugMode) {
-            debugPrint(
+            _logDebug(
               '[searchFoodsFTS] Synonyms found ${results.length} results',
             );
           }
@@ -1144,25 +1169,29 @@ class AppDatabase extends _$AppDatabase {
       }
 
       if (kDebugMode) {
-        debugPrint('[searchFoodsFTS] All strategies returned 0 results');
+        _logDebug('[searchFoodsFTS] All strategies returned 0 results');
       }
       return results;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint(
+        _logDebug(
           '[searchFoodsFTS] FTS search error: $e, falling back to LIKE',
         );
       }
-      return _searchFoodsLike(query, limit: limit);
+      return _searchFoodsLike(query, limit: limit, offset: safeOffset);
     }
   }
 
   /// Helper to execute FTS query and map results
-  Future<List<Food>> _executeFtsQuery(String ftsQuery, int limit) async {
+  Future<List<Food>> _executeFtsQuery(
+    String ftsQuery,
+    int limit,
+    int offset,
+  ) async {
     // FTS5 con food_id UNINDEXED: buscamos en FTS y obtenemos food_ids
     final ftsResults = await customSelect(
-      'SELECT food_id FROM foods_fts WHERE foods_fts MATCH ? LIMIT ?',
-      variables: [Variable(ftsQuery), Variable(limit)],
+      'SELECT food_id FROM foods_fts WHERE foods_fts MATCH ? LIMIT ? OFFSET ?',
+      variables: [Variable(ftsQuery), Variable(limit), Variable(offset)],
     ).get();
 
     if (ftsResults.isEmpty) return [];
@@ -1189,14 +1218,19 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// SEGURIDAD: Todos los parámetros de usuario están completamente parametrizados
   /// para prevenir SQL injection. Los términos se escapan mediante placeholders ?
-  Future<List<Food>> _searchFoodsLike(String query, {int limit = 50}) async {
+  Future<List<Food>> _searchFoodsLike(
+    String query, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
     final normalized = query.toLowerCase().trim();
     final terms = normalized.split(' ').where((t) => t.isNotEmpty).toList();
+    final safeOffset = offset < 0 ? 0 : offset;
 
     if (terms.isEmpty) return [];
 
     if (kDebugMode) {
-      debugPrint(
+      _logDebug(
         '[_searchFoodsLike] Fallback LIKE search for: $normalized (${terms.length} terms)',
       );
     }
@@ -1219,8 +1253,9 @@ class AppDatabase extends _$AppDatabase {
 
     final whereClause = whereConditions.join(' AND ');
 
-    // Añadir límite al final (con tipo explícito para type safety)
+    // Añadir límite y offset al final (con tipo explícito para type safety)
     variables.add(Variable<int>(limit));
+    variables.add(Variable<int>(safeOffset));
 
     final results = await customSelect(
       'SELECT id, name, normalized_name, brand, barcode, '
@@ -1231,12 +1266,12 @@ class AppDatabase extends _$AppDatabase {
       'is_favorite, created_at, updated_at FROM foods '
       'WHERE $whereClause '
       'ORDER BY use_count DESC, last_used_at DESC '
-      'LIMIT ?',
+      'LIMIT ? OFFSET ?',
       variables: variables,
     ).get();
 
     if (kDebugMode) {
-      debugPrint('[_searchFoodsLike] Found ${results.length} results');
+      _logDebug('[_searchFoodsLike] Found ${results.length} results');
     }
     return results.map((row) => _mapRowToFood(row)).toList();
   }
@@ -1314,13 +1349,21 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Búsqueda offline completa (FTS + fallback a LIKE)
-  Future<List<Food>> searchFoodsOffline(String query, {int limit = 50}) async {
+  Future<List<Food>> searchFoodsOffline(
+    String query, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
     // Intentar FTS primero
-    final ftsResults = await searchFoodsFTS(query, limit: limit);
+    final ftsResults = await searchFoodsFTS(
+      query,
+      limit: limit,
+      offset: offset,
+    );
     if (ftsResults.isNotEmpty) return ftsResults;
 
     // Fallback a LIKE - use the robust _searchFoodsLike method
-    return _searchFoodsLike(query, limit: limit);
+    return _searchFoodsLike(query, limit: limit, offset: offset);
   }
 
   /// Sugerencias de autocompletado basadas en historial y alimentos populares

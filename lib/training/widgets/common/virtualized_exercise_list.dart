@@ -152,17 +152,18 @@ class _ListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: AppColors.bgElevated,
+      color: colors.surfaceContainerHighest,
       child: Row(
         children: [
           Text(
             '$total ejercicios',
-            style: const TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+            style: AppTypography.labelSmall.copyWith(
+              color: colors.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -192,17 +193,21 @@ class _ExerciseListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Material(
       color: isSelected
-          ? AppColors.neonPrimary.withValues(alpha: 0.2)
+          ? colors.primary.withAlpha((0.2 * 255).round())
           : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
           height: height,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AppColors.bgElevated)),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: colors.outlineVariant),
+            ),
           ),
           child: Row(
             children: [
@@ -223,9 +228,8 @@ class _ExerciseListItem extends StatelessWidget {
                   children: [
                     Text(
                       exercise.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: colors.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -236,12 +240,12 @@ class _ExerciseListItem extends StatelessWidget {
                       children: [
                         _InfoChip(
                           text: exercise.muscleGroup,
-                          color: AppColors.neonPrimary,
+                          color: colors.primary,
                         ),
                         const SizedBox(width: 6),
                         _InfoChip(
                           text: exercise.equipment,
-                          color: AppColors.border,
+                          color: colors.onSurfaceVariant,
                         ),
                       ],
                     ),
@@ -251,9 +255,9 @@ class _ExerciseListItem extends StatelessWidget {
 
               // Indicador de selección o favorito
               if (isSelected)
-                const Icon(
+                Icon(
                   Icons.check_circle,
-                  color: AppColors.neonPrimary,
+                  color: colors.primary,
                   size: 24,
                 )
               else if (showFavorite)
@@ -264,8 +268,8 @@ class _ExerciseListItem extends StatelessWidget {
                         ? Icons.favorite
                         : Icons.favorite_border,
                     color: exercise.isFavorite
-                        ? AppColors.neonPrimary
-                        : AppColors.textTertiary,
+                        ? colors.primary
+                        : colors.onSurfaceVariant,
                     size: 22,
                   ),
                   padding: EdgeInsets.zero,
@@ -294,14 +298,13 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
+        color: color.withAlpha((0.2 * 255).round()),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: AppTypography.labelSmall.copyWith(
           color: color,
-          fontSize: 10,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -315,14 +318,19 @@ class _LoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Container(
       height: 60,
       padding: const EdgeInsets.all(16),
-      child: const Center(
+      child: Center(
         child: SizedBox(
           width: 24,
           height: 24,
-          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: colors.primary,
+          ),
         ),
       ),
     );
@@ -335,20 +343,30 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final colors = Theme.of(context).colorScheme;
+
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off, size: 64, color: AppColors.border),
-          SizedBox(height: 16),
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: colors.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
           Text(
             'No se encontraron ejercicios',
-            style: TextStyle(color: AppColors.textTertiary, fontSize: 16),
+            style: AppTypography.bodyMedium.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Intenta con otros filtros',
-            style: TextStyle(color: AppColors.textTertiary, fontSize: 14),
+            style: AppTypography.bodySmall.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -390,6 +408,8 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -398,14 +418,15 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
         onChanged: (value) {
           ref.read(exerciseSearchQueryProvider.notifier).setQuery(value);
         },
-        style: const TextStyle(color: Colors.white),
+        style: AppTypography.bodyMedium.copyWith(color: colors.onSurface),
         decoration: InputDecoration(
           hintText: 'Buscar ejercicio...',
-          hintStyle: const TextStyle(color: AppColors.textTertiary),
-          prefixIcon: const Icon(Icons.search, color: AppColors.textTertiary),
+          hintStyle:
+              AppTypography.bodySmall.copyWith(color: colors.onSurfaceVariant),
+          prefixIcon: Icon(Icons.search, color: colors.onSurfaceVariant),
           suffixIcon: _controller.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear, color: AppColors.textTertiary),
+                  icon: Icon(Icons.clear, color: colors.onSurfaceVariant),
                   onPressed: () {
                     _controller.clear();
                     ref.read(exerciseSearchQueryProvider.notifier).setQuery('');
@@ -413,9 +434,9 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
                 )
               : null,
           filled: true,
-          fillColor: AppColors.bgElevated,
+          fillColor: colors.surfaceContainerHighest,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide: BorderSide.none,
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -483,8 +504,10 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Material(
-      color: isSelected ? AppColors.neonPrimary : AppColors.bgElevated,
+      color: isSelected ? colors.primary : colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
@@ -495,14 +518,19 @@ class _FilterChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 16, color: Colors.white),
+                Icon(
+                  icon,
+                  size: 16,
+                  color:
+                      isSelected ? colors.onPrimary : colors.onSurfaceVariant,
+                ),
                 const SizedBox(width: 4),
               ],
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
+                style: AppTypography.labelSmall.copyWith(
+                  color:
+                      isSelected ? colors.onPrimary : colors.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),

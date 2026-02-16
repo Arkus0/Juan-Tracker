@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/design_system/design_system.dart';
+import '../../core/services/user_error_message.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_states.dart';
 import '../../core/widgets/app_snackbar.dart';
@@ -25,6 +27,7 @@ class RecipeListScreen extends ConsumerStatefulWidget {
 class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isImportingRecipe = false;
 
   @override
   void dispose() {
@@ -43,8 +46,12 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.link),
-            tooltip: 'Importar desde URL',
-            onPressed: () => _showImportUrlDialog(context),
+            tooltip: _isImportingRecipe
+                ? 'Importando receta...'
+                : 'Importar desde URL',
+            onPressed: _isImportingRecipe
+                ? null
+                : () => _showImportUrlDialog(context),
           ),
         ],
       ),
@@ -57,6 +64,7 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
       ),
       body: Column(
         children: [
+          if (_isImportingRecipe) const LinearProgressIndicator(minHeight: 2),
           // Barra de búsqueda
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -78,8 +86,9 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 filled: true,
-                fillColor: colors.surfaceContainerHighest
-                    .withAlpha((0.3 * 255).round()),
+                fillColor: colors.surfaceContainerHighest.withAlpha(
+                  (0.3 * 255).round(),
+                ),
               ),
               onChanged: (value) => setState(() => _searchQuery = value),
             ),
@@ -88,23 +97,30 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
           Expanded(
             child: recipesAsync.when(
               loading: () => const AppLoading(message: 'Cargando recetas...'),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(
+                child: Text(
+                  userErrorMessage(
+                    e,
+                    fallback: 'No se pudieron cargar las recetas.',
+                  ),
+                ),
+              ),
               data: (recipes) {
                 // Filtrar por búsqueda
                 final filtered = _searchQuery.isEmpty
                     ? recipes
                     : recipes
-                        .where((r) => r.name
-                            .toLowerCase()
-                            .contains(_searchQuery.toLowerCase()))
-                        .toList();
+                          .where(
+                            (r) => r.name.toLowerCase().contains(
+                              _searchQuery.toLowerCase(),
+                            ),
+                          )
+                          .toList();
 
                 if (filtered.isEmpty) {
                   return AppEmpty(
                     icon: Icons.restaurant_menu,
-                    title: recipes.isEmpty
-                        ? 'Sin recetas'
-                        : 'Sin resultados',
+                    title: recipes.isEmpty ? 'Sin recetas' : 'Sin resultados',
                     subtitle: recipes.isEmpty
                         ? 'Crea tu primera receta con el botón +'
                         : 'No se encontraron recetas con "$_searchQuery"',
@@ -143,7 +159,9 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Eliminar receta', style: AppTypography.titleMedium),
-        content: Text('¿Eliminar "${recipe.name}"? Esta acción no se puede deshacer.'),
+        content: Text(
+          '¿Eliminar "${recipe.name}"? Esta acción no se puede deshacer.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -205,13 +223,34 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
               controller: urlController,
               autofocus: true,
               keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.done,
               decoration: InputDecoration(
                 hintText: 'https://ejemplo.com/receta...',
                 prefixIcon: const Icon(Icons.link),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.content_paste),
+                  tooltip: 'Pegar URL',
+                  onPressed: () async {
+                    final clipboard = await Clipboard.getData('text/plain');
+                    final pasted = clipboard?.text?.trim();
+                    if (pasted == null || pasted.isEmpty) return;
+                    urlController
+                      ..text = pasted
+                      ..selection = TextSelection.collapsed(
+                        offset: pasted.length,
+                      );
+                  },
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
               ),
+              onSubmitted: (_) {
+                final normalized = _normalizeHttpUrl(urlController.text);
+                if (normalized != null) {
+                  Navigator.pop(dialogCtx, normalized);
+                }
+              },
             ),
           ],
         ),
@@ -222,10 +261,9 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
           ),
           FilledButton.icon(
             onPressed: () {
-              final text = urlController.text.trim();
-              if (text.isNotEmpty &&
-                  (text.startsWith('http://') || text.startsWith('https://'))) {
-                Navigator.pop(dialogCtx, text);
+              final normalized = _normalizeHttpUrl(urlController.text);
+              if (normalized != null) {
+                Navigator.pop(dialogCtx, normalized);
               } else {
                 AppSnackbar.showError(
                   dialogCtx,
@@ -244,15 +282,13 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
 
     if (url == null || !ctx.mounted) return;
 
-    // Mostrar loading
-    _showLoadingDialog(ctx);
+    setState(() => _isImportingRecipe = true);
 
     try {
       final importer = RecipeUrlImporter();
       final parsed = await importer.importFromUrl(url);
 
       if (!ctx.mounted) return;
-      Navigator.pop(ctx); // Cerrar loading
 
       if (parsed.ingredients.isEmpty) {
         AppSnackbar.showError(
@@ -266,14 +302,12 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
       ref.read(recipeEditorProvider.notifier).initNew();
       ref.read(recipeEditorProvider.notifier).setName(parsed.name);
       if (parsed.description != null) {
-        ref.read(recipeEditorProvider.notifier).setDescription(
-              parsed.description!,
-            );
+        ref
+            .read(recipeEditorProvider.notifier)
+            .setDescription(parsed.description!);
       }
       if (parsed.servings != null && parsed.servings! > 0) {
-        ref.read(recipeEditorProvider.notifier).setServings(
-              parsed.servings!,
-            );
+        ref.read(recipeEditorProvider.notifier).setServings(parsed.servings!);
       }
 
       if (ctx.mounted) {
@@ -286,31 +320,31 @@ class _RecipeListScreenState extends ConsumerState<RecipeListScreen> {
           }
         });
       }
-    } catch (e) {
+    } on RecipeImportException catch (e) {
       if (ctx.mounted) {
-        Navigator.pop(ctx); // Cerrar loading
+        AppSnackbar.showError(ctx, message: e.message);
+      }
+    } catch (_) {
+      if (ctx.mounted) {
         AppSnackbar.showError(
           ctx,
-          message: 'Error al importar: ${e.toString().length > 60 ? '${e.toString().substring(0, 60)}...' : e}',
+          message: 'No se pudo importar la receta en este momento.',
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isImportingRecipe = false);
       }
     }
   }
 
-  void _showLoadingDialog(BuildContext ctx) {
-    showDialog(
-      context: ctx,
-      barrierDismissible: false,
-      builder: (_) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 20),
-            Text('Importando receta...'),
-          ],
-        ),
-      ),
-    );
+  String? _normalizeHttpUrl(String raw) {
+    final text = raw.trim();
+    if (text.isEmpty) return null;
+    if (text.startsWith('http://') || text.startsWith('https://')) {
+      return text;
+    }
+    return null;
   }
 
   void _showParsedIngredientsSheet(BuildContext ctx, ParsedRecipe parsed) {
@@ -511,11 +545,16 @@ class _RecipeCard extends StatelessWidget {
                           value: 'delete',
                           child: Row(
                             children: [
-                              Icon(Icons.delete_outline, size: 18,
-                                  color: colors.error),
+                              Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: colors.error,
+                              ),
                               const SizedBox(width: 8),
-                              Text('Eliminar',
-                                  style: TextStyle(color: colors.error)),
+                              Text(
+                                'Eliminar',
+                                style: TextStyle(color: colors.error),
+                              ),
                             ],
                           ),
                         ),
@@ -531,8 +570,9 @@ class _RecipeCard extends StatelessWidget {
                     vertical: AppSpacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest
-                        .withAlpha((0.5 * 255).round()),
+                    color: colors.surfaceContainerHighest.withAlpha(
+                      (0.5 * 255).round(),
+                    ),
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Row(
@@ -545,17 +585,20 @@ class _RecipeCard extends StatelessWidget {
                       ),
                       _MacroChip(
                         label: 'P',
-                        value: '${recipe.proteinPerServing?.toStringAsFixed(0) ?? '-'}g',
+                        value:
+                            '${recipe.proteinPerServing?.toStringAsFixed(0) ?? '-'}g',
                         color: const Color(0xFF4CAF50),
                       ),
                       _MacroChip(
                         label: 'C',
-                        value: '${recipe.carbsPerServing?.toStringAsFixed(0) ?? '-'}g',
+                        value:
+                            '${recipe.carbsPerServing?.toStringAsFixed(0) ?? '-'}g',
                         color: const Color(0xFFFF9800),
                       ),
                       _MacroChip(
                         label: 'G',
-                        value: '${recipe.fatPerServing?.toStringAsFixed(0) ?? '-'}g',
+                        value:
+                            '${recipe.fatPerServing?.toStringAsFixed(0) ?? '-'}g',
                         color: const Color(0xFFF44336),
                       ),
                     ],
@@ -601,17 +644,12 @@ class _MacroChip extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
         Text(
           '$value $label',
-          style: AppTypography.labelSmall.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTypography.labelSmall.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
     );

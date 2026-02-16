@@ -139,7 +139,6 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
   Widget build(BuildContext context) {
     final voiceState = ref.watch(voiceInputProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    final onSurface = colorScheme.onSurface;
 
     if (voiceState.isProcessing && _displayState != PttState.processing) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -151,7 +150,7 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
       mainAxisSize: MainAxisSize.min,
       children: [
         if (widget.showHint && _displayState == PttState.idle) ...[
-          _buildHintText(onSurface),
+          _buildHintText(colorScheme),
           const SizedBox(height: 12),
         ],
         GestureDetector(
@@ -160,38 +159,47 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
           onTapCancel: _onTapCancel,
           child: AnimatedBuilder(
             animation: Listenable.merge([_pulseAnimation, _glowAnimation]),
-            builder: (context, child) => _buildButton(),
+            builder: (context, child) => _buildButton(colorScheme),
           ),
         ),
         if (widget.showLabel) ...[
           const SizedBox(height: 12),
-          _buildStateLabel(onSurface),
+          _buildStateLabel(colorScheme),
         ],
         if (_displayState == PttState.listening && voiceState.partialTranscript.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _buildTranscriptPreview(voiceState.partialTranscript, onSurface),
+          _buildTranscriptPreview(voiceState.partialTranscript, colorScheme),
         ],
       ],
     );
   }
 
-  Widget _buildHintText(Color onSurface) {
+  Widget _buildHintText(ColorScheme colors) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(color: AppColors.bgDeep.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest.withAlpha((0.9 * 255).round()),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.outline),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.touch_app, size: 16, color: onSurface.withAlpha(138)),
+          Icon(Icons.touch_app, size: 16, color: colors.onSurfaceVariant),
           const SizedBox(width: 8),
-          Text('Mantén pulsado para hablar', style: AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(138))),
+          Text(
+            'Mant?n pulsado para hablar',
+            style: AppTypography.bodyMedium.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildButton() {
-    final config = _getStateConfig();
+  Widget _buildButton(ColorScheme colors) {
+    final config = _getStateConfig(colors);
     final scale = _displayState == PttState.listening ? _pulseAnimation.value : 1.0;
     final glowOpacity = _displayState == PttState.listening ? _glowAnimation.value : 0.0;
 
@@ -206,7 +214,7 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
           boxShadow: [
             if (_displayState == PttState.listening)
               BoxShadow(color: config.glowColor.withValues(alpha: glowOpacity), blurRadius: 30, spreadRadius: 8),
-            BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
+            BoxShadow(color: colors.shadow.withAlpha((0.3 * 255).round()), blurRadius: 8, offset: const Offset(0, 4)),
           ],
           border: Border.all(color: config.borderColor, width: _displayState == PttState.listening ? 3 : 2),
         ),
@@ -219,8 +227,8 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
     );
   }
 
-  Widget _buildStateLabel(Color onSurface) {
-    final config = _getStateConfig();
+  Widget _buildStateLabel(ColorScheme colors) {
+    final config = _getStateConfig(colors);
     String labelText;
     switch (_displayState) {
       case PttState.idle: labelText = 'Pulsa para hablar';
@@ -238,39 +246,95 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
           Text(labelText, style: AppTypography.labelLarge.copyWith(color: config.labelColor)),
           if (_displayState == PttState.success && _successPreview != null) ...[
             const SizedBox(height: 4),
-            Text(_successPreview!, style: AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(138)), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(_successPreview!, style: AppTypography.bodyMedium.copyWith(color: colors.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildTranscriptPreview(String text, Color onSurface) {
+  Widget _buildTranscriptPreview(String text, ColorScheme colors) {
     return Container(
       padding: const EdgeInsets.all(12),
       constraints: const BoxConstraints(maxWidth: 300),
-      decoration: BoxDecoration(color: AppColors.bgElevated, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.error.withValues(alpha: 0.5))),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colors.error.withAlpha((0.5 * 255).round()),
+        ),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const _PulsingDot(color: AppColors.error),
+          _PulsingDot(color: colors.error),
           const SizedBox(width: 8),
-          Flexible(child: Text(text, style: AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(178)), maxLines: 2, overflow: TextOverflow.ellipsis)),
+          Flexible(
+            child: Text(
+              text,
+              style: AppTypography.bodyMedium.copyWith(
+                color: colors.onSurface,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  _PttStateConfig _getStateConfig() {
+  _PttStateConfig _getStateConfig(ColorScheme colors) {
     switch (_displayState) {
-      case PttState.idle: return const _PttStateConfig(backgroundColor: AppColors.bgElevated, borderColor: AppColors.border, iconColor: Colors.white70, labelColor: Colors.white54, glowColor: Colors.transparent, icon: Icons.mic_none);
-      case PttState.listening: return _PttStateConfig(backgroundColor: AppColors.error, borderColor: Colors.red[400]!, iconColor: Colors.white, labelColor: AppColors.error, glowColor: Colors.red, icon: Icons.mic);
-      case PttState.processing: return _PttStateConfig(backgroundColor: Colors.amber[700]!, borderColor: Colors.amber[400]!, iconColor: Colors.white, labelColor: Colors.amber[600]!, glowColor: Colors.amber, icon: Icons.hourglass_empty);
-      case PttState.success: return _PttStateConfig(backgroundColor: Colors.green[600]!, borderColor: Colors.green[400]!, iconColor: Colors.white, labelColor: Colors.green[500]!, glowColor: Colors.green, icon: Icons.check);
-      case PttState.error: return _PttStateConfig(backgroundColor: Colors.orange[700]!, borderColor: Colors.orange[400]!, iconColor: Colors.white, labelColor: Colors.orange[500]!, glowColor: Colors.orange, icon: Icons.error_outline);
+      case PttState.idle:
+        return _PttStateConfig(
+          backgroundColor: colors.surfaceContainerHighest,
+          borderColor: colors.outline,
+          iconColor: colors.onSurfaceVariant,
+          labelColor: colors.onSurfaceVariant,
+          glowColor: colors.primary,
+          icon: Icons.mic_none,
+        );
+      case PttState.listening:
+        return _PttStateConfig(
+          backgroundColor: colors.primary,
+          borderColor: colors.primary,
+          iconColor: colors.onPrimary,
+          labelColor: colors.primary,
+          glowColor: colors.primary,
+          icon: Icons.mic,
+        );
+      case PttState.processing:
+        return _PttStateConfig(
+          backgroundColor: colors.secondary,
+          borderColor: colors.secondary,
+          iconColor: colors.onSecondary,
+          labelColor: colors.secondary,
+          glowColor: colors.secondary,
+          icon: Icons.hourglass_empty,
+        );
+      case PttState.success:
+        return _PttStateConfig(
+          backgroundColor: colors.tertiary,
+          borderColor: colors.tertiary,
+          iconColor: colors.onTertiary,
+          labelColor: colors.tertiary,
+          glowColor: colors.tertiary,
+          icon: Icons.check,
+        );
+      case PttState.error:
+        return _PttStateConfig(
+          backgroundColor: colors.error,
+          borderColor: colors.error,
+          iconColor: colors.onError,
+          labelColor: colors.error,
+          glowColor: colors.error,
+          icon: Icons.error_outline,
+        );
     }
   }
 }
+
 
 class _PttStateConfig {
   final Color backgroundColor;
@@ -360,7 +424,6 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
     final voiceState = ref.watch(voiceInputProvider);
     final isListening = voiceState.isListening;
     final colorScheme = Theme.of(context).colorScheme;
-    final onSurface = colorScheme.onSurface;
 
     if (isListening && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
@@ -390,11 +453,17 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
               height: widget.size,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isListening ? AppColors.error : AppColors.bgElevated,
-                border: Border.all(color: isListening ? Colors.red[400]! : AppColors.border, width: isListening ? 2 : 1),
-                boxShadow: isListening ? [BoxShadow(color: Colors.red.withValues(alpha: 0.4), blurRadius: 12, spreadRadius: 2)] : null,
+                color: isListening ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+                border: Border.all(color: isListening ? colorScheme.primary : colorScheme.outline, width: isListening ? 2 : 1),
+                boxShadow: isListening
+                    ? [BoxShadow(color: colorScheme.primary.withAlpha((0.4 * 255).round()), blurRadius: 12, spreadRadius: 2)]
+                    : null,
               ),
-              child: Icon(isListening ? Icons.mic : Icons.mic_none, color: onSurface, size: widget.size * 0.5),
+              child: Icon(
+                isListening ? Icons.mic : Icons.mic_none,
+                color: isListening ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                size: widget.size * 0.5,
+              ),
             ),
           );
         },

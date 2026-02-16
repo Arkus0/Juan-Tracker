@@ -101,7 +101,7 @@ class AppRouter {
   /// Router principal configurado con todas las rutas
   static final GoRouter router = GoRouter(
     initialLocation: root,
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: kDebugMode,
     routes: [
       // Ruta raíz con splash wrapper
       GoRoute(
@@ -197,9 +197,8 @@ class AppRouter {
       ),
       GoRoute(
         path: '/nutrition/recipes/:id',
-        builder: (context, state) => RecipeEditorScreen(
-          recipeId: state.pathParameters['id'],
-        ),
+        builder: (context, state) =>
+            RecipeEditorScreen(recipeId: state.pathParameters['id']),
       ),
 
       // === DEBUG ROUTES (only in debug mode) ===
@@ -212,10 +211,8 @@ class AppRouter {
       // === PROGRESO CORPORAL ===
       GoRoute(
         path: bodyProgress,
-        pageBuilder: (context, state) => _fadePage(
-          key: state.pageKey,
-          child: const BodyProgressScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _fadePage(key: state.pageKey, child: const BodyProgressScreen()),
       ),
 
       // === ENTRENAMIENTO ===
@@ -275,21 +272,20 @@ class AppRouter {
           child: const TrainingSessionScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             // Scale desde 0.92 → 1.0 (efecto "expandir")
-            final scale = Tween<double>(
-              begin: 0.92,
-              end: 1.0,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            ));
+            final scale = Tween<double>(begin: 0.92, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            );
             // Slide-up sutil
-            final slideUp = Tween<Offset>(
-              begin: const Offset(0, 0.08),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            ));
+            final slideUp =
+                Tween<Offset>(
+                  begin: const Offset(0, 0.08),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                );
             return SlideTransition(
               position: slideUp,
               child: ScaleTransition(
@@ -313,18 +309,20 @@ class AppRouter {
             return CustomTransitionPage<void>(
               key: state.pageKey,
               child: SessionDetailScreen(sesion: extra),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
               transitionDuration: const Duration(milliseconds: 300),
             );
           }
           return CustomTransitionPage<void>(
             key: state.pageKey,
             child: const _MissingSessionDetailScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           );
         },
       ),
@@ -343,33 +341,40 @@ class AppRouter {
     ],
 
     // Manejo de errores (ruta no encontrada)
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'Página no encontrada',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              state.uri.path,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => context.go(root),
-              child: const Text('Ir al inicio'),
-            ),
-          ],
+    errorBuilder: (context, state) {
+      final colors = Theme.of(context).colorScheme;
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: colors.onSurfaceVariant,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Página no encontrada',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.uri.path,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => context.go(root),
+                child: const Text('Ir al inicio'),
+              ),
+            ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 }
 

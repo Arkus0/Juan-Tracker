@@ -12,7 +12,13 @@ import '../repositories/local_exercise_repository.dart';
 // DATABASE & REPOSITORIES
 // ============================================================================
 
-final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase();
+  ref.onDispose(() {
+    db.close();
+  });
+  return db;
+});
 
 final foodRepositoryProvider = Provider<IFoodRepository>((ref) {
   return DriftFoodRepository(ref.watch(appDatabaseProvider));

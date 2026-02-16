@@ -7,6 +7,7 @@ import '../../models/library_exercise.dart';
 import '../../services/exercise_library_service.dart';
 import '../../services/exercise_image_storage_service.dart';
 import '../../../core/design_system/design_system.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 /// Diálogo para crear un ejercicio personalizado
 class CreateExerciseDialog extends StatefulWidget {
@@ -194,12 +195,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
       if (mounted) Navigator.of(context).pop(result);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.actionPrimary,
-          ),
-        );
+        AppSnackbar.showError(context, message: 'Error: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -267,19 +263,19 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
     final scheme = Theme.of(context).colorScheme;
 
     return AlertDialog(
-      backgroundColor: AppColors.bgElevated,
+      backgroundColor: scheme.surface,
       title: Row(
         children: [
           Icon(
             _isEditing ? Icons.edit : Icons.add_circle,
-            color: AppColors.textSecondary,
+            color: scheme.onSurfaceVariant,
           ),
           const SizedBox(width: 8),
           Text(
             _isEditing ? 'EDITAR EJERCICIO' : 'NUEVO EJERCICIO',
             style: AppTypography.headlineSmall.copyWith(
               fontWeight: FontWeight.w900,
-              color: Colors.white,
+              color: scheme.onSurface,
             ),
           ),
         ],
@@ -296,19 +292,19 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 // Nombre del ejercicio
                 TextFormField(
                   controller: _nameController,
-                  style: const TextStyle(color: Colors.white),
+                  style: AppTypography.bodyMedium.copyWith(color: scheme.onSurface),
                   decoration: InputDecoration(
                     labelText: 'Nombre del ejercicio *',
-                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    labelStyle: AppTypography.bodySmall.copyWith(color: scheme.onSurfaceVariant),
                     filled: true,
-                    fillColor: AppColors.bgElevated,
+                    fillColor: scheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
-                    prefixIcon: const Icon(
+                    prefixIcon: Icon(
                       Icons.fitness_center,
-                      color: Colors.grey,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                   validator: (value) {
@@ -328,18 +324,18 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 // Grupo muscular
                 DropdownButtonFormField<String>(
                   initialValue: _selectedMuscleGroup,
-                  dropdownColor: AppColors.bgElevated,
-                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: scheme.surface,
+                  style: AppTypography.bodyMedium.copyWith(color: scheme.onSurface),
                   decoration: InputDecoration(
                     labelText: 'Grupo muscular',
-                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    labelStyle: AppTypography.bodySmall.copyWith(color: scheme.onSurfaceVariant),
                     filled: true,
-                    fillColor: AppColors.bgElevated,
+                    fillColor: scheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
-                    prefixIcon: const Icon(Icons.category, color: Colors.grey),
+                    prefixIcon: Icon(Icons.category, color: scheme.onSurfaceVariant),
                   ),
                   items: _muscleGroups.map((group) {
                     return DropdownMenuItem(value: group, child: Text(group));
@@ -360,18 +356,18 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 // Equipamiento
                 DropdownButtonFormField<String>(
                   initialValue: _selectedEquipment,
-                  dropdownColor: AppColors.bgElevated,
-                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: scheme.surface,
+                  style: AppTypography.bodyMedium.copyWith(color: scheme.onSurface),
                   decoration: InputDecoration(
                     labelText: 'Equipamiento',
-                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    labelStyle: AppTypography.bodySmall.copyWith(color: scheme.onSurfaceVariant),
                     filled: true,
-                    fillColor: AppColors.bgElevated,
+                    fillColor: scheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
-                    prefixIcon: const Icon(Icons.build, color: Colors.grey),
+                    prefixIcon: Icon(Icons.build, color: scheme.onSurfaceVariant),
                   ),
                   items: _equipmentOptions.map((eq) {
                     return DropdownMenuItem(value: eq, child: Text(eq));
@@ -388,11 +384,11 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 // Músculos específicos (opcional)
                 if (_musclesByGroup[_selectedMuscleGroup]?.isNotEmpty ==
                     true) ...[
-                  const Text(
-                    'Músculos trabajados (opcional)',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
+                  Text(
+                    'Músculos trabajados (opcional)'
+                    ,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -407,7 +403,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                         label: Text(
                           muscle,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.grey[300],
+                            color: isSelected ? scheme.onPrimary : scheme.onSurfaceVariant,
                             fontSize: 12,
                           ),
                         ),
@@ -421,9 +417,9 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                             }
                           });
                         },
-                        selectedColor: AppColors.actionPrimary,
-                        backgroundColor: AppColors.bgInteractive,
-                        checkmarkColor: Colors.white,
+                        selectedColor: scheme.primary,
+                        backgroundColor: scheme.surfaceContainerHighest,
+                        checkmarkColor: scheme.onPrimary,
                       );
                     }).toList(),
                   ),
@@ -433,18 +429,18 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 // Descripción (opcional)
                 TextFormField(
                   controller: _descriptionController,
-                  style: const TextStyle(color: Colors.white),
+                  style: AppTypography.bodyMedium.copyWith(color: scheme.onSurface),
                   maxLines: 2,
                   decoration: InputDecoration(
                     labelText: 'Descripción (opcional)',
-                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    labelStyle: AppTypography.bodySmall.copyWith(color: scheme.onSurfaceVariant),
                     filled: true,
-                    fillColor: AppColors.bgElevated,
+                    fillColor: scheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
-                    prefixIcon: const Icon(Icons.notes, color: Colors.grey),
+                    prefixIcon: Icon(Icons.notes, color: scheme.onSurfaceVariant),
                   ),
                   textCapitalization: TextCapitalization.sentences,
                 ),
@@ -515,24 +511,26 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text(
+          child: Text(
             'CANCELAR',
-            style: TextStyle(color: AppColors.textSecondary),
+            style: AppTypography.labelLarge.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _save,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.actionPrimary,
-            foregroundColor: Colors.white,
+            backgroundColor: scheme.primary,
+            foregroundColor: scheme.onPrimary,
           ),
           child: _isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: scheme.onPrimary,
                   ),
                 )
               : Text(

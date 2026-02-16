@@ -7,13 +7,14 @@ import '../../../core/models/user_profile_model.dart';
 import '../../../core/providers/database_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/tdee_calculator.dart';
+import '../../../core/services/user_error_message.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../diet/providers/body_progress_providers.dart';
 import '../../../diet/providers/reminder_providers.dart';
 import 'body_progress_screen.dart';
 
 /// Pantalla de Perfil y Ajustes
-/// 
+///
 /// Centraliza:
 /// - Datos del perfil (edad, sexo, altura, peso)
 /// - Cálculo de TDEE
@@ -115,86 +116,85 @@ class _ProfileSection extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: AppCard(
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: isComplete ? AppColors.success : colors.primary,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isComplete ? AppColors.success : colors.primary,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    isComplete ? Icons.check_circle : Icons.person,
+                    color: Colors.white,
+                  ),
                 ),
-                child: Icon(
-                  isComplete ? Icons.check_circle : Icons.person,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tus Datos',
-                      style: AppTypography.titleMedium,
-                    ),
-                    Text(
-                      isComplete
-                          ? 'Perfil completo'
-                          : 'Completa tu perfil para calcular tu TDEE',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: colors.onSurfaceVariant,
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Tus Datos', style: AppTypography.titleMedium),
+                      Text(
+                        isComplete
+                            ? 'Perfil completo'
+                            : 'Completa tu perfil para calcular tu TDEE',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+              ],
+            ),
+            if (profile != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              const Divider(),
+              const SizedBox(height: AppSpacing.md),
+              _ProfileInfoRow(
+                icon: Icons.cake,
+                label: 'Edad',
+                value: profile?.age != null
+                    ? '${profile!.age} años'
+                    : 'No configurado',
+              ),
+              _ProfileInfoRow(
+                icon: Icons.person,
+                label: 'Sexo',
+                value: profile?.gender?.displayName ?? 'No configurado',
+              ),
+              _ProfileInfoRow(
+                icon: Icons.height,
+                label: 'Altura',
+                value: profile?.heightCm != null
+                    ? '${profile!.heightCm!.toStringAsFixed(0)} cm'
+                    : 'No configurado',
+              ),
+              _ProfileInfoRow(
+                icon: Icons.scale,
+                label: 'Peso actual',
+                value: profile?.currentWeightKg != null
+                    ? '${profile!.currentWeightKg!.toStringAsFixed(1)} kg'
+                    : 'No configurado',
+              ),
+              _ProfileInfoRow(
+                icon: Icons.local_fire_department,
+                label: 'Nivel de actividad',
+                value: profile?.activityLevel.displayName ?? 'Moderado',
               ),
             ],
-          ),
-          if (profile != null) ...[
             const SizedBox(height: AppSpacing.md),
-            const Divider(),
-            const SizedBox(height: AppSpacing.md),
-            _ProfileInfoRow(
-              icon: Icons.cake,
-              label: 'Edad',
-              value: profile?.age != null ? '${profile!.age} años' : 'No configurado',
-            ),
-            _ProfileInfoRow(
-              icon: Icons.person,
-              label: 'Sexo',
-              value: profile?.gender?.displayName ?? 'No configurado',
-            ),
-            _ProfileInfoRow(
-              icon: Icons.height,
-              label: 'Altura',
-              value: profile?.heightCm != null
-                  ? '${profile!.heightCm!.toStringAsFixed(0)} cm'
-                  : 'No configurado',
-            ),
-            _ProfileInfoRow(
-              icon: Icons.scale,
-              label: 'Peso actual',
-              value: profile?.currentWeightKg != null
-                  ? '${profile!.currentWeightKg!.toStringAsFixed(1)} kg'
-                  : 'No configurado',
-            ),
-            _ProfileInfoRow(
-              icon: Icons.local_fire_department,
-              label: 'Nivel de actividad',
-              value: profile?.activityLevel.displayName ?? 'Moderado',
+            AppButton(
+              onPressed: () => _showEditProfileDialog(context, profile),
+              label: isComplete ? 'Editar Perfil' : 'Completar Perfil',
+              isFullWidth: true,
             ),
           ],
-          const SizedBox(height: AppSpacing.md),
-          AppButton(
-            onPressed: () => _showEditProfileDialog(context, profile),
-            label: isComplete ? 'Editar Perfil' : 'Completar Perfil',
-            isFullWidth: true,
-          ),
-        ],
+        ),
       ),
-    ),
     );
   }
 
@@ -258,10 +258,7 @@ class _LibrarySection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Biblioteca de Alimentos',
-              style: AppTypography.titleMedium,
-            ),
+            Text('Biblioteca de Alimentos', style: AppTypography.titleMedium),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Gestiona tus alimentos guardados',
@@ -356,9 +353,7 @@ class _BodyProgressSection extends ConsumerWidget {
             AppButton(
               variant: AppButtonVariant.secondary,
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const BodyProgressScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const BodyProgressScreen()),
               ),
               icon: Icons.trending_up,
               label: 'Ver Progreso',
@@ -373,7 +368,7 @@ class _BodyProgressSection extends ConsumerWidget {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date).inDays;
-    
+
     if (diff == 0) return 'Hoy';
     if (diff == 1) return 'Ayer';
     if (diff < 7) return 'Hace $diff días';
@@ -387,10 +382,12 @@ class _CleanupDuplicatesButton extends ConsumerStatefulWidget {
   const _CleanupDuplicatesButton();
 
   @override
-  ConsumerState<_CleanupDuplicatesButton> createState() => _CleanupDuplicatesButtonState();
+  ConsumerState<_CleanupDuplicatesButton> createState() =>
+      _CleanupDuplicatesButtonState();
 }
 
-class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButton> {
+class _CleanupDuplicatesButtonState
+    extends ConsumerState<_CleanupDuplicatesButton> {
   bool _isLoading = false;
   int? _duplicatesFound;
 
@@ -436,15 +433,17 @@ class _CleanupDuplicatesButtonState extends ConsumerState<_CleanupDuplicatesButt
       final db = ref.read(appDatabaseProvider);
       final removed = await db.cleanupAllDuplicates();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Se eliminaron $removed duplicados')),
-        );
+        AppSnackbar.show(context, message: 'Se eliminaron $removed duplicados');
         setState(() => _duplicatesFound = null);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        AppSnackbar.showError(
+          context,
+          message: userErrorMessage(
+            e,
+            fallback: 'No se pudieron limpiar los duplicados.',
+          ),
         );
       }
     } finally {
@@ -610,7 +609,9 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
             // Peso
             TextField(
               controller: _weightController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Peso actual *',
                 suffixText: 'kg',
@@ -642,10 +643,7 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: _save,
-          child: const Text('Guardar'),
-        ),
+        FilledButton(onPressed: _save, child: const Text('Guardar')),
       ],
     );
   }
@@ -670,9 +668,9 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
     );
 
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
       return;
     }
 
@@ -733,10 +731,7 @@ class _RemindersSection extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Recordatorios',
-                        style: AppTypography.titleMedium,
-                      ),
+                      Text('Recordatorios', style: AppTypography.titleMedium),
                       Text(
                         reminders.hasAnyEnabled
                             ? '${reminders.enabledCount} activo${reminders.enabledCount != 1 ? 's' : ''}'
@@ -847,7 +842,45 @@ class _RemindersSection extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sm),
               Center(
                 child: TextButton.icon(
-                  onPressed: () => notifier.disableAll(),
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Desactivar recordatorios'),
+                        content: const Text(
+                          'Se desactivaran todos los recordatorios de dieta. '
+                          'Puedes volver a activarlos cuando quieras.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('CANCELAR'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('DESACTIVAR'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmed != true) return;
+
+                    try {
+                      await notifier.disableAll();
+                    } catch (e) {
+                      if (context.mounted) {
+                        AppSnackbar.showError(
+                          context,
+                          message: userErrorMessage(
+                            e,
+                            fallback:
+                                'No se pudieron desactivar los recordatorios.',
+                          ),
+                        );
+                      }
+                    }
+                  },
                   icon: Icon(
                     Icons.notifications_off,
                     size: 18,
@@ -953,7 +986,20 @@ class _ReminderRow extends StatelessWidget {
             height: 38,
             child: Switch(
               value: config.enabled,
-              onChanged: onToggle,
+              onChanged: (value) {
+                onToggle(value).catchError((error) {
+                  if (context.mounted) {
+                    AppSnackbar.showError(
+                      context,
+                      message: userErrorMessage(
+                        error,
+                        fallback:
+                            'No se pudo actualizar el recordatorio. Intenta de nuevo.',
+                      ),
+                    );
+                  }
+                });
+              },
             ),
           ),
         ],
@@ -970,7 +1016,19 @@ class _ReminderRow extends StatelessWidget {
       confirmText: 'ACEPTAR',
     );
     if (picked != null) {
-      await onTimeChanged(picked);
+      try {
+        await onTimeChanged(picked);
+      } catch (e) {
+        if (context.mounted) {
+          AppSnackbar.showError(
+            context,
+            message: userErrorMessage(
+              e,
+              fallback: 'No se pudo actualizar la hora del recordatorio.',
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -1006,10 +1064,7 @@ class _TipsAndTricksSection extends StatelessWidget {
                     color: AppColors.info.withAlpha(30),
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: Icon(
-                    Icons.tips_and_updates,
-                    color: AppColors.info,
-                  ),
+                  child: Icon(Icons.tips_and_updates, color: AppColors.info),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -1039,32 +1094,38 @@ class _TipsAndTricksSection extends StatelessWidget {
             _TipItem(
               icon: Icons.search,
               title: 'Búsqueda inteligente',
-              description: 'Escribe solo las primeras letras. La app busca por palabras clave y sinónimos.',
+              description:
+                  'Escribe solo las primeras letras. La app busca por palabras clave y sinónimos.',
             ),
             _TipItem(
               icon: Icons.history,
               title: 'Alimentos frecuentes',
-              description: 'Los chips de acceso rápido muestran lo que más usas. ¡Un tap para añadir!',
+              description:
+                  'Los chips de acceso rápido muestran lo que más usas. ¡Un tap para añadir!',
             ),
             _TipItem(
               icon: Icons.copy_all,
               title: 'Repetir ayer',
-              description: 'Usa "Repetir ayer" para copiar todas las comidas del día anterior.',
+              description:
+                  'Usa "Repetir ayer" para copiar todas las comidas del día anterior.',
             ),
             _TipItem(
               icon: Icons.bookmark,
               title: 'Plantillas de comida',
-              description: 'Guarda comidas como plantillas desde el menú (⋮) de cada sección.',
+              description:
+                  'Guarda comidas como plantillas desde el menú (⋮) de cada sección.',
             ),
             _TipItem(
               icon: Icons.qr_code_scanner,
               title: 'Escanear código de barras',
-              description: 'Escanea productos para añadirlos automáticamente a tu diario.',
+              description:
+                  'Escanea productos para añadirlos automáticamente a tu diario.',
             ),
             _TipItem(
               icon: Icons.auto_graph,
               title: 'Coach adaptativo',
-              description: 'El check-in semanal ajusta tus objetivos basándose en tu progreso real.',
+              description:
+                  'El check-in semanal ajusta tus objetivos basándose en tu progreso real.',
             ),
 
             const SizedBox(height: AppSpacing.md),

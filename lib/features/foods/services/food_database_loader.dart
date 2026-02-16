@@ -9,11 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/providers/database_provider.dart';
+import '../../../core/services/telemetry_service.dart';
 import '../../../training/database/database.dart';
 import '../providers/market_providers.dart';
 
 /// Servicio para cargar la base de datos de alimentos desde el asset comprimido
-/// 
+///
 /// Soporta múltiples mercados (España, USA, etc.)
 /// Optimizaciones: Parseo en isolates, batches grandes, transacciones por batch
 class FoodDatabaseLoader {
@@ -22,7 +23,7 @@ class FoodDatabaseLoader {
   static const int _batchSize = 5000;
 
   final AppDatabase _db;
-  
+
   FoodDatabaseLoader(this._db);
 
   /// Obtiene el path del asset según el mercado seleccionado
@@ -32,16 +33,18 @@ class FoodDatabaseLoader {
   Future<bool> isDatabaseLoaded(FoodMarket market) async {
     final prefs = await SharedPreferences.getInstance();
     final savedVersion = prefs.getInt('${_dbVersionKey}_${market.name}');
-    
+
     if (savedVersion != _currentDbVersion) {
       return false;
     }
-    
+
     // Verificar si hay alimentos de este mercado
-    final count = await _db.customSelect(
-      "SELECT COUNT(*) as count FROM foods WHERE user_created = 0 LIMIT 1"
-    ).getSingle();
-    
+    final count = await _db
+        .customSelect(
+          "SELECT COUNT(*) as count FROM foods WHERE user_created = 0 LIMIT 1",
+        )
+        .getSingle();
+
     return (count.data['count'] as int) > 10000;
   }
 
@@ -51,59 +54,69 @@ class FoodDatabaseLoader {
     void Function(double progress, int loaded)? onProgress,
   }) async {
     final assetPath = _getAssetPath(market);
-    
-    try {
-      onProgress?.call(0.0, 0);
-      
-      // Verificar que el asset existe
-      final byteData = await rootBundle.load(assetPath);
-      final bytes = byteData.buffer.asUint8List();
-      
-      // Descompresión en isolate
-      final jsonlString = await compute(_decompressGzip, bytes);
-      onProgress?.call(0.05, 0);
-      
-      // Separar líneas en isolate
-      final lines = await compute(_splitLines, jsonlString);
-      final totalLines = lines.length;
-      
-      // Procesar en batches
-      int loadedCount = 0;
-      final totalBatches = (totalLines / _batchSize).ceil();
-      
-      for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-        final start = batchIndex * _batchSize;
-        final end = (start + _batchSize < totalLines) ? start + _batchSize : totalLines;
-        final batchLines = lines.sublist(start, end);
-        
-        // Parsear batch en isolate
-        final companions = await compute(_parseBatch, batchLines);
-        
-        // Insertar en DB
-        await _insertBatchOptimized(companions);
-        
-        loadedCount += companions.length;
-        
-        final progress = 0.05 + (0.95 * loadedCount / totalLines);
-        onProgress?.call(progress, loadedCount);
-      }
-      
-      // Marcar como cargada
-      await _markDatabaseAsLoaded(market);
-      
-      return loadedCount;
-    } catch (e) {
-      throw Exception('Error cargando base de datos para ${market.displayName}: $e');
-    }
+
+    return TelemetryService()
+        .measureAsync(MetricNames.dbLoadFoods, () async {
+          onProgress?.call(0.0, 0);
+
+          // Verificar que el asset existe
+          final byteData = await rootBundle.load(assetPath);
+          final bytes = byteData.buffer.asUint8List();
+
+          // Descompresión en isolate
+          final jsonlString = await compute(_decompressGzip, bytes);
+          onProgress?.call(0.05, 0);
+
+          // Separar líneas en isolate
+          final lines = await compute(_splitLines, jsonlString);
+          final totalLines = lines.length;
+
+          // Procesar en batches
+          int loadedCount = 0;
+          final totalBatches = (totalLines / _batchSize).ceil();
+
+          for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+            final start = batchIndex * _batchSize;
+            final end = (start + _batchSize < totalLines)
+                ? start + _batchSize
+                : totalLines;
+            final batchLines = lines.sublist(start, end);
+
+            // Parsear batch en isolate
+            final companions = await compute(_parseBatch, batchLines);
+
+            // Insertar en DB
+            await _insertBatchOptimized(companions);
+
+            loadedCount += companions.length;
+
+            final progress = 0.05 + (0.95 * loadedCount / totalLines);
+            onProgress?.call(progress, loadedCount);
+          }
+
+          // Reconstruir FTS al final garantiza búsquedas rápidas sin depender
+          // de sincronización por registro durante cargas masivas.
+          await _db.rebuildFtsIndex();
+
+          // Marcar como cargada
+          await _markDatabaseAsLoaded(market);
+
+          return loadedCount;
+        }, tags: {'market': market.name})
+        .catchError((Object e) {
+          throw Exception(
+            'Error cargando base de datos para ${market.displayName}: $e',
+          );
+        });
   }
 
   /// Parsea un batch de líneas JSONL
   static List<FoodsCompanion> _parseBatch(List<String> lines) {
     final companions = <FoodsCompanion>[];
-    
+
     for (final line in lines) {
       if (line.trim().isEmpty) continue;
-      
+
       try {
         final json = jsonDecode(line) as Map<String, dynamic>;
         final companion = _parseFoodCompanion(json);
@@ -112,7 +125,7 @@ class FoodDatabaseLoader {
         // Ignorar líneas malformadas
       }
     }
-    
+
     return companions;
   }
 
@@ -131,11 +144,7 @@ class FoodDatabaseLoader {
   Future<void> _insertBatchOptimized(List<FoodsCompanion> batch) async {
     await _db.transaction(() async {
       await _db.batch((b) {
-        b.insertAll(
-          _db.foods, 
-          batch, 
-          mode: InsertMode.insertOrReplace,
-        );
+        b.insertAll(_db.foods, batch, mode: InsertMode.insertOrReplace);
       });
     });
   }
@@ -143,7 +152,7 @@ class FoodDatabaseLoader {
   /// Parsea un JSON a FoodsCompanion
   static FoodsCompanion _parseFoodCompanion(Map<String, dynamic> json) {
     final nutriments = json['nutriments'] as Map<String, dynamic>? ?? {};
-    
+
     return FoodsCompanion(
       id: Value(json['code'] as String? ?? const Uuid().v4()),
       name: Value(_sanitizeName(json['name'] as String? ?? 'Sin nombre')),
@@ -168,7 +177,9 @@ class FoodDatabaseLoader {
 
   /// Limpia la base de datos
   Future<void> clearDatabase(FoodMarket market) async {
-    await _db.delete(_db.foods).go();
+    // Solo limpiar catálogo importado. Los alimentos creados por usuario se preservan.
+    await _db.customStatement('DELETE FROM foods WHERE user_created = 0');
+    await _db.rebuildFtsIndex();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('${_dbVersionKey}_${market.name}');
   }
@@ -181,7 +192,7 @@ class FoodDatabaseLoader {
   }) async {
     // Limpiar mercado anterior
     await clearDatabase(from);
-    
+
     // Cargar nuevo mercado
     return loadDatabase(market: to, onProgress: onProgress);
   }
@@ -211,7 +222,7 @@ final foodDatabaseLoaderProvider = Provider<FoodDatabaseLoader>((ref) {
 final foodDatabaseLoadedProvider = FutureProvider<bool>((ref) async {
   final market = ref.watch(selectedMarketProvider);
   if (market == null) return false;
-  
+
   final loader = ref.watch(foodDatabaseLoaderProvider);
   return loader.isDatabaseLoaded(market);
 });

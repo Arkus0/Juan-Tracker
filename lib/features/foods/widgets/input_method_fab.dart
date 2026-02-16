@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// FAB expandible con métodos de entrada de alimentos
-/// 
-/// Muestra opciones:
-/// - Añadir manual
-/// - Dictar con voz
-/// - Escanear etiqueta
-/// - Escanear barcode
+/// FAB expandible con metodos de entrada de alimentos.
 class InputMethodFab extends StatefulWidget {
   final VoidCallback onManualAdd;
   final VoidCallback onVoiceInput;
   final VoidCallback onOcrScan;
   final VoidCallback onBarcodeScan;
+  final bool isBusy;
 
   const InputMethodFab({
     super.key,
@@ -20,6 +15,7 @@ class InputMethodFab extends StatefulWidget {
     required this.onVoiceInput,
     required this.onOcrScan,
     required this.onBarcodeScan,
+    this.isBusy = false,
   });
 
   @override
@@ -39,10 +35,7 @@ class _InputMethodFabState extends State<InputMethodFab>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
   }
 
   @override
@@ -52,6 +45,8 @@ class _InputMethodFabState extends State<InputMethodFab>
   }
 
   void _toggle() {
+    if (widget.isBusy) return;
+
     setState(() {
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
@@ -74,22 +69,23 @@ class _InputMethodFabState extends State<InputMethodFab>
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final isEnabled = !widget.isBusy;
+
     return Stack(
       alignment: Alignment.bottomRight,
-      clipBehavior: Clip.none, // Permitir que los children se dibujen fuera del bounds
+      clipBehavior: Clip.none,
       children: [
-        // Backdrop para cerrar al tocar fuera
         if (_isExpanded)
           GestureDetector(
             onTap: _collapse,
             child: Container(
-              color: Colors.transparent,
+              color: colors.scrim.withAlpha((0.04 * 255).round()),
               width: double.infinity,
               height: double.infinity,
             ),
           ),
-        
-        // Opciones expandibles
+
         Positioned(
           bottom: 72,
           right: 0,
@@ -100,59 +96,73 @@ class _InputMethodFabState extends State<InputMethodFab>
               _buildOption(
                 label: 'Escanear barcode',
                 icon: Icons.qr_code_scanner,
-                color: Colors.blue,
+                containerColor: colors.secondaryContainer,
+                foregroundColor: colors.onSecondaryContainer,
                 onTap: () {
                   _collapse();
                   widget.onBarcodeScan();
                 },
                 delay: 0,
+                enabled: isEnabled,
               ),
               _buildOption(
                 label: 'Escanear etiqueta',
                 icon: Icons.document_scanner,
-                color: Colors.green,
+                containerColor: colors.tertiaryContainer,
+                foregroundColor: colors.onTertiaryContainer,
                 onTap: () {
                   _collapse();
                   widget.onOcrScan();
                 },
                 delay: 1,
+                enabled: isEnabled,
               ),
               _buildOption(
                 label: 'Dictar con voz',
                 icon: Icons.mic,
-                color: Colors.orange,
+                containerColor: colors.errorContainer,
+                foregroundColor: colors.onErrorContainer,
                 onTap: () {
                   _collapse();
                   widget.onVoiceInput();
                 },
                 delay: 2,
+                enabled: isEnabled,
               ),
               _buildOption(
-                label: 'Añadir manual',
+                label: 'Anadir manual',
                 icon: Icons.edit,
-                color: Colors.purple,
+                containerColor: colors.primaryContainer,
+                foregroundColor: colors.onPrimaryContainer,
                 onTap: () {
                   _collapse();
                   widget.onManualAdd();
                 },
                 delay: 3,
+                enabled: isEnabled,
               ),
             ],
           ),
         ),
-        
-        // FAB principal
-        FloatingActionButton(
-          onPressed: _toggle,
-          elevation: _isExpanded ? 8 : 4,
-          child: AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              return Transform.rotate(
-                angle: _animation.value * 0.785, // 45 grados
-                child: Icon(_isExpanded ? Icons.close : Icons.add),
-              );
-            },
+
+        Tooltip(
+          message: widget.isBusy
+              ? 'Espera a que termine la accion actual'
+              : (_isExpanded ? 'Cerrar acciones' : 'Abrir acciones rapidas'),
+          child: FloatingActionButton(
+            onPressed: isEnabled ? _toggle : null,
+            elevation: _isExpanded ? 8 : 4,
+            backgroundColor: colors.primary,
+            foregroundColor: colors.onPrimary,
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _animation.value * 0.785,
+                  child: Icon(_isExpanded ? Icons.close : Icons.add),
+                );
+              },
+            ),
           ),
         ),
       ],
@@ -162,16 +172,20 @@ class _InputMethodFabState extends State<InputMethodFab>
   Widget _buildOption({
     required String label,
     required IconData icon,
-    required Color color,
+    required Color containerColor,
+    required Color foregroundColor,
     required VoidCallback onTap,
     required int delay,
+    required bool enabled,
   }) {
+    final colors = Theme.of(context).colorScheme;
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
         final offset = (1 - _animation.value) * (delay * 10 + 20);
         final opacity = _animation.value;
-        
+
         return Transform.translate(
           offset: Offset(0, offset),
           child: Opacity(
@@ -181,46 +195,39 @@ class _InputMethodFabState extends State<InputMethodFab>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Label
                   Container(
                     margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
+                      color: colors.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha((0.1 * 255).round()),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Text(
                       label,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: colors.onSurface,
                       ),
                     ),
                   ),
-                  
-                  // Button
-                  Material(
-                    color: color,
-                    borderRadius: BorderRadius.circular(12),
-                    elevation: 4,
-                    child: InkWell(
-                      onTap: onTap,
+                  Tooltip(
+                    message: label,
+                    child: Material(
+                      color: containerColor,
                       borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
+                      elevation: enabled ? 4 : 1,
+                      child: InkWell(
+                        onTap: enabled ? onTap : null,
+                        borderRadius: BorderRadius.circular(12),
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Icon(icon, color: foregroundColor),
                         ),
-                        child: Icon(icon, color: Colors.white),
                       ),
                     ),
                   ),
