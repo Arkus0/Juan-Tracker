@@ -10,3 +10,7 @@ build/
 /android/*.iml
 /android/.gradle
 local.properties
+
+# Large dataset (ignored locally)
+# scripts/openfoodfacts_products.csv.gz is ~1.1GB and should not be committed
+scripts/openfoodfacts_products.csv.gz
