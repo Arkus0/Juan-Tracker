@@ -89,6 +89,7 @@ Lee `CONTRIBUTING.md` para el flujo de contribución, checklist y buenas prácti
 - Información técnica y pautas para agentes: `AGENTS.md`.
 - Corpus de algoritmos de búsqueda: `docs/corpus_algoritmos_busqueda_nutricion.md`.
 - Documentación del subset de alimentos: `scripts/README_FOOD_SUBSET.md`.
+- Almacenamiento de datasets grandes: `docs/dataset_handling.md`.
 
 ---
 
