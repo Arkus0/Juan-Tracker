@@ -12,5 +12,7 @@ build/
 local.properties
 
 # Large dataset (ignored locally)
-# scripts/openfoodfacts_products.csv.gz is ~1.1GB and should not be committed
+# specific large file (kept locally or archived elsewhere)
 scripts/openfoodfacts_products.csv.gz
+# ignore any compressed dataset files in scripts/ to prevent accidental commits
+scripts/*.gz
