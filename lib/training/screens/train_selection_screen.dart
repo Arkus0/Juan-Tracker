@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:go_router/go_router.dart';
+
 import '../../../core/design_system/design_system.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/widgets/widgets.dart';
 import '../models/rutina.dart';
+import '../models/session_template.dart';
 import '../providers/main_provider.dart';
 import '../providers/session_progress_provider.dart';
 import '../providers/session_tolerance_provider.dart';
+import '../providers/session_template_provider.dart';
 import '../providers/training_provider.dart';
 import '../widgets/routine_template_sheet.dart';
-import 'training_session_screen.dart';
 
 /// ============================================================================
 /// PRINCIPIO DE LOS 3 SEGUNDOS
@@ -38,6 +42,7 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
     final activeSessionAsync = ref.watch(activeSessionStreamProvider);
     final rutinasAsync = ref.watch(rutinasStreamProvider);
     final suggestionAsync = ref.watch(smartSuggestionProvider);
+    final templatesAsync = ref.watch(sessionTemplatesProvider);
 
     return Scaffold(
       backgroundColor: colors.surface,
@@ -102,6 +107,7 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
                     return _ZeroThoughtHome(
                       suggestion: suggestion,
                       rutinas: rutinas,
+                      templatesAsync: templatesAsync,
                       showAlternatives: _showAlternatives,
                       onStart: () => _startSession(
                         context,
@@ -109,6 +115,11 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
                         suggestion.rutina,
                         suggestion.dayIndex,
                       ),
+                      onStartFree: () => _startFreeWorkout(context, ref),
+                      onStartTemplate: (template) =>
+                          _startTemplateSession(context, ref, template),
+                      onDeleteTemplate: (template) =>
+                          _deleteTemplate(context, template),
                       onToggleAlternatives: () => setState(
                         () => _showAlternatives = !_showAlternatives,
                       ),
@@ -133,21 +144,20 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
     mainProvider.setIndex(0);
   }
 
+  void _startFreeWorkout(BuildContext context, WidgetRef ref) {
+    try {
+      HapticFeedback.heavyImpact();
+    } catch (_) {}
+    ref.read(trainingSessionProvider.notifier).startFreeSession();
+    context.push(AppRouter.trainingSession);
+  }
+
   void _continueSession(BuildContext context, WidgetRef ref) {
     try {
       HapticFeedback.mediumImpact();
     } catch (_) {}
-    final theme = Theme.of(context);
     ref.read(trainingSessionProvider.notifier).restoreFromStorage();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Theme(
-          data: theme,
-          child: const TrainingSessionScreen(),
-        ),
-      ),
-    );
+    context.push(AppRouter.trainingSession);
   }
 
   void _startSession(
@@ -178,16 +188,71 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
           dayIndex: dayIndex,
         );
 
-    final theme = Theme.of(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Theme(
-          data: theme,
-          child: const TrainingSessionScreen(),
+    context.push(AppRouter.trainingSession);
+  }
+
+  void _startTemplateSession(
+    BuildContext context,
+    WidgetRef ref,
+    SessionTemplate template,
+  ) {
+    try {
+      HapticFeedback.heavyImpact();
+    } catch (_) {}
+
+    ref.read(sessionProgressProvider.notifier).reset();
+    ref.read(exerciseCompletionProvider.notifier).reset();
+    ref.read(sessionToleranceProvider.notifier).reset();
+
+    ref
+        .read(trainingSessionProvider.notifier)
+        .startSessionFromTemplate(template);
+
+    context.push(AppRouter.trainingSession);
+  }
+
+  Future<void> _deleteTemplate(
+    BuildContext context,
+    SessionTemplate template,
+  ) async {
+    final colors = Theme.of(context).colorScheme;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.surface,
+        title: Text(
+          '¿Eliminar plantilla?',
+          style: AppTypography.titleMedium,
         ),
+        content: Text(
+          'Se eliminará "${template.name}".',
+          style: AppTypography.bodyMedium.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('CANCELAR'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              'ELIMINAR',
+              style: AppTypography.labelLarge.copyWith(color: colors.error),
+            ),
+          ),
+        ],
       ),
     );
+    if (confirmed != true) return;
+
+    final service = ref.read(sessionTemplateServiceProvider);
+    await service.deleteTemplate(template.id);
+    ref.invalidate(sessionTemplatesProvider);
+
+    if (!context.mounted) return;
+    AppSnackbar.show(context, message: 'Plantilla eliminada');
   }
 
   void _showDiscardDialog(BuildContext context, WidgetRef ref) {
@@ -245,16 +310,24 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
 class _ZeroThoughtHome extends StatelessWidget {
   final SmartWorkoutSuggestion suggestion;
   final List<Rutina> rutinas;
+  final AsyncValue<List<SessionTemplate>> templatesAsync;
   final bool showAlternatives;
   final VoidCallback onStart;
+  final VoidCallback onStartFree;
+  final void Function(SessionTemplate) onStartTemplate;
+  final void Function(SessionTemplate) onDeleteTemplate;
   final VoidCallback onToggleAlternatives;
   final void Function(Rutina, int) onAlternativeSelected;
 
   const _ZeroThoughtHome({
     required this.suggestion,
     required this.rutinas,
+    required this.templatesAsync,
     required this.showAlternatives,
     required this.onStart,
+    required this.onStartFree,
+    required this.onStartTemplate,
+    required this.onDeleteTemplate,
     required this.onToggleAlternatives,
     required this.onAlternativeSelected,
   });
@@ -295,6 +368,19 @@ class _ZeroThoughtHome extends StatelessWidget {
 
     return Column(
       children: [
+        templatesAsync.when(
+          data: (templates) {
+            if (templates.isEmpty) return const SizedBox.shrink();
+            return _SessionTemplatesStrip(
+              templates: templates,
+              onStart: onStartTemplate,
+              onDelete: onDeleteTemplate,
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
+        ),
+        const SizedBox(height: AppSpacing.md),
         // ═══════════════════════════════════════════════════════════════════
         // ZONA PRINCIPAL: Centrada, respira, sin ruido
         // ═══════════════════════════════════════════════════════════════════
@@ -396,16 +482,32 @@ class _ZeroThoughtHome extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      // Opción de entrenar de todas formas
-                      GestureDetector(
-                        onTap: onToggleAlternatives,
-                        child: Text(
-                          'Entrenar de todas formas',
-                          style: AppTypography.labelMedium.copyWith(
-                            color: colors.onSurfaceVariant,
-                            decoration: TextDecoration.underline,
+                      // Opciones secundarias en día de descanso
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: onToggleAlternatives,
+                            child: Text(
+                              'Entrenar de todas formas',
+                              style: AppTypography.labelMedium.copyWith(
+                                color: colors.onSurfaceVariant,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: AppSpacing.lg),
+                          GestureDetector(
+                            onTap: onStartFree,
+                            child: Text(
+                              'Libre',
+                              style: AppTypography.labelMedium.copyWith(
+                                color: colors.onSurfaceVariant,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ] else ...[
                       // CTA normal para días de entrenamiento
@@ -438,31 +540,48 @@ class _ZeroThoughtHome extends StatelessWidget {
                       const SizedBox(height: AppSpacing.md),
 
                       // Escape claro: No está atrapado
-                      GestureDetector(
-                        onTap: onToggleAlternatives,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                showAlternatives ? 'Ocultar opciones' : 'Cambiar',
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: onToggleAlternatives,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    showAlternatives ? 'Ocultar opciones' : 'Cambiar',
+                                    style: AppTypography.labelMedium.copyWith(
+                                      color: colors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  Icon(
+                                    showAlternatives
+                                        ? Icons.keyboard_arrow_up_rounded
+                                        : Icons.keyboard_arrow_down_rounded,
+                                    color: colors.onSurfaceVariant,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.lg),
+                          GestureDetector(
+                            onTap: onStartFree,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                              child: Text(
+                                'Libre',
                                 style: AppTypography.labelMedium.copyWith(
                                   color: colors.onSurfaceVariant,
                                 ),
                               ),
-                              const SizedBox(width: AppSpacing.xs),
-                              Icon(
-                                showAlternatives
-                                    ? Icons.keyboard_arrow_up_rounded
-                                    : Icons.keyboard_arrow_down_rounded,
-                                color: colors.onSurfaceVariant,
-                                size: 20,
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ],
@@ -485,6 +604,112 @@ class _ZeroThoughtHome extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _SessionTemplatesStrip extends StatelessWidget {
+  final List<SessionTemplate> templates;
+  final void Function(SessionTemplate) onStart;
+  final void Function(SessionTemplate) onDelete;
+
+  const _SessionTemplatesStrip({
+    required this.templates,
+    required this.onStart,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        0,
+      ),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'PLANTILLAS DE SESIÓN',
+              style: AppTypography.labelLarge.copyWith(
+                color: colors.onSurfaceVariant,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              height: 72,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: templates.length,
+                separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+                itemBuilder: (context, index) {
+                  final template = templates[index];
+                  final exerciseCount = template.exercises.length;
+                  return GestureDetector(
+                    onTap: () => onStart(template),
+                    onLongPress: () => onDelete(template),
+                    child: Container(
+                      width: 160,
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(color: colors.outline),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            template.name,
+                            style: AppTypography.titleSmall.copyWith(
+                              color: colors.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$exerciseCount ejercicio${exerciseCount == 1 ? '' : 's'}',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                          const Spacer(),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.play_arrow_rounded,
+                                size: 16,
+                                color: colors.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'INICIAR',
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: colors.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -804,16 +1029,7 @@ class _EmptyState extends ConsumerWidget {
     // Iniciar sesión libre sin rutina
     ref.read(trainingSessionProvider.notifier).startFreeSession();
     
-    final theme = Theme.of(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Theme(
-          data: theme,
-          child: const TrainingSessionScreen(),
-        ),
-      ),
-    );
+    context.push(AppRouter.trainingSession);
   }
 }
 

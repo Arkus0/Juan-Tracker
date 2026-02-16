@@ -12,6 +12,8 @@ import '../models/progression_engine_models.dart';
 import '../models/rutina.dart';
 import '../models/serie_log.dart';
 import '../models/sesion.dart';
+import '../models/training_set_type.dart';
+import '../models/session_template.dart';
 
 import '../repositories/drift_training_repository.dart';
 import '../repositories/i_training_repository.dart';
@@ -20,6 +22,7 @@ import '../services/rest_timer_controller.dart';
 import '../services/session_history_manager.dart';
 import '../services/session_persistence_service.dart';
 import 'session_tolerance_provider.dart';
+import 'settings_provider.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
@@ -168,6 +171,9 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
   /// Extraído del God Object para mejorar testabilidad y separación de responsabilidades
   SessionHistoryManager? _historyManager;
 
+  ({int exerciseIndex, int setIndex, SerieLog previousLog})?
+  _lastCompletedSet;
+
   @override
   TrainingState build() {
     _repository = ref.read(trainingRepositoryProvider);
@@ -225,14 +231,36 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     _timerController.clearTimerFinishedWhileAway();
   }
 
+  SerieLog _buildDefaultLog(TrainingSetType setType) {
+    return SerieLog(
+      peso: 0.0,
+      reps: 0,
+      completed: false,
+      isDropset: setType == TrainingSetType.dropSet,
+      isRestPause: setType == TrainingSetType.restPause,
+      isMyoReps: setType == TrainingSetType.myoReps,
+      isAmrap: setType == TrainingSetType.amrap,
+    );
+  }
+
   Future<void> startSession(
     Rutina rutina,
     List<EjercicioEnRutina> routineExercises, {
     String? dayName,
     int? dayIndex,
   }) async {
+    final autoRestEnabled =
+        ref.read(settingsProvider).autoRestFromHistoryEnabled;
+    final restByLibraryId = autoRestEnabled
+        ? await _repository.getAverageRestSecondsByLibraryId(
+            routineExercises.map((e) => e.id).toList(),
+          )
+        : <String, int>{};
+
     // Map EjercicioEnRutina (Type 5) -> Ejercicio (Type 0, Session Model)
     final sessionExercises = routineExercises.map((e) {
+      final suggestedRest =
+          e.descansoSugerido?.inSeconds ?? restByLibraryId[e.id];
       return Ejercicio(
         id: e.instanceId, // Use the stable Instance ID
         libraryId: e.id, // Reference to the library
@@ -246,16 +274,8 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
         notas: e.notas,
         supersetId:
             e.supersetId, // Copiar superset para lógica de timer encadenado
-        descansoSugeridoSeconds: e.descansoSugerido?.inSeconds,
-        logs: List.generate(
-          e.series,
-          (_) => SerieLog(
-            // ID is generated automatically in constructor
-            peso: 0.0,
-            reps: 0,
-            completed: false,
-          ),
-        ),
+        descansoSugeridoSeconds: suggestedRest,
+        logs: List.generate(e.series, (_) => _buildDefaultLog(e.setType)),
       );
     }).toList();
 
@@ -277,6 +297,12 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
       showAdvancedOptions: false,
     );
     _saveState();
+
+    // Auto-rellenar con la última sesión si está habilitado
+    final autoFill = ref.read(settingsProvider).autoFillLastSession;
+    if (autoFill) {
+      applyHistoryToCurrentSession(overwriteExisting: true);
+    }
   }
 
   /// Inicia una sesión de entrenamiento libre sin rutina predefinida.
@@ -297,6 +323,53 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     _saveState();
   }
 
+  /// Inicia una sesión desde una plantilla guardada
+  Future<void> startSessionFromTemplate(SessionTemplate template) async {
+    final sessionExercises = template.exercises.map((e) {
+      final logs = e.sets.map((set) {
+        return SerieLog(
+          peso: set.weight,
+          reps: set.reps,
+          completed: false,
+          isWarmup: set.isWarmup,
+          isFailure: set.isFailure,
+          isDropset: set.isDropset,
+          isRestPause: set.isRestPause,
+          isMyoReps: set.isMyoReps,
+          isAmrap: set.isAmrap,
+        );
+      }).toList();
+
+      return Ejercicio(
+        id: const Uuid().v4(),
+        libraryId: e.libraryId,
+        nombre: e.name,
+        musculosPrincipales: e.musclesPrimary,
+        musculosSecundarios: e.musclesSecondary,
+        series: logs.length,
+        reps: logs.isNotEmpty ? logs.first.reps : 0,
+        peso: logs.isNotEmpty ? logs.first.peso : 0.0,
+        descansoSugeridoSeconds: e.suggestedRestSeconds,
+        logs: logs,
+      );
+    }).toList();
+
+    final historyMap =
+        await _historyManager?.loadHistoryForExercises(sessionExercises) ?? {};
+
+    state = TrainingState(
+      activeRutina: null,
+      dayName: 'Plantilla: ${template.name}',
+      dayIndex: null,
+      exercises: sessionExercises,
+      targets: sessionExercises.map((e) => e.copyWith()).toList(),
+      startTime: DateTime.now(),
+      history: historyMap,
+      showAdvancedOptions: false,
+    );
+    _saveState();
+  }
+
   void updateLog(
     int exerciseIndex,
     int setIndex, {
@@ -310,6 +383,8 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     bool? isDropset,
     bool? isRestPause,
     bool? isWarmup,
+    bool? isMyoReps,
+    bool? isAmrap,
     bool skipToleranceCheck =
         false, // 🎯 Skip validation when user accepted a correction
   }) {
@@ -317,6 +392,9 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     final exercise = exercises[exerciseIndex];
     final logs = [...exercise.logs];
     final log = logs[setIndex];
+    final wasCompleted = log.completed;
+    final previousLog = log.copyWith();
+    final completedValue = completed ?? log.completed;
 
     // ═══════════════════════════════════════════════════════════════════════
     // ERROR TOLERANCE: Validación tolerante de peso (nunca bloquea)
@@ -392,7 +470,7 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
       id: log.id, // Preserve UUID
       peso: finalPeso,
       reps: finalReps,
-      completed: completed ?? log.completed,
+      completed: completedValue,
       rpe: validRpe,
       notas: notas ?? log.notas,
       restSeconds: restSeconds ?? log.restSeconds,
@@ -400,6 +478,8 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
       isDropset: isDropset ?? log.isDropset,
       isRestPause: isRestPause ?? log.isRestPause,
       isWarmup: isWarmup ?? log.isWarmup,
+      isMyoReps: isMyoReps ?? log.isMyoReps,
+      isAmrap: isAmrap ?? log.isAmrap,
     );
 
     logs[setIndex] = newLog;
@@ -408,6 +488,57 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
 
     state = state.copyWith(exercises: exercises);
     _saveState();
+
+    if (!wasCompleted && completedValue) {
+      _lastCompletedSet = (
+        exerciseIndex: exerciseIndex,
+        setIndex: setIndex,
+        previousLog: previousLog,
+      );
+      _maybeAutoStartRest(
+        exerciseIndex: exerciseIndex,
+        setIndex: setIndex,
+        log: newLog,
+      );
+    }
+  }
+
+  void _maybeAutoStartRest({
+    required int exerciseIndex,
+    required int setIndex,
+    required SerieLog log,
+  }) {
+    final settings = ref.read(settingsProvider);
+    if (!settings.autoStartTimer) return;
+    if (log.peso <= 0 && log.reps <= 0) return;
+
+    startRestForExercise(exerciseIndex, setIndex: setIndex);
+  }
+
+  bool undoLastCompletedSet() {
+    final last = _lastCompletedSet;
+    if (last == null) return false;
+
+    updateLog(
+      last.exerciseIndex,
+      last.setIndex,
+      peso: last.previousLog.peso,
+      reps: last.previousLog.reps,
+      completed: last.previousLog.completed,
+      rpe: last.previousLog.rpe,
+      notas: last.previousLog.notas,
+      restSeconds: last.previousLog.restSeconds,
+      isFailure: last.previousLog.isFailure,
+        isDropset: last.previousLog.isDropset,
+        isRestPause: last.previousLog.isRestPause,
+        isWarmup: last.previousLog.isWarmup,
+        isMyoReps: last.previousLog.isMyoReps,
+        isAmrap: last.previousLog.isAmrap,
+        skipToleranceCheck: true,
+      );
+
+    _lastCompletedSet = null;
+    return true;
   }
 
   /// Obtiene el último peso conocido para un ejercicio (del historial)
@@ -449,6 +580,133 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     );
   }
 
+  /// Aplica el historial de la última sesión a la sesión actual.
+  ///
+  /// - Si [overwriteExisting] es false, solo rellena sets vacíos.
+  /// - Si [overwriteExisting] es true, reemplaza valores existentes.
+  ///
+  /// Devuelve cuántas series fueron aplicadas y en cuántos ejercicios.
+  ({int setsApplied, int exercisesUpdated}) applyHistoryToCurrentSession({
+    bool overwriteExisting = false,
+  }) {
+    if (state.exercises.isEmpty || state.history.isEmpty) {
+      return (setsApplied: 0, exercisesUpdated: 0);
+    }
+
+    final exercises = [...state.exercises];
+    var setsApplied = 0;
+    var exercisesUpdated = 0;
+
+    for (var exerciseIndex = 0;
+        exerciseIndex < exercises.length;
+        exerciseIndex++) {
+      final exercise = exercises[exerciseIndex];
+      final historyLogs =
+          state.history[exercise.historyKey] ??
+          state.history[exercise.nombre] ??
+          const <SerieLog>[];
+
+      if (historyLogs.isEmpty) continue;
+
+      final logs = [...exercise.logs];
+      var changed = false;
+      final limit = historyLogs.length < logs.length
+          ? historyLogs.length
+          : logs.length;
+
+      for (var setIndex = 0; setIndex < limit; setIndex++) {
+        final current = logs[setIndex];
+        final history = historyLogs[setIndex];
+
+        // No sobrescribir si ya hay datos (modo relleno)
+        if (!overwriteExisting &&
+            (current.peso > 0 || current.reps > 0 || current.completed)) {
+          continue;
+        }
+
+        // Evitar copiar sets vacíos
+        if (history.peso <= 0 && history.reps <= 0) continue;
+
+        logs[setIndex] = current.copyWith(
+          peso: history.peso,
+          reps: history.reps,
+          rpe: history.rpe,
+          completed: false,
+        );
+        changed = true;
+        setsApplied++;
+      }
+
+      if (changed) {
+        exercises[exerciseIndex] = exercise.copyWith(logs: logs);
+        exercisesUpdated++;
+      }
+    }
+
+    if (setsApplied > 0) {
+      state = state.copyWith(exercises: exercises);
+      _saveState();
+    }
+
+    return (setsApplied: setsApplied, exercisesUpdated: exercisesUpdated);
+  }
+
+  /// Aplica el historial a un ejercicio especÃ­fico de la sesiÃ³n.
+  ///
+  /// - Si [overwriteExisting] es false, solo rellena sets vacÃ­os.
+  /// - Si [overwriteExisting] es true, reemplaza valores existentes.
+  ///
+  /// Devuelve cuÃ¡ntas series fueron aplicadas.
+  int applyHistoryToExercise(
+    int exerciseIndex, {
+    bool overwriteExisting = false,
+  }) {
+    if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) {
+      return 0;
+    }
+
+    final exercise = state.exercises[exerciseIndex];
+    final historyLogs =
+        state.history[exercise.historyKey] ??
+        state.history[exercise.nombre] ??
+        const <SerieLog>[];
+    if (historyLogs.isEmpty) return 0;
+
+    final logs = [...exercise.logs];
+    var setsApplied = 0;
+    final limit =
+        historyLogs.length < logs.length ? historyLogs.length : logs.length;
+
+    for (var setIndex = 0; setIndex < limit; setIndex++) {
+      final current = logs[setIndex];
+      final history = historyLogs[setIndex];
+
+      if (!overwriteExisting &&
+          (current.peso > 0 || current.reps > 0 || current.completed)) {
+        continue;
+      }
+
+      if (history.peso <= 0 && history.reps <= 0) continue;
+
+      logs[setIndex] = current.copyWith(
+        peso: history.peso,
+        reps: history.reps,
+        rpe: history.rpe,
+        completed: false,
+      );
+      setsApplied++;
+    }
+
+    if (setsApplied > 0) {
+      final exercises = [...state.exercises];
+      exercises[exerciseIndex] = exercise.copyWith(logs: logs);
+      state = state.copyWith(exercises: exercises);
+      _saveState();
+    }
+
+    return setsApplied;
+  }
+
   /// Añade una serie adicional a un ejercicio durante la sesión
   void addSetToExercise(int exerciseIndex) {
     if (exerciseIndex >= state.exercises.length) return;
@@ -458,16 +716,22 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
 
     // Crear una nueva serie vacía (o copiando peso/reps de la última si existe)
     SerieLog newLog;
-    if (exercise.logs.isNotEmpty) {
-      final lastLog = exercise.logs.last;
-      newLog = SerieLog(
-        peso: lastLog.peso,
-        reps: lastLog.reps,
-        completed: false,
-      );
-    } else {
-      newLog = SerieLog(peso: 0.0, reps: 0, completed: false);
-    }
+      if (exercise.logs.isNotEmpty) {
+        final lastLog = exercise.logs.last;
+        newLog = SerieLog(
+          peso: lastLog.peso,
+          reps: lastLog.reps,
+          completed: false,
+          isFailure: lastLog.isFailure,
+          isDropset: lastLog.isDropset,
+          isRestPause: lastLog.isRestPause,
+          isWarmup: lastLog.isWarmup,
+          isMyoReps: lastLog.isMyoReps,
+          isAmrap: lastLog.isAmrap,
+        );
+      } else {
+        newLog = SerieLog(peso: 0.0, reps: 0, completed: false);
+      }
 
     final newLogs = [...exercise.logs, newLog];
     final newExercise = exercise.copyWith(
@@ -480,6 +744,68 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     // Esto permite que la sesión sea flexible sin afectar futuros entrenamientos
 
     state = state.copyWith(exercises: exercises);
+    _saveState();
+  }
+
+  /// Duplica una serie dentro del ejercicio en la sesion activa.
+  void duplicateSet(int exerciseIndex, int setIndex) {
+    if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) return;
+
+    final exercises = [...state.exercises];
+    final exercise = exercises[exerciseIndex];
+    if (setIndex < 0 || setIndex >= exercise.logs.length) return;
+
+    final original = exercise.logs[setIndex];
+      final newLog = SerieLog(
+        peso: original.peso,
+        reps: original.reps,
+        completed: false,
+        rpe: original.rpe,
+        notas: original.notas,
+        restSeconds: original.restSeconds,
+        isFailure: original.isFailure,
+        isDropset: original.isDropset,
+        isRestPause: original.isRestPause,
+        isWarmup: original.isWarmup,
+        isMyoReps: original.isMyoReps,
+        isAmrap: original.isAmrap,
+      );
+
+    final newLogs = [...exercise.logs]..insert(setIndex + 1, newLog);
+    final newExercise = exercise.copyWith(
+      logs: newLogs,
+      series: newLogs.length,
+    );
+    exercises[exerciseIndex] = newExercise;
+
+    state = state.copyWith(exercises: exercises);
+    _saveState();
+  }
+
+  /// Reordena ejercicios dentro de la sesion activa.
+  void reorderExercises(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= state.exercises.length) return;
+    if (newIndex < 0) return;
+
+    final exercises = [...state.exercises];
+    final targets = [...state.targets];
+
+    if (newIndex > exercises.length) {
+      newIndex = exercises.length;
+    }
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+
+    final movedExercise = exercises.removeAt(oldIndex);
+    exercises.insert(newIndex, movedExercise);
+
+    if (targets.length == state.exercises.length) {
+      final movedTarget = targets.removeAt(oldIndex);
+      targets.insert(newIndex, movedTarget);
+    }
+
+    state = state.copyWith(exercises: exercises, targets: targets);
     _saveState();
   }
 
@@ -496,13 +822,24 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     final exercises = [...state.exercises];
     final exercise = exercises[exerciseIndex];
 
-    // Crear nueva serie con valores especificados
-    final newLog = SerieLog(
-      peso: weight,
-      reps: reps,
-      completed: false,
-      isWarmup: isWarmup,
-    );
+      final referenceLog = exercise.logs.isNotEmpty
+          ? exercise.logs[
+              (setIndex - 1).clamp(0, exercise.logs.length - 1).toInt()
+            ]
+          : null;
+
+      // Crear nueva serie con valores especificados
+      final newLog = SerieLog(
+        peso: weight,
+        reps: reps,
+        completed: false,
+        isWarmup: isWarmup,
+        isFailure: !isWarmup && (referenceLog?.isFailure ?? false),
+        isDropset: !isWarmup && (referenceLog?.isDropset ?? false),
+        isRestPause: !isWarmup && (referenceLog?.isRestPause ?? false),
+        isMyoReps: !isWarmup && (referenceLog?.isMyoReps ?? false),
+        isAmrap: !isWarmup && (referenceLog?.isAmrap ?? false),
+      );
 
     // Insertar en la posición específica
     final newLogs = [...exercise.logs];
@@ -552,6 +889,21 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
     _saveState();
   }
 
+  /// Marca o desmarca todas las series de un ejercicio en la sesión activa.
+  void setExerciseCompletion(int exerciseIndex, {required bool completed}) {
+    if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) return;
+
+    final exercises = [...state.exercises];
+    final exercise = exercises[exerciseIndex];
+    final newLogs = exercise.logs
+        .map((log) => log.copyWith(completed: completed))
+        .toList();
+
+    exercises[exerciseIndex] = exercise.copyWith(logs: newLogs);
+    state = state.copyWith(exercises: exercises);
+    _saveState();
+  }
+
   /// Añade un ejercicio a la sesión activa desde la biblioteca
   void addExerciseToSession(
     LibraryExercise libExercise, {
@@ -566,11 +918,11 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
       musculosSecundarios: libExercise.secondaryMuscles,
       series: series,
       reps: reps,
-      logs: List.generate(
-        series,
-        (_) => SerieLog(peso: 0.0, reps: 0, completed: false),
-      ),
-    );
+        logs: List.generate(
+          series,
+          (_) => _buildDefaultLog(TrainingSetType.normal),
+        ),
+      );
 
     final exercises = [...state.exercises, newExercise];
     final targets = [...state.targets, newExercise.copyWith()];
@@ -613,18 +965,25 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
           index < originalLogs.length) {
         // Copiar datos de la serie completada como "sugerencia" (no completada)
         final originalLog = originalLogs[index];
-        return SerieLog(
-          peso: originalLog.peso,
-          reps: originalLog.reps,
-          completed: false, // Resetear estado de completado
-          rpe: originalLog.rpe,
-          notas: index == 0
-              ? 'Sustituido desde: ${originalExercise.nombre}'
-              : null,
-        );
-      }
-      return SerieLog(peso: 0.0, reps: 0, completed: false);
-    });
+          return SerieLog(
+            peso: originalLog.peso,
+            reps: originalLog.reps,
+            completed: false, // Resetear estado de completado
+            rpe: originalLog.rpe,
+            notas: index == 0
+                ? 'Sustituido desde: ${originalExercise.nombre}'
+                : null,
+            restSeconds: originalLog.restSeconds,
+            isFailure: originalLog.isFailure,
+            isDropset: originalLog.isDropset,
+            isRestPause: originalLog.isRestPause,
+            isWarmup: originalLog.isWarmup,
+            isMyoReps: originalLog.isMyoReps,
+            isAmrap: originalLog.isAmrap,
+          );
+        }
+        return _buildDefaultLog(TrainingSetType.normal);
+      });
 
     // Crear el nuevo ejercicio con los logs preparados
     final swappedExercise = Ejercicio(
@@ -765,7 +1124,10 @@ class TrainingSessionNotifier extends Notifier<TrainingState> {
       restSeconds: restSeconds,
       isFailure: log.isFailure,
       isDropset: log.isDropset,
+      isRestPause: log.isRestPause,
       isWarmup: log.isWarmup,
+      isMyoReps: log.isMyoReps,
+      isAmrap: log.isAmrap,
     );
 
     exercises[exerciseIndex] = exercise.copyWith(logs: logs);

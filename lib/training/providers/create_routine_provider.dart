@@ -770,6 +770,7 @@ class CreateRoutineNotifier extends Notifier<Rutina> {
         descansoSugerido: oldExercise.descansoSugerido,
         notas: oldExercise.notas,
         supersetId: oldExercise.supersetId, // Keep superset membership
+        setType: oldExercise.setType,
       );
     } else {
       // Fallback: Just update the name if not found in library

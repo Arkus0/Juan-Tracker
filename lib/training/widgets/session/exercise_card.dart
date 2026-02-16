@@ -11,15 +11,14 @@ import '../../models/progression_engine_models.dart';
 import '../../models/serie_log.dart';
 import '../../../core/providers/information_density_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../providers/exercise_history_provider.dart';
+import '../../providers/analysis_provider.dart';
 import '../../providers/focus_manager_provider.dart';
 import '../../providers/progression_provider.dart';
 import '../../providers/training_provider.dart';
-import '../../screens/training_session_screen.dart';
+import '../../providers/timer_focus_provider.dart';
 import '../../services/alternativas_service.dart';
 import '../../services/exercise_library_service.dart';
-import '../../../core/design_system/design_system.dart' show AppTypography;
-import '../../utils/design_system.dart' show AppColors;
+import '../../../core/design_system/design_system.dart';
 import '../../widgets/common/alternativas_dialog.dart';
 import 'advanced_options_modal.dart';
 import 'exercise_swap_bottom_sheet.dart'; // 🆕 Quick Swap
@@ -28,9 +27,13 @@ import 'progression_suggestion_chip.dart'; // Nuevo chip de sugerencias de progr
 import 'quick_actions_menu.dart'; // QuickActionsMenu for the FAB-style actions
 import 'session_modifiers.dart'; // AddSetButton
 import 'session_set_row.dart';
+import 'series_indicator.dart';
+import 'exercise_history_sheet.dart';
 
 typedef IndexedCompletionChanged =
     void Function(int setIndex, {required bool? value});
+
+enum _ExerciseHistoryFillAction { fillEmpty, overwriteAll }
 
 class ExerciseCardContainer extends ConsumerStatefulWidget {
   final int exerciseIndex;
@@ -69,6 +72,121 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       final currentCollapsed = _isCollapsed(allCompleted);
       _manualCollapsedState = !currentCollapsed;
     });
+  }
+
+  SerieLog? _getLog(int setIndex) {
+    final exercises = ref.read(trainingSessionProvider).exercises;
+    if (widget.exerciseIndex < 0 || widget.exerciseIndex >= exercises.length) {
+      return null;
+    }
+    final logs = exercises[widget.exerciseIndex].logs;
+    if (setIndex < 0 || setIndex >= logs.length) return null;
+    return logs[setIndex];
+  }
+
+  void _toggleWarmup(int setIndex) {
+    final log = _getLog(setIndex);
+    if (log == null) return;
+    ref
+        .read(trainingSessionProvider.notifier)
+        .updateLog(widget.exerciseIndex, setIndex, isWarmup: !log.isWarmup);
+  }
+
+  void _toggleFailure(int setIndex) {
+    final log = _getLog(setIndex);
+    if (log == null) return;
+    ref
+        .read(trainingSessionProvider.notifier)
+        .updateLog(widget.exerciseIndex, setIndex, isFailure: !log.isFailure);
+  }
+
+  void _toggleDropset(int setIndex) {
+    final log = _getLog(setIndex);
+    if (log == null) return;
+    ref
+        .read(trainingSessionProvider.notifier)
+        .updateLog(widget.exerciseIndex, setIndex, isDropset: !log.isDropset);
+  }
+
+  void _toggleRestPause(int setIndex) {
+    final log = _getLog(setIndex);
+    if (log == null) return;
+    ref
+        .read(trainingSessionProvider.notifier)
+        .updateLog(widget.exerciseIndex, setIndex, isRestPause: !log.isRestPause);
+  }
+
+  void _toggleMyoReps(int setIndex) {
+    final log = _getLog(setIndex);
+    if (log == null) return;
+    ref
+        .read(trainingSessionProvider.notifier)
+        .updateLog(widget.exerciseIndex, setIndex, isMyoReps: !log.isMyoReps);
+  }
+
+  void _toggleAmrap(int setIndex) {
+    final log = _getLog(setIndex);
+    if (log == null) return;
+    ref
+        .read(trainingSessionProvider.notifier)
+        .updateLog(widget.exerciseIndex, setIndex, isAmrap: !log.isAmrap);
+  }
+
+  void _maybeAutoWarmup(int setIndex, double? weight) {
+    if (setIndex != 0) return;
+    if (weight == null || weight <= 0) return;
+
+    final settings = ref.read(settingsProvider);
+    if (!settings.autoWarmupEnabled) return;
+    if (weight <= settings.barWeight) return;
+
+    final exercises = ref.read(trainingSessionProvider).exercises;
+    if (widget.exerciseIndex < 0 || widget.exerciseIndex >= exercises.length) {
+      return;
+    }
+    final exercise = exercises[widget.exerciseIndex];
+    final primaryMuscle = exercise.musculosPrincipales.isNotEmpty
+        ? exercise.musculosPrincipales.first
+        : '';
+    final isCompound = exercise.musculosPrincipales.length > 1 ||
+        exercise.musculosSecundarios.isNotEmpty;
+    if (primaryMuscle.isNotEmpty &&
+        !WarmupGeneratorService().shouldHaveWarmup(
+          primaryMuscle,
+          isCompound: isCompound,
+        )) {
+      return;
+    }
+    final hasWarmup = exercise.logs.any((log) => log.isWarmup);
+    if (hasWarmup) return;
+
+    final warmupSets = WarmupGeneratorService().generateWarmupSets(
+      targetWeight: weight,
+      barWeight: settings.barWeight,
+    );
+    if (warmupSets.isEmpty) return;
+
+    final notifier = ref.read(trainingSessionProvider.notifier);
+    for (var i = 0; i < warmupSets.length; i++) {
+      notifier.insertSetAt(
+        exerciseIndex: widget.exerciseIndex,
+        setIndex: i,
+        weight: warmupSets[i].weight,
+        reps: warmupSets[i].reps,
+        isWarmup: true,
+      );
+    }
+
+    if (!mounted) return;
+    AppSnackbar.showWithUndo(
+      context,
+      message: 'Calentamiento automatico: +${warmupSets.length} sets',
+      onUndo: () {
+        for (var i = 0; i < warmupSets.length; i++) {
+          notifier.removeSetFromExercise(widget.exerciseIndex, 0);
+        }
+      },
+    );
   }
 
   void _showNotesDialog(BuildContext context, String exerciseName) async {
@@ -263,6 +381,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   void _showExerciseOptions(BuildContext context, Ejercicio exercise) {
     // Convert string ID to int safely
     final libId = int.tryParse(exercise.libraryId);
+    final allCompleted =
+        exercise.logs.isNotEmpty && exercise.logs.every((log) => log.completed);
 
     final hasAlternativas =
         libId != null && AlternativasService.instance.hasAlternativas(libId);
@@ -300,6 +420,45 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   onTap: () {
                     Navigator.pop(sheetContext);
                     _showHistoryDialog(context, exercise.nombre, historyLogs);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(
+                    allCompleted ? Icons.undo_rounded : Icons.check_circle,
+                    color: allCompleted
+                        ? AppColors.textSecondary
+                        : AppColors.completedGreen,
+                  ),
+                  title: Text(
+                    allCompleted
+                        ? 'Reabrir ejercicio'
+                        : 'Marcar ejercicio como completado',
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
+                  subtitle: Text(
+                    allCompleted
+                        ? 'Vuelve a editar sus series'
+                        : 'Marca todas las series como hechas',
+                    style: const TextStyle(
+                      color: AppColors.textTertiary,
+                      fontSize: 12,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    ref
+                        .read(trainingSessionProvider.notifier)
+                        .setExerciseCompletion(
+                          widget.exerciseIndex,
+                          completed: !allCompleted,
+                        );
+                    AppSnackbar.show(
+                      context,
+                      message: allCompleted
+                          ? 'Ejercicio reabierto'
+                          : 'Ejercicio completado',
+                      duration: AppSnackbar.shortDuration,
+                    );
                   },
                 ),
                 // 🆕 QUICK SWAP: Sustituir ejercicio en sesión activa
@@ -559,9 +718,6 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     final showAdvanced = ref.watch(
       trainingSessionProvider.select((s) => s.showAdvancedOptions),
     );
-    final isRestActive = ref.watch(
-      trainingSessionProvider.select((s) => s.restTimer.isActive),
-    );
 
     // Settings
     final showSupersetIndicator = ref.watch(
@@ -616,11 +772,11 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       isCollapsed: isCollapsed,
       onToggleCollapse: _toggleCollapse,
       onShowOptions: () => _showExerciseOptions(context, exercise),
-      onUpdateWeight: (setIndex, val) => notifier.updateLog(
-        widget.exerciseIndex,
-        setIndex,
-        peso: double.tryParse(val),
-      ),
+      onUpdateWeight: (setIndex, val) {
+        final parsed = double.tryParse(val);
+        notifier.updateLog(widget.exerciseIndex, setIndex, peso: parsed);
+        _maybeAutoWarmup(setIndex, parsed);
+      },
       onUpdateReps: (setIndex, val) => notifier.updateLog(
         widget.exerciseIndex,
         setIndex,
@@ -637,30 +793,40 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
               ? historyLogs[setIndex]
               : null;
           _triggerCompletionFeedback(log, prevLog);
-          // 🎯 P1: Timer SIEMPRE auto-inicia al completar serie
-          if (!isRestActive) {
-            notifier.startRestForExercise(
-              widget.exerciseIndex,
-              setIndex: setIndex,
-            );
-          }
         }
       },
-      onPlateCalc: (setIndex, val) =>
-          notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
+      onPlateCalc: (setIndex, val) {
+        notifier.updateLog(widget.exerciseIndex, setIndex, peso: val);
+        _maybeAutoWarmup(setIndex, val);
+      },
       onSetLongPress: (setIndex) => _showAdvancedOptions(context, setIndex),
       onRestTimeChange: (seconds) => _updateExerciseRestTime(seconds),
-      onUpdateWeightDirect: (setIndex, val) =>
-          notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
+      onUpdateWeightDirect: (setIndex, val) {
+        notifier.updateLog(widget.exerciseIndex, setIndex, peso: val);
+        _maybeAutoWarmup(setIndex, val);
+      },
       onUpdateRepsDirect: (setIndex, val) =>
           notifier.updateLog(widget.exerciseIndex, setIndex, reps: val),
       // 🆕 Quick Actions
       onRepeat: () => _repeatCurrentSet(exercise, historyLogs),
       onHistory: () => _showExpandedHistorySheet(context, exercise),
       onQuickNote: (note) => _addQuickNote(exercise.nombre, note),
+      onFillFromHistory:
+          (historyLogs == null || historyLogs.isEmpty)
+              ? null
+              : () => _fillFromHistory(exercise, historyLogs),
+      onDuplicateSet: () => _duplicateCurrentSet(exercise),
+      onDuplicateSetAt: (setIndex) => _duplicateSetAt(exercise, setIndex),
+      dragHandle: _buildDragHandle(),
       // 🆕 ELIMINAR SERIE: Solo afecta sesión activa, no la rutina
       onDeleteSet: (setIndex) => _deleteSet(setIndex),
       onShowWarmup: () => _generateWarmupSets(context, exercise),
+      onToggleWarmup: (setIndex) => _toggleWarmup(setIndex),
+      onToggleFailure: (setIndex) => _toggleFailure(setIndex),
+      onToggleDropset: (setIndex) => _toggleDropset(setIndex),
+      onToggleRestPause: (setIndex) => _toggleRestPause(setIndex),
+      onToggleMyoReps: (setIndex) => _toggleMyoReps(setIndex),
+      onToggleAmrap: (setIndex) => _toggleAmrap(setIndex),
     );
   }
 
@@ -707,24 +873,135 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     }
   }
 
-  void _showExpandedHistorySheet(BuildContext context, Ejercicio exercise) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgElevated,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            // Performance: ProviderScope aísla el consumer del historial
-            child: _HistorySheetContent(exerciseName: exercise.nombre),
-          ),
+  /// 🆕 QUICK ACTION: Rellenar ejercicio con la última sesión
+  Future<void> _fillFromHistory(Ejercicio exercise, List<SerieLog>? historyLogs) async {
+    if (historyLogs == null || historyLogs.isEmpty) {
+      if (mounted) {
+        AppSnackbar.showWarning(
+          context,
+          message: 'No hay historial para este ejercicio',
         );
-      },
+      }
+      return;
+    }
+
+    final hasInput = exercise.logs.any(
+      (log) => log.peso > 0 || log.reps > 0 || log.completed,
     );
+
+    var overwriteExisting = true;
+    if (hasInput) {
+      final action = await _showFillFromHistoryDialog();
+      if (!mounted) return;
+      if (action == null) return;
+      overwriteExisting = action == _ExerciseHistoryFillAction.overwriteAll;
+    }
+
+    final notifier = ref.read(trainingSessionProvider.notifier);
+    final setsApplied = notifier.applyHistoryToExercise(
+      widget.exerciseIndex,
+      overwriteExisting: overwriteExisting,
+    );
+
+    if (!mounted) return;
+
+    if (setsApplied == 0) {
+      AppSnackbar.showWarning(
+        context,
+        message: 'No se aplicaron series',
+      );
+      return;
+    }
+
+    AppSnackbar.show(
+      context,
+      message: 'Rellenado: $setsApplied series',
+      duration: AppSnackbar.shortDuration,
+    );
+  }
+
+  Future<_ExerciseHistoryFillAction?> _showFillFromHistoryDialog() {
+    final colors = Theme.of(context).colorScheme;
+
+    return showDialog<_ExerciseHistoryFillAction>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Rellenar ejercicio',
+          style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Ya hay datos en este ejercicio. ¿Cómo quieres aplicar el historial?',
+          style: AppTypography.bodyMedium.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('CANCELAR'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(ctx).pop(_ExerciseHistoryFillAction.fillEmpty),
+            child: const Text('RELLENAR HUECOS'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(ctx).pop(_ExerciseHistoryFillAction.overwriteAll),
+            child: const Text('REEMPLAZAR TODO'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🆕 QUICK ACTION: Duplicar la serie actual
+  void _duplicateCurrentSet(Ejercicio exercise) {
+    final currentSetIndex = exercise.logs.indexWhere((log) => !log.completed);
+    final targetIndex = currentSetIndex == -1
+        ? (exercise.logs.isEmpty ? 0 : exercise.logs.length - 1)
+        : currentSetIndex;
+
+    _duplicateSetAt(exercise, targetIndex);
+  }
+
+  void _duplicateSetAt(Ejercicio exercise, int setIndex) {
+    final notifier = ref.read(trainingSessionProvider.notifier);
+    notifier.duplicateSet(widget.exerciseIndex, setIndex);
+
+    if (mounted) {
+      AppSnackbar.showWithUndo(
+        context,
+        message: 'Serie duplicada',
+        onUndo: () {
+          notifier.removeSetFromExercise(widget.exerciseIndex, setIndex + 1);
+        },
+      );
+    }
+  }
+
+  Widget _buildDragHandle() {
+    return ReorderableDragStartListener(
+      index: widget.exerciseIndex,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: AppColors.bgInteractive,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: const Icon(
+          Icons.drag_handle,
+          size: 18,
+          color: AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  void _showExpandedHistorySheet(BuildContext context, Ejercicio exercise) {
+    showExpandedHistorySheet(context, exercise);
   }
 
   /// 🆕 QUICK ACTION: Añadir nota rápida al ejercicio
@@ -865,10 +1142,21 @@ class ExerciseCard extends ConsumerWidget {
   final VoidCallback? onRepeat; // Copiar peso/reps de serie anterior
   final VoidCallback? onHistory; // Ver historial de 3 últimas sesiones
   final Function(String)? onQuickNote; // Añadir nota rápida
+  final VoidCallback? onFillFromHistory; // Rellenar con última sesión
+  final VoidCallback? onDuplicateSet; // Duplicar serie actual
+  final Function(int)? onDuplicateSetAt; // Duplicar serie específica
+  final Widget? dragHandle; // Drag handle para reordenar
   // 🆕 Callback para eliminar serie (solo sesión activa)
   final Function(int)? onDeleteSet;
   // 🆕 Callback para mostrar warm-up (doble-tap en header)
   final VoidCallback? onShowWarmup;
+  // 🆕 Quick toggles de tipo de set
+  final Function(int)? onToggleWarmup;
+  final Function(int)? onToggleFailure;
+  final Function(int)? onToggleDropset;
+  final Function(int)? onToggleRestPause;
+  final Function(int)? onToggleMyoReps;
+  final Function(int)? onToggleAmrap;
 
   const ExerciseCard({
     super.key,
@@ -895,8 +1183,18 @@ class ExerciseCard extends ConsumerWidget {
     this.onRepeat,
     this.onHistory,
     this.onQuickNote,
+    this.onFillFromHistory,
+    this.onDuplicateSet,
+    this.onDuplicateSetAt,
+    this.dragHandle,
     this.onDeleteSet,
     this.onShowWarmup,
+    this.onToggleWarmup,
+    this.onToggleFailure,
+    this.onToggleDropset,
+    this.onToggleRestPause,
+    this.onToggleMyoReps,
+    this.onToggleAmrap,
   });
 
   @override
@@ -912,6 +1210,21 @@ class ExerciseCard extends ConsumerWidget {
     final allSetsCompleted = exercise.logs.every((log) => log.completed);
     final completedSets = exercise.logs.where((log) => log.completed).length;
     final totalSets = exercise.logs.length;
+    final historySummary = _formatHistorySummary(historyLogs);
+    final prAsync = ref.watch(
+      personalRecordForExerciseProvider(exercise.nombre),
+    );
+    final prRecord = prAsync.asData?.value;
+
+    bool isPrLog(SerieLog log) {
+      if (prRecord == null) return false;
+      if (!log.completed || log.isWarmup) return false;
+      if (log.peso > prRecord.maxWeight) return true;
+      if (log.peso == prRecord.maxWeight && log.reps > prRecord.repsAtMax) {
+        return true;
+      }
+      return false;
+    }
 
     // 🎯 NUEVO: Índice de la serie actual (primera incompleta)
     final currentSetIndex = exercise.logs.indexWhere((log) => !log.completed);
@@ -1012,13 +1325,27 @@ class ExerciseCard extends ConsumerWidget {
 
                   // Fila 2: Indicador de serie + botón acciones (solo si expandido)
                   if (!isCollapsed) ...[
+                    if (historySummary != null) ...[
+                      const SizedBox(height: 6),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 32),
+                        child: Text(
+                          historySummary,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppColors.textTertiary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 10),
                     Row(
                       children: [
                         const SizedBox(width: 32), // Alineado con el nombre
                         // Indicador de serie prominente
                         if (!allSetsCompleted)
-                          _SeriesIndicator(
+                          SeriesIndicator(
                             currentSet: currentSetNumber,
                             totalSets: totalSets,
                             completedSets: completedSets,
@@ -1026,6 +1353,10 @@ class ExerciseCard extends ConsumerWidget {
                             isLastSet: isLastSet,
                           ),
                         const Spacer(),
+                        if (dragHandle != null) ...[
+                          dragHandle!,
+                          const SizedBox(width: 8),
+                        ],
                         // Botón acciones rápidas - touch target grande
                         Material(
                           color: AppColors.bgInteractive,
@@ -1066,6 +1397,14 @@ class ExerciseCard extends ConsumerWidget {
                                         onHistory: () {
                                           Navigator.pop(sheetContext);
                                           onHistory?.call();
+                                        },
+                                        onFillFromHistory: () {
+                                          Navigator.pop(sheetContext);
+                                          onFillFromHistory?.call();
+                                        },
+                                        onDuplicateSet: () {
+                                          Navigator.pop(sheetContext);
+                                          onDuplicateSet?.call();
                                         },
                                         onRestTimeSelected: (s) {
                                           Navigator.pop(sheetContext);
@@ -1123,7 +1462,7 @@ class ExerciseCard extends ConsumerWidget {
                     Row(
                       children: [
                         const SizedBox(width: 32),
-                        _SeriesIndicator(
+                        SeriesIndicator(
                           currentSet: currentSetNumber,
                           totalSets: totalSets,
                           completedSets: completedSets,
@@ -1139,7 +1478,12 @@ class ExerciseCard extends ConsumerWidget {
               // 🆕 Contenido colapsable con animación
               AnimatedCrossFade(
                 firstChild: const SizedBox.shrink(),
-                secondChild: _buildExpandedContent(context, restSeconds, autofocusEnabled),
+                secondChild: _buildExpandedContent(
+                  context,
+                  restSeconds,
+                  autofocusEnabled,
+                  isPrLog,
+                ),
                 crossFadeState: isCollapsed
                     ? CrossFadeState.showFirst
                     : CrossFadeState.showSecond,
@@ -1153,8 +1497,29 @@ class ExerciseCard extends ConsumerWidget {
     );
   }
 
+  String? _formatHistorySummary(List<SerieLog>? logs) {
+    if (logs == null || logs.isEmpty) return null;
+
+    String formatWeight(double value) {
+      if (value % 1 == 0) return value.toStringAsFixed(0);
+      return value.toStringAsFixed(1);
+    }
+
+    final preview = logs.take(3).map((log) {
+      return '${formatWeight(log.peso)}×${log.reps}';
+    }).join(' · ');
+    final suffix = logs.length > 3 ? ' +${logs.length - 3}' : '';
+
+    return 'Última: $preview$suffix';
+  }
+
   /// Contenido expandido del ejercicio (series, etc.)
-  Widget _buildExpandedContent(BuildContext context, int restSeconds, bool autofocusEnabled) {
+  Widget _buildExpandedContent(
+    BuildContext context,
+    int restSeconds,
+    bool autofocusEnabled,
+    bool Function(SerieLog) isPrLog,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1270,6 +1635,7 @@ class ExerciseCard extends ConsumerWidget {
               (historyLogs != null && setIndex < historyLogs!.length)
               ? historyLogs![setIndex]
               : null;
+          final prBadge = isPrLog(log);
 
           // Determinar si esta serie es la activa (primera incompleta)
           final isFirstIncomplete = exercise.logs
@@ -1292,11 +1658,19 @@ class ExerciseCard extends ConsumerWidget {
                   onUpdateWeightDirect?.call(setIndex, val),
               onRepsChanged: (val) => onUpdateRepsDirect?.call(setIndex, val),
               onCompleted: (value) => onUpdateCompleted(setIndex, value: value),
+              showAdvanced: showAdvanced,
               onLongPress: () => onSetLongPress(setIndex),
               // 🎯 FIX #2: Siempre permite eliminar - si el ejercicio se queda sin series,
               // se elimina de la sesión (pero NO de la rutina base)
               canDelete: true,
               onDelete: () => onDeleteSet?.call(setIndex),
+              onToggleWarmup: () => onToggleWarmup?.call(setIndex),
+              onToggleFailure: () => onToggleFailure?.call(setIndex),
+              onToggleDropset: () => onToggleDropset?.call(setIndex),
+              onToggleRestPause: () => onToggleRestPause?.call(setIndex),
+              onToggleMyoReps: () => onToggleMyoReps?.call(setIndex),
+              onToggleAmrap: () => onToggleAmrap?.call(setIndex),
+              showPrBadge: prBadge,
             );
           }
 
@@ -1316,271 +1690,20 @@ class ExerciseCard extends ConsumerWidget {
             shouldFocus: autofocusEnabled && focusSetIndex == setIndex,
             canDelete: true,
             onDelete: () => onDeleteSet?.call(setIndex),
+            onDuplicate: () => onDuplicateSetAt?.call(setIndex),
+            onToggleWarmup: () => onToggleWarmup?.call(setIndex),
+            onToggleFailure: () => onToggleFailure?.call(setIndex),
+            onToggleDropset: () => onToggleDropset?.call(setIndex),
+            onToggleRestPause: () => onToggleRestPause?.call(setIndex),
+            onToggleMyoReps: () => onToggleMyoReps?.call(setIndex),
+            onToggleAmrap: () => onToggleAmrap?.call(setIndex),
+            showPrBadge: prBadge,
           );
         }),
 
         // 🆕 Botón para añadir series adicionales
         AddSetButton(exerciseIndex: exerciseIndex),
       ],
-    );
-  }
-}
-
-/// 🎯 NUEVO: Indicador de series prominente y visible
-/// Responde a: "¿Cuántas llevo? ¿Cuántas quedan?"
-/// - Cuando expandido: Muestra "Serie X / Y" con barra de progreso visual
-/// - Cuando colapsado: Muestra "X/Y" compacto
-/// - Última serie: Destaca con color especial y mensaje "¡ÚLTIMA!"
-class _SeriesIndicator extends StatelessWidget {
-  final int currentSet;
-  final int totalSets;
-  final int completedSets;
-  final bool isCollapsed;
-  final bool isLastSet;
-
-  const _SeriesIndicator({
-    required this.currentSet,
-    required this.totalSets,
-    required this.completedSets,
-    required this.isCollapsed,
-    required this.isLastSet,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Calcular progreso
-    final progress = totalSets > 0 ? completedSets / totalSets : 0.0;
-
-    // Colores según estado
-    final Color bgColor;
-    final Color textColor;
-    final Color progressColor;
-
-    if (isLastSet) {
-      // Última serie: color de urgencia/celebración
-      bgColor = AppColors.fireRed.withValues(alpha: 0.2);
-      textColor = AppColors.fireRed;
-      progressColor = AppColors.fireRed;
-    } else if (progress >= 0.5) {
-      // Más de la mitad: color de progreso
-      bgColor = AppColors.completedGreen.withValues(alpha: 0.15);
-      textColor = AppColors.completedGreen;
-      progressColor = AppColors.completedGreen;
-    } else {
-      // Menos de la mitad: color neutro/activo
-      bgColor = AppColors.bloodRed.withValues(alpha: 0.15);
-      textColor = AppColors.bloodRed;
-      progressColor = AppColors.bloodRed;
-    }
-
-    if (isCollapsed) {
-      // Versión compacta para estado colapsado
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: textColor.withValues(alpha: 0.5)),
-        ),
-        child: Text(
-          '$completedSets/$totalSets',
-          style: AppTypography.labelMedium.copyWith(
-            fontWeight: FontWeight.w700,
-            color: textColor,
-          ),
-        ),
-      );
-    }
-
-    // Versión expandida con más información
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: textColor.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Icono de serie/repetición
-          Icon(Icons.fitness_center, size: 12, color: textColor),
-          const SizedBox(width: 4),
-          // Texto principal
-          Text(
-            isLastSet ? '¡ÚLTIMA!' : 'Serie $currentSet',
-            style: AppTypography.labelMedium.copyWith(
-              fontWeight: FontWeight.w800,
-              color: textColor,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(width: 4),
-          // Separador
-          Text(
-            '/',
-            style: AppTypography.labelMedium.copyWith(
-              fontWeight: FontWeight.w500,
-              color: textColor.withAlpha((0.6 * 255).round()),
-            ),
-          ),
-          const SizedBox(width: 4),
-          // Total de series
-          Text(
-            '$totalSets',
-            style: AppTypography.labelMedium.copyWith(
-              fontWeight: FontWeight.w600,
-              color: textColor.withAlpha((0.8 * 255).round()),
-            ),
-          ),
-          const SizedBox(width: 6),
-          // Mini barra de progreso visual
-          SizedBox(
-            width: 24,
-            height: 4,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: textColor.withValues(alpha: 0.2),
-                valueColor: AlwaysStoppedAnimation(progressColor),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// PERFORMANCE OPTIMIZATION: Historial Cacheado
-// ============================================================================
-/// Widget que muestra el historial de un ejercicio usando provider cacheado.
-/// 
-/// Usa [exerciseHistoryProvider] que implementa TTL de 5 minutos,
-/// evitando N+1 queries cuando el usuario navega entre ejercicios.
-class _HistorySheetContent extends ConsumerWidget {
-  final String exerciseName;
-
-  const _HistorySheetContent({required this.exerciseName});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(exerciseHistoryProvider(exerciseName));
-
-    return historyAsync.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, _) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('HISTORIAL', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          Text(
-            'Error al cargar: $e',
-            style: const TextStyle(color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-      data: (sessions) {
-        if (sessions.isEmpty) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('HISTORIAL', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 12),
-              const Text(
-                'No hay datos previos.',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            ],
-          );
-        }
-
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              exerciseName.toUpperCase(),
-              style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'ÚLTIMAS 3 SESIONES',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.6,
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: sessions.length,
-                separatorBuilder: (_, _) =>
-                    const Divider(color: AppColors.border),
-                itemBuilder: (context, index) {
-                  final session = sessions[index];
-                  final sessionExercise = session.ejerciciosCompletados
-                      .firstWhere(
-                        (e) => e.nombre == exerciseName,
-                        orElse: () => Ejercicio(
-                          id: '',
-                          libraryId: 'unknown',
-                          nombre: exerciseName,
-                          series: 0,
-                          reps: 0,
-                          logs: const [],
-                        ),
-                      );
-
-                  final dateLabel =
-                      '${session.fecha.day.toString().padLeft(2, '0')}/'
-                      '${session.fecha.month.toString().padLeft(2, '0')}/'
-                      '${session.fecha.year}';
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          dateLabel,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        ...sessionExercise.logs.map((log) {
-                          final weight =
-                              log.peso.truncateToDouble() == log.peso
-                                  ? log.peso.toInt().toString()
-                                  : log.peso.toStringAsFixed(1);
-                          return Text(
-                            '• $weight kg × ${log.reps}',
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }

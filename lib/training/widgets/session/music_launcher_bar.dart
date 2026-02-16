@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../services/haptics_controller.dart';
 import '../../services/media_control_service.dart';
-import '../../utils/design_system.dart';
 
 /// 🎯 NEON IRON: Control de música ultra-compacto para AppBar
 ///
@@ -238,7 +238,7 @@ class _MusicControlSheet extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.bgElevated,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(

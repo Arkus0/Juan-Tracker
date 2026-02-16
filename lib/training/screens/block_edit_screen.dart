@@ -4,7 +4,6 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_tracker/core/design_system/app_theme.dart';
 import 'package:uuid/uuid.dart';
 import '../models/training_block.dart';
@@ -208,9 +207,8 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
         backgroundColor: AppColors.darkSurface,
         title: Text(
           _isEditing ? 'EDITAR BLOQUE' : 'NUEVO BLOQUE',
-          style: GoogleFonts.montserrat(
+          style: AppTypography.headlineSmall.copyWith(
             fontWeight: FontWeight.w900,
-            fontSize: 18,
           ),
         ),
         actions: [
@@ -218,9 +216,9 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
             onPressed: _save,
             child: Text(
               'GUARDAR',
-              style: GoogleFonts.montserrat(
+              style: AppTypography.titleMedium.copyWith(
                 color: AppColors.ironRed,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -234,13 +232,12 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _nameController,
-            style: GoogleFonts.montserrat(
+            style: AppTypography.bodyLarge.copyWith(
               color: AppColors.darkTextPrimary,
-              fontSize: 16,
             ),
             decoration: InputDecoration(
-              hintText: 'ej. Volumen Hipertrófia',
-              hintStyle: GoogleFonts.montserrat(
+              hintText: 'ej. Volumen Hipertrofía',
+              hintStyle: AppTypography.bodyLarge.copyWith(
                 color: AppColors.darkTextTertiary,
               ),
               filled: true,
@@ -289,9 +286,9 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
                 },
                 backgroundColor: AppColors.darkSurfaceVariant,
                 selectedColor: AppColors.ironRed,
-                labelStyle: GoogleFonts.montserrat(
+                labelStyle: AppTypography.bodyMedium.copyWith(
                   color: isSelected ? Colors.white : AppColors.darkTextPrimary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
@@ -348,8 +345,7 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
                 const SizedBox(width: 8),
                 Text(
                   '$_durationWeeks semanas',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
+                  style: AppTypography.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.ironRed,
                   ),
@@ -371,9 +367,7 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
             label: const Text('Añadir objetivo'),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.ironRed,
-              textStyle: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w600,
-              ),
+              textStyle: AppTypography.titleMedium,
             ),
           ),
 
@@ -384,13 +378,12 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _notesController,
-            style: GoogleFonts.montserrat(
+            style: AppTypography.bodyMedium.copyWith(
               color: AppColors.darkTextPrimary,
-              fontSize: 14,
             ),
             decoration: InputDecoration(
               hintText: 'Notas sobre el bloque, progresión planificada, etc...',
-              hintStyle: GoogleFonts.montserrat(
+              hintStyle: AppTypography.bodyMedium.copyWith(
                 color: AppColors.darkTextTertiary,
               ),
               filled: true,
@@ -439,8 +432,7 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
             ),
             child: Text(
               _isEditing ? 'GUARDAR CAMBIOS' : 'CREAR BLOQUE',
-              style: GoogleFonts.montserrat(
-                fontSize: 16,
+              style: AppTypography.titleLarge.copyWith(
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1,
               ),
@@ -468,13 +460,12 @@ class _BlockEditScreenState extends State<BlockEditScreen> {
             Expanded(
               child: TextField(
                 controller: controller,
-                style: GoogleFonts.montserrat(
+                style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.darkTextPrimary,
-                  fontSize: 14,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Objetivo ${index + 1}',
-                  hintStyle: GoogleFonts.montserrat(
+                  hintStyle: AppTypography.bodyMedium.copyWith(
                     color: AppColors.darkTextTertiary,
                   ),
                   filled: true,
@@ -514,7 +505,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: GoogleFonts.montserrat(
+      style: AppTypography.sectionLabel.copyWith(
         fontSize: 12,
         fontWeight: FontWeight.w700,
         color: AppColors.darkTextSecondary,
@@ -551,8 +542,7 @@ class _DatePickerField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.montserrat(
-            fontSize: 11,
+          style: AppTypography.caption.copyWith(
             color: AppColors.darkTextTertiary,
           ),
         ),
@@ -580,8 +570,7 @@ class _DatePickerField extends StatelessWidget {
                   Expanded(
                     child: Text(
                       _formattedDate,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
+                      style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.darkTextPrimary,
                       ),
                     ),

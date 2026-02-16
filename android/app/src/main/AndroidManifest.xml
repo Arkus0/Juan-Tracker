@@ -11,6 +11,11 @@
     <!-- Speech recognition / Voice input -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- Scheduled notification reminders (Android 12+) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:label="juan_tracker"
         android:name="${applicationName}"

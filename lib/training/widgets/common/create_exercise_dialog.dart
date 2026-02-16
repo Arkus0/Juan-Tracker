@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/library_exercise.dart';
 import '../../services/exercise_library_service.dart';
-import '../../utils/design_system.dart';
+import '../../services/exercise_image_storage_service.dart';
+import '../../../core/design_system/design_system.dart';
 
 /// Diálogo para crear un ejercicio personalizado
 class CreateExerciseDialog extends StatefulWidget {
@@ -32,10 +35,16 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
 
   String _selectedMuscleGroup = 'Pecho';
   String _selectedEquipment = 'Barra';
   List<String> _selectedMuscles = [];
+
+  String? _existingImagePath;
+  String? _pendingImagePath;
+  bool _removeImage = false;
+  bool _isPickingImage = false;
 
   bool _isLoading = false;
 
@@ -104,6 +113,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
           ? ex.equipment
           : 'Otro';
       _selectedMuscles = List.from(ex.muscles);
+      _existingImagePath = ex.localImagePath;
     }
   }
 
@@ -121,6 +131,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
 
     try {
       final library = ExerciseLibraryService.instance;
+      final imageService = ExerciseImageStorageService.instance;
       LibraryExercise result;
 
       if (_isEditing) {
@@ -134,7 +145,27 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
               : null,
           muscles: _selectedMuscles,
         );
-        result = library.getExerciseById(widget.exerciseToEdit!.id)!;
+        final exerciseId = widget.exerciseToEdit!.id;
+
+        if (_removeImage) {
+          await imageService.deleteImageIfExists(_existingImagePath);
+          await library.setExerciseImage(
+            exerciseId: exerciseId,
+            localImagePath: null,
+          );
+        } else if (_pendingImagePath != null) {
+          final savedPath = await imageService.persistImage(
+            sourcePath: _pendingImagePath!,
+            exerciseId: exerciseId,
+          );
+          await imageService.deleteImageIfExists(_existingImagePath);
+          await library.setExerciseImage(
+            exerciseId: exerciseId,
+            localImagePath: savedPath,
+          );
+        }
+
+        result = library.getExerciseById(exerciseId)!;
       } else {
         result = await library.addCustomExercise(
           name: _nameController.text.trim(),
@@ -145,6 +176,18 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
               : null,
           muscles: _selectedMuscles,
         );
+
+        if (_pendingImagePath != null) {
+          final savedPath = await imageService.persistImage(
+            sourcePath: _pendingImagePath!,
+            exerciseId: result.id,
+          );
+          await library.setExerciseImage(
+            exerciseId: result.id,
+            localImagePath: savedPath,
+          );
+          result = library.getExerciseById(result.id)!;
+        }
       }
 
       HapticFeedback.mediumImpact();
@@ -163,8 +206,66 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
     }
   }
 
+  String? get _previewImagePath {
+    if (_pendingImagePath != null) return _pendingImagePath;
+    if (_removeImage) return null;
+    return _existingImagePath;
+  }
+
+  Future<void> _pickImage() async {
+    if (_isPickingImage) return;
+    setState(() => _isPickingImage = true);
+
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Cámara'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galería'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      final picked = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        setState(() {
+          _pendingImagePath = picked.path;
+          _removeImage = false;
+        });
+      }
+    }
+
+    if (mounted) setState(() => _isPickingImage = false);
+  }
+
+  void _clearImage() {
+    setState(() {
+      _pendingImagePath = null;
+      _removeImage = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return AlertDialog(
       backgroundColor: AppColors.bgElevated,
       title: Row(
@@ -176,10 +277,9 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
           const SizedBox(width: 8),
           Text(
             _isEditing ? 'EDITAR EJERCICIO' : 'NUEVO EJERCICIO',
-            style: GoogleFonts.montserrat(
+            style: AppTypography.headlineSmall.copyWith(
               fontWeight: FontWeight.w900,
               color: Colors.white,
-              fontSize: 18,
             ),
           ),
         ],
@@ -348,6 +448,65 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                   ),
                   textCapitalization: TextCapitalization.sentences,
                 ),
+
+                const SizedBox(height: 16),
+
+                // Foto (opcional)
+                Text(
+                  'Foto (opcional)',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (_previewImagePath != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      File(_previewImagePath!),
+                      height: 140,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                else
+                  Container(
+                    height: 140,
+                    width: double.infinity,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: scheme.outlineVariant),
+                    ),
+                    child: Icon(
+                      Icons.fitness_center,
+                      color: scheme.onSurfaceVariant,
+                      size: 40,
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isPickingImage ? null : _pickImage,
+                        icon: const Icon(Icons.photo_camera),
+                        label: Text(
+                          _previewImagePath == null
+                              ? 'Elegir foto'
+                              : 'Cambiar foto',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (_previewImagePath != null)
+                      OutlinedButton(
+                        onPressed: _clearImage,
+                        child: const Text('Quitar'),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -378,7 +537,9 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 )
               : Text(
                   _isEditing ? 'GUARDAR' : 'CREAR',
-                  style: GoogleFonts.montserrat(fontWeight: FontWeight.w700),
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
         ),
       ],

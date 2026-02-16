@@ -13,14 +13,13 @@ import 'package:juan_tracker/training/services/haptics_controller.dart';
 import 'package:juan_tracker/training/services/routine_ocr_service.dart';
 import 'package:juan_tracker/training/services/routine_sharing_service.dart';
 import 'package:juan_tracker/training/services/voice_input_service.dart';
-import 'package:juan_tracker/training/utils/design_system.dart';
 import 'package:juan_tracker/training/widgets/routine/block_timeline_widget.dart';
 import 'package:juan_tracker/training/widgets/routine/scheduling_config_widget.dart';
 import 'package:juan_tracker/training/widgets/routine_import_dialog.dart';
 import 'package:juan_tracker/training/widgets/smart_import_sheet.dart';
 import 'package:juan_tracker/training/widgets/voice/voice_input_sheet.dart';
 import 'package:logger/logger.dart';
-import '../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../core/design_system/design_system.dart';
 
 class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   final Rutina? rutina; // Null for Create, existing for Edit
@@ -243,7 +242,7 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             '¡RUTINA FORJADA!',
-            style: core.AppTypography.headlineMedium.copyWith(
+            style: AppTypography.headlineMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -393,7 +392,7 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Ponle nombre a tu rutina antes de compartir',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -410,7 +409,7 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Añade ejercicios antes de compartir',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -436,7 +435,7 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Primero añade un día a tu rutina',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -488,7 +487,7 @@ class _CreateEditRoutineScreenState
           children: [
             Text(
               '¿A qué día importar?',
-              style: core.AppTypography.titleLarge.copyWith(
+              style: AppTypography.titleLarge.copyWith(
                 color: Theme.of(ctx).colorScheme.onSurface,
               ),
             ),
@@ -501,20 +500,20 @@ class _CreateEditRoutineScreenState
                   backgroundColor: AppColors.neonPrimary,
                   child: Text(
                     '${index + 1}',
-                    style: core.AppTypography.titleLarge.copyWith(
+                    style: AppTypography.titleLarge.copyWith(
                       color: Theme.of(ctx).colorScheme.onSurface,
                     ),
                   ),
                 ),
                 title: Text(
                   dia.nombre,
-                  style: core.AppTypography.bodyMedium.copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
                     color: Theme.of(ctx).colorScheme.onSurface,
                   ),
                 ),
                 subtitle: Text(
                   '${dia.ejercicios.length} ejercicio${dia.ejercicios.length == 1 ? '' : 's'}',
-                  style: core.AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: Theme.of(ctx).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
@@ -574,7 +573,7 @@ class _CreateEditRoutineScreenState
           SnackBar(
             content: Text(
               '¡${exercises.length} ejercicio${exercises.length == 1 ? '' : 's'} importado${exercises.length == 1 ? '' : 's'}!',
-              style: core.AppTypography.labelLarge.copyWith(
+              style: AppTypography.labelLarge.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
@@ -601,7 +600,7 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Primero añade un día a tu rutina',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -651,7 +650,7 @@ class _CreateEditRoutineScreenState
                 const SizedBox(width: 8),
                 Text(
                   '¿A qué día añadir?',
-                  style: core.AppTypography.titleLarge.copyWith(
+                  style: AppTypography.titleLarge.copyWith(
                     color: Theme.of(ctx).colorScheme.onSurface,
                   ),
                 ),
@@ -666,20 +665,20 @@ class _CreateEditRoutineScreenState
                   backgroundColor: AppColors.neonPrimary,
                   child: Text(
                     '${index + 1}',
-                    style: core.AppTypography.titleLarge.copyWith(
+                    style: AppTypography.titleLarge.copyWith(
                       color: Theme.of(ctx).colorScheme.onSurface,
                     ),
                   ),
                 ),
                 title: Text(
                   dia.nombre,
-                  style: core.AppTypography.bodyMedium.copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
                     color: Theme.of(ctx).colorScheme.onSurface,
                   ),
                 ),
                 subtitle: Text(
                   '${dia.ejercicios.length} ejercicio${dia.ejercicios.length == 1 ? '' : 's'}',
-                  style: core.AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: Theme.of(ctx).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
@@ -747,7 +746,7 @@ class _CreateEditRoutineScreenState
                 const SizedBox(width: 8),
                 Text(
                   '¡${exercises.length} ejercicio${exercises.length == 1 ? '' : 's'} añadido${exercises.length == 1 ? '' : 's'}!',
-                  style: core.AppTypography.labelLarge.copyWith(
+                  style: AppTypography.labelLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
@@ -774,7 +773,7 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Primero añade un día a tu rutina',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -813,7 +812,7 @@ class _CreateEditRoutineScreenState
               const SizedBox(height: 20),
               Text(
                 'AÑADIR EJERCICIOS',
-                style: core.AppTypography.headlineMedium.copyWith(
+                style: AppTypography.headlineMedium.copyWith(
                   color: Theme.of(ctx).colorScheme.onSurface,
                 ),
               ),
@@ -882,7 +881,7 @@ class _CreateEditRoutineScreenState
           const SizedBox(height: 16),
           Text(
             '¿A qué día añadir?',
-            style: core.AppTypography.titleLarge.copyWith(
+            style: AppTypography.titleLarge.copyWith(
               color: Theme.of(ctx).colorScheme.onSurface,
             ),
           ),
@@ -899,7 +898,7 @@ class _CreateEditRoutineScreenState
               ),
               title: Text(
                 dia.nombre,
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(ctx).colorScheme.onSurface,
                 ),
               ),
@@ -925,7 +924,7 @@ class _CreateEditRoutineScreenState
         SnackBar(
           content: Text(
             'Primero añade un día a tu rutina',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -969,7 +968,7 @@ class _CreateEditRoutineScreenState
           const SizedBox(height: 16),
           Text(
             '¿A qué día añadir ejercicios?',
-            style: core.AppTypography.titleLarge.copyWith(
+            style: AppTypography.titleLarge.copyWith(
               color: Theme.of(ctx).colorScheme.onSurface,
             ),
           ),
@@ -986,13 +985,13 @@ class _CreateEditRoutineScreenState
               ),
               title: Text(
                 dia.nombre,
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(ctx).colorScheme.onSurface,
                 ),
               ),
               subtitle: Text(
                 '${dia.ejercicios.length} ejercicios',
-                style: core.AppTypography.bodySmall.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: Theme.of(ctx).colorScheme.onSurface.withAlpha(138),
                 ),
               ),
@@ -1058,7 +1057,7 @@ class _CreateEditRoutineScreenState
                 const SizedBox(width: 8),
                 Text(
                   '${exercises.length} ejercicio${exercises.length == 1 ? '' : 's'} importado${exercises.length == 1 ? '' : 's'}',
-                  style: core.AppTypography.bodyMedium.copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
@@ -1198,7 +1197,7 @@ class _CreateEditRoutineScreenState
             widget.rutina == null
                 ? 'CREA TU RUTINA'
                 : 'EDITAR: ${routineState.nombre.toUpperCase()}',
-            style: core.AppTypography.headlineSmall,
+            style: AppTypography.headlineSmall,
           ),
           actions: [
             // 🎯 UX ALTO: Un solo botón Smart Import (consolida voz + OCR + smart)
@@ -1265,12 +1264,12 @@ class _CreateEditRoutineScreenState
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
                   controller: _nameController,
-                  style: core.AppTypography.headlineMedium.copyWith(
+                  style: AppTypography.headlineMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Nombre que motive miedo',
-                    hintStyle: core.AppTypography.bodyMedium.copyWith(
+                    hintStyle: AppTypography.bodyMedium.copyWith(
                       color: AppColors.neonPrimaryPressed.withValues(
                         alpha: 0.5,
                       ),
@@ -1328,7 +1327,7 @@ class _CreateEditRoutineScreenState
                   child: Center(
                     child: Text(
                       'AÑADE TU PRIMER DÍA',
-                      style: core.AppTypography.titleLarge.copyWith(
+                      style: AppTypography.titleLarge.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withAlpha(61),
                       ),
                     ),
@@ -1455,7 +1454,7 @@ class _CreateEditRoutineScreenState
                   icon: const Icon(Icons.add, size: 32),
                   label: Text(
                     'AÑADIR DÍA',
-                    style: core.AppTypography.labelLarge.copyWith(
+                    style: AppTypography.labelLarge.copyWith(
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -1491,7 +1490,7 @@ class _CreateEditRoutineScreenState
             ),
             child: Text(
               'GUARDAR RUTINA',
-              style: core.AppTypography.headlineSmall.copyWith(
+              style: AppTypography.headlineSmall.copyWith(
                 letterSpacing: 1,
                 color: Theme.of(context).colorScheme.onPrimary,
               ),
@@ -1624,14 +1623,14 @@ class _ImportOptionTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: core.AppTypography.labelLarge.copyWith(
+                      style: AppTypography.labelLarge.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: core.AppTypography.bodySmall.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                       ),
                     ),

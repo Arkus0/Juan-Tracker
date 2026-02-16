@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/design_system/design_system.dart';
 import '../../models/progression_engine_models.dart';
@@ -113,9 +112,7 @@ class ProgressionSuggestionChip extends ConsumerWidget {
               Expanded(
                 child: Text(
                   'Aplicado: ${weightText}kg × ${decision.suggestedReps}',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                  style: AppTypography.titleMedium.copyWith(
                     color: Colors.white,
                   ),
                 ),
@@ -198,8 +195,7 @@ class _ProgressionChipContent extends StatelessWidget {
                   // Línea principal: "Siguiente: 82.5kg × 5"
                   Text(
                     'Siguiente: ${weightText}kg × ${decision.suggestedReps}',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 14,
+                    style: AppTypography.titleMedium.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.primary,
                     ),
@@ -210,8 +206,7 @@ class _ProgressionChipContent extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       'Si lo logras → ${_getShortNextStep(decision.nextStepPreview!)}',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 11,
+                      style: AppTypography.caption.copyWith(
                         fontWeight: FontWeight.w500,
                         color: AppColors.primary.withAlpha((0.80 * 255).round()),
                       ),
@@ -229,9 +224,7 @@ class _ProgressionChipContent extends StatelessWidget {
               icon: const Icon(Icons.check, size: 16),
               label: Text(
                 'APLICAR',
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+                style: AppTypography.captionBold.copyWith(
                   letterSpacing: 0.5,
                 ),
               ),

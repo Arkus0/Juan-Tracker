@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../utils/design_system.dart';
+import '../../../core/design_system/design_system.dart';
 import '../../utils/performance_utils.dart';
 
 /// Skeleton loaders optimizados para Juan Training

@@ -17,6 +17,13 @@ class SettingsKeys {
   static const String useFocusedInputMode = 'use_focused_input_mode';
   static const String mediaControlsEnabled = 'media_controls_enabled';
   static const String autofocusEnabled = 'autofocus_enabled';
+  static const String autoFillLastSession = 'auto_fill_last_session';
+  static const String quickWeightIncrements = 'quick_weight_increments';
+  static const String quickRepIncrements = 'quick_rep_increments';
+  static const String autoWarmupEnabled = 'auto_warmup_enabled';
+  static const String autoRestFromHistoryEnabled =
+      'auto_rest_from_history_enabled';
+  static const String sessionFocusModeEnabled = 'session_focus_mode_enabled';
 }
 
 /// Estado inmutable de las preferencias del usuario
@@ -50,6 +57,16 @@ class UserSettings {
   /// Autofocus en inputs de peso/reps durante entrenamiento
   final bool autofocusEnabled;
 
+  /// Auto-rellenar sesión con la última sesión del ejercicio
+  final bool autoFillLastSession;
+
+  /// Incrementos rapidos para chips (peso y reps)
+  final List<double> quickWeightIncrements;
+  final List<int> quickRepIncrements;
+  final bool autoWarmupEnabled;
+  final bool autoRestFromHistoryEnabled;
+  final bool sessionFocusModeEnabled;
+
   const UserSettings({
     this.timerSoundEnabled =
         false, // Desactivado por defecto (gym = sin sonido)
@@ -65,6 +82,12 @@ class UserSettings {
     this.useFocusedInputMode = true, // Activado por defecto - UX optimizada
     this.mediaControlsEnabled = true, // Activado por defecto
     this.autofocusEnabled = true, // Activado por defecto
+    this.autoFillLastSession = false,
+    this.quickWeightIncrements = const [1.25, 2.5, 5],
+    this.quickRepIncrements = const [1, 2],
+    this.autoWarmupEnabled = false,
+    this.autoRestFromHistoryEnabled = true,
+    this.sessionFocusModeEnabled = false,
   });
 
   UserSettings copyWith({
@@ -81,6 +104,12 @@ class UserSettings {
     bool? useFocusedInputMode,
     bool? mediaControlsEnabled,
     bool? autofocusEnabled,
+    bool? autoFillLastSession,
+    List<double>? quickWeightIncrements,
+    List<int>? quickRepIncrements,
+    bool? autoWarmupEnabled,
+    bool? autoRestFromHistoryEnabled,
+    bool? sessionFocusModeEnabled,
   }) {
     return UserSettings(
       timerSoundEnabled: timerSoundEnabled ?? this.timerSoundEnabled,
@@ -100,6 +129,14 @@ class UserSettings {
       useFocusedInputMode: useFocusedInputMode ?? this.useFocusedInputMode,
       mediaControlsEnabled: mediaControlsEnabled ?? this.mediaControlsEnabled,
       autofocusEnabled: autofocusEnabled ?? this.autofocusEnabled,
+      autoFillLastSession: autoFillLastSession ?? this.autoFillLastSession,
+      quickWeightIncrements: quickWeightIncrements ?? this.quickWeightIncrements,
+      quickRepIncrements: quickRepIncrements ?? this.quickRepIncrements,
+      autoWarmupEnabled: autoWarmupEnabled ?? this.autoWarmupEnabled,
+      autoRestFromHistoryEnabled:
+          autoRestFromHistoryEnabled ?? this.autoRestFromHistoryEnabled,
+      sessionFocusModeEnabled:
+          sessionFocusModeEnabled ?? this.sessionFocusModeEnabled,
     );
   }
 }
@@ -145,6 +182,75 @@ class SettingsNotifier extends Notifier<UserSettings> {
           prefs.getBool(SettingsKeys.mediaControlsEnabled) ?? true,
       autofocusEnabled:
           prefs.getBool(SettingsKeys.autofocusEnabled) ?? true,
+      autoFillLastSession:
+          prefs.getBool(SettingsKeys.autoFillLastSession) ?? false,
+      autoWarmupEnabled:
+          prefs.getBool(SettingsKeys.autoWarmupEnabled) ?? false,
+      autoRestFromHistoryEnabled:
+          prefs.getBool(SettingsKeys.autoRestFromHistoryEnabled) ?? true,
+      sessionFocusModeEnabled:
+          prefs.getBool(SettingsKeys.sessionFocusModeEnabled) ?? false,
+      quickWeightIncrements: _parseWeightIncrements(
+        prefs.getStringList(SettingsKeys.quickWeightIncrements),
+      ),
+      quickRepIncrements: _parseRepIncrements(
+        prefs.getStringList(SettingsKeys.quickRepIncrements),
+      ),
+    );
+  }
+
+  List<double> _parseWeightIncrements(List<String>? values) {
+    if (values == null || values.isEmpty) {
+      return const [1.25, 2.5, 5];
+    }
+    final parsed = <double>[];
+    for (final raw in values) {
+      final val = double.tryParse(raw);
+      if (val != null && val > 0) parsed.add(val);
+    }
+    if (parsed.isEmpty) return const [1.25, 2.5, 5];
+    final unique = parsed.toSet().toList()..sort();
+    return unique;
+  }
+
+  List<int> _parseRepIncrements(List<String>? values) {
+    if (values == null || values.isEmpty) {
+      return const [1, 2];
+    }
+    final parsed = <int>[];
+    for (final raw in values) {
+      final val = int.tryParse(raw);
+      if (val != null && val > 0) parsed.add(val);
+    }
+    if (parsed.isEmpty) return const [1, 2];
+    final unique = parsed.toSet().toList()..sort();
+    return unique;
+  }
+
+  Future<void> setQuickIncrements({
+    required List<double> weightIncrements,
+    required List<int> repIncrements,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final sanitizedWeights = _parseWeightIncrements(
+      weightIncrements.map((e) => e.toString()).toList(),
+    );
+    final sanitizedReps = _parseRepIncrements(
+      repIncrements.map((e) => e.toString()).toList(),
+    );
+
+    await prefs.setStringList(
+      SettingsKeys.quickWeightIncrements,
+      sanitizedWeights.map((e) => e.toString()).toList(),
+    );
+    await prefs.setStringList(
+      SettingsKeys.quickRepIncrements,
+      sanitizedReps.map((e) => e.toString()).toList(),
+    );
+
+    state = state.copyWith(
+      quickWeightIncrements: sanitizedWeights,
+      quickRepIncrements: sanitizedReps,
     );
   }
 
@@ -253,6 +359,31 @@ class SettingsNotifier extends Notifier<UserSettings> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.autofocusEnabled, value);
     state = state.copyWith(autofocusEnabled: value);
+  }
+
+  /// Activar/desactivar auto-rellenado desde la última sesión
+  Future<void> setAutoFillLastSession({required bool value}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(SettingsKeys.autoFillLastSession, value);
+    state = state.copyWith(autoFillLastSession: value);
+  }
+
+  Future<void> setAutoWarmupEnabled({required bool value}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(SettingsKeys.autoWarmupEnabled, value);
+    state = state.copyWith(autoWarmupEnabled: value);
+  }
+
+  Future<void> setAutoRestFromHistoryEnabled({required bool value}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(SettingsKeys.autoRestFromHistoryEnabled, value);
+    state = state.copyWith(autoRestFromHistoryEnabled: value);
+  }
+
+  Future<void> setSessionFocusModeEnabled({required bool value}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(SettingsKeys.sessionFocusModeEnabled, value);
+    state = state.copyWith(sessionFocusModeEnabled: value);
   }
 }
 

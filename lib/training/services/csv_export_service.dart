@@ -1,8 +1,9 @@
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 
+import '../../diet/models/diary_entry_model.dart';
+import '../../diet/models/weighin_model.dart';
 import '../models/sesion.dart';
-
 import '../models/serie_log.dart';
 
 /// Tipo de exportación disponible
@@ -50,6 +51,9 @@ class SetExportData {
   final bool isWarmup;
   final bool isFailure;
   final bool isDropset;
+  final bool isRestPause;
+  final bool isMyoReps;
+  final bool isAmrap;
 
   double get volume => weight * reps;
 
@@ -61,6 +65,9 @@ class SetExportData {
     this.isWarmup = false,
     this.isFailure = false,
     this.isDropset = false,
+    this.isRestPause = false,
+    this.isMyoReps = false,
+    this.isAmrap = false,
   });
 }
 
@@ -79,6 +86,9 @@ class CsvExportService {
     ColumnOption('is_warmup', 'Calentamiento', false),
     ColumnOption('is_failure', 'Fallo', false),
     ColumnOption('is_dropset', 'Dropset', false),
+    ColumnOption('is_rest_pause', 'Rest-pause', false),
+    ColumnOption('is_myo_reps', 'Myo reps', false),
+    ColumnOption('is_amrap', 'AMRAP', false),
   ];
 
   /// Genera CSV de entrenamiento
@@ -118,6 +128,9 @@ class CsvExportService {
       'is_warmup' => 'Calentamiento',
       'is_failure' => 'Fallo',
       'is_dropset' => 'Dropset',
+      'is_rest_pause' => 'Rest-pause',
+      'is_myo_reps' => 'Myo reps',
+      'is_amrap' => 'AMRAP',
       _ => column,
     };
   }
@@ -141,6 +154,9 @@ class CsvExportService {
         'is_warmup' => set.isWarmup ? 'Sí' : 'No',
         'is_failure' => set.isFailure ? 'Sí' : 'No',
         'is_dropset' => set.isDropset ? 'Sí' : 'No',
+        'is_rest_pause' => set.isRestPause ? 'Sí' : 'No',
+        'is_myo_reps' => set.isMyoReps ? 'Sí' : 'No',
+        'is_amrap' => set.isAmrap ? 'Sí' : 'No',
         _ => '',
       };
     }).toList();
@@ -194,6 +210,9 @@ class CsvExportService {
       isWarmup: log.isWarmup,
       isFailure: log.isFailure,
       isDropset: log.isDropset,
+      isRestPause: log.isRestPause,
+      isMyoReps: log.isMyoReps,
+      isAmrap: log.isAmrap,
     );
   }
 
@@ -254,5 +273,194 @@ class CsvExportService {
       }
     }
     return count;
+  }
+
+  // ==========================================================================
+  // DIET EXPORT
+  // ==========================================================================
+
+  /// Columnas disponibles para exportación de dieta
+  static const List<ColumnOption> availableDietColumns = [
+    ColumnOption('d_date', 'Fecha', true),
+    ColumnOption('d_meal', 'Comida', true),
+    ColumnOption('d_food', 'Alimento', true),
+    ColumnOption('d_brand', 'Marca', false),
+    ColumnOption('d_amount', 'Cantidad', true),
+    ColumnOption('d_unit', 'Unidad', true),
+    ColumnOption('d_kcal', 'Kcal', true),
+    ColumnOption('d_protein', 'Proteína (g)', true),
+    ColumnOption('d_carbs', 'Carbos (g)', true),
+    ColumnOption('d_fat', 'Grasa (g)', true),
+    ColumnOption('d_fiber', 'Fibra (g)', false),
+    ColumnOption('d_sugar', 'Azúcar (g)', false),
+    ColumnOption('d_saturated_fat', 'Grasa Sat. (g)', false),
+    ColumnOption('d_sodium', 'Sodio (mg)', false),
+    ColumnOption('d_notes', 'Notas', false),
+  ];
+
+  /// Columnas por defecto para diet export
+  static List<String> get defaultDietColumns => availableDietColumns
+      .where((c) => c.selectedByDefault)
+      .map((c) => c.key)
+      .toList();
+
+  /// Genera CSV de dieta
+  static String generateDietCSV({
+    required List<DiaryEntryModel> entries,
+    required List<String> columns,
+  }) {
+    final rows = <List<String>>[];
+
+    // Header
+    rows.add(columns.map(_getDietColumnHeader).toList());
+
+    // Ordenar por fecha y comida
+    final sorted = [...entries]..sort((a, b) {
+        final dateComp = a.date.compareTo(b.date);
+        if (dateComp != 0) return dateComp;
+        return a.mealType.index.compareTo(b.mealType.index);
+      });
+
+    // Data rows
+    for (final entry in sorted) {
+      rows.add(_buildDietRow(entry, columns));
+    }
+
+    return '\uFEFF${const ListToCsvConverter(fieldDelimiter: ';').convert(rows)}';
+  }
+
+  /// Genera CSV de registros de peso
+  static String generateWeightCSV({
+    required List<WeighInModel> weighIns,
+  }) {
+    final rows = <List<String>>[];
+
+    // Header
+    rows.add(['Fecha', 'Hora', 'Peso (kg)', 'Notas']);
+
+    // Ordenar por fecha
+    final sorted = [...weighIns]..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    for (final w in sorted) {
+      rows.add([
+        DateFormat('dd/MM/yyyy').format(w.dateTime),
+        DateFormat('HH:mm').format(w.dateTime),
+        w.weightKg.toStringAsFixed(1).replaceAll('.', ','),
+        w.note ?? '',
+      ]);
+    }
+
+    return '\uFEFF${const ListToCsvConverter(fieldDelimiter: ';').convert(rows)}';
+  }
+
+  /// Genera CSV combinado (dieta + peso en hojas separadas por separador)
+  static String generateFullDietCSV({
+    required List<DiaryEntryModel> entries,
+    required List<WeighInModel> weighIns,
+    required List<String> columns,
+  }) {
+    final sb = StringBuffer();
+
+    // Sección Diario
+    sb.writeln('--- DIARIO DE ALIMENTOS ---');
+    sb.write(generateDietCSV(entries: entries, columns: columns));
+
+    if (weighIns.isNotEmpty) {
+      sb.writeln();
+      sb.writeln();
+      sb.writeln('--- REGISTROS DE PESO ---');
+      // Quitar BOM del segundo CSV
+      final weightCsv = generateWeightCSV(weighIns: weighIns);
+      sb.write(weightCsv.startsWith('\uFEFF')
+          ? weightCsv.substring(1)
+          : weightCsv);
+    }
+
+    return sb.toString();
+  }
+
+  static String _getDietColumnHeader(String column) {
+    return switch (column) {
+      'd_date' => 'Fecha',
+      'd_meal' => 'Comida',
+      'd_food' => 'Alimento',
+      'd_brand' => 'Marca',
+      'd_amount' => 'Cantidad',
+      'd_unit' => 'Unidad',
+      'd_kcal' => 'Kcal',
+      'd_protein' => 'Proteína (g)',
+      'd_carbs' => 'Carbos (g)',
+      'd_fat' => 'Grasa (g)',
+      'd_fiber' => 'Fibra (g)',
+      'd_sugar' => 'Azúcar (g)',
+      'd_saturated_fat' => 'Grasa Sat. (g)',
+      'd_sodium' => 'Sodio (mg)',
+      'd_notes' => 'Notas',
+      _ => column,
+    };
+  }
+
+  static List<String> _buildDietRow(
+    DiaryEntryModel entry,
+    List<String> columns,
+  ) {
+    return columns.map((column) {
+      return switch (column) {
+        'd_date' => DateFormat('dd/MM/yyyy').format(entry.date),
+        'd_meal' => entry.mealType.displayName,
+        'd_food' => entry.foodName,
+        'd_brand' => entry.foodBrand ?? '',
+        'd_amount' =>
+          entry.amount.toStringAsFixed(1).replaceAll('.', ','),
+        'd_unit' => _unitDisplayName(entry.unit),
+        'd_kcal' => entry.kcal.toString(),
+        'd_protein' =>
+          entry.protein?.toStringAsFixed(1).replaceAll('.', ',') ?? '',
+        'd_carbs' =>
+          entry.carbs?.toStringAsFixed(1).replaceAll('.', ',') ?? '',
+        'd_fat' =>
+          entry.fat?.toStringAsFixed(1).replaceAll('.', ',') ?? '',
+        'd_fiber' =>
+          entry.fiber?.toStringAsFixed(1).replaceAll('.', ',') ?? '',
+        'd_sugar' =>
+          entry.sugar?.toStringAsFixed(1).replaceAll('.', ',') ?? '',
+        'd_saturated_fat' =>
+          entry.saturatedFat?.toStringAsFixed(1).replaceAll('.', ',') ?? '',
+        'd_sodium' =>
+          entry.sodium?.toStringAsFixed(1).replaceAll('.', ',') ?? '',
+        'd_notes' => entry.notes ?? '',
+        _ => '',
+      };
+    }).toList();
+  }
+
+  static String _unitDisplayName(ServingUnit unit) {
+    return switch (unit) {
+      ServingUnit.grams => 'g',
+      ServingUnit.portion => 'porción',
+      ServingUnit.milliliter => 'ml',
+    };
+  }
+
+  /// Genera preview de datos de dieta
+  static List<List<String>> generateDietPreview({
+    required List<DiaryEntryModel> entries,
+    required List<String> columns,
+    int maxRows = 5,
+  }) {
+    final headers = columns.map(_getDietColumnHeader).toList();
+
+    final sorted = [...entries]..sort((a, b) {
+        final dateComp = a.date.compareTo(b.date);
+        if (dateComp != 0) return dateComp;
+        return a.mealType.index.compareTo(b.mealType.index);
+      });
+
+    final rows = sorted
+        .take(maxRows)
+        .map((e) => _buildDietRow(e, columns))
+        .toList();
+
+    return [headers, ...rows];
   }
 }

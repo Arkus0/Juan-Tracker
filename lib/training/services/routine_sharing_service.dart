@@ -118,6 +118,7 @@ class RoutineSharingService {
             progressionType: ejercicio.progressionType,
             weightIncrement: ejercicio.weightIncrement,
             targetRpe: ejercicio.targetRpe,
+            setType: ejercicio.setType,
           );
         }
 

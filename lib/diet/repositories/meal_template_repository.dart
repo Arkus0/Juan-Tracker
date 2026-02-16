@@ -115,6 +115,10 @@ class MealTemplateRepository {
         proteinPer100g: food.proteinPer100g,
         carbsPer100g: food.carbsPer100g,
         fatPer100g: food.fatPer100g,
+        fiberPer100g: food.fiberPer100g,
+        sugarPer100g: food.sugarPer100g,
+        saturatedFatPer100g: food.saturatedFatPer100g,
+        sodiumPer100g: food.sodiumPer100g,
         sortOrder: i,
       );
 
@@ -130,6 +134,10 @@ class MealTemplateRepository {
           proteinPer100gSnapshot: Value(item.proteinPer100g),
           carbsPer100gSnapshot: Value(item.carbsPer100g),
           fatPer100gSnapshot: Value(item.fatPer100g),
+          fiberPer100gSnapshot: Value(item.fiberPer100g),
+          sugarPer100gSnapshot: Value(item.sugarPer100g),
+          saturatedFatPer100gSnapshot: Value(item.saturatedFatPer100g),
+          sodiumPer100gSnapshot: Value(item.sodiumPer100g),
           sortOrder: Value(i),
         ),
       );
@@ -207,6 +215,10 @@ class MealTemplateRepository {
         proteinPer100g: i.proteinPer100gSnapshot,
         carbsPer100g: i.carbsPer100gSnapshot,
         fatPer100g: i.fatPer100gSnapshot,
+        fiberPer100g: i.fiberPer100gSnapshot,
+        sugarPer100g: i.sugarPer100gSnapshot,
+        saturatedFatPer100g: i.saturatedFatPer100gSnapshot,
+        sodiumPer100g: i.sodiumPer100gSnapshot,
         sortOrder: i.sortOrder,
       )).toList(),
     );

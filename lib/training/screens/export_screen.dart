@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -16,8 +15,11 @@ import '../models/sesion.dart';
 import '../providers/training_provider.dart';
 import '../services/backup_service.dart';
 import '../services/csv_export_service.dart';
-import '../utils/design_system.dart';
+import '../../core/design_system/design_system.dart';
+import '../../core/providers/database_provider.dart';
 import '../../core/widgets/home_button.dart';
+import '../../diet/models/diary_entry_model.dart';
+import '../../diet/models/weighin_model.dart';
 
 /// Pantalla de exportación de datos con filtros
 class ExportScreen extends ConsumerStatefulWidget {
@@ -43,6 +45,18 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     'reps',
     'rpe',
     'volume',
+  ];
+
+  final List<String> _selectedDietColumns = [
+    'd_date',
+    'd_meal',
+    'd_food',
+    'd_amount',
+    'd_unit',
+    'd_kcal',
+    'd_protein',
+    'd_carbs',
+    'd_fat',
   ];
 
   bool _isLoading = false;
@@ -141,17 +155,59 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     }).toList();
   }
 
-  Future<String> _generateCSV() async {
-    final sessions = await _loadSessionsForExport();
-    final exportData = CsvExportService.convertSessionsToExportData(
-      sessions,
-      exerciseFilter: _allExercisesSelected ? null : _selectedExercises,
-    );
+  Future<List<DiaryEntryModel>> _loadDietEntriesForExport() async {
+    final repo = ref.read(diaryRepositoryProvider);
+    return repo.getByDateRange(_dateRange.start, _dateRange.end);
+  }
 
-    return CsvExportService.generateTrainingCSV(
-      sessions: exportData,
-      columns: _selectedColumns,
-    );
+  Future<List<WeighInModel>> _loadWeighInsForExport() async {
+    final repo = ref.read(weighInRepositoryProvider);
+    return repo.getByDateRange(_dateRange.start, _dateRange.end);
+  }
+
+  Future<String> _generateCSV() async {
+    if (_type == ExportType.training) {
+      final sessions = await _loadSessionsForExport();
+      final exportData = CsvExportService.convertSessionsToExportData(
+        sessions,
+        exerciseFilter: _allExercisesSelected ? null : _selectedExercises,
+      );
+      return CsvExportService.generateTrainingCSV(
+        sessions: exportData,
+        columns: _selectedColumns,
+      );
+    } else if (_type == ExportType.diet) {
+      final entries = await _loadDietEntriesForExport();
+      final weighIns = await _loadWeighInsForExport();
+      return CsvExportService.generateFullDietCSV(
+        entries: entries,
+        weighIns: weighIns,
+        columns: _selectedDietColumns,
+      );
+    } else {
+      // Both
+      final sessions = await _loadSessionsForExport();
+      final exportData = CsvExportService.convertSessionsToExportData(
+        sessions,
+        exerciseFilter: _allExercisesSelected ? null : _selectedExercises,
+      );
+      final trainingCsv = CsvExportService.generateTrainingCSV(
+        sessions: exportData,
+        columns: _selectedColumns,
+      );
+      final entries = await _loadDietEntriesForExport();
+      final weighIns = await _loadWeighInsForExport();
+      final dietCsv = CsvExportService.generateFullDietCSV(
+        entries: entries,
+        weighIns: weighIns,
+        columns: _selectedDietColumns,
+      );
+      // Concatenar ambos CSVs
+      final dietWithoutBom = dietCsv.startsWith('\uFEFF')
+          ? dietCsv.substring(1)
+          : dietCsv;
+      return '$trainingCsv\n\n--- DATOS DE DIETA ---\n$dietWithoutBom';
+    }
   }
 
   Future<void> _exportAndShare() async {
@@ -229,7 +285,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         SnackBar(
           content: Text(
             'Guardado en Descargas: $fileName',
-            style: GoogleFonts.montserrat(),
+            style: AppTypography.bodyMedium,
           ),
           backgroundColor: AppColors.completedGreen,
         ),
@@ -245,7 +301,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: GoogleFonts.montserrat()),
+        content: Text(message, style: AppTypography.bodyMedium),
         backgroundColor: AppColors.error,
       ),
     );
@@ -254,7 +310,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: GoogleFonts.montserrat()),
+        content: Text(message, style: AppTypography.bodyMedium),
         backgroundColor: AppColors.completedGreen,
       ),
     );
@@ -321,7 +377,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         ),
         title: Text(
           'EXPORTAR DATOS',
-          style: AppTypography.sectionTitle.copyWith(
+          style: AppTypography.titleLarge.copyWith(
             letterSpacing: 2,
             color: scheme.onSurface,
           ),
@@ -405,10 +461,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: GoogleFonts.montserrat(
+      style: AppTypography.sectionLabel.copyWith(
         color: Theme.of(context).colorScheme.onSurfaceVariant,
         fontSize: 12,
-        fontWeight: FontWeight.w800,
         letterSpacing: 1.5,
       ),
     );
@@ -420,7 +475,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     return Container(
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: scheme.outline),
       ),
       padding: const EdgeInsets.all(4),
@@ -468,7 +523,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? scheme.primary.withValues(alpha: 0.12) : null,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
             border: isSelected
                 ? Border.all(color: scheme.primary.withValues(alpha: 0.5))
                 : null,
@@ -484,8 +539,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               const SizedBox(height: 4),
               Text(
                 label,
-                style: GoogleFonts.montserrat(
-                  fontSize: 10,
+                style: AppTypography.labelSmall.copyWith(
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected ? scheme.onSurface : scheme.onSurfaceVariant,
                 ),
@@ -503,12 +557,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
     return InkWell(
       onTap: _selectDateRange,
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           border: Border.all(color: scheme.outline),
         ),
         child: Row(
@@ -521,16 +575,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                 children: [
                   Text(
                     'Desde: ${dateFormat.format(_dateRange.start)}',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 13,
+                    style: AppTypography.bodyCompact.copyWith(
                       color: scheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Hasta: ${dateFormat.format(_dateRange.end)}',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 13,
+                    style: AppTypography.bodyCompact.copyWith(
                       color: scheme.onSurface,
                     ),
                   ),
@@ -561,7 +613,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         return ActionChip(
           label: Text(
             label,
-            style: GoogleFonts.montserrat(fontSize: 11),
+            style: AppTypography.caption,
           ),
           onPressed: () => _setQuickDateRange(days),
           backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -581,7 +633,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         Container(
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
             border: Border.all(color: scheme.outline),
           ),
           child: Column(
@@ -589,7 +641,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               RadioListTile<bool>(
                 title: Text(
                   'Todos los ejercicios',
-                  style: GoogleFonts.montserrat(fontSize: 14),
+                  style: AppTypography.bodyMedium,
                 ),
                 value: true,
                 groupValue: _allExercisesSelected,
@@ -605,7 +657,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               RadioListTile<bool>(
                 title: Text(
                   'Seleccionar ejercicios específicos',
-                  style: GoogleFonts.montserrat(fontSize: 14),
+                  style: AppTypography.bodyMedium,
                 ),
                 value: false,
                 groupValue: _allExercisesSelected,
@@ -628,11 +680,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           TextField(
             controller: _exerciseSearchController,
             onChanged: (value) => setState(() => _exerciseSearchQuery = value),
-            style: GoogleFonts.montserrat(fontSize: 14),
+            style: AppTypography.bodyMedium,
             decoration: InputDecoration(
               hintText: 'Buscar ejercicio...',
-              hintStyle: GoogleFonts.montserrat(
-                fontSize: 14,
+              hintStyle: AppTypography.bodyMedium.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
               prefixIcon: Icon(Icons.search, color: scheme.onSurfaceVariant),
@@ -648,15 +699,15 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               filled: true,
               fillColor: scheme.surfaceContainerHighest,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 borderSide: BorderSide(color: scheme.outline),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 borderSide: BorderSide(color: scheme.outline),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 borderSide: BorderSide(color: scheme.primary, width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
@@ -670,10 +721,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
                 '${_selectedExercises.length} ejercicio(s) seleccionado(s)',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
+                style: AppTypography.labelMedium.copyWith(
                   color: scheme.primary,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -683,7 +732,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             constraints: const BoxConstraints(maxHeight: 250),
             decoration: BoxDecoration(
               color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(color: scheme.outline),
             ),
             child: _availableExercises.isEmpty
@@ -709,7 +758,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       return CheckboxListTile(
                         title: Text(
                           exercise,
-                          style: GoogleFonts.montserrat(fontSize: 13),
+                          style: AppTypography.bodyCompact,
                         ),
                         value: isSelected,
                         onChanged: (value) {
@@ -737,34 +786,89 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   Widget _buildColumnSelector() {
     final scheme = Theme.of(context).colorScheme;
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: CsvExportService.availableColumns.map((column) {
-        final isSelected = _selectedColumns.contains(column.key);
-        return FilterChip(
-          label: Text(
-            column.label,
-            style: GoogleFonts.montserrat(fontSize: 12),
-          ),
-          selected: isSelected,
-          onSelected: (selected) {
-            HapticFeedback.selectionClick();
-            setState(() {
-              if (selected) {
-                _selectedColumns.add(column.key);
-              } else if (_selectedColumns.length > 1) {
-                _selectedColumns.remove(column.key);
-              }
-            });
-          },
-          selectedColor: scheme.primary.withValues(alpha: 0.2),
-          checkmarkColor: scheme.primary,
-          side: BorderSide(
-            color: isSelected ? scheme.primary : scheme.outline,
-          ),
-        );
-      }).toList(),
+    final isDiet = _type == ExportType.diet;
+    final isBoth = _type == ExportType.both;
+
+    final widgets = <Widget>[];
+
+    // Training columns (for training or both)
+    if (!isDiet) {
+      if (isBoth) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text('Entrenamiento',
+              style: AppTypography.labelSmall
+                  .copyWith(color: scheme.onSurfaceVariant)),
+        ));
+      }
+      widgets.add(Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: CsvExportService.availableColumns.map((column) {
+          final isSelected = _selectedColumns.contains(column.key);
+          return FilterChip(
+            label: Text(column.label, style: AppTypography.bodySmall),
+            selected: isSelected,
+            onSelected: (selected) {
+              HapticFeedback.selectionClick();
+              setState(() {
+                if (selected) {
+                  _selectedColumns.add(column.key);
+                } else if (_selectedColumns.length > 1) {
+                  _selectedColumns.remove(column.key);
+                }
+              });
+            },
+            selectedColor: scheme.primary.withValues(alpha: 0.2),
+            checkmarkColor: scheme.primary,
+            side: BorderSide(
+                color: isSelected ? scheme.primary : scheme.outline),
+          );
+        }).toList(),
+      ));
+    }
+
+    // Diet columns (for diet or both)
+    if (isDiet || isBoth) {
+      if (isBoth) {
+        widgets.add(const SizedBox(height: 16));
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text('Dieta',
+              style: AppTypography.labelSmall
+                  .copyWith(color: scheme.onSurfaceVariant)),
+        ));
+      }
+      widgets.add(Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: CsvExportService.availableDietColumns.map((column) {
+          final isSelected = _selectedDietColumns.contains(column.key);
+          return FilterChip(
+            label: Text(column.label, style: AppTypography.bodySmall),
+            selected: isSelected,
+            onSelected: (selected) {
+              HapticFeedback.selectionClick();
+              setState(() {
+                if (selected) {
+                  _selectedDietColumns.add(column.key);
+                } else if (_selectedDietColumns.length > 1) {
+                  _selectedDietColumns.remove(column.key);
+                }
+              });
+            },
+            selectedColor: scheme.primary.withValues(alpha: 0.2),
+            checkmarkColor: scheme.primary,
+            side: BorderSide(
+                color: isSelected ? scheme.primary : scheme.outline),
+          );
+        }).toList(),
+      ));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
     );
   }
 
@@ -779,7 +883,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             height: 150,
             decoration: BoxDecoration(
               color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(color: scheme.outline),
             ),
             child: const Center(child: CircularProgressIndicator()),
@@ -792,13 +896,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(color: scheme.outline),
             ),
             child: Text(
               'No hay datos para mostrar en el rango seleccionado',
-              style: GoogleFonts.montserrat(
-                fontSize: 13,
+              style: AppTypography.bodyCompact.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),
@@ -814,11 +917,11 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             Container(
               decoration: BoxDecoration(
                 color: scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 border: Border.all(color: scheme.outline),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
@@ -833,9 +936,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                         .map((h) => DataColumn(
                               label: Text(
                                 h,
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
+                                style: AppTypography.captionBold.copyWith(
                                   color: scheme.onSurface,
                                 ),
                               ),
@@ -847,8 +948,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                                   .map((cell) => DataCell(
                                         Text(
                                           cell,
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: 11,
+                                          style: AppTypography.caption.copyWith(
                                             color: scheme.onSurfaceVariant,
                                           ),
                                         ),
@@ -869,8 +969,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                   rows.length < count
                       ? 'Mostrando ${rows.length} de $count filas'
                       : 'Total: $count filas',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 11,
+                  style: AppTypography.caption.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 );
@@ -884,6 +983,16 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
   Future<List<List<String>>> _buildPreviewData() async {
     try {
+      if (_type == ExportType.diet) {
+        final entries = await _loadDietEntriesForExport();
+        if (entries.isEmpty) return [];
+        return CsvExportService.generateDietPreview(
+          entries: entries,
+          columns: _selectedDietColumns,
+          maxRows: 5,
+        );
+      }
+      // Training or Both — show training preview
       final sessions = await _loadSessionsForExport();
       final exportData = CsvExportService.convertSessionsToExportData(
         sessions,
@@ -904,6 +1013,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
   Future<int> _getTotalRowCount() async {
     try {
+      if (_type == ExportType.diet) {
+        final entries = await _loadDietEntriesForExport();
+        return entries.length;
+      }
       final sessions = await _loadSessionsForExport();
       final exportData = CsvExportService.convertSessionsToExportData(
         sessions,
@@ -927,14 +1040,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             icon: const Icon(Icons.share),
             label: Text(
               'EXPORTAR Y COMPARTIR',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w800),
+              style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w800),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: scheme.primary,
               foregroundColor: scheme.onPrimary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
             ),
           ),
@@ -947,14 +1060,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             icon: const Icon(Icons.download),
             label: Text(
               'GUARDAR EN DESCARGAS',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w700),
+              style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700),
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: scheme.onSurface,
               side: BorderSide(color: scheme.outline),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
             ),
           ),
@@ -969,7 +1082,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.primaryContainer.withAlpha((0.1 * 255).round()),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: scheme.primary.withAlpha((0.3 * 255).round())),
       ),
       child: Column(
@@ -985,15 +1098,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                   children: [
                     Text(
                       'Backup JSON Completo',
-                      style: GoogleFonts.montserrat(
+                      style: AppTypography.titleMedium.copyWith(
                         fontWeight: FontWeight.w700,
                         color: scheme.onSurface,
                       ),
                     ),
                     Text(
                       'Incluye: rutinas, sesiones, notas, perfiles',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
+                      style: AppTypography.bodySmall.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
                     ),
@@ -1052,6 +1164,15 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           color: Colors.orange,
           onTap: _importFromStrong,
         ),
+        const SizedBox(height: 12),
+        _buildImportCard(
+          scheme: scheme,
+          icon: Icons.file_upload_outlined,
+          title: 'Importar CSV Juan Tracker',
+          subtitle: 'Importar CSV exportado por esta app',
+          color: scheme.primary,
+          onTap: _importFromJuanCsv,
+        ),
       ],
     );
   }
@@ -1066,12 +1187,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   }) {
     return InkWell(
       onTap: _isLoading ? null : onTap,
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           border: Border.all(color: scheme.outline),
         ),
         child: Row(
@@ -1091,15 +1212,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.montserrat(
+                    style: AppTypography.titleMedium.copyWith(
                       fontWeight: FontWeight.w700,
                       color: scheme.onSurface,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12,
+                    style: AppTypography.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
@@ -1156,6 +1276,34 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       final repo = ref.read(trainingRepositoryProvider);
       final backupService = BackupService(repo);
       final result = await backupService.importFromStrongApp(content);
+
+      if (!context.mounted) return;
+
+      if (result.success) {
+        _showSuccess(_buildImportSummary(result));
+        await _loadAvailableExercises();
+      } else {
+        _showError('Error al importar: ${result.error}');
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      _showError('Error al importar: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _importFromJuanCsv() async {
+    HapticFeedback.selectionClick();
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final content = await _pickFileContent(allowedExtensions: ['csv']);
+      if (content == null) return;
+
+      final repo = ref.read(trainingRepositoryProvider);
+      final backupService = BackupService(repo);
+      final result = await backupService.importFromJuanTrackerCsv(content);
 
       if (!context.mounted) return;
 

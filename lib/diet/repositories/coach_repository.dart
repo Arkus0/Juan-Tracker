@@ -135,6 +135,7 @@ class CoachRepository {
       currentKcalTarget: json['currentKcalTarget'] as int?,
       notes: json['notes'] as String?,
       macroPreset: macroPreset,
+      autoApplyCheckIn: json['autoApplyCheckIn'] as bool? ?? false,
     );
   }
 }
@@ -153,5 +154,6 @@ extension CoachPlanJson on CoachPlan {
     'currentKcalTarget': currentKcalTarget,
     'notes': notes,
     'macroPreset': macroPreset.name,
+    'autoApplyCheckIn': autoApplyCheckIn,
   };
 }

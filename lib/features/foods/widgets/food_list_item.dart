@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../training/database/database.dart';
 
+/// Callback para quick-log: recibe (amount, unitLabel) donde unitLabel es 'g', 'ml' o porción
+typedef QuickLogCallback = void Function(double amount, String unitKey);
+
 // ============================================================================
 // PERF: Emoji lookup optimization - O(1) instead of O(27) per item
 // ============================================================================
@@ -121,6 +124,9 @@ class FoodListItem extends StatelessWidget {
   final bool showSelectionCheckbox;
   final bool isSelected;
   final VoidCallback? onSelectionToggle;
+  /// Callback para registro rápido (sin abrir diálogo).
+  /// Si se pasa, se muestra una fila de chips de cantidad bajo los macros.
+  final QuickLogCallback? onQuickLog;
 
   const FoodListItem({
     super.key,
@@ -132,6 +138,7 @@ class FoodListItem extends StatelessWidget {
     this.showSelectionCheckbox = false,
     this.isSelected = false,
     this.onSelectionToggle,
+    this.onQuickLog,
   });
 
   @override
@@ -252,6 +259,10 @@ class FoodListItem extends StatelessWidget {
 
                     // Macros
                     _buildMacrosRow(theme),
+
+                    // Quick-log chips (si está habilitado)
+                    if (onQuickLog != null)
+                      _buildQuickLogRow(theme),
                   ],
                 ),
               ),
@@ -307,6 +318,38 @@ class FoodListItem extends StatelessWidget {
     );
   }
 
+  Widget _buildQuickLogRow(ThemeData theme) {
+    final presets = <_QuickPreset>[];
+
+    // Porción del alimento (si existe)
+    if (food.portionName != null && food.portionGrams != null) {
+      presets.add(_QuickPreset(
+        label: '1 ${food.portionName}',
+        amount: 1,
+        unitKey: 'portion',
+      ));
+    }
+
+    // Cantidades estándar
+    presets.addAll(const [
+      _QuickPreset(label: '100g', amount: 100, unitKey: 'g'),
+      _QuickPreset(label: '150g', amount: 150, unitKey: 'g'),
+      _QuickPreset(label: '200g', amount: 200, unitKey: 'g'),
+    ]);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 2,
+        children: presets.map((p) => _QuickLogChip(
+          label: p.label,
+          onTap: () => onQuickLog?.call(p.amount, p.unitKey),
+        )).toList(),
+      ),
+    );
+  }
+
   Widget _buildMacrosRow(ThemeData theme) {
     final protein = food.proteinPer100g;
     final carbs = food.carbsPer100g;
@@ -349,4 +392,57 @@ class FoodListItem extends StatelessWidget {
 
   // NOTE: _getEmojiForFood moved to top-level _getEmojiForFoodFast() with
   // hash map lookup + caching for O(1) vs O(27) performance improvement
+}
+
+/// Dato interno para un preset de quick-log
+class _QuickPreset {
+  final String label;
+  final double amount;
+  final String unitKey; // 'g', 'ml', 'portion'
+
+  const _QuickPreset({
+    required this.label,
+    required this.amount,
+    required this.unitKey,
+  });
+}
+
+/// Chip compacto para loguear una cantidad con un toque
+class _QuickLogChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickLogChip({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colors.secondaryContainer.withAlpha(100),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 14, color: colors.secondary),
+              const SizedBox(width: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: colors.secondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

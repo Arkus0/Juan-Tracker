@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../providers/voice_input_provider.dart';
-import '../../utils/design_system.dart';
 
 /// FAB flotante sutil para control por voz durante entrenamiento
 ///
@@ -282,7 +281,7 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
             Flexible(
               child: Text(
                 text,
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: voiceState.partialTranscript.isEmpty ? onSurface.withAlpha(97) : onSurface.withAlpha(178),
                   fontStyle: voiceState.partialTranscript.isEmpty ? FontStyle.italic : FontStyle.normal,
                 ),

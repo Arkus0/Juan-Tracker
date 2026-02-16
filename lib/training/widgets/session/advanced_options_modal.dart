@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/design_system/design_system.dart';
 
 import '../../providers/training_provider.dart';
-import '../../utils/design_system.dart';
 
 class AdvancedOptionsModal extends ConsumerStatefulWidget {
   final int exerciseIndex;
@@ -62,9 +61,8 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
           const SizedBox(height: 16),
           Text(
             'OPCIONES PRO',
-            style: GoogleFonts.montserrat(
+            style: AppTypography.headlineSmall.copyWith(
               fontWeight: FontWeight.w900,
-              fontSize: 18,
               color: AppColors.goldAccent,
             ),
           ),
@@ -83,7 +81,9 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
           ),
 
           // Toggles
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               FilterChip(
                 label: const Text('FALLO MUSCULAR'),
@@ -95,7 +95,6 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
                 ),
                 selectedColor: AppColors.error.withAlpha(180),
               ),
-              const SizedBox(width: 8),
               FilterChip(
                 label: const Text('DROPSET'),
                 selected: log.isDropset,
@@ -106,7 +105,6 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
                 ),
                 selectedColor: AppColors.warning.withAlpha(180),
               ),
-              const SizedBox(width: 8),
               FilterChip(
                 label: const Text('REST-PAUSE'),
                 selected: log.isRestPause,
@@ -116,6 +114,26 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
                   isRestPause: val,
                 ),
                 selectedColor: AppColors.info.withAlpha(180),
+              ),
+              FilterChip(
+                label: const Text('MYO REPS'),
+                selected: log.isMyoReps,
+                onSelected: (val) => notifier.updateLog(
+                  widget.exerciseIndex,
+                  widget.setIndex,
+                  isMyoReps: val,
+                ),
+                selectedColor: AppColors.info.withAlpha(180),
+              ),
+              FilterChip(
+                label: const Text('AMRAP'),
+                selected: log.isAmrap,
+                onSelected: (val) => notifier.updateLog(
+                  widget.exerciseIndex,
+                  widget.setIndex,
+                  isAmrap: val,
+                ),
+                selectedColor: AppColors.warning.withAlpha(180),
               ),
             ],
           ),
@@ -186,9 +204,7 @@ class _RpeSliderWithColorFeedback extends StatelessWidget {
           children: [
             Text(
               'RPE (Esfuerzo Percibido): ',
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+              style: AppTypography.titleMedium.copyWith(
                 color: AppColors.textPrimary,
               ),
             ),
@@ -206,9 +222,8 @@ class _RpeSliderWithColorFeedback extends StatelessWidget {
                 children: [
                   Text(
                     rpe > 0 ? '$rpe' : '-',
-                    style: GoogleFonts.montserrat(
+                    style: AppTypography.titleLarge.copyWith(
                       fontWeight: FontWeight.w900,
-                      fontSize: 16,
                       color: color,
                     ),
                   ),
@@ -216,9 +231,8 @@ class _RpeSliderWithColorFeedback extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       label,
-                      style: GoogleFonts.montserrat(
+                      style: AppTypography.caption.copyWith(
                         fontWeight: FontWeight.w500,
-                        fontSize: 11,
                         color: color,
                       ),
                     ),
@@ -237,7 +251,7 @@ class _RpeSliderWithColorFeedback extends StatelessWidget {
             thumbColor: color,
             overlayColor: color.withValues(alpha: 0.2),
             valueIndicatorColor: color,
-            valueIndicatorTextStyle: GoogleFonts.montserrat(
+            valueIndicatorTextStyle: AppTypography.titleMedium.copyWith(
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),

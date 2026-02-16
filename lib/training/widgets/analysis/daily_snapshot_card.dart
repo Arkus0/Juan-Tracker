@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/design_system/design_system.dart' show AppTypography;
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
 import '../../screens/session_detail_screen.dart';
@@ -80,8 +80,7 @@ class DailySnapshotCard extends ConsumerWidget {
                           'EEEE, d MMMM',
                           'es_ES',
                         ).format(snapshot.date).toUpperCase(),
-                        style: GoogleFonts.montserrat(
-                          fontSize: 12,
+                        style: AppTypography.labelMedium.copyWith(
                           fontWeight: FontWeight.w700,
                           color: scheme.onSurface,
                           letterSpacing: 1,
@@ -90,9 +89,7 @@ class DailySnapshotCard extends ConsumerWidget {
                       if (snapshot.dayName != null)
                         Text(
                           snapshot.dayName!,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                          style: AppTypography.titleLarge.copyWith(
                             color: scheme.onSurface,
                           ),
                         ),
@@ -158,8 +155,7 @@ class DailySnapshotCard extends ConsumerWidget {
                         children: [
                           Text(
                             'MEJOR SET',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 10,
+                            style: AppTypography.labelSmall.copyWith(
                               fontWeight: FontWeight.w700,
                               color: scheme.tertiary,
                               letterSpacing: 1,
@@ -167,9 +163,7 @@ class DailySnapshotCard extends ConsumerWidget {
                           ),
                           Text(
                             snapshot.bestSet!.formatted,
-                            style: GoogleFonts.montserrat(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                            style: AppTypography.titleMedium.copyWith(
                               color: scheme.onSurface,
                             ),
                           ),
@@ -199,9 +193,10 @@ class DailySnapshotCard extends ConsumerWidget {
                     ),
                     child: Text(
                       name,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 10,
+                      style: AppTypography.labelSmall.copyWith(
+                        fontWeight: FontWeight.w400,
                         color: scheme.onSurfaceVariant,
+                        letterSpacing: 0,
                       ),
                     ),
                   );
@@ -212,9 +207,10 @@ class DailySnapshotCard extends ConsumerWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     '+${snapshot.exerciseNames.length - 5} más',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 10,
+                    style: AppTypography.labelSmall.copyWith(
+                      fontWeight: FontWeight.w400,
                       color: scheme.onSurfaceVariant,
+                      letterSpacing: 0,
                     ),
                   ),
                 ),
@@ -248,16 +244,14 @@ class DailySnapshotCard extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
+            style: AppTypography.dataSmall.copyWith(
               fontWeight: FontWeight.w800,
               color: scheme.onSurface,
             ),
           ),
           Text(
             label,
-            style: GoogleFonts.montserrat(
-              fontSize: 9,
+            style: AppTypography.micro.copyWith(
               fontWeight: FontWeight.w600,
               color: scheme.onSurfaceVariant,
               letterSpacing: 0.5,
@@ -282,16 +276,13 @@ class DailySnapshotCard extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             'Sin entrenamiento',
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+            style: AppTypography.titleMedium.copyWith(
               color: scheme.onSurfaceVariant,
             ),
           ),
           Text(
             DateFormat('d MMM yyyy', 'es_ES').format(date),
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
+            style: AppTypography.bodySmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),
           ),

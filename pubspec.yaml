@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.0.0
   cupertino_icons: ^1.0.8
-  file_picker: ^6.2.1
+  file_picker: ^10.3.10
   google_fonts: ^6.3.0
   shared_preferences: ^2.3.3
   logging: ^1.3.0
@@ -42,6 +42,9 @@ dependencies:
   mobile_scanner: ^6.0.7
   go_router: ^14.6.3
   sqflite: ^2.3.0
+  timezone: ^0.10.0
+  flutter_timezone: ^4.1.1
+  html: ^0.15.6
 
 dev_dependencies:
   flutter_test:
@@ -56,7 +59,8 @@ flutter:
     - assets/data/exercises_local.json
     - assets/data/routine_templates.json
     - assets/data/alternativas.json
-    - assets/data/foods.jsonl.gz
+    - assets/data/spain_subset.jsonl.gz
+    - assets/data/usa_subset.jsonl.gz
     - assets/fonts/
     - assets/sounds/
 

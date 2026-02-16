@@ -1,7 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../models/library_exercise.dart';
-import '../../utils/design_system.dart';
 import '../../utils/performance_utils.dart';
 
 /// Widget optimizado para mostrar imágenes de ejercicios
@@ -127,6 +129,13 @@ class _OptimizedExerciseImageState extends State<OptimizedExerciseImage>
   }
 
   ImageProvider? _getImageProvider() {
+    final localPath = widget.exercise.localImagePath;
+    if (localPath != null && localPath.isNotEmpty) {
+      final file = File(localPath);
+      if (file.existsSync()) {
+        return FileImage(file);
+      }
+    }
     if (widget.exercise.imageUrls.isNotEmpty) {
       return NetworkImage(widget.exercise.imageUrls.first);
     }

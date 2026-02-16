@@ -14,6 +14,7 @@ class OpenFoodFactsResult {
   final double? fatPer100g;
   final double? fiberPer100g;
   final double? sugarPer100g;
+  final double? saturatedFatPer100g;
   final double? sodiumPer100g;
 
   // Información de porción (si existe)
@@ -45,6 +46,7 @@ class OpenFoodFactsResult {
     this.fatPer100g,
     this.fiberPer100g,
     this.sugarPer100g,
+    this.saturatedFatPer100g,
     this.sodiumPer100g,
     this.portionName,
     this.portionGrams,
@@ -105,6 +107,7 @@ class OpenFoodFactsResult {
       fatPer100g: _extractDouble(nutriments, 'fat_100g'),
       fiberPer100g: _extractDouble(nutriments, 'fiber_100g'),
       sugarPer100g: _extractDouble(nutriments, 'sugars_100g'),
+      saturatedFatPer100g: _extractDouble(nutriments, 'saturated-fat_100g'),
       sodiumPer100g: _extractDouble(nutriments, 'sodium_100g'),
       portionName: portionName,
       portionGrams: portionGrams,
@@ -174,6 +177,7 @@ class OpenFoodFactsResult {
     'fatPer100g': fatPer100g,
     'fiberPer100g': fiberPer100g,
     'sugarPer100g': sugarPer100g,
+    'saturatedFatPer100g': saturatedFatPer100g,
     'sodiumPer100g': sodiumPer100g,
     'portionName': portionName,
     'portionGrams': portionGrams,
@@ -199,6 +203,7 @@ class OpenFoodFactsResult {
       fatPer100g: (json['fatPer100g'] as num?)?.toDouble(),
       fiberPer100g: (json['fiberPer100g'] as num?)?.toDouble(),
       sugarPer100g: (json['sugarPer100g'] as num?)?.toDouble(),
+      saturatedFatPer100g: (json['saturatedFatPer100g'] as num?)?.toDouble(),
       sodiumPer100g: (json['sodiumPer100g'] as num?)?.toDouble(),
       portionName: json['portionName'] as String?,
       portionGrams: (json['portionGrams'] as num?)?.toDouble(),
@@ -225,6 +230,10 @@ class OpenFoodFactsResult {
     'proteinPer100g': proteinPer100g,
     'carbsPer100g': carbsPer100g,
     'fatPer100g': fatPer100g,
+    'fiberPer100g': fiberPer100g,
+    'sugarPer100g': sugarPer100g,
+    'saturatedFatPer100g': saturatedFatPer100g,
+    'sodiumPer100g': sodiumPer100g,
     'portionName': portionName ?? 'Porción',
     'portionGrams': portionGrams ?? 100.0,
     'userCreated': false,

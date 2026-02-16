@@ -3,16 +3,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/design_system/design_system.dart' show AppTypography;
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
-
+import '../../../core/router/app_router.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../models/rutina.dart';
 import '../../models/sesion.dart';
 import '../../providers/training_provider.dart';
-import '../../screens/session_detail_screen.dart';
 
 /// Session history list grouped by week - refactored from HistoryScreen
 class SessionListView extends ConsumerWidget {
@@ -131,10 +131,9 @@ class WeekSection extends StatelessWidget {
             children: [
               Text(
                 weekLabel,
-                style: GoogleFonts.montserrat(
+                style: AppTypography.sectionLabel.copyWith(
                   color: scheme.onSurfaceVariant,
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(width: 12),
@@ -205,15 +204,9 @@ class _SessionTileState extends State<SessionTile> {
             },
             onLongPress: () {
               HapticFeedback.mediumImpact();
-              final theme = Theme.of(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => Theme(
-                    data: theme,
-                    child: SessionDetailScreen(sesion: widget.session),
-                  ),
-                ),
+              context.push(
+                AppRouter.trainingSessionDetail,
+                extra: widget.session,
               );
             },
             borderRadius: BorderRadius.circular(12),
@@ -234,8 +227,7 @@ class _SessionTileState extends State<SessionTile> {
                       children: [
                         Text(
                           dateStr.split(' ')[0],
-                          style: GoogleFonts.montserrat(
-                            fontSize: 20,
+                          style: AppTypography.headlineMedium.copyWith(
                             fontWeight: FontWeight.w900,
                             color: scheme.onSurface,
                             height: 1,
@@ -245,8 +237,7 @@ class _SessionTileState extends State<SessionTile> {
                           dateStr.split(' ').length > 1
                               ? dateStr.split(' ')[1]
                               : '',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 10,
+                          style: AppTypography.labelSmall.copyWith(
                             fontWeight: FontWeight.w700,
                             color: scheme.onSurfaceVariant,
                           ),
@@ -265,8 +256,7 @@ class _SessionTileState extends State<SessionTile> {
                             Expanded(
                               child: Text(
                                 rutinaName.toUpperCase(),
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 14,
+                                style: AppTypography.titleMedium.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: scheme.onSurface,
                                 ),
@@ -286,8 +276,7 @@ class _SessionTileState extends State<SessionTile> {
                                 ),
                                 child: Text(
                                   widget.session.dayName!,
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 9,
+                                  style: AppTypography.micro.copyWith(
                                     fontWeight: FontWeight.w700,
                                     color: scheme.onSurface,
                                   ),
@@ -306,8 +295,7 @@ class _SessionTileState extends State<SessionTile> {
                             const SizedBox(width: 3),
                             Text(
                               timeStr,
-                              style: GoogleFonts.montserrat(
-                                fontSize: 11,
+                              style: AppTypography.caption.copyWith(
                                 color: scheme.onSurfaceVariant,
                               ),
                             ),
@@ -320,8 +308,7 @@ class _SessionTileState extends State<SessionTile> {
                             const SizedBox(width: 3),
                             Text(
                               durationText,
-                              style: GoogleFonts.montserrat(
-                                fontSize: 11,
+                              style: AppTypography.caption.copyWith(
                                 color: scheme.onSurfaceVariant,
                               ),
                             ),
@@ -334,8 +321,7 @@ class _SessionTileState extends State<SessionTile> {
                             const SizedBox(width: 3),
                             Text(
                               '${(widget.session.totalVolume / 1000).toStringAsFixed(1)}t',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 11,
+                              style: AppTypography.caption.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: scheme.primary,
                               ),
@@ -391,8 +377,7 @@ class _SessionTileState extends State<SessionTile> {
                   Expanded(
                     child: Text(
                       ejercicio.nombre,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
+                      style: AppTypography.bodySmall.copyWith(
                         color: scheme.onSurface,
                       ),
                       maxLines: 1,
@@ -401,17 +386,14 @@ class _SessionTileState extends State<SessionTile> {
                   ),
                   Text(
                     '$completedSets series',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
+                    style: AppTypography.caption.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(width: 10),
                   Text(
                     '${maxWeight.toStringAsFixed(1)}kg',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                    style: AppTypography.captionBold.copyWith(
                       color: scheme.primary,
                     ),
                   ),
@@ -424,8 +406,8 @@ class _SessionTileState extends State<SessionTile> {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 '+${widget.session.ejerciciosCompletados.length - 5} ejercicios más',
-                style: GoogleFonts.montserrat(
-                  fontSize: 10,
+                style: AppTypography.labelSmall.copyWith(
+                  fontWeight: FontWeight.w400,
                   color: scheme.onSurfaceVariant,
                 ),
               ),
@@ -437,15 +419,9 @@ class _SessionTileState extends State<SessionTile> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    final theme = Theme.of(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => Theme(
-                          data: theme,
-                          child: SessionDetailScreen(sesion: widget.session),
-                        ),
-                      ),
+                    context.push(
+                      AppRouter.trainingSessionDetail,
+                      extra: widget.session,
                     );
                   },
                   icon: const Icon(Icons.visibility, size: 16),
@@ -454,8 +430,7 @@ class _SessionTileState extends State<SessionTile> {
                     foregroundColor: scheme.onSurface,
                     side: BorderSide(color: scheme.outline),
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    textStyle: GoogleFonts.montserrat(
-                      fontSize: 11,
+                    textStyle: AppTypography.caption.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -475,8 +450,7 @@ class _SessionTileState extends State<SessionTile> {
                     vertical: 8,
                     horizontal: 12,
                   ),
-                  textStyle: GoogleFonts.montserrat(
-                    fontSize: 11,
+                  textStyle: AppTypography.caption.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),

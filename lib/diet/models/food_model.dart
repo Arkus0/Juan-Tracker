@@ -12,6 +12,12 @@ class FoodModel {
   final double? carbsPer100g;
   final double? fatPer100g;
 
+  // Micronutrientes por 100g
+  final double? fiberPer100g;
+  final double? sugarPer100g;
+  final double? saturatedFatPer100g;
+  final double? sodiumPer100g;
+
   // Información de porción (opcional)
   final String? portionName;
   final double? portionGrams;
@@ -33,6 +39,10 @@ class FoodModel {
     this.proteinPer100g,
     this.carbsPer100g,
     this.fatPer100g,
+    this.fiberPer100g,
+    this.sugarPer100g,
+    this.saturatedFatPer100g,
+    this.sodiumPer100g,
     this.portionName,
     this.portionGrams,
     this.userCreated = true,
@@ -59,12 +69,32 @@ class FoodModel {
   double? fatForGrams(double grams) =>
       fatPer100g != null ? grams / 100 * fatPer100g! : null;
 
+  /// Calcula la fibra para una cantidad dada en gramos
+  double? fiberForGrams(double grams) =>
+      fiberPer100g != null ? grams / 100 * fiberPer100g! : null;
+
+  /// Calcula el azúcar para una cantidad dada en gramos
+  double? sugarForGrams(double grams) =>
+      sugarPer100g != null ? grams / 100 * sugarPer100g! : null;
+
+  /// Calcula la grasa saturada para una cantidad dada en gramos
+  double? saturatedFatForGrams(double grams) =>
+      saturatedFatPer100g != null ? grams / 100 * saturatedFatPer100g! : null;
+
+  /// Calcula el sodio para una cantidad dada en gramos
+  double? sodiumForGrams(double grams) =>
+      sodiumPer100g != null ? grams / 100 * sodiumPer100g! : null;
+
   /// Calcula las macros para una cantidad dada
   Macros macrosForGrams(double grams) => Macros(
         kcal: kcalForGrams(grams),
         protein: proteinForGrams(grams),
         carbs: carbsForGrams(grams),
         fat: fatForGrams(grams),
+        fiber: fiberForGrams(grams),
+        sugar: sugarForGrams(grams),
+        saturatedFat: saturatedFatForGrams(grams),
+        sodium: sodiumForGrams(grams),
       );
 
   /// Crea una copia con valores modificados
@@ -77,6 +107,10 @@ class FoodModel {
     double? proteinPer100g,
     double? carbsPer100g,
     double? fatPer100g,
+    double? fiberPer100g,
+    double? sugarPer100g,
+    double? saturatedFatPer100g,
+    double? sodiumPer100g,
     String? portionName,
     double? portionGrams,
     bool? userCreated,
@@ -94,6 +128,10 @@ class FoodModel {
         proteinPer100g: proteinPer100g ?? this.proteinPer100g,
         carbsPer100g: carbsPer100g ?? this.carbsPer100g,
         fatPer100g: fatPer100g ?? this.fatPer100g,
+        fiberPer100g: fiberPer100g ?? this.fiberPer100g,
+        sugarPer100g: sugarPer100g ?? this.sugarPer100g,
+        saturatedFatPer100g: saturatedFatPer100g ?? this.saturatedFatPer100g,
+        sodiumPer100g: sodiumPer100g ?? this.sodiumPer100g,
         portionName: portionName ?? this.portionName,
         portionGrams: portionGrams ?? this.portionGrams,
         userCreated: userCreated ?? this.userCreated,
@@ -124,12 +162,20 @@ class Macros {
   final double? protein;
   final double? carbs;
   final double? fat;
+  final double? fiber;
+  final double? sugar;
+  final double? saturatedFat;
+  final double? sodium;
 
   const Macros({
     required this.kcal,
     this.protein,
     this.carbs,
     this.fat,
+    this.fiber,
+    this.sugar,
+    this.saturatedFat,
+    this.sodium,
   });
 
   /// Suma dos Macros preservando null cuando ambos son desconocidos
@@ -141,6 +187,10 @@ class Macros {
         protein: _sumNullable(protein, other.protein),
         carbs: _sumNullable(carbs, other.carbs),
         fat: _sumNullable(fat, other.fat),
+        fiber: _sumNullable(fiber, other.fiber),
+        sugar: _sumNullable(sugar, other.sugar),
+        saturatedFat: _sumNullable(saturatedFat, other.saturatedFat),
+        sodium: _sumNullable(sodium, other.sodium),
       );
 
   /// Helper para sumar valores nullable preservando semántica

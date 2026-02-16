@@ -63,7 +63,10 @@ class AnalyticsRepository {
                   restSeconds: s.restSeconds,
                   isFailure: s.isFailure,
                   isDropset: s.isDropset,
+                  isRestPause: s.isRestPause,
                   isWarmup: s.isWarmup,
+                  isMyoReps: s.isMyoReps,
+                  isAmrap: s.isAmrap,
                 ),
               )
               .toList(),
@@ -686,6 +689,54 @@ class AnalyticsRepository {
         .toSet()
         .toList()
       ..sort();
+  }
+
+  /// Promedio de descanso (segundos) por libraryId usando historial real.
+  /// Solo considera sets con restSeconds y sesiones completadas.
+  Future<Map<String, int>> getAverageRestSecondsByLibraryId(
+    List<String> libraryIds,
+  ) async {
+    final ids = libraryIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList();
+    if (ids.isEmpty) return {};
+
+    final placeholders = List.filled(ids.length, '?').join(',');
+    final results = await db.customSelect(
+      '''
+      SELECT se.library_id AS library_id,
+             AVG(ws.rest_seconds) AS avg_rest,
+             COUNT(ws.rest_seconds) AS samples
+      FROM session_exercises se
+      INNER JOIN workout_sets ws ON ws.session_exercise_id = se.id
+      INNER JOIN sessions s ON s.id = se.session_id
+      WHERE se.library_id IN ($placeholders)
+        AND ws.rest_seconds IS NOT NULL
+        AND s.completed_at IS NOT NULL
+      GROUP BY se.library_id
+      ''',
+      variables: ids.map(Variable.new).toList(),
+    ).get();
+
+    final averages = <String, int>{};
+    for (final row in results) {
+      final libraryId = row.data['library_id'] as String?;
+      if (libraryId == null || libraryId.isEmpty) continue;
+
+      final avgRest = row.data['avg_rest'];
+      final samples = (row.data['samples'] as int?) ?? 0;
+      if (samples < 3) continue;
+
+      final value = avgRest is num ? avgRest.toDouble() : null;
+      if (value == null || value <= 0) continue;
+
+      final rounded = ((value / 5).round() * 5).clamp(20, 600);
+      averages[libraryId] = rounded.toInt();
+    }
+
+    return averages;
   }
 }
 

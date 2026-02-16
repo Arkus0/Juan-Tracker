@@ -104,6 +104,7 @@ class CoachPlan {
   final int? currentKcalTarget; // Necesario para clamps
   final String? notes;
   final MacroPreset macroPreset;
+  final bool autoApplyCheckIn;
 
   const CoachPlan({
     required this.id,
@@ -117,6 +118,7 @@ class CoachPlan {
     this.currentKcalTarget,
     this.notes,
     this.macroPreset = MacroPreset.balanced,
+    this.autoApplyCheckIn = false,
   });
 
   /// Velocidad semanal en kg (ya no %)
@@ -169,6 +171,7 @@ class CoachPlan {
     int? currentKcalTarget,
     String? notes,
     MacroPreset? macroPreset,
+    bool? autoApplyCheckIn,
   }) {
     return CoachPlan(
       id: id ?? this.id,
@@ -182,6 +185,7 @@ class CoachPlan {
       currentKcalTarget: currentKcalTarget ?? this.currentKcalTarget,
       notes: notes ?? this.notes,
       macroPreset: macroPreset ?? this.macroPreset,
+      autoApplyCheckIn: autoApplyCheckIn ?? this.autoApplyCheckIn,
     );
   }
 }

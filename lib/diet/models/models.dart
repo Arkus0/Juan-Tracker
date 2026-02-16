@@ -8,3 +8,6 @@ export 'recipe_model.dart';
 export 'open_food_facts_model.dart';
 export 'goal_projection_model.dart';
 export 'body_progress_models.dart';
+export 'macro_cycle_model.dart';
+export 'macro_flexibility_model.dart';
+export 'tdee_trend_model.dart';

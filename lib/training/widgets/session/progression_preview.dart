@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../models/progression_engine_models.dart';
-import '../../utils/design_system.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // CONSECUENCIA MESSAGE - WIDGET PRINCIPAL DE UX
@@ -53,8 +52,7 @@ class ConsequenceMessage extends StatelessWidget {
           Flexible(
             child: Text(
               message,
-              style: GoogleFonts.montserrat(
-                fontSize: 11,
+              style: AppTypography.caption.copyWith(
                 fontWeight: FontWeight.w600,
                 color: iconColor,
               ),
@@ -189,8 +187,7 @@ class ProgressionPreviewCard extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               _getActionLabel(decision.action),
-              style: GoogleFonts.montserrat(
-                fontSize: 10,
+              style: AppTypography.labelSmall.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1,
                 color: AppColors.textSecondary,
@@ -206,8 +203,7 @@ class ProgressionPreviewCard extends StatelessWidget {
                 ),
                 child: Text(
                   '↑ MEJORA',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 8,
+                  style: AppTypography.microBadge.copyWith(
                     fontWeight: FontWeight.w900,
                     color: AppColors.neonCyan,
                   ),
@@ -222,8 +218,7 @@ class ProgressionPreviewCard extends StatelessWidget {
         // Peso y reps grandes
         Text(
           '${_formatWeight(decision.suggestedWeight)}kg × ${decision.suggestedReps}',
-          style: GoogleFonts.montserrat(
-            fontSize: 22,
+          style: AppTypography.timerCompact.copyWith(
             fontWeight: FontWeight.w900,
             color: Colors.white,
           ),
@@ -234,8 +229,7 @@ class ProgressionPreviewCard extends StatelessWidget {
         // Mensaje para usuario
         Text(
           decision.userMessage,
-          style: GoogleFonts.montserrat(
-            fontSize: 11,
+          style: AppTypography.caption.copyWith(
             color: AppColors.textSecondary,
           ),
         ),
@@ -260,8 +254,7 @@ class ProgressionPreviewCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   decision.nextStepPreview!,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 9,
+                  style: AppTypography.micro.copyWith(
                     color: AppColors.textTertiary,
                   ),
                 ),
@@ -378,9 +371,7 @@ class ProgressionBadge extends StatelessWidget {
           const SizedBox(width: 3),
           Text(
             label,
-            style: GoogleFonts.montserrat(
-              fontSize: 8,
-              fontWeight: FontWeight.w800,
+            style: AppTypography.microBadge.copyWith(
               color: color,
             ),
           ),
@@ -461,8 +452,7 @@ class ProgressionInfoTooltip extends StatelessWidget {
           // Header
           Text(
             '¿POR QUÉ ESTA SUGERENCIA?',
-            style: GoogleFonts.montserrat(
-              fontSize: 10,
+            style: AppTypography.labelSmall.copyWith(
               fontWeight: FontWeight.w800,
               letterSpacing: 1,
               color: AppColors.textTertiary,
@@ -483,8 +473,7 @@ class ProgressionInfoTooltip extends StatelessWidget {
               Expanded(
                 child: Text(
                   decision.reason,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
+                  style: AppTypography.bodySmall.copyWith(
                     color: Colors.white,
                   ),
                 ),
@@ -505,8 +494,7 @@ class ProgressionInfoTooltip extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Confianza: ${_getConfidenceLabel(decision.confidence)}',
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
+                style: AppTypography.caption.copyWith(
                   color: _getConfidenceColor(decision.confidence),
                 ),
               ),
@@ -520,8 +508,7 @@ class ProgressionInfoTooltip extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'HISTORIAL',
-              style: GoogleFonts.montserrat(
-                fontSize: 9,
+              style: AppTypography.micro.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
                 color: AppColors.textTertiary,
@@ -530,15 +517,13 @@ class ProgressionInfoTooltip extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '${this.context!.recentSessions.length} sesiones analizadas',
-              style: GoogleFonts.montserrat(
-                fontSize: 11,
+              style: AppTypography.caption.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
             Text(
               '${this.context!.consecutiveSuccesses} éxitos consecutivos',
-              style: GoogleFonts.montserrat(
-                fontSize: 11,
+              style: AppTypography.caption.copyWith(
                 color: this.context!.consecutiveSuccesses > 0
                     ? AppColors.neonCyan
                     : AppColors.textSecondary,
@@ -638,9 +623,7 @@ class SessionProgressIndicator extends StatelessWidget {
           // Porcentaje
           Text(
             '$percent%',
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
+            style: AppTypography.captionBold.copyWith(
               color: isSuccess ? AppColors.neonCyan : AppColors.textSecondary,
             ),
           ),
@@ -650,8 +633,7 @@ class SessionProgressIndicator extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               '(faltan $setsNeeded)',
-              style: GoogleFonts.montserrat(
-                fontSize: 9,
+              style: AppTypography.micro.copyWith(
                 color: AppColors.textTertiary,
               ),
             ),
@@ -687,9 +669,7 @@ class ProtectionBadge extends StatelessWidget {
           const SizedBox(width: 3),
           Text(
             'PROTEGIDO',
-            style: GoogleFonts.montserrat(
-              fontSize: 8,
-              fontWeight: FontWeight.w800,
+            style: AppTypography.microBadge.copyWith(
               color: AppColors.info,
             ),
           ),
@@ -729,8 +709,7 @@ class IncrementInfoBadge extends StatelessWidget {
           const SizedBox(width: 3),
           Text(
             '+${_formatWeight(increment)}kg',
-            style: GoogleFonts.montserrat(
-              fontSize: 8,
+            style: AppTypography.microBadge.copyWith(
               fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
             ),
@@ -817,8 +796,7 @@ class EmpatheticFeedback extends StatelessWidget {
               Expanded(
                 child: Text(
                   message,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 13,
+                  style: AppTypography.bodyCompact.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -841,8 +819,7 @@ class EmpatheticFeedback extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               subtext,
-              style: GoogleFonts.montserrat(
-                fontSize: 11,
+              style: AppTypography.caption.copyWith(
                 color: AppColors.textTertiary,
               ),
             ),
@@ -926,8 +903,7 @@ class EmpatheticBanner extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               message,
-              style: GoogleFonts.montserrat(
-                fontSize: 11,
+              style: AppTypography.caption.copyWith(
                 fontWeight: FontWeight.w500,
                 color: Colors.grey[300],
               ),
@@ -990,8 +966,7 @@ class ExerciseSummaryFeedback extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 metTarget ? '¡Objetivo cumplido!' : 'Ejercicio completado',
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
+                style: AppTypography.titleMedium.copyWith(
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
@@ -1038,8 +1013,8 @@ class ExerciseSummaryFeedback extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     nextSessionHint!,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 10,
+                    style: AppTypography.labelSmall.copyWith(
+                      fontWeight: FontWeight.w400,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -1079,17 +1054,14 @@ class _StatChip extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.montserrat(
-              fontSize: 9,
+            style: AppTypography.micro.copyWith(
               color: AppColors.textTertiary,
             ),
           ),
           const SizedBox(width: 4),
           Text(
             value,
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
+            style: AppTypography.captionBold.copyWith(
               color: highlighted ? AppColors.neonCyan : Colors.white,
             ),
           ),

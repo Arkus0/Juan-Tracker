@@ -117,6 +117,10 @@ class MealTemplateItemModel {
   final double? proteinPer100g;
   final double? carbsPer100g;
   final double? fatPer100g;
+  final double? fiberPer100g;
+  final double? sugarPer100g;
+  final double? saturatedFatPer100g;
+  final double? sodiumPer100g;
   final int sortOrder;
 
   MealTemplateItemModel({
@@ -130,6 +134,10 @@ class MealTemplateItemModel {
     this.proteinPer100g,
     this.carbsPer100g,
     this.fatPer100g,
+    this.fiberPer100g,
+    this.sugarPer100g,
+    this.saturatedFatPer100g,
+    this.sodiumPer100g,
     this.sortOrder = 0,
   });
 
@@ -152,6 +160,10 @@ class MealTemplateItemModel {
       proteinPer100g: food.proteinPer100g,
       carbsPer100g: food.carbsPer100g,
       fatPer100g: food.fatPer100g,
+      fiberPer100g: food.fiberPer100g,
+      sugarPer100g: food.sugarPer100g,
+      saturatedFatPer100g: food.saturatedFatPer100g,
+      sodiumPer100g: food.sodiumPer100g,
       sortOrder: sortOrder,
     );
   }
@@ -174,6 +186,26 @@ class MealTemplateItemModel {
       ? fatPer100g! * amount / 100 
       : null;
 
+  /// Fibra calculada para esta cantidad
+  double? get fiber => fiberPer100g != null 
+      ? fiberPer100g! * amount / 100 
+      : null;
+
+  /// Azúcar calculado para esta cantidad
+  double? get sugar => sugarPer100g != null 
+      ? sugarPer100g! * amount / 100 
+      : null;
+
+  /// Grasa saturada calculada para esta cantidad
+  double? get saturatedFat => saturatedFatPer100g != null 
+      ? saturatedFatPer100g! * amount / 100 
+      : null;
+
+  /// Sodio calculado para esta cantidad
+  double? get sodium => sodiumPer100g != null 
+      ? sodiumPer100g! * amount / 100 
+      : null;
+
   /// Texto descriptivo del item
   String get description => '${amount.toStringAsFixed(0)}g $foodName';
 
@@ -188,6 +220,10 @@ class MealTemplateItemModel {
     double? proteinPer100g,
     double? carbsPer100g,
     double? fatPer100g,
+    double? fiberPer100g,
+    double? sugarPer100g,
+    double? saturatedFatPer100g,
+    double? sodiumPer100g,
     int? sortOrder,
   }) {
     return MealTemplateItemModel(
@@ -201,6 +237,10 @@ class MealTemplateItemModel {
       proteinPer100g: proteinPer100g ?? this.proteinPer100g,
       carbsPer100g: carbsPer100g ?? this.carbsPer100g,
       fatPer100g: fatPer100g ?? this.fatPer100g,
+      fiberPer100g: fiberPer100g ?? this.fiberPer100g,
+      sugarPer100g: sugarPer100g ?? this.sugarPer100g,
+      saturatedFatPer100g: saturatedFatPer100g ?? this.saturatedFatPer100g,
+      sodiumPer100g: sodiumPer100g ?? this.sodiumPer100g,
       sortOrder: sortOrder ?? this.sortOrder,
     );
   }

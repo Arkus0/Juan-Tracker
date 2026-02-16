@@ -271,6 +271,10 @@ class SmartFoodSuggestion {
   final double? protein;
   final double? carbs;
   final double? fat;
+  final double? fiber;
+  final double? sugar;
+  final double? saturatedFat;
+  final double? sodium;
   final double amount;
   final diet.ServingUnit unit;
   final int timesEaten;
@@ -285,6 +289,10 @@ class SmartFoodSuggestion {
     this.protein,
     this.carbs,
     this.fat,
+    this.fiber,
+    this.sugar,
+    this.saturatedFat,
+    this.sodium,
     required this.amount,
     required this.unit,
     required this.timesEaten,
@@ -311,6 +319,10 @@ class SmartFoodSuggestion {
       protein: protein,
       carbs: carbs,
       fat: fat,
+      fiber: fiber,
+      sugar: sugar,
+      saturatedFat: saturatedFat,
+      sodium: sodium,
     );
   }
 }
@@ -425,6 +437,10 @@ final smartFoodSuggestionsProvider = FutureProvider<List<SmartFoodSuggestion>>((
       protein: entry.protein,
       carbs: entry.carbs,
       fat: entry.fat,
+      fiber: entry.fiber,
+      sugar: entry.sugar,
+      saturatedFat: entry.saturatedFat,
+      sodium: entry.sodium,
       amount: freq.avgQuantity,
       unit: entry.unit,
       timesEaten: count,

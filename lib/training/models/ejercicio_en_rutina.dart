@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 import 'progression_type.dart';
+import 'training_set_type.dart';
 
 class EjercicioEnRutina {
   // Embedded Library Data
@@ -18,6 +19,7 @@ class EjercicioEnRutina {
   String? notas;
   final String instanceId;
   final String? supersetId;
+  TrainingSetType setType;
 
   // Progression Configuration
   final ProgressionType progressionType;
@@ -42,6 +44,7 @@ class EjercicioEnRutina {
     this.progressionType = ProgressionType.none,
     this.weightIncrement = 2.5,
     this.targetRpe,
+    this.setType = TrainingSetType.normal,
   }) : instanceId = instanceId ?? const Uuid().v4();
 
   /// Creates a DEEP copy of this exercise for isolated editing.
@@ -65,6 +68,7 @@ class EjercicioEnRutina {
       progressionType: progressionType,
       weightIncrement: weightIncrement,
       targetRpe: targetRpe,
+      setType: setType,
     );
   }
 
@@ -87,6 +91,7 @@ class EjercicioEnRutina {
     ProgressionType? progressionType,
     double? weightIncrement,
     Object? targetRpe = _sentinel,
+    TrainingSetType? setType,
   }) {
     return EjercicioEnRutina(
       id: id ?? this.id,
@@ -113,6 +118,7 @@ class EjercicioEnRutina {
       progressionType: progressionType ?? this.progressionType,
       weightIncrement: weightIncrement ?? this.weightIncrement,
       targetRpe: targetRpe == _sentinel ? this.targetRpe : targetRpe as int?,
+      setType: setType ?? this.setType,
     );
   }
 
@@ -135,6 +141,7 @@ class EjercicioEnRutina {
       'progressionType': progressionType.value,
       'weightIncrement': weightIncrement,
       'targetRpe': targetRpe,
+      'setType': setType.value,
     };
   }
 
@@ -178,6 +185,7 @@ class EjercicioEnRutina {
       ),
       weightIncrement: (json['weightIncrement'] as num?)?.toDouble() ?? 2.5,
       targetRpe: json['targetRpe'] as int?,
+      setType: TrainingSetType.fromString(json['setType'] as String?),
     );
   }
 }

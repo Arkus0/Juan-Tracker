@@ -10,6 +10,7 @@ import '../models/progression_type.dart';
 import '../models/rutina.dart';
 import '../models/serie_log.dart';
 import '../models/sesion.dart';
+import '../models/training_set_type.dart';
 import 'i_training_repository.dart';
 
 /// Repositorio especializado para operaciones de Sesiones.
@@ -62,7 +63,10 @@ class SessionRepository {
                   restSeconds: s.restSeconds,
                   isFailure: s.isFailure,
                   isDropset: s.isDropset,
+                  isRestPause: s.isRestPause,
                   isWarmup: s.isWarmup,
+                  isMyoReps: s.isMyoReps,
+                  isAmrap: s.isAmrap,
                 ),
               )
               .toList(),
@@ -120,6 +124,7 @@ class SessionRepository {
                 progressionType: ProgressionType.fromString(e.progressionType),
                 weightIncrement: e.weightIncrement,
                 targetRpe: e.targetRpe,
+                setType: TrainingSetType.fromString(e.setType),
               ),
             )
             .toList(),
@@ -332,6 +337,8 @@ class SessionRepository {
                   isDropset: Value(log.isDropset),
                   isRestPause: Value(log.isRestPause),
                   isWarmup: Value(log.isWarmup),
+                  isMyoReps: Value(log.isMyoReps),
+                  isAmrap: Value(log.isAmrap),
                 ),
               );
         }

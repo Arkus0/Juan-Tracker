@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../models/library_exercise.dart';
 import '../../services/alternativas_service.dart';
-import '../../utils/design_system.dart';
 
 /// Dialog que muestra las alternativas para un ejercicio.
 class AlternativasDialog extends StatelessWidget {
@@ -50,8 +49,7 @@ class AlternativasDialog extends StatelessWidget {
               Expanded(
                 child: Text(
                   'ALTERNATIVAS',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 18,
+                  style: AppTypography.headlineSmall.copyWith(
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
                   ),
@@ -62,8 +60,7 @@ class AlternativasDialog extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             ejercicioOriginal.name.toUpperCase(),
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
+            style: AppTypography.titleMedium.copyWith(
               fontWeight: FontWeight.w700,
               color: AppColors.neonPrimary,
             ),
@@ -84,7 +81,7 @@ class AlternativasDialog extends StatelessWidget {
           },
           child: Text(
             'CERRAR',
-            style: GoogleFonts.montserrat(
+            style: AppTypography.labelLarge.copyWith(
               fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
             ),
@@ -104,9 +101,9 @@ class AlternativasDialog extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Sin alternativas registradas',
-            style: GoogleFonts.montserrat(
-              color: Colors.white38,
+            style: AppTypography.bodyMedium.copyWith(
               fontWeight: FontWeight.w600,
+              color: Colors.white38,
             ),
           ),
         ],
@@ -167,18 +164,18 @@ class _AlternativaItem extends StatelessWidget {
                 children: [
                   Text(
                     exercise.name.toUpperCase(),
-                    style: GoogleFonts.montserrat(
-                      color: isFirst ? Colors.white : Colors.white38,
+                    style: AppTypography.titleMedium.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      color: isFirst ? Colors.white : Colors.white38,
                     ),
                   ),
                   if (exercise.equipment.isNotEmpty)
                     Text(
                       exercise.equipment,
-                      style: GoogleFonts.montserrat(
+                      style: AppTypography.labelSmall.copyWith(
+                        fontWeight: FontWeight.w400,
                         color: AppColors.textTertiary,
-                        fontSize: 10,
+                        letterSpacing: 0,
                       ),
                     ),
                   if (isFirst)
@@ -186,10 +183,8 @@ class _AlternativaItem extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         'RECOMENDADA',
-                        style: GoogleFonts.montserrat(
+                        style: AppTypography.labelSmall.copyWith(
                           color: AppColors.neonPrimary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 10,
                         ),
                       ),
                     ),
@@ -207,10 +202,9 @@ class _AlternativaItem extends StatelessWidget {
               ),
               child: Text(
                 'CAMBIAR',
-                style: GoogleFonts.montserrat(
-                  color: Colors.redAccent[100],
+                style: AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.w800,
-                  fontSize: 10,
+                  color: Colors.redAccent[100],
                 ),
               ),
             ),

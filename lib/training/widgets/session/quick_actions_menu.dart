@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../utils/design_system.dart';
+import '../../../core/design_system/design_system.dart';
 
 /// ============================================================================
 /// QUICK ACTIONS MENU — Grid 2x2 de Acciones Rápidas Mid-Workout
@@ -28,6 +27,8 @@ enum QuickActionType {
   history, // Ver historial del ejercicio
   restTimer, // Ajustar tiempo de descanso
   quickNote, // Añadir nota rápida
+  fillFromHistory, // Rellenar con última sesión
+  duplicateSet, // Duplicar serie actual
 }
 
 class QuickActionsMenu extends StatefulWidget {
@@ -36,6 +37,12 @@ class QuickActionsMenu extends StatefulWidget {
 
   /// Callback cuando se presiona "HISTORIAL"
   final VoidCallback? onHistory;
+
+  /// Callback cuando se presiona "ÚLTIMA"
+  final VoidCallback? onFillFromHistory;
+
+  /// Callback cuando se presiona "DUPLICAR"
+  final VoidCallback? onDuplicateSet;
 
   /// Callback cuando se selecciona un tiempo de descanso
   final Function(int seconds)? onRestTimeSelected;
@@ -56,6 +63,8 @@ class QuickActionsMenu extends StatefulWidget {
     super.key,
     this.onRepeat,
     this.onHistory,
+    this.onFillFromHistory,
+    this.onDuplicateSet,
     this.onRestTimeSelected,
     this.onQuickNote,
     this.currentRestSeconds = 90,
@@ -194,7 +203,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
         // Título
         Text(
           'ACCIONES RÁPIDAS',
-          style: GoogleFonts.montserrat(
+          style: AppTypography.sectionLabel.copyWith(
             fontSize: 12,
             fontWeight: FontWeight.w900,
             color: AppColors.bloodRed,
@@ -219,7 +228,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
   /// Grid 2x2 de acciones
   Widget _buildGridContent() {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 280),
+      constraints: const BoxConstraints(maxWidth: 320),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -294,6 +303,41 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          // Fila 3: ÚLTIMA + DUPLICAR
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionTile(
+                  icon: Icons.auto_awesome_rounded,
+                  label: 'ÚLTIMA',
+                  sublabel: 'Rellenar ejercicio',
+                  color: AppColors.neonCyan,
+                  filled: false,
+                  enabled: widget.onFillFromHistory != null,
+                  onTap: () {
+                    _handleAction(widget.onFillFromHistory);
+                    _closeMenu();
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _QuickActionTile(
+                  icon: Icons.copy_all_rounded,
+                  label: 'DUPLICAR',
+                  sublabel: 'Set actual',
+                  color: AppColors.bloodRed,
+                  filled: false,
+                  enabled: widget.onDuplicateSet != null,
+                  onTap: () {
+                    _handleAction(widget.onDuplicateSet);
+                    _closeMenu();
+                  },
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -324,11 +368,8 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
               const SizedBox(width: 8),
               Text(
                 'TIEMPO DE DESCANSO',
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                style: AppTypography.sectionLabel.copyWith(
                   color: AppColors.restTeal,
-                  letterSpacing: 1,
                 ),
               ),
             ],
@@ -363,8 +404,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                 ),
                 child: Text(
                   _formatTime(_selectedRestSeconds),
-                  style: GoogleFonts.montserrat(
-                    fontSize: 28,
+                  style: AppTypography.displaySmall.copyWith(
                     fontWeight: FontWeight.w900,
                     color: AppColors.restTeal,
                   ),
@@ -413,9 +453,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                   ),
                   child: Text(
                     _formatTime(seconds),
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                    style: AppTypography.captionBold.copyWith(
                       color: isSelected
                           ? AppColors.restTeal
                           : AppColors.textSecondary,
@@ -447,9 +485,8 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
               ),
               child: Text(
                 'CONFIRMAR',
-                style: GoogleFonts.montserrat(
+                style: AppTypography.sectionLabel.copyWith(
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -506,11 +543,8 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
               const SizedBox(width: 8),
               Text(
                 'NOTA RÁPIDA',
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                style: AppTypography.sectionLabel.copyWith(
                   color: AppColors.techCyan,
-                  letterSpacing: 1,
                 ),
               ),
             ],
@@ -522,14 +556,12 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
             controller: _noteController,
             autofocus: true,
             maxLines: 2,
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
+            style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textPrimary,
             ),
             decoration: InputDecoration(
               hintText: 'Ej: Subir peso próxima vez, ajustar agarre...',
-              hintStyle: GoogleFonts.montserrat(
-                fontSize: 13,
+              hintStyle: AppTypography.bodyCompact.copyWith(
                 color: AppColors.textTertiary,
               ),
               filled: true,
@@ -590,9 +622,8 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
               ),
               child: Text(
                 'GUARDAR NOTA',
-                style: GoogleFonts.montserrat(
+                style: AppTypography.sectionLabel.copyWith(
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -618,8 +649,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
         ),
         child: Text(
           text,
-          style: GoogleFonts.montserrat(
-            fontSize: 11,
+          style: AppTypography.caption.copyWith(
             color: AppColors.textSecondary,
           ),
         ),
@@ -646,6 +676,7 @@ class _QuickActionTile extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
   final bool filled;
+  final bool enabled;
 
   const _QuickActionTile({
     required this.icon,
@@ -654,6 +685,7 @@ class _QuickActionTile extends StatelessWidget {
     required this.color,
     required this.onTap,
     required this.filled,
+    this.enabled = true,
   });
 
   @override
@@ -661,7 +693,7 @@ class _QuickActionTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -678,23 +710,25 @@ class _QuickActionTile extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 24, color: color),
+              Icon(
+                icon,
+                size: 24,
+                color: enabled ? color : AppColors.textDisabled,
+              ),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: color,
+                style: AppTypography.sectionLabel.copyWith(
+                  color: enabled ? color : AppColors.textDisabled,
                   letterSpacing: 0.3,
                 ),
                 textAlign: TextAlign.center,
               ),
               Text(
                 sublabel,
-                style: GoogleFonts.montserrat(
-                  fontSize: 9,
-                  color: AppColors.textTertiary,
+                style: AppTypography.micro.copyWith(
+                  color:
+                      enabled ? AppColors.textTertiary : AppColors.textDisabled,
                 ),
                 textAlign: TextAlign.center,
               ),

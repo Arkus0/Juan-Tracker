@@ -992,6 +992,18 @@ class $RoutineExercisesTable extends RoutineExercises
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _setTypeMeta = const VerificationMeta(
+    'setType',
+  );
+  @override
+  late final GeneratedColumn<String> setType = GeneratedColumn<String>(
+    'set_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('normal'),
+  );
   static const VerificationMeta _supersetIdMeta = const VerificationMeta(
     'supersetId',
   );
@@ -1064,6 +1076,7 @@ class $RoutineExercisesTable extends RoutineExercises
     repsRange,
     suggestedRestSeconds,
     notes,
+    setType,
     supersetId,
     exerciseIndex,
     progressionType,
@@ -1166,6 +1179,12 @@ class $RoutineExercisesTable extends RoutineExercises
       context.handle(
         _notesMeta,
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('set_type')) {
+      context.handle(
+        _setTypeMeta,
+        setType.isAcceptableOrUnknown(data['set_type']!, _setTypeMeta),
       );
     }
     if (data.containsKey('superset_id')) {
@@ -1275,6 +1294,10 @@ class $RoutineExercisesTable extends RoutineExercises
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      setType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}set_type'],
+      )!,
       supersetId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}superset_id'],
@@ -1323,6 +1346,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
   final String repsRange;
   final int? suggestedRestSeconds;
   final String? notes;
+  final String setType;
   final String? supersetId;
   final int exerciseIndex;
   final String progressionType;
@@ -1342,6 +1366,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
     required this.repsRange,
     this.suggestedRestSeconds,
     this.notes,
+    required this.setType,
     this.supersetId,
     required this.exerciseIndex,
     required this.progressionType,
@@ -1382,6 +1407,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['set_type'] = Variable<String>(setType);
     if (!nullToAbsent || supersetId != null) {
       map['superset_id'] = Variable<String>(supersetId);
     }
@@ -1417,6 +1443,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      setType: Value(setType),
       supersetId: supersetId == null && nullToAbsent
           ? const Value.absent()
           : Value(supersetId),
@@ -1452,6 +1479,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
         json['suggestedRestSeconds'],
       ),
       notes: serializer.fromJson<String?>(json['notes']),
+      setType: serializer.fromJson<String>(json['setType']),
       supersetId: serializer.fromJson<String?>(json['supersetId']),
       exerciseIndex: serializer.fromJson<int>(json['exerciseIndex']),
       progressionType: serializer.fromJson<String>(json['progressionType']),
@@ -1476,6 +1504,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       'repsRange': serializer.toJson<String>(repsRange),
       'suggestedRestSeconds': serializer.toJson<int?>(suggestedRestSeconds),
       'notes': serializer.toJson<String?>(notes),
+      'setType': serializer.toJson<String>(setType),
       'supersetId': serializer.toJson<String?>(supersetId),
       'exerciseIndex': serializer.toJson<int>(exerciseIndex),
       'progressionType': serializer.toJson<String>(progressionType),
@@ -1498,6 +1527,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
     String? repsRange,
     Value<int?> suggestedRestSeconds = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    String? setType,
     Value<String?> supersetId = const Value.absent(),
     int? exerciseIndex,
     String? progressionType,
@@ -1521,6 +1551,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
         ? suggestedRestSeconds.value
         : this.suggestedRestSeconds,
     notes: notes.present ? notes.value : this.notes,
+    setType: setType ?? this.setType,
     supersetId: supersetId.present ? supersetId.value : this.supersetId,
     exerciseIndex: exerciseIndex ?? this.exerciseIndex,
     progressionType: progressionType ?? this.progressionType,
@@ -1552,6 +1583,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           ? data.suggestedRestSeconds.value
           : this.suggestedRestSeconds,
       notes: data.notes.present ? data.notes.value : this.notes,
+      setType: data.setType.present ? data.setType.value : this.setType,
       supersetId: data.supersetId.present
           ? data.supersetId.value
           : this.supersetId,
@@ -1584,6 +1616,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           ..write('repsRange: $repsRange, ')
           ..write('suggestedRestSeconds: $suggestedRestSeconds, ')
           ..write('notes: $notes, ')
+          ..write('setType: $setType, ')
           ..write('supersetId: $supersetId, ')
           ..write('exerciseIndex: $exerciseIndex, ')
           ..write('progressionType: $progressionType, ')
@@ -1608,6 +1641,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
     repsRange,
     suggestedRestSeconds,
     notes,
+    setType,
     supersetId,
     exerciseIndex,
     progressionType,
@@ -1631,6 +1665,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           other.repsRange == this.repsRange &&
           other.suggestedRestSeconds == this.suggestedRestSeconds &&
           other.notes == this.notes &&
+          other.setType == this.setType &&
           other.supersetId == this.supersetId &&
           other.exerciseIndex == this.exerciseIndex &&
           other.progressionType == this.progressionType &&
@@ -1652,6 +1687,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
   final Value<String> repsRange;
   final Value<int?> suggestedRestSeconds;
   final Value<String?> notes;
+  final Value<String> setType;
   final Value<String?> supersetId;
   final Value<int> exerciseIndex;
   final Value<String> progressionType;
@@ -1672,6 +1708,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     this.repsRange = const Value.absent(),
     this.suggestedRestSeconds = const Value.absent(),
     this.notes = const Value.absent(),
+    this.setType = const Value.absent(),
     this.supersetId = const Value.absent(),
     this.exerciseIndex = const Value.absent(),
     this.progressionType = const Value.absent(),
@@ -1693,6 +1730,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     required String repsRange,
     this.suggestedRestSeconds = const Value.absent(),
     this.notes = const Value.absent(),
+    this.setType = const Value.absent(),
     this.supersetId = const Value.absent(),
     required int exerciseIndex,
     this.progressionType = const Value.absent(),
@@ -1723,6 +1761,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     Expression<String>? repsRange,
     Expression<int>? suggestedRestSeconds,
     Expression<String>? notes,
+    Expression<String>? setType,
     Expression<String>? supersetId,
     Expression<int>? exerciseIndex,
     Expression<String>? progressionType,
@@ -1745,6 +1784,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
       if (suggestedRestSeconds != null)
         'suggested_rest_seconds': suggestedRestSeconds,
       if (notes != null) 'notes': notes,
+      if (setType != null) 'set_type': setType,
       if (supersetId != null) 'superset_id': supersetId,
       if (exerciseIndex != null) 'exercise_index': exerciseIndex,
       if (progressionType != null) 'progression_type': progressionType,
@@ -1768,6 +1808,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     Value<String>? repsRange,
     Value<int?>? suggestedRestSeconds,
     Value<String?>? notes,
+    Value<String>? setType,
     Value<String?>? supersetId,
     Value<int>? exerciseIndex,
     Value<String>? progressionType,
@@ -1789,6 +1830,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
       repsRange: repsRange ?? this.repsRange,
       suggestedRestSeconds: suggestedRestSeconds ?? this.suggestedRestSeconds,
       notes: notes ?? this.notes,
+      setType: setType ?? this.setType,
       supersetId: supersetId ?? this.supersetId,
       exerciseIndex: exerciseIndex ?? this.exerciseIndex,
       progressionType: progressionType ?? this.progressionType,
@@ -1848,6 +1890,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (setType.present) {
+      map['set_type'] = Variable<String>(setType.value);
+    }
     if (supersetId.present) {
       map['superset_id'] = Variable<String>(supersetId.value);
     }
@@ -1885,6 +1930,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
           ..write('repsRange: $repsRange, ')
           ..write('suggestedRestSeconds: $suggestedRestSeconds, ')
           ..write('notes: $notes, ')
+          ..write('setType: $setType, ')
           ..write('supersetId: $supersetId, ')
           ..write('exerciseIndex: $exerciseIndex, ')
           ..write('progressionType: $progressionType, ')
@@ -3224,6 +3270,36 @@ class $WorkoutSetsTable extends WorkoutSets
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isMyoRepsMeta = const VerificationMeta(
+    'isMyoReps',
+  );
+  @override
+  late final GeneratedColumn<bool> isMyoReps = GeneratedColumn<bool>(
+    'is_myo_reps',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_myo_reps" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isAmrapMeta = const VerificationMeta(
+    'isAmrap',
+  );
+  @override
+  late final GeneratedColumn<bool> isAmrap = GeneratedColumn<bool>(
+    'is_amrap',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_amrap" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3239,6 +3315,8 @@ class $WorkoutSetsTable extends WorkoutSets
     isDropset,
     isRestPause,
     isWarmup,
+    isMyoReps,
+    isAmrap,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3346,6 +3424,18 @@ class $WorkoutSetsTable extends WorkoutSets
         isWarmup.isAcceptableOrUnknown(data['is_warmup']!, _isWarmupMeta),
       );
     }
+    if (data.containsKey('is_myo_reps')) {
+      context.handle(
+        _isMyoRepsMeta,
+        isMyoReps.isAcceptableOrUnknown(data['is_myo_reps']!, _isMyoRepsMeta),
+      );
+    }
+    if (data.containsKey('is_amrap')) {
+      context.handle(
+        _isAmrapMeta,
+        isAmrap.isAcceptableOrUnknown(data['is_amrap']!, _isAmrapMeta),
+      );
+    }
     return context;
   }
 
@@ -3407,6 +3497,14 @@ class $WorkoutSetsTable extends WorkoutSets
         DriftSqlType.bool,
         data['${effectivePrefix}is_warmup'],
       )!,
+      isMyoReps: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_myo_reps'],
+      )!,
+      isAmrap: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_amrap'],
+      )!,
     );
   }
 
@@ -3430,6 +3528,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
   final bool isDropset;
   final bool isRestPause;
   final bool isWarmup;
+  final bool isMyoReps;
+  final bool isAmrap;
   const WorkoutSet({
     required this.id,
     required this.sessionExerciseId,
@@ -3444,6 +3544,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     required this.isDropset,
     required this.isRestPause,
     required this.isWarmup,
+    required this.isMyoReps,
+    required this.isAmrap,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3467,6 +3569,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     map['is_dropset'] = Variable<bool>(isDropset);
     map['is_rest_pause'] = Variable<bool>(isRestPause);
     map['is_warmup'] = Variable<bool>(isWarmup);
+    map['is_myo_reps'] = Variable<bool>(isMyoReps);
+    map['is_amrap'] = Variable<bool>(isAmrap);
     return map;
   }
 
@@ -3489,6 +3593,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       isDropset: Value(isDropset),
       isRestPause: Value(isRestPause),
       isWarmup: Value(isWarmup),
+      isMyoReps: Value(isMyoReps),
+      isAmrap: Value(isAmrap),
     );
   }
 
@@ -3511,6 +3617,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       isDropset: serializer.fromJson<bool>(json['isDropset']),
       isRestPause: serializer.fromJson<bool>(json['isRestPause']),
       isWarmup: serializer.fromJson<bool>(json['isWarmup']),
+      isMyoReps: serializer.fromJson<bool>(json['isMyoReps']),
+      isAmrap: serializer.fromJson<bool>(json['isAmrap']),
     );
   }
   @override
@@ -3530,6 +3638,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       'isDropset': serializer.toJson<bool>(isDropset),
       'isRestPause': serializer.toJson<bool>(isRestPause),
       'isWarmup': serializer.toJson<bool>(isWarmup),
+      'isMyoReps': serializer.toJson<bool>(isMyoReps),
+      'isAmrap': serializer.toJson<bool>(isAmrap),
     };
   }
 
@@ -3547,6 +3657,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     bool? isDropset,
     bool? isRestPause,
     bool? isWarmup,
+    bool? isMyoReps,
+    bool? isAmrap,
   }) => WorkoutSet(
     id: id ?? this.id,
     sessionExerciseId: sessionExerciseId ?? this.sessionExerciseId,
@@ -3561,6 +3673,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     isDropset: isDropset ?? this.isDropset,
     isRestPause: isRestPause ?? this.isRestPause,
     isWarmup: isWarmup ?? this.isWarmup,
+    isMyoReps: isMyoReps ?? this.isMyoReps,
+    isAmrap: isAmrap ?? this.isAmrap,
   );
   WorkoutSet copyWithCompanion(WorkoutSetsCompanion data) {
     return WorkoutSet(
@@ -3583,6 +3697,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
           ? data.isRestPause.value
           : this.isRestPause,
       isWarmup: data.isWarmup.present ? data.isWarmup.value : this.isWarmup,
+      isMyoReps: data.isMyoReps.present ? data.isMyoReps.value : this.isMyoReps,
+      isAmrap: data.isAmrap.present ? data.isAmrap.value : this.isAmrap,
     );
   }
 
@@ -3601,7 +3717,9 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
           ..write('isFailure: $isFailure, ')
           ..write('isDropset: $isDropset, ')
           ..write('isRestPause: $isRestPause, ')
-          ..write('isWarmup: $isWarmup')
+          ..write('isWarmup: $isWarmup, ')
+          ..write('isMyoReps: $isMyoReps, ')
+          ..write('isAmrap: $isAmrap')
           ..write(')'))
         .toString();
   }
@@ -3621,6 +3739,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     isDropset,
     isRestPause,
     isWarmup,
+    isMyoReps,
+    isAmrap,
   );
   @override
   bool operator ==(Object other) =>
@@ -3638,7 +3758,9 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
           other.isFailure == this.isFailure &&
           other.isDropset == this.isDropset &&
           other.isRestPause == this.isRestPause &&
-          other.isWarmup == this.isWarmup);
+          other.isWarmup == this.isWarmup &&
+          other.isMyoReps == this.isMyoReps &&
+          other.isAmrap == this.isAmrap);
 }
 
 class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
@@ -3655,6 +3777,8 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
   final Value<bool> isDropset;
   final Value<bool> isRestPause;
   final Value<bool> isWarmup;
+  final Value<bool> isMyoReps;
+  final Value<bool> isAmrap;
   final Value<int> rowid;
   const WorkoutSetsCompanion({
     this.id = const Value.absent(),
@@ -3670,6 +3794,8 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     this.isDropset = const Value.absent(),
     this.isRestPause = const Value.absent(),
     this.isWarmup = const Value.absent(),
+    this.isMyoReps = const Value.absent(),
+    this.isAmrap = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkoutSetsCompanion.insert({
@@ -3686,6 +3812,8 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     this.isDropset = const Value.absent(),
     this.isRestPause = const Value.absent(),
     this.isWarmup = const Value.absent(),
+    this.isMyoReps = const Value.absent(),
+    this.isAmrap = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        sessionExerciseId = Value(sessionExerciseId),
@@ -3706,6 +3834,8 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     Expression<bool>? isDropset,
     Expression<bool>? isRestPause,
     Expression<bool>? isWarmup,
+    Expression<bool>? isMyoReps,
+    Expression<bool>? isAmrap,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3722,6 +3852,8 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
       if (isDropset != null) 'is_dropset': isDropset,
       if (isRestPause != null) 'is_rest_pause': isRestPause,
       if (isWarmup != null) 'is_warmup': isWarmup,
+      if (isMyoReps != null) 'is_myo_reps': isMyoReps,
+      if (isAmrap != null) 'is_amrap': isAmrap,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3740,6 +3872,8 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     Value<bool>? isDropset,
     Value<bool>? isRestPause,
     Value<bool>? isWarmup,
+    Value<bool>? isMyoReps,
+    Value<bool>? isAmrap,
     Value<int>? rowid,
   }) {
     return WorkoutSetsCompanion(
@@ -3756,6 +3890,8 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
       isDropset: isDropset ?? this.isDropset,
       isRestPause: isRestPause ?? this.isRestPause,
       isWarmup: isWarmup ?? this.isWarmup,
+      isMyoReps: isMyoReps ?? this.isMyoReps,
+      isAmrap: isAmrap ?? this.isAmrap,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3802,6 +3938,12 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     if (isWarmup.present) {
       map['is_warmup'] = Variable<bool>(isWarmup.value);
     }
+    if (isMyoReps.present) {
+      map['is_myo_reps'] = Variable<bool>(isMyoReps.value);
+    }
+    if (isAmrap.present) {
+      map['is_amrap'] = Variable<bool>(isAmrap.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3824,6 +3966,8 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
           ..write('isDropset: $isDropset, ')
           ..write('isRestPause: $isRestPause, ')
           ..write('isWarmup: $isWarmup, ')
+          ..write('isMyoReps: $isMyoReps, ')
+          ..write('isAmrap: $isAmrap, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4657,6 +4801,50 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _fiberPer100gMeta = const VerificationMeta(
+    'fiberPer100g',
+  );
+  @override
+  late final GeneratedColumn<double> fiberPer100g = GeneratedColumn<double>(
+    'fiber_per100g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sugarPer100gMeta = const VerificationMeta(
+    'sugarPer100g',
+  );
+  @override
+  late final GeneratedColumn<double> sugarPer100g = GeneratedColumn<double>(
+    'sugar_per100g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _saturatedFatPer100gMeta =
+      const VerificationMeta('saturatedFatPer100g');
+  @override
+  late final GeneratedColumn<double> saturatedFatPer100g =
+      GeneratedColumn<double>(
+        'saturated_fat_per100g',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sodiumPer100gMeta = const VerificationMeta(
+    'sodiumPer100g',
+  );
+  @override
+  late final GeneratedColumn<double> sodiumPer100g = GeneratedColumn<double>(
+    'sodium_per100g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _portionNameMeta = const VerificationMeta(
     'portionName',
   );
@@ -4817,6 +5005,10 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
     proteinPer100g,
     carbsPer100g,
     fatPer100g,
+    fiberPer100g,
+    sugarPer100g,
+    saturatedFatPer100g,
+    sodiumPer100g,
     portionName,
     portionGrams,
     userCreated,
@@ -4901,6 +5093,42 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
       context.handle(
         _fatPer100gMeta,
         fatPer100g.isAcceptableOrUnknown(data['fat_per100g']!, _fatPer100gMeta),
+      );
+    }
+    if (data.containsKey('fiber_per100g')) {
+      context.handle(
+        _fiberPer100gMeta,
+        fiberPer100g.isAcceptableOrUnknown(
+          data['fiber_per100g']!,
+          _fiberPer100gMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sugar_per100g')) {
+      context.handle(
+        _sugarPer100gMeta,
+        sugarPer100g.isAcceptableOrUnknown(
+          data['sugar_per100g']!,
+          _sugarPer100gMeta,
+        ),
+      );
+    }
+    if (data.containsKey('saturated_fat_per100g')) {
+      context.handle(
+        _saturatedFatPer100gMeta,
+        saturatedFatPer100g.isAcceptableOrUnknown(
+          data['saturated_fat_per100g']!,
+          _saturatedFatPer100gMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sodium_per100g')) {
+      context.handle(
+        _sodiumPer100gMeta,
+        sodiumPer100g.isAcceptableOrUnknown(
+          data['sodium_per100g']!,
+          _sodiumPer100gMeta,
+        ),
       );
     }
     if (data.containsKey('portion_name')) {
@@ -5038,6 +5266,22 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, Food> {
         DriftSqlType.double,
         data['${effectivePrefix}fat_per100g'],
       ),
+      fiberPer100g: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber_per100g'],
+      ),
+      sugarPer100g: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar_per100g'],
+      ),
+      saturatedFatPer100g: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}saturated_fat_per100g'],
+      ),
+      sodiumPer100g: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium_per100g'],
+      ),
       portionName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}portion_name'],
@@ -5117,6 +5361,10 @@ class Food extends DataClass implements Insertable<Food> {
   final double? proteinPer100g;
   final double? carbsPer100g;
   final double? fatPer100g;
+  final double? fiberPer100g;
+  final double? sugarPer100g;
+  final double? saturatedFatPer100g;
+  final double? sodiumPer100g;
   final String? portionName;
   final double? portionGrams;
   final bool userCreated;
@@ -5139,6 +5387,10 @@ class Food extends DataClass implements Insertable<Food> {
     this.proteinPer100g,
     this.carbsPer100g,
     this.fatPer100g,
+    this.fiberPer100g,
+    this.sugarPer100g,
+    this.saturatedFatPer100g,
+    this.sodiumPer100g,
     this.portionName,
     this.portionGrams,
     required this.userCreated,
@@ -5173,6 +5425,18 @@ class Food extends DataClass implements Insertable<Food> {
     }
     if (!nullToAbsent || fatPer100g != null) {
       map['fat_per100g'] = Variable<double>(fatPer100g);
+    }
+    if (!nullToAbsent || fiberPer100g != null) {
+      map['fiber_per100g'] = Variable<double>(fiberPer100g);
+    }
+    if (!nullToAbsent || sugarPer100g != null) {
+      map['sugar_per100g'] = Variable<double>(sugarPer100g);
+    }
+    if (!nullToAbsent || saturatedFatPer100g != null) {
+      map['saturated_fat_per100g'] = Variable<double>(saturatedFatPer100g);
+    }
+    if (!nullToAbsent || sodiumPer100g != null) {
+      map['sodium_per100g'] = Variable<double>(sodiumPer100g);
     }
     if (!nullToAbsent || portionName != null) {
       map['portion_name'] = Variable<String>(portionName);
@@ -5228,6 +5492,18 @@ class Food extends DataClass implements Insertable<Food> {
       fatPer100g: fatPer100g == null && nullToAbsent
           ? const Value.absent()
           : Value(fatPer100g),
+      fiberPer100g: fiberPer100g == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiberPer100g),
+      sugarPer100g: sugarPer100g == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sugarPer100g),
+      saturatedFatPer100g: saturatedFatPer100g == null && nullToAbsent
+          ? const Value.absent()
+          : Value(saturatedFatPer100g),
+      sodiumPer100g: sodiumPer100g == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodiumPer100g),
       portionName: portionName == null && nullToAbsent
           ? const Value.absent()
           : Value(portionName),
@@ -5274,6 +5550,12 @@ class Food extends DataClass implements Insertable<Food> {
       proteinPer100g: serializer.fromJson<double?>(json['proteinPer100g']),
       carbsPer100g: serializer.fromJson<double?>(json['carbsPer100g']),
       fatPer100g: serializer.fromJson<double?>(json['fatPer100g']),
+      fiberPer100g: serializer.fromJson<double?>(json['fiberPer100g']),
+      sugarPer100g: serializer.fromJson<double?>(json['sugarPer100g']),
+      saturatedFatPer100g: serializer.fromJson<double?>(
+        json['saturatedFatPer100g'],
+      ),
+      sodiumPer100g: serializer.fromJson<double?>(json['sodiumPer100g']),
       portionName: serializer.fromJson<String?>(json['portionName']),
       portionGrams: serializer.fromJson<double?>(json['portionGrams']),
       userCreated: serializer.fromJson<bool>(json['userCreated']),
@@ -5303,6 +5585,10 @@ class Food extends DataClass implements Insertable<Food> {
       'proteinPer100g': serializer.toJson<double?>(proteinPer100g),
       'carbsPer100g': serializer.toJson<double?>(carbsPer100g),
       'fatPer100g': serializer.toJson<double?>(fatPer100g),
+      'fiberPer100g': serializer.toJson<double?>(fiberPer100g),
+      'sugarPer100g': serializer.toJson<double?>(sugarPer100g),
+      'saturatedFatPer100g': serializer.toJson<double?>(saturatedFatPer100g),
+      'sodiumPer100g': serializer.toJson<double?>(sodiumPer100g),
       'portionName': serializer.toJson<String?>(portionName),
       'portionGrams': serializer.toJson<double?>(portionGrams),
       'userCreated': serializer.toJson<bool>(userCreated),
@@ -5330,6 +5616,10 @@ class Food extends DataClass implements Insertable<Food> {
     Value<double?> proteinPer100g = const Value.absent(),
     Value<double?> carbsPer100g = const Value.absent(),
     Value<double?> fatPer100g = const Value.absent(),
+    Value<double?> fiberPer100g = const Value.absent(),
+    Value<double?> sugarPer100g = const Value.absent(),
+    Value<double?> saturatedFatPer100g = const Value.absent(),
+    Value<double?> sodiumPer100g = const Value.absent(),
     Value<String?> portionName = const Value.absent(),
     Value<double?> portionGrams = const Value.absent(),
     bool? userCreated,
@@ -5354,6 +5644,14 @@ class Food extends DataClass implements Insertable<Food> {
         : this.proteinPer100g,
     carbsPer100g: carbsPer100g.present ? carbsPer100g.value : this.carbsPer100g,
     fatPer100g: fatPer100g.present ? fatPer100g.value : this.fatPer100g,
+    fiberPer100g: fiberPer100g.present ? fiberPer100g.value : this.fiberPer100g,
+    sugarPer100g: sugarPer100g.present ? sugarPer100g.value : this.sugarPer100g,
+    saturatedFatPer100g: saturatedFatPer100g.present
+        ? saturatedFatPer100g.value
+        : this.saturatedFatPer100g,
+    sodiumPer100g: sodiumPer100g.present
+        ? sodiumPer100g.value
+        : this.sodiumPer100g,
     portionName: portionName.present ? portionName.value : this.portionName,
     portionGrams: portionGrams.present ? portionGrams.value : this.portionGrams,
     userCreated: userCreated ?? this.userCreated,
@@ -5392,6 +5690,18 @@ class Food extends DataClass implements Insertable<Food> {
       fatPer100g: data.fatPer100g.present
           ? data.fatPer100g.value
           : this.fatPer100g,
+      fiberPer100g: data.fiberPer100g.present
+          ? data.fiberPer100g.value
+          : this.fiberPer100g,
+      sugarPer100g: data.sugarPer100g.present
+          ? data.sugarPer100g.value
+          : this.sugarPer100g,
+      saturatedFatPer100g: data.saturatedFatPer100g.present
+          ? data.saturatedFatPer100g.value
+          : this.saturatedFatPer100g,
+      sodiumPer100g: data.sodiumPer100g.present
+          ? data.sodiumPer100g.value
+          : this.sodiumPer100g,
       portionName: data.portionName.present
           ? data.portionName.value
           : this.portionName,
@@ -5437,6 +5747,10 @@ class Food extends DataClass implements Insertable<Food> {
           ..write('proteinPer100g: $proteinPer100g, ')
           ..write('carbsPer100g: $carbsPer100g, ')
           ..write('fatPer100g: $fatPer100g, ')
+          ..write('fiberPer100g: $fiberPer100g, ')
+          ..write('sugarPer100g: $sugarPer100g, ')
+          ..write('saturatedFatPer100g: $saturatedFatPer100g, ')
+          ..write('sodiumPer100g: $sodiumPer100g, ')
           ..write('portionName: $portionName, ')
           ..write('portionGrams: $portionGrams, ')
           ..write('userCreated: $userCreated, ')
@@ -5464,6 +5778,10 @@ class Food extends DataClass implements Insertable<Food> {
     proteinPer100g,
     carbsPer100g,
     fatPer100g,
+    fiberPer100g,
+    sugarPer100g,
+    saturatedFatPer100g,
+    sodiumPer100g,
     portionName,
     portionGrams,
     userCreated,
@@ -5490,6 +5808,10 @@ class Food extends DataClass implements Insertable<Food> {
           other.proteinPer100g == this.proteinPer100g &&
           other.carbsPer100g == this.carbsPer100g &&
           other.fatPer100g == this.fatPer100g &&
+          other.fiberPer100g == this.fiberPer100g &&
+          other.sugarPer100g == this.sugarPer100g &&
+          other.saturatedFatPer100g == this.saturatedFatPer100g &&
+          other.sodiumPer100g == this.sodiumPer100g &&
           other.portionName == this.portionName &&
           other.portionGrams == this.portionGrams &&
           other.userCreated == this.userCreated &&
@@ -5514,6 +5836,10 @@ class FoodsCompanion extends UpdateCompanion<Food> {
   final Value<double?> proteinPer100g;
   final Value<double?> carbsPer100g;
   final Value<double?> fatPer100g;
+  final Value<double?> fiberPer100g;
+  final Value<double?> sugarPer100g;
+  final Value<double?> saturatedFatPer100g;
+  final Value<double?> sodiumPer100g;
   final Value<String?> portionName;
   final Value<double?> portionGrams;
   final Value<bool> userCreated;
@@ -5537,6 +5863,10 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     this.proteinPer100g = const Value.absent(),
     this.carbsPer100g = const Value.absent(),
     this.fatPer100g = const Value.absent(),
+    this.fiberPer100g = const Value.absent(),
+    this.sugarPer100g = const Value.absent(),
+    this.saturatedFatPer100g = const Value.absent(),
+    this.sodiumPer100g = const Value.absent(),
     this.portionName = const Value.absent(),
     this.portionGrams = const Value.absent(),
     this.userCreated = const Value.absent(),
@@ -5561,6 +5891,10 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     this.proteinPer100g = const Value.absent(),
     this.carbsPer100g = const Value.absent(),
     this.fatPer100g = const Value.absent(),
+    this.fiberPer100g = const Value.absent(),
+    this.sugarPer100g = const Value.absent(),
+    this.saturatedFatPer100g = const Value.absent(),
+    this.sodiumPer100g = const Value.absent(),
     this.portionName = const Value.absent(),
     this.portionGrams = const Value.absent(),
     this.userCreated = const Value.absent(),
@@ -5589,6 +5923,10 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     Expression<double>? proteinPer100g,
     Expression<double>? carbsPer100g,
     Expression<double>? fatPer100g,
+    Expression<double>? fiberPer100g,
+    Expression<double>? sugarPer100g,
+    Expression<double>? saturatedFatPer100g,
+    Expression<double>? sodiumPer100g,
     Expression<String>? portionName,
     Expression<double>? portionGrams,
     Expression<bool>? userCreated,
@@ -5613,6 +5951,11 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       if (proteinPer100g != null) 'protein_per100g': proteinPer100g,
       if (carbsPer100g != null) 'carbs_per100g': carbsPer100g,
       if (fatPer100g != null) 'fat_per100g': fatPer100g,
+      if (fiberPer100g != null) 'fiber_per100g': fiberPer100g,
+      if (sugarPer100g != null) 'sugar_per100g': sugarPer100g,
+      if (saturatedFatPer100g != null)
+        'saturated_fat_per100g': saturatedFatPer100g,
+      if (sodiumPer100g != null) 'sodium_per100g': sodiumPer100g,
       if (portionName != null) 'portion_name': portionName,
       if (portionGrams != null) 'portion_grams': portionGrams,
       if (userCreated != null) 'user_created': userCreated,
@@ -5639,6 +5982,10 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     Value<double?>? proteinPer100g,
     Value<double?>? carbsPer100g,
     Value<double?>? fatPer100g,
+    Value<double?>? fiberPer100g,
+    Value<double?>? sugarPer100g,
+    Value<double?>? saturatedFatPer100g,
+    Value<double?>? sodiumPer100g,
     Value<String?>? portionName,
     Value<double?>? portionGrams,
     Value<bool>? userCreated,
@@ -5663,6 +6010,10 @@ class FoodsCompanion extends UpdateCompanion<Food> {
       proteinPer100g: proteinPer100g ?? this.proteinPer100g,
       carbsPer100g: carbsPer100g ?? this.carbsPer100g,
       fatPer100g: fatPer100g ?? this.fatPer100g,
+      fiberPer100g: fiberPer100g ?? this.fiberPer100g,
+      sugarPer100g: sugarPer100g ?? this.sugarPer100g,
+      saturatedFatPer100g: saturatedFatPer100g ?? this.saturatedFatPer100g,
+      sodiumPer100g: sodiumPer100g ?? this.sodiumPer100g,
       portionName: portionName ?? this.portionName,
       portionGrams: portionGrams ?? this.portionGrams,
       userCreated: userCreated ?? this.userCreated,
@@ -5706,6 +6057,20 @@ class FoodsCompanion extends UpdateCompanion<Food> {
     }
     if (fatPer100g.present) {
       map['fat_per100g'] = Variable<double>(fatPer100g.value);
+    }
+    if (fiberPer100g.present) {
+      map['fiber_per100g'] = Variable<double>(fiberPer100g.value);
+    }
+    if (sugarPer100g.present) {
+      map['sugar_per100g'] = Variable<double>(sugarPer100g.value);
+    }
+    if (saturatedFatPer100g.present) {
+      map['saturated_fat_per100g'] = Variable<double>(
+        saturatedFatPer100g.value,
+      );
+    }
+    if (sodiumPer100g.present) {
+      map['sodium_per100g'] = Variable<double>(sodiumPer100g.value);
     }
     if (portionName.present) {
       map['portion_name'] = Variable<String>(portionName.value);
@@ -5765,6 +6130,10 @@ class FoodsCompanion extends UpdateCompanion<Food> {
           ..write('proteinPer100g: $proteinPer100g, ')
           ..write('carbsPer100g: $carbsPer100g, ')
           ..write('fatPer100g: $fatPer100g, ')
+          ..write('fiberPer100g: $fiberPer100g, ')
+          ..write('sugarPer100g: $sugarPer100g, ')
+          ..write('saturatedFatPer100g: $saturatedFatPer100g, ')
+          ..write('sodiumPer100g: $sodiumPer100g, ')
           ..write('portionName: $portionName, ')
           ..write('portionGrams: $portionGrams, ')
           ..write('userCreated: $userCreated, ')
@@ -5907,6 +6276,44 @@ class $DiaryEntriesTable extends DiaryEntries
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _fiberMeta = const VerificationMeta('fiber');
+  @override
+  late final GeneratedColumn<double> fiber = GeneratedColumn<double>(
+    'fiber',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sugarMeta = const VerificationMeta('sugar');
+  @override
+  late final GeneratedColumn<double> sugar = GeneratedColumn<double>(
+    'sugar',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _saturatedFatMeta = const VerificationMeta(
+    'saturatedFat',
+  );
+  @override
+  late final GeneratedColumn<double> saturatedFat = GeneratedColumn<double>(
+    'saturated_fat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sodiumMeta = const VerificationMeta('sodium');
+  @override
+  late final GeneratedColumn<double> sodium = GeneratedColumn<double>(
+    'sodium',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isQuickAddMeta = const VerificationMeta(
     'isQuickAdd',
   );
@@ -5956,6 +6363,10 @@ class $DiaryEntriesTable extends DiaryEntries
     protein,
     carbs,
     fat,
+    fiber,
+    sugar,
+    saturatedFat,
+    sodium,
     isQuickAdd,
     notes,
     createdAt,
@@ -6037,6 +6448,33 @@ class $DiaryEntriesTable extends DiaryEntries
       context.handle(
         _fatMeta,
         fat.isAcceptableOrUnknown(data['fat']!, _fatMeta),
+      );
+    }
+    if (data.containsKey('fiber')) {
+      context.handle(
+        _fiberMeta,
+        fiber.isAcceptableOrUnknown(data['fiber']!, _fiberMeta),
+      );
+    }
+    if (data.containsKey('sugar')) {
+      context.handle(
+        _sugarMeta,
+        sugar.isAcceptableOrUnknown(data['sugar']!, _sugarMeta),
+      );
+    }
+    if (data.containsKey('saturated_fat')) {
+      context.handle(
+        _saturatedFatMeta,
+        saturatedFat.isAcceptableOrUnknown(
+          data['saturated_fat']!,
+          _saturatedFatMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sodium')) {
+      context.handle(
+        _sodiumMeta,
+        sodium.isAcceptableOrUnknown(data['sodium']!, _sodiumMeta),
       );
     }
     if (data.containsKey('is_quick_add')) {
@@ -6123,6 +6561,22 @@ class $DiaryEntriesTable extends DiaryEntries
         DriftSqlType.double,
         data['${effectivePrefix}fat'],
       ),
+      fiber: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber'],
+      ),
+      sugar: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar'],
+      ),
+      saturatedFat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}saturated_fat'],
+      ),
+      sodium: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium'],
+      ),
       isQuickAdd: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_quick_add'],
@@ -6162,6 +6616,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
   final double? protein;
   final double? carbs;
   final double? fat;
+  final double? fiber;
+  final double? sugar;
+  final double? saturatedFat;
+  final double? sodium;
   final bool isQuickAdd;
   final String? notes;
   final DateTime createdAt;
@@ -6178,6 +6636,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
     this.protein,
     this.carbs,
     this.fat,
+    this.fiber,
+    this.sugar,
+    this.saturatedFat,
+    this.sodium,
     required this.isQuickAdd,
     this.notes,
     required this.createdAt,
@@ -6215,6 +6677,18 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
     if (!nullToAbsent || fat != null) {
       map['fat'] = Variable<double>(fat);
     }
+    if (!nullToAbsent || fiber != null) {
+      map['fiber'] = Variable<double>(fiber);
+    }
+    if (!nullToAbsent || sugar != null) {
+      map['sugar'] = Variable<double>(sugar);
+    }
+    if (!nullToAbsent || saturatedFat != null) {
+      map['saturated_fat'] = Variable<double>(saturatedFat);
+    }
+    if (!nullToAbsent || sodium != null) {
+      map['sodium'] = Variable<double>(sodium);
+    }
     map['is_quick_add'] = Variable<bool>(isQuickAdd);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -6245,6 +6719,18 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
           ? const Value.absent()
           : Value(carbs),
       fat: fat == null && nullToAbsent ? const Value.absent() : Value(fat),
+      fiber: fiber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiber),
+      sugar: sugar == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sugar),
+      saturatedFat: saturatedFat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(saturatedFat),
+      sodium: sodium == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodium),
       isQuickAdd: Value(isQuickAdd),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
@@ -6271,6 +6757,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
       protein: serializer.fromJson<double?>(json['protein']),
       carbs: serializer.fromJson<double?>(json['carbs']),
       fat: serializer.fromJson<double?>(json['fat']),
+      fiber: serializer.fromJson<double?>(json['fiber']),
+      sugar: serializer.fromJson<double?>(json['sugar']),
+      saturatedFat: serializer.fromJson<double?>(json['saturatedFat']),
+      sodium: serializer.fromJson<double?>(json['sodium']),
       isQuickAdd: serializer.fromJson<bool>(json['isQuickAdd']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -6292,6 +6782,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
       'protein': serializer.toJson<double?>(protein),
       'carbs': serializer.toJson<double?>(carbs),
       'fat': serializer.toJson<double?>(fat),
+      'fiber': serializer.toJson<double?>(fiber),
+      'sugar': serializer.toJson<double?>(sugar),
+      'saturatedFat': serializer.toJson<double?>(saturatedFat),
+      'sodium': serializer.toJson<double?>(sodium),
       'isQuickAdd': serializer.toJson<bool>(isQuickAdd),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -6311,6 +6805,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
     Value<double?> protein = const Value.absent(),
     Value<double?> carbs = const Value.absent(),
     Value<double?> fat = const Value.absent(),
+    Value<double?> fiber = const Value.absent(),
+    Value<double?> sugar = const Value.absent(),
+    Value<double?> saturatedFat = const Value.absent(),
+    Value<double?> sodium = const Value.absent(),
     bool? isQuickAdd,
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
@@ -6327,6 +6825,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
     protein: protein.present ? protein.value : this.protein,
     carbs: carbs.present ? carbs.value : this.carbs,
     fat: fat.present ? fat.value : this.fat,
+    fiber: fiber.present ? fiber.value : this.fiber,
+    sugar: sugar.present ? sugar.value : this.sugar,
+    saturatedFat: saturatedFat.present ? saturatedFat.value : this.saturatedFat,
+    sodium: sodium.present ? sodium.value : this.sodium,
     isQuickAdd: isQuickAdd ?? this.isQuickAdd,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
@@ -6345,6 +6847,12 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
       protein: data.protein.present ? data.protein.value : this.protein,
       carbs: data.carbs.present ? data.carbs.value : this.carbs,
       fat: data.fat.present ? data.fat.value : this.fat,
+      fiber: data.fiber.present ? data.fiber.value : this.fiber,
+      sugar: data.sugar.present ? data.sugar.value : this.sugar,
+      saturatedFat: data.saturatedFat.present
+          ? data.saturatedFat.value
+          : this.saturatedFat,
+      sodium: data.sodium.present ? data.sodium.value : this.sodium,
       isQuickAdd: data.isQuickAdd.present
           ? data.isQuickAdd.value
           : this.isQuickAdd,
@@ -6368,6 +6876,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('fiber: $fiber, ')
+          ..write('sugar: $sugar, ')
+          ..write('saturatedFat: $saturatedFat, ')
+          ..write('sodium: $sodium, ')
           ..write('isQuickAdd: $isQuickAdd, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt')
@@ -6389,6 +6901,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
     protein,
     carbs,
     fat,
+    fiber,
+    sugar,
+    saturatedFat,
+    sodium,
     isQuickAdd,
     notes,
     createdAt,
@@ -6409,6 +6925,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
           other.protein == this.protein &&
           other.carbs == this.carbs &&
           other.fat == this.fat &&
+          other.fiber == this.fiber &&
+          other.sugar == this.sugar &&
+          other.saturatedFat == this.saturatedFat &&
+          other.sodium == this.sodium &&
           other.isQuickAdd == this.isQuickAdd &&
           other.notes == this.notes &&
           other.createdAt == this.createdAt);
@@ -6427,6 +6947,10 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
   final Value<double?> protein;
   final Value<double?> carbs;
   final Value<double?> fat;
+  final Value<double?> fiber;
+  final Value<double?> sugar;
+  final Value<double?> saturatedFat;
+  final Value<double?> sodium;
   final Value<bool> isQuickAdd;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
@@ -6444,6 +6968,10 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     this.protein = const Value.absent(),
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.saturatedFat = const Value.absent(),
+    this.sodium = const Value.absent(),
     this.isQuickAdd = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -6462,6 +6990,10 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     this.protein = const Value.absent(),
     this.carbs = const Value.absent(),
     this.fat = const Value.absent(),
+    this.fiber = const Value.absent(),
+    this.sugar = const Value.absent(),
+    this.saturatedFat = const Value.absent(),
+    this.sodium = const Value.absent(),
     this.isQuickAdd = const Value.absent(),
     this.notes = const Value.absent(),
     required DateTime createdAt,
@@ -6487,6 +7019,10 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     Expression<double>? protein,
     Expression<double>? carbs,
     Expression<double>? fat,
+    Expression<double>? fiber,
+    Expression<double>? sugar,
+    Expression<double>? saturatedFat,
+    Expression<double>? sodium,
     Expression<bool>? isQuickAdd,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
@@ -6505,6 +7041,10 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
       if (protein != null) 'protein': protein,
       if (carbs != null) 'carbs': carbs,
       if (fat != null) 'fat': fat,
+      if (fiber != null) 'fiber': fiber,
+      if (sugar != null) 'sugar': sugar,
+      if (saturatedFat != null) 'saturated_fat': saturatedFat,
+      if (sodium != null) 'sodium': sodium,
       if (isQuickAdd != null) 'is_quick_add': isQuickAdd,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
@@ -6525,6 +7065,10 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     Value<double?>? protein,
     Value<double?>? carbs,
     Value<double?>? fat,
+    Value<double?>? fiber,
+    Value<double?>? sugar,
+    Value<double?>? saturatedFat,
+    Value<double?>? sodium,
     Value<bool>? isQuickAdd,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
@@ -6543,6 +7087,10 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
       protein: protein ?? this.protein,
       carbs: carbs ?? this.carbs,
       fat: fat ?? this.fat,
+      fiber: fiber ?? this.fiber,
+      sugar: sugar ?? this.sugar,
+      saturatedFat: saturatedFat ?? this.saturatedFat,
+      sodium: sodium ?? this.sodium,
       isQuickAdd: isQuickAdd ?? this.isQuickAdd,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
@@ -6593,6 +7141,18 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     if (fat.present) {
       map['fat'] = Variable<double>(fat.value);
     }
+    if (fiber.present) {
+      map['fiber'] = Variable<double>(fiber.value);
+    }
+    if (sugar.present) {
+      map['sugar'] = Variable<double>(sugar.value);
+    }
+    if (saturatedFat.present) {
+      map['saturated_fat'] = Variable<double>(saturatedFat.value);
+    }
+    if (sodium.present) {
+      map['sodium'] = Variable<double>(sodium.value);
+    }
     if (isQuickAdd.present) {
       map['is_quick_add'] = Variable<bool>(isQuickAdd.value);
     }
@@ -6623,6 +7183,10 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
           ..write('protein: $protein, ')
           ..write('carbs: $carbs, ')
           ..write('fat: $fat, ')
+          ..write('fiber: $fiber, ')
+          ..write('sugar: $sugar, ')
+          ..write('saturatedFat: $saturatedFat, ')
+          ..write('sodium: $sodium, ')
           ..write('isQuickAdd: $isQuickAdd, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
@@ -7061,6 +7625,51 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, Target> {
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _fiberTargetMeta = const VerificationMeta(
+    'fiberTarget',
+  );
+  @override
+  late final GeneratedColumn<double> fiberTarget = GeneratedColumn<double>(
+    'fiber_target',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sugarLimitMeta = const VerificationMeta(
+    'sugarLimit',
+  );
+  @override
+  late final GeneratedColumn<double> sugarLimit = GeneratedColumn<double>(
+    'sugar_limit',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _saturatedFatLimitMeta = const VerificationMeta(
+    'saturatedFatLimit',
+  );
+  @override
+  late final GeneratedColumn<double> saturatedFatLimit =
+      GeneratedColumn<double>(
+        'saturated_fat_limit',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sodiumLimitMeta = const VerificationMeta(
+    'sodiumLimit',
+  );
+  @override
+  late final GeneratedColumn<double> sodiumLimit = GeneratedColumn<double>(
+    'sodium_limit',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -7089,6 +7698,10 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, Target> {
     proteinTarget,
     carbsTarget,
     fatTarget,
+    fiberTarget,
+    sugarLimit,
+    saturatedFatLimit,
+    sodiumLimit,
     notes,
     createdAt,
   ];
@@ -7149,6 +7762,39 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, Target> {
         fatTarget.isAcceptableOrUnknown(data['fat_target']!, _fatTargetMeta),
       );
     }
+    if (data.containsKey('fiber_target')) {
+      context.handle(
+        _fiberTargetMeta,
+        fiberTarget.isAcceptableOrUnknown(
+          data['fiber_target']!,
+          _fiberTargetMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sugar_limit')) {
+      context.handle(
+        _sugarLimitMeta,
+        sugarLimit.isAcceptableOrUnknown(data['sugar_limit']!, _sugarLimitMeta),
+      );
+    }
+    if (data.containsKey('saturated_fat_limit')) {
+      context.handle(
+        _saturatedFatLimitMeta,
+        saturatedFatLimit.isAcceptableOrUnknown(
+          data['saturated_fat_limit']!,
+          _saturatedFatLimitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sodium_limit')) {
+      context.handle(
+        _sodiumLimitMeta,
+        sodiumLimit.isAcceptableOrUnknown(
+          data['sodium_limit']!,
+          _sodiumLimitMeta,
+        ),
+      );
+    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -7196,6 +7842,22 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, Target> {
         DriftSqlType.double,
         data['${effectivePrefix}fat_target'],
       ),
+      fiberTarget: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber_target'],
+      ),
+      sugarLimit: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar_limit'],
+      ),
+      saturatedFatLimit: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}saturated_fat_limit'],
+      ),
+      sodiumLimit: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium_limit'],
+      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -7220,6 +7882,10 @@ class Target extends DataClass implements Insertable<Target> {
   final double? proteinTarget;
   final double? carbsTarget;
   final double? fatTarget;
+  final double? fiberTarget;
+  final double? sugarLimit;
+  final double? saturatedFatLimit;
+  final double? sodiumLimit;
   final String? notes;
   final DateTime createdAt;
   const Target({
@@ -7229,6 +7895,10 @@ class Target extends DataClass implements Insertable<Target> {
     this.proteinTarget,
     this.carbsTarget,
     this.fatTarget,
+    this.fiberTarget,
+    this.sugarLimit,
+    this.saturatedFatLimit,
+    this.sodiumLimit,
     this.notes,
     required this.createdAt,
   });
@@ -7246,6 +7916,18 @@ class Target extends DataClass implements Insertable<Target> {
     }
     if (!nullToAbsent || fatTarget != null) {
       map['fat_target'] = Variable<double>(fatTarget);
+    }
+    if (!nullToAbsent || fiberTarget != null) {
+      map['fiber_target'] = Variable<double>(fiberTarget);
+    }
+    if (!nullToAbsent || sugarLimit != null) {
+      map['sugar_limit'] = Variable<double>(sugarLimit);
+    }
+    if (!nullToAbsent || saturatedFatLimit != null) {
+      map['saturated_fat_limit'] = Variable<double>(saturatedFatLimit);
+    }
+    if (!nullToAbsent || sodiumLimit != null) {
+      map['sodium_limit'] = Variable<double>(sodiumLimit);
     }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -7268,6 +7950,18 @@ class Target extends DataClass implements Insertable<Target> {
       fatTarget: fatTarget == null && nullToAbsent
           ? const Value.absent()
           : Value(fatTarget),
+      fiberTarget: fiberTarget == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiberTarget),
+      sugarLimit: sugarLimit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sugarLimit),
+      saturatedFatLimit: saturatedFatLimit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(saturatedFatLimit),
+      sodiumLimit: sodiumLimit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodiumLimit),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -7287,6 +7981,12 @@ class Target extends DataClass implements Insertable<Target> {
       proteinTarget: serializer.fromJson<double?>(json['proteinTarget']),
       carbsTarget: serializer.fromJson<double?>(json['carbsTarget']),
       fatTarget: serializer.fromJson<double?>(json['fatTarget']),
+      fiberTarget: serializer.fromJson<double?>(json['fiberTarget']),
+      sugarLimit: serializer.fromJson<double?>(json['sugarLimit']),
+      saturatedFatLimit: serializer.fromJson<double?>(
+        json['saturatedFatLimit'],
+      ),
+      sodiumLimit: serializer.fromJson<double?>(json['sodiumLimit']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -7301,6 +8001,10 @@ class Target extends DataClass implements Insertable<Target> {
       'proteinTarget': serializer.toJson<double?>(proteinTarget),
       'carbsTarget': serializer.toJson<double?>(carbsTarget),
       'fatTarget': serializer.toJson<double?>(fatTarget),
+      'fiberTarget': serializer.toJson<double?>(fiberTarget),
+      'sugarLimit': serializer.toJson<double?>(sugarLimit),
+      'saturatedFatLimit': serializer.toJson<double?>(saturatedFatLimit),
+      'sodiumLimit': serializer.toJson<double?>(sodiumLimit),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -7313,6 +8017,10 @@ class Target extends DataClass implements Insertable<Target> {
     Value<double?> proteinTarget = const Value.absent(),
     Value<double?> carbsTarget = const Value.absent(),
     Value<double?> fatTarget = const Value.absent(),
+    Value<double?> fiberTarget = const Value.absent(),
+    Value<double?> sugarLimit = const Value.absent(),
+    Value<double?> saturatedFatLimit = const Value.absent(),
+    Value<double?> sodiumLimit = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
   }) => Target(
@@ -7324,6 +8032,12 @@ class Target extends DataClass implements Insertable<Target> {
         : this.proteinTarget,
     carbsTarget: carbsTarget.present ? carbsTarget.value : this.carbsTarget,
     fatTarget: fatTarget.present ? fatTarget.value : this.fatTarget,
+    fiberTarget: fiberTarget.present ? fiberTarget.value : this.fiberTarget,
+    sugarLimit: sugarLimit.present ? sugarLimit.value : this.sugarLimit,
+    saturatedFatLimit: saturatedFatLimit.present
+        ? saturatedFatLimit.value
+        : this.saturatedFatLimit,
+    sodiumLimit: sodiumLimit.present ? sodiumLimit.value : this.sodiumLimit,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -7341,6 +8055,18 @@ class Target extends DataClass implements Insertable<Target> {
           ? data.carbsTarget.value
           : this.carbsTarget,
       fatTarget: data.fatTarget.present ? data.fatTarget.value : this.fatTarget,
+      fiberTarget: data.fiberTarget.present
+          ? data.fiberTarget.value
+          : this.fiberTarget,
+      sugarLimit: data.sugarLimit.present
+          ? data.sugarLimit.value
+          : this.sugarLimit,
+      saturatedFatLimit: data.saturatedFatLimit.present
+          ? data.saturatedFatLimit.value
+          : this.saturatedFatLimit,
+      sodiumLimit: data.sodiumLimit.present
+          ? data.sodiumLimit.value
+          : this.sodiumLimit,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -7355,6 +8081,10 @@ class Target extends DataClass implements Insertable<Target> {
           ..write('proteinTarget: $proteinTarget, ')
           ..write('carbsTarget: $carbsTarget, ')
           ..write('fatTarget: $fatTarget, ')
+          ..write('fiberTarget: $fiberTarget, ')
+          ..write('sugarLimit: $sugarLimit, ')
+          ..write('saturatedFatLimit: $saturatedFatLimit, ')
+          ..write('sodiumLimit: $sodiumLimit, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -7369,6 +8099,10 @@ class Target extends DataClass implements Insertable<Target> {
     proteinTarget,
     carbsTarget,
     fatTarget,
+    fiberTarget,
+    sugarLimit,
+    saturatedFatLimit,
+    sodiumLimit,
     notes,
     createdAt,
   );
@@ -7382,6 +8116,10 @@ class Target extends DataClass implements Insertable<Target> {
           other.proteinTarget == this.proteinTarget &&
           other.carbsTarget == this.carbsTarget &&
           other.fatTarget == this.fatTarget &&
+          other.fiberTarget == this.fiberTarget &&
+          other.sugarLimit == this.sugarLimit &&
+          other.saturatedFatLimit == this.saturatedFatLimit &&
+          other.sodiumLimit == this.sodiumLimit &&
           other.notes == this.notes &&
           other.createdAt == this.createdAt);
 }
@@ -7393,6 +8131,10 @@ class TargetsCompanion extends UpdateCompanion<Target> {
   final Value<double?> proteinTarget;
   final Value<double?> carbsTarget;
   final Value<double?> fatTarget;
+  final Value<double?> fiberTarget;
+  final Value<double?> sugarLimit;
+  final Value<double?> saturatedFatLimit;
+  final Value<double?> sodiumLimit;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
@@ -7403,6 +8145,10 @@ class TargetsCompanion extends UpdateCompanion<Target> {
     this.proteinTarget = const Value.absent(),
     this.carbsTarget = const Value.absent(),
     this.fatTarget = const Value.absent(),
+    this.fiberTarget = const Value.absent(),
+    this.sugarLimit = const Value.absent(),
+    this.saturatedFatLimit = const Value.absent(),
+    this.sodiumLimit = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -7414,6 +8160,10 @@ class TargetsCompanion extends UpdateCompanion<Target> {
     this.proteinTarget = const Value.absent(),
     this.carbsTarget = const Value.absent(),
     this.fatTarget = const Value.absent(),
+    this.fiberTarget = const Value.absent(),
+    this.sugarLimit = const Value.absent(),
+    this.saturatedFatLimit = const Value.absent(),
+    this.sodiumLimit = const Value.absent(),
     this.notes = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
@@ -7428,6 +8178,10 @@ class TargetsCompanion extends UpdateCompanion<Target> {
     Expression<double>? proteinTarget,
     Expression<double>? carbsTarget,
     Expression<double>? fatTarget,
+    Expression<double>? fiberTarget,
+    Expression<double>? sugarLimit,
+    Expression<double>? saturatedFatLimit,
+    Expression<double>? sodiumLimit,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
@@ -7439,6 +8193,10 @@ class TargetsCompanion extends UpdateCompanion<Target> {
       if (proteinTarget != null) 'protein_target': proteinTarget,
       if (carbsTarget != null) 'carbs_target': carbsTarget,
       if (fatTarget != null) 'fat_target': fatTarget,
+      if (fiberTarget != null) 'fiber_target': fiberTarget,
+      if (sugarLimit != null) 'sugar_limit': sugarLimit,
+      if (saturatedFatLimit != null) 'saturated_fat_limit': saturatedFatLimit,
+      if (sodiumLimit != null) 'sodium_limit': sodiumLimit,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -7452,6 +8210,10 @@ class TargetsCompanion extends UpdateCompanion<Target> {
     Value<double?>? proteinTarget,
     Value<double?>? carbsTarget,
     Value<double?>? fatTarget,
+    Value<double?>? fiberTarget,
+    Value<double?>? sugarLimit,
+    Value<double?>? saturatedFatLimit,
+    Value<double?>? sodiumLimit,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
@@ -7463,6 +8225,10 @@ class TargetsCompanion extends UpdateCompanion<Target> {
       proteinTarget: proteinTarget ?? this.proteinTarget,
       carbsTarget: carbsTarget ?? this.carbsTarget,
       fatTarget: fatTarget ?? this.fatTarget,
+      fiberTarget: fiberTarget ?? this.fiberTarget,
+      sugarLimit: sugarLimit ?? this.sugarLimit,
+      saturatedFatLimit: saturatedFatLimit ?? this.saturatedFatLimit,
+      sodiumLimit: sodiumLimit ?? this.sodiumLimit,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -7490,6 +8256,18 @@ class TargetsCompanion extends UpdateCompanion<Target> {
     if (fatTarget.present) {
       map['fat_target'] = Variable<double>(fatTarget.value);
     }
+    if (fiberTarget.present) {
+      map['fiber_target'] = Variable<double>(fiberTarget.value);
+    }
+    if (sugarLimit.present) {
+      map['sugar_limit'] = Variable<double>(sugarLimit.value);
+    }
+    if (saturatedFatLimit.present) {
+      map['saturated_fat_limit'] = Variable<double>(saturatedFatLimit.value);
+    }
+    if (sodiumLimit.present) {
+      map['sodium_limit'] = Variable<double>(sodiumLimit.value);
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -7511,6 +8289,10 @@ class TargetsCompanion extends UpdateCompanion<Target> {
           ..write('proteinTarget: $proteinTarget, ')
           ..write('carbsTarget: $carbsTarget, ')
           ..write('fatTarget: $fatTarget, ')
+          ..write('fiberTarget: $fiberTarget, ')
+          ..write('sugarLimit: $sugarLimit, ')
+          ..write('saturatedFatLimit: $saturatedFatLimit, ')
+          ..write('sodiumLimit: $sodiumLimit, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -7597,6 +8379,51 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _totalFiberMeta = const VerificationMeta(
+    'totalFiber',
+  );
+  @override
+  late final GeneratedColumn<double> totalFiber = GeneratedColumn<double>(
+    'total_fiber',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalSugarMeta = const VerificationMeta(
+    'totalSugar',
+  );
+  @override
+  late final GeneratedColumn<double> totalSugar = GeneratedColumn<double>(
+    'total_sugar',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalSaturatedFatMeta = const VerificationMeta(
+    'totalSaturatedFat',
+  );
+  @override
+  late final GeneratedColumn<double> totalSaturatedFat =
+      GeneratedColumn<double>(
+        'total_saturated_fat',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _totalSodiumMeta = const VerificationMeta(
+    'totalSodium',
+  );
+  @override
+  late final GeneratedColumn<double> totalSodium = GeneratedColumn<double>(
+    'total_sodium',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _totalGramsMeta = const VerificationMeta(
     'totalGrams',
   );
@@ -7677,6 +8504,10 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
     totalProtein,
     totalCarbs,
     totalFat,
+    totalFiber,
+    totalSugar,
+    totalSaturatedFat,
+    totalSodium,
     totalGrams,
     servings,
     servingName,
@@ -7745,6 +8576,36 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
       context.handle(
         _totalFatMeta,
         totalFat.isAcceptableOrUnknown(data['total_fat']!, _totalFatMeta),
+      );
+    }
+    if (data.containsKey('total_fiber')) {
+      context.handle(
+        _totalFiberMeta,
+        totalFiber.isAcceptableOrUnknown(data['total_fiber']!, _totalFiberMeta),
+      );
+    }
+    if (data.containsKey('total_sugar')) {
+      context.handle(
+        _totalSugarMeta,
+        totalSugar.isAcceptableOrUnknown(data['total_sugar']!, _totalSugarMeta),
+      );
+    }
+    if (data.containsKey('total_saturated_fat')) {
+      context.handle(
+        _totalSaturatedFatMeta,
+        totalSaturatedFat.isAcceptableOrUnknown(
+          data['total_saturated_fat']!,
+          _totalSaturatedFatMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_sodium')) {
+      context.handle(
+        _totalSodiumMeta,
+        totalSodium.isAcceptableOrUnknown(
+          data['total_sodium']!,
+          _totalSodiumMeta,
+        ),
       );
     }
     if (data.containsKey('total_grams')) {
@@ -7832,6 +8693,22 @@ class $RecipesTable extends Recipes with TableInfo<$RecipesTable, Recipe> {
         DriftSqlType.double,
         data['${effectivePrefix}total_fat'],
       ),
+      totalFiber: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_fiber'],
+      ),
+      totalSugar: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_sugar'],
+      ),
+      totalSaturatedFat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_saturated_fat'],
+      ),
+      totalSodium: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_sodium'],
+      ),
       totalGrams: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}total_grams'],
@@ -7873,6 +8750,10 @@ class Recipe extends DataClass implements Insertable<Recipe> {
   final double? totalProtein;
   final double? totalCarbs;
   final double? totalFat;
+  final double? totalFiber;
+  final double? totalSugar;
+  final double? totalSaturatedFat;
+  final double? totalSodium;
   final double totalGrams;
   final int servings;
   final String? servingName;
@@ -7887,6 +8768,10 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     this.totalProtein,
     this.totalCarbs,
     this.totalFat,
+    this.totalFiber,
+    this.totalSugar,
+    this.totalSaturatedFat,
+    this.totalSodium,
     required this.totalGrams,
     required this.servings,
     this.servingName,
@@ -7911,6 +8796,18 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     }
     if (!nullToAbsent || totalFat != null) {
       map['total_fat'] = Variable<double>(totalFat);
+    }
+    if (!nullToAbsent || totalFiber != null) {
+      map['total_fiber'] = Variable<double>(totalFiber);
+    }
+    if (!nullToAbsent || totalSugar != null) {
+      map['total_sugar'] = Variable<double>(totalSugar);
+    }
+    if (!nullToAbsent || totalSaturatedFat != null) {
+      map['total_saturated_fat'] = Variable<double>(totalSaturatedFat);
+    }
+    if (!nullToAbsent || totalSodium != null) {
+      map['total_sodium'] = Variable<double>(totalSodium);
     }
     map['total_grams'] = Variable<double>(totalGrams);
     map['servings'] = Variable<int>(servings);
@@ -7940,6 +8837,18 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       totalFat: totalFat == null && nullToAbsent
           ? const Value.absent()
           : Value(totalFat),
+      totalFiber: totalFiber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalFiber),
+      totalSugar: totalSugar == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalSugar),
+      totalSaturatedFat: totalSaturatedFat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalSaturatedFat),
+      totalSodium: totalSodium == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalSodium),
       totalGrams: Value(totalGrams),
       servings: Value(servings),
       servingName: servingName == null && nullToAbsent
@@ -7964,6 +8873,12 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       totalProtein: serializer.fromJson<double?>(json['totalProtein']),
       totalCarbs: serializer.fromJson<double?>(json['totalCarbs']),
       totalFat: serializer.fromJson<double?>(json['totalFat']),
+      totalFiber: serializer.fromJson<double?>(json['totalFiber']),
+      totalSugar: serializer.fromJson<double?>(json['totalSugar']),
+      totalSaturatedFat: serializer.fromJson<double?>(
+        json['totalSaturatedFat'],
+      ),
+      totalSodium: serializer.fromJson<double?>(json['totalSodium']),
       totalGrams: serializer.fromJson<double>(json['totalGrams']),
       servings: serializer.fromJson<int>(json['servings']),
       servingName: serializer.fromJson<String?>(json['servingName']),
@@ -7983,6 +8898,10 @@ class Recipe extends DataClass implements Insertable<Recipe> {
       'totalProtein': serializer.toJson<double?>(totalProtein),
       'totalCarbs': serializer.toJson<double?>(totalCarbs),
       'totalFat': serializer.toJson<double?>(totalFat),
+      'totalFiber': serializer.toJson<double?>(totalFiber),
+      'totalSugar': serializer.toJson<double?>(totalSugar),
+      'totalSaturatedFat': serializer.toJson<double?>(totalSaturatedFat),
+      'totalSodium': serializer.toJson<double?>(totalSodium),
       'totalGrams': serializer.toJson<double>(totalGrams),
       'servings': serializer.toJson<int>(servings),
       'servingName': serializer.toJson<String?>(servingName),
@@ -8000,6 +8919,10 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     Value<double?> totalProtein = const Value.absent(),
     Value<double?> totalCarbs = const Value.absent(),
     Value<double?> totalFat = const Value.absent(),
+    Value<double?> totalFiber = const Value.absent(),
+    Value<double?> totalSugar = const Value.absent(),
+    Value<double?> totalSaturatedFat = const Value.absent(),
+    Value<double?> totalSodium = const Value.absent(),
     double? totalGrams,
     int? servings,
     Value<String?> servingName = const Value.absent(),
@@ -8014,6 +8937,12 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     totalProtein: totalProtein.present ? totalProtein.value : this.totalProtein,
     totalCarbs: totalCarbs.present ? totalCarbs.value : this.totalCarbs,
     totalFat: totalFat.present ? totalFat.value : this.totalFat,
+    totalFiber: totalFiber.present ? totalFiber.value : this.totalFiber,
+    totalSugar: totalSugar.present ? totalSugar.value : this.totalSugar,
+    totalSaturatedFat: totalSaturatedFat.present
+        ? totalSaturatedFat.value
+        : this.totalSaturatedFat,
+    totalSodium: totalSodium.present ? totalSodium.value : this.totalSodium,
     totalGrams: totalGrams ?? this.totalGrams,
     servings: servings ?? this.servings,
     servingName: servingName.present ? servingName.value : this.servingName,
@@ -8036,6 +8965,18 @@ class Recipe extends DataClass implements Insertable<Recipe> {
           ? data.totalCarbs.value
           : this.totalCarbs,
       totalFat: data.totalFat.present ? data.totalFat.value : this.totalFat,
+      totalFiber: data.totalFiber.present
+          ? data.totalFiber.value
+          : this.totalFiber,
+      totalSugar: data.totalSugar.present
+          ? data.totalSugar.value
+          : this.totalSugar,
+      totalSaturatedFat: data.totalSaturatedFat.present
+          ? data.totalSaturatedFat.value
+          : this.totalSaturatedFat,
+      totalSodium: data.totalSodium.present
+          ? data.totalSodium.value
+          : this.totalSodium,
       totalGrams: data.totalGrams.present
           ? data.totalGrams.value
           : this.totalGrams,
@@ -8061,6 +9002,10 @@ class Recipe extends DataClass implements Insertable<Recipe> {
           ..write('totalProtein: $totalProtein, ')
           ..write('totalCarbs: $totalCarbs, ')
           ..write('totalFat: $totalFat, ')
+          ..write('totalFiber: $totalFiber, ')
+          ..write('totalSugar: $totalSugar, ')
+          ..write('totalSaturatedFat: $totalSaturatedFat, ')
+          ..write('totalSodium: $totalSodium, ')
           ..write('totalGrams: $totalGrams, ')
           ..write('servings: $servings, ')
           ..write('servingName: $servingName, ')
@@ -8080,6 +9025,10 @@ class Recipe extends DataClass implements Insertable<Recipe> {
     totalProtein,
     totalCarbs,
     totalFat,
+    totalFiber,
+    totalSugar,
+    totalSaturatedFat,
+    totalSodium,
     totalGrams,
     servings,
     servingName,
@@ -8098,6 +9047,10 @@ class Recipe extends DataClass implements Insertable<Recipe> {
           other.totalProtein == this.totalProtein &&
           other.totalCarbs == this.totalCarbs &&
           other.totalFat == this.totalFat &&
+          other.totalFiber == this.totalFiber &&
+          other.totalSugar == this.totalSugar &&
+          other.totalSaturatedFat == this.totalSaturatedFat &&
+          other.totalSodium == this.totalSodium &&
           other.totalGrams == this.totalGrams &&
           other.servings == this.servings &&
           other.servingName == this.servingName &&
@@ -8114,6 +9067,10 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
   final Value<double?> totalProtein;
   final Value<double?> totalCarbs;
   final Value<double?> totalFat;
+  final Value<double?> totalFiber;
+  final Value<double?> totalSugar;
+  final Value<double?> totalSaturatedFat;
+  final Value<double?> totalSodium;
   final Value<double> totalGrams;
   final Value<int> servings;
   final Value<String?> servingName;
@@ -8129,6 +9086,10 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     this.totalProtein = const Value.absent(),
     this.totalCarbs = const Value.absent(),
     this.totalFat = const Value.absent(),
+    this.totalFiber = const Value.absent(),
+    this.totalSugar = const Value.absent(),
+    this.totalSaturatedFat = const Value.absent(),
+    this.totalSodium = const Value.absent(),
     this.totalGrams = const Value.absent(),
     this.servings = const Value.absent(),
     this.servingName = const Value.absent(),
@@ -8145,6 +9106,10 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     this.totalProtein = const Value.absent(),
     this.totalCarbs = const Value.absent(),
     this.totalFat = const Value.absent(),
+    this.totalFiber = const Value.absent(),
+    this.totalSugar = const Value.absent(),
+    this.totalSaturatedFat = const Value.absent(),
+    this.totalSodium = const Value.absent(),
     required double totalGrams,
     this.servings = const Value.absent(),
     this.servingName = const Value.absent(),
@@ -8166,6 +9131,10 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     Expression<double>? totalProtein,
     Expression<double>? totalCarbs,
     Expression<double>? totalFat,
+    Expression<double>? totalFiber,
+    Expression<double>? totalSugar,
+    Expression<double>? totalSaturatedFat,
+    Expression<double>? totalSodium,
     Expression<double>? totalGrams,
     Expression<int>? servings,
     Expression<String>? servingName,
@@ -8182,6 +9151,10 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
       if (totalProtein != null) 'total_protein': totalProtein,
       if (totalCarbs != null) 'total_carbs': totalCarbs,
       if (totalFat != null) 'total_fat': totalFat,
+      if (totalFiber != null) 'total_fiber': totalFiber,
+      if (totalSugar != null) 'total_sugar': totalSugar,
+      if (totalSaturatedFat != null) 'total_saturated_fat': totalSaturatedFat,
+      if (totalSodium != null) 'total_sodium': totalSodium,
       if (totalGrams != null) 'total_grams': totalGrams,
       if (servings != null) 'servings': servings,
       if (servingName != null) 'serving_name': servingName,
@@ -8200,6 +9173,10 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     Value<double?>? totalProtein,
     Value<double?>? totalCarbs,
     Value<double?>? totalFat,
+    Value<double?>? totalFiber,
+    Value<double?>? totalSugar,
+    Value<double?>? totalSaturatedFat,
+    Value<double?>? totalSodium,
     Value<double>? totalGrams,
     Value<int>? servings,
     Value<String?>? servingName,
@@ -8216,6 +9193,10 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
       totalProtein: totalProtein ?? this.totalProtein,
       totalCarbs: totalCarbs ?? this.totalCarbs,
       totalFat: totalFat ?? this.totalFat,
+      totalFiber: totalFiber ?? this.totalFiber,
+      totalSugar: totalSugar ?? this.totalSugar,
+      totalSaturatedFat: totalSaturatedFat ?? this.totalSaturatedFat,
+      totalSodium: totalSodium ?? this.totalSodium,
       totalGrams: totalGrams ?? this.totalGrams,
       servings: servings ?? this.servings,
       servingName: servingName ?? this.servingName,
@@ -8249,6 +9230,18 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
     }
     if (totalFat.present) {
       map['total_fat'] = Variable<double>(totalFat.value);
+    }
+    if (totalFiber.present) {
+      map['total_fiber'] = Variable<double>(totalFiber.value);
+    }
+    if (totalSugar.present) {
+      map['total_sugar'] = Variable<double>(totalSugar.value);
+    }
+    if (totalSaturatedFat.present) {
+      map['total_saturated_fat'] = Variable<double>(totalSaturatedFat.value);
+    }
+    if (totalSodium.present) {
+      map['total_sodium'] = Variable<double>(totalSodium.value);
     }
     if (totalGrams.present) {
       map['total_grams'] = Variable<double>(totalGrams.value);
@@ -8284,6 +9277,10 @@ class RecipesCompanion extends UpdateCompanion<Recipe> {
           ..write('totalProtein: $totalProtein, ')
           ..write('totalCarbs: $totalCarbs, ')
           ..write('totalFat: $totalFat, ')
+          ..write('totalFiber: $totalFiber, ')
+          ..write('totalSugar: $totalSugar, ')
+          ..write('totalSaturatedFat: $totalSaturatedFat, ')
+          ..write('totalSodium: $totalSodium, ')
           ..write('totalGrams: $totalGrams, ')
           ..write('servings: $servings, ')
           ..write('servingName: $servingName, ')
@@ -8409,6 +9406,61 @@ class $RecipeItemsTable extends RecipeItems
         type: DriftSqlType.double,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _fiberPer100gSnapshotMeta =
+      const VerificationMeta('fiberPer100gSnapshot');
+  @override
+  late final GeneratedColumn<double> fiberPer100gSnapshot =
+      GeneratedColumn<double>(
+        'fiber_per100g_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sugarPer100gSnapshotMeta =
+      const VerificationMeta('sugarPer100gSnapshot');
+  @override
+  late final GeneratedColumn<double> sugarPer100gSnapshot =
+      GeneratedColumn<double>(
+        'sugar_per100g_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _saturatedFatPer100gSnapshotMeta =
+      const VerificationMeta('saturatedFatPer100gSnapshot');
+  @override
+  late final GeneratedColumn<double> saturatedFatPer100gSnapshot =
+      GeneratedColumn<double>(
+        'saturated_fat_per100g_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sodiumPer100gSnapshotMeta =
+      const VerificationMeta('sodiumPer100gSnapshot');
+  @override
+  late final GeneratedColumn<double> sodiumPer100gSnapshot =
+      GeneratedColumn<double>(
+        'sodium_per100g_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _portionGramsSnapshotMeta =
+      const VerificationMeta('portionGramsSnapshot');
+  @override
+  late final GeneratedColumn<double> portionGramsSnapshot =
+      GeneratedColumn<double>(
+        'portion_grams_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _sortOrderMeta = const VerificationMeta(
     'sortOrder',
   );
@@ -8433,6 +9485,11 @@ class $RecipeItemsTable extends RecipeItems
     proteinPer100gSnapshot,
     carbsPer100gSnapshot,
     fatPer100gSnapshot,
+    fiberPer100gSnapshot,
+    sugarPer100gSnapshot,
+    saturatedFatPer100gSnapshot,
+    sodiumPer100gSnapshot,
+    portionGramsSnapshot,
     sortOrder,
   ];
   @override
@@ -8525,6 +9582,51 @@ class $RecipeItemsTable extends RecipeItems
         ),
       );
     }
+    if (data.containsKey('fiber_per100g_snapshot')) {
+      context.handle(
+        _fiberPer100gSnapshotMeta,
+        fiberPer100gSnapshot.isAcceptableOrUnknown(
+          data['fiber_per100g_snapshot']!,
+          _fiberPer100gSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sugar_per100g_snapshot')) {
+      context.handle(
+        _sugarPer100gSnapshotMeta,
+        sugarPer100gSnapshot.isAcceptableOrUnknown(
+          data['sugar_per100g_snapshot']!,
+          _sugarPer100gSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('saturated_fat_per100g_snapshot')) {
+      context.handle(
+        _saturatedFatPer100gSnapshotMeta,
+        saturatedFatPer100gSnapshot.isAcceptableOrUnknown(
+          data['saturated_fat_per100g_snapshot']!,
+          _saturatedFatPer100gSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sodium_per100g_snapshot')) {
+      context.handle(
+        _sodiumPer100gSnapshotMeta,
+        sodiumPer100gSnapshot.isAcceptableOrUnknown(
+          data['sodium_per100g_snapshot']!,
+          _sodiumPer100gSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('portion_grams_snapshot')) {
+      context.handle(
+        _portionGramsSnapshotMeta,
+        portionGramsSnapshot.isAcceptableOrUnknown(
+          data['portion_grams_snapshot']!,
+          _portionGramsSnapshotMeta,
+        ),
+      );
+    }
     if (data.containsKey('sort_order')) {
       context.handle(
         _sortOrderMeta,
@@ -8582,6 +9684,26 @@ class $RecipeItemsTable extends RecipeItems
         DriftSqlType.double,
         data['${effectivePrefix}fat_per100g_snapshot'],
       ),
+      fiberPer100gSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber_per100g_snapshot'],
+      ),
+      sugarPer100gSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar_per100g_snapshot'],
+      ),
+      saturatedFatPer100gSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}saturated_fat_per100g_snapshot'],
+      ),
+      sodiumPer100gSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium_per100g_snapshot'],
+      ),
+      portionGramsSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}portion_grams_snapshot'],
+      ),
       sortOrder: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
@@ -8609,6 +9731,11 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
   final double? proteinPer100gSnapshot;
   final double? carbsPer100gSnapshot;
   final double? fatPer100gSnapshot;
+  final double? fiberPer100gSnapshot;
+  final double? sugarPer100gSnapshot;
+  final double? saturatedFatPer100gSnapshot;
+  final double? sodiumPer100gSnapshot;
+  final double? portionGramsSnapshot;
   final int sortOrder;
   const RecipeItem({
     required this.id,
@@ -8621,6 +9748,11 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
     this.proteinPer100gSnapshot,
     this.carbsPer100gSnapshot,
     this.fatPer100gSnapshot,
+    this.fiberPer100gSnapshot,
+    this.sugarPer100gSnapshot,
+    this.saturatedFatPer100gSnapshot,
+    this.sodiumPer100gSnapshot,
+    this.portionGramsSnapshot,
     required this.sortOrder,
   });
   @override
@@ -8648,6 +9780,23 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
     if (!nullToAbsent || fatPer100gSnapshot != null) {
       map['fat_per100g_snapshot'] = Variable<double>(fatPer100gSnapshot);
     }
+    if (!nullToAbsent || fiberPer100gSnapshot != null) {
+      map['fiber_per100g_snapshot'] = Variable<double>(fiberPer100gSnapshot);
+    }
+    if (!nullToAbsent || sugarPer100gSnapshot != null) {
+      map['sugar_per100g_snapshot'] = Variable<double>(sugarPer100gSnapshot);
+    }
+    if (!nullToAbsent || saturatedFatPer100gSnapshot != null) {
+      map['saturated_fat_per100g_snapshot'] = Variable<double>(
+        saturatedFatPer100gSnapshot,
+      );
+    }
+    if (!nullToAbsent || sodiumPer100gSnapshot != null) {
+      map['sodium_per100g_snapshot'] = Variable<double>(sodiumPer100gSnapshot);
+    }
+    if (!nullToAbsent || portionGramsSnapshot != null) {
+      map['portion_grams_snapshot'] = Variable<double>(portionGramsSnapshot);
+    }
     map['sort_order'] = Variable<int>(sortOrder);
     return map;
   }
@@ -8670,6 +9819,22 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
       fatPer100gSnapshot: fatPer100gSnapshot == null && nullToAbsent
           ? const Value.absent()
           : Value(fatPer100gSnapshot),
+      fiberPer100gSnapshot: fiberPer100gSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiberPer100gSnapshot),
+      sugarPer100gSnapshot: sugarPer100gSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sugarPer100gSnapshot),
+      saturatedFatPer100gSnapshot:
+          saturatedFatPer100gSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(saturatedFatPer100gSnapshot),
+      sodiumPer100gSnapshot: sodiumPer100gSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodiumPer100gSnapshot),
+      portionGramsSnapshot: portionGramsSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(portionGramsSnapshot),
       sortOrder: Value(sortOrder),
     );
   }
@@ -8698,6 +9863,21 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
       fatPer100gSnapshot: serializer.fromJson<double?>(
         json['fatPer100gSnapshot'],
       ),
+      fiberPer100gSnapshot: serializer.fromJson<double?>(
+        json['fiberPer100gSnapshot'],
+      ),
+      sugarPer100gSnapshot: serializer.fromJson<double?>(
+        json['sugarPer100gSnapshot'],
+      ),
+      saturatedFatPer100gSnapshot: serializer.fromJson<double?>(
+        json['saturatedFatPer100gSnapshot'],
+      ),
+      sodiumPer100gSnapshot: serializer.fromJson<double?>(
+        json['sodiumPer100gSnapshot'],
+      ),
+      portionGramsSnapshot: serializer.fromJson<double?>(
+        json['portionGramsSnapshot'],
+      ),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
     );
   }
@@ -8717,6 +9897,15 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
       ),
       'carbsPer100gSnapshot': serializer.toJson<double?>(carbsPer100gSnapshot),
       'fatPer100gSnapshot': serializer.toJson<double?>(fatPer100gSnapshot),
+      'fiberPer100gSnapshot': serializer.toJson<double?>(fiberPer100gSnapshot),
+      'sugarPer100gSnapshot': serializer.toJson<double?>(sugarPer100gSnapshot),
+      'saturatedFatPer100gSnapshot': serializer.toJson<double?>(
+        saturatedFatPer100gSnapshot,
+      ),
+      'sodiumPer100gSnapshot': serializer.toJson<double?>(
+        sodiumPer100gSnapshot,
+      ),
+      'portionGramsSnapshot': serializer.toJson<double?>(portionGramsSnapshot),
       'sortOrder': serializer.toJson<int>(sortOrder),
     };
   }
@@ -8732,6 +9921,11 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
     Value<double?> proteinPer100gSnapshot = const Value.absent(),
     Value<double?> carbsPer100gSnapshot = const Value.absent(),
     Value<double?> fatPer100gSnapshot = const Value.absent(),
+    Value<double?> fiberPer100gSnapshot = const Value.absent(),
+    Value<double?> sugarPer100gSnapshot = const Value.absent(),
+    Value<double?> saturatedFatPer100gSnapshot = const Value.absent(),
+    Value<double?> sodiumPer100gSnapshot = const Value.absent(),
+    Value<double?> portionGramsSnapshot = const Value.absent(),
     int? sortOrder,
   }) => RecipeItem(
     id: id ?? this.id,
@@ -8750,6 +9944,21 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
     fatPer100gSnapshot: fatPer100gSnapshot.present
         ? fatPer100gSnapshot.value
         : this.fatPer100gSnapshot,
+    fiberPer100gSnapshot: fiberPer100gSnapshot.present
+        ? fiberPer100gSnapshot.value
+        : this.fiberPer100gSnapshot,
+    sugarPer100gSnapshot: sugarPer100gSnapshot.present
+        ? sugarPer100gSnapshot.value
+        : this.sugarPer100gSnapshot,
+    saturatedFatPer100gSnapshot: saturatedFatPer100gSnapshot.present
+        ? saturatedFatPer100gSnapshot.value
+        : this.saturatedFatPer100gSnapshot,
+    sodiumPer100gSnapshot: sodiumPer100gSnapshot.present
+        ? sodiumPer100gSnapshot.value
+        : this.sodiumPer100gSnapshot,
+    portionGramsSnapshot: portionGramsSnapshot.present
+        ? portionGramsSnapshot.value
+        : this.portionGramsSnapshot,
     sortOrder: sortOrder ?? this.sortOrder,
   );
   RecipeItem copyWithCompanion(RecipeItemsCompanion data) {
@@ -8774,6 +9983,21 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
       fatPer100gSnapshot: data.fatPer100gSnapshot.present
           ? data.fatPer100gSnapshot.value
           : this.fatPer100gSnapshot,
+      fiberPer100gSnapshot: data.fiberPer100gSnapshot.present
+          ? data.fiberPer100gSnapshot.value
+          : this.fiberPer100gSnapshot,
+      sugarPer100gSnapshot: data.sugarPer100gSnapshot.present
+          ? data.sugarPer100gSnapshot.value
+          : this.sugarPer100gSnapshot,
+      saturatedFatPer100gSnapshot: data.saturatedFatPer100gSnapshot.present
+          ? data.saturatedFatPer100gSnapshot.value
+          : this.saturatedFatPer100gSnapshot,
+      sodiumPer100gSnapshot: data.sodiumPer100gSnapshot.present
+          ? data.sodiumPer100gSnapshot.value
+          : this.sodiumPer100gSnapshot,
+      portionGramsSnapshot: data.portionGramsSnapshot.present
+          ? data.portionGramsSnapshot.value
+          : this.portionGramsSnapshot,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
     );
   }
@@ -8791,6 +10015,11 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
           ..write('proteinPer100gSnapshot: $proteinPer100gSnapshot, ')
           ..write('carbsPer100gSnapshot: $carbsPer100gSnapshot, ')
           ..write('fatPer100gSnapshot: $fatPer100gSnapshot, ')
+          ..write('fiberPer100gSnapshot: $fiberPer100gSnapshot, ')
+          ..write('sugarPer100gSnapshot: $sugarPer100gSnapshot, ')
+          ..write('saturatedFatPer100gSnapshot: $saturatedFatPer100gSnapshot, ')
+          ..write('sodiumPer100gSnapshot: $sodiumPer100gSnapshot, ')
+          ..write('portionGramsSnapshot: $portionGramsSnapshot, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
         .toString();
@@ -8808,6 +10037,11 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
     proteinPer100gSnapshot,
     carbsPer100gSnapshot,
     fatPer100gSnapshot,
+    fiberPer100gSnapshot,
+    sugarPer100gSnapshot,
+    saturatedFatPer100gSnapshot,
+    sodiumPer100gSnapshot,
+    portionGramsSnapshot,
     sortOrder,
   );
   @override
@@ -8824,6 +10058,12 @@ class RecipeItem extends DataClass implements Insertable<RecipeItem> {
           other.proteinPer100gSnapshot == this.proteinPer100gSnapshot &&
           other.carbsPer100gSnapshot == this.carbsPer100gSnapshot &&
           other.fatPer100gSnapshot == this.fatPer100gSnapshot &&
+          other.fiberPer100gSnapshot == this.fiberPer100gSnapshot &&
+          other.sugarPer100gSnapshot == this.sugarPer100gSnapshot &&
+          other.saturatedFatPer100gSnapshot ==
+              this.saturatedFatPer100gSnapshot &&
+          other.sodiumPer100gSnapshot == this.sodiumPer100gSnapshot &&
+          other.portionGramsSnapshot == this.portionGramsSnapshot &&
           other.sortOrder == this.sortOrder);
 }
 
@@ -8838,6 +10078,11 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
   final Value<double?> proteinPer100gSnapshot;
   final Value<double?> carbsPer100gSnapshot;
   final Value<double?> fatPer100gSnapshot;
+  final Value<double?> fiberPer100gSnapshot;
+  final Value<double?> sugarPer100gSnapshot;
+  final Value<double?> saturatedFatPer100gSnapshot;
+  final Value<double?> sodiumPer100gSnapshot;
+  final Value<double?> portionGramsSnapshot;
   final Value<int> sortOrder;
   final Value<int> rowid;
   const RecipeItemsCompanion({
@@ -8851,6 +10096,11 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
     this.proteinPer100gSnapshot = const Value.absent(),
     this.carbsPer100gSnapshot = const Value.absent(),
     this.fatPer100gSnapshot = const Value.absent(),
+    this.fiberPer100gSnapshot = const Value.absent(),
+    this.sugarPer100gSnapshot = const Value.absent(),
+    this.saturatedFatPer100gSnapshot = const Value.absent(),
+    this.sodiumPer100gSnapshot = const Value.absent(),
+    this.portionGramsSnapshot = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -8865,6 +10115,11 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
     this.proteinPer100gSnapshot = const Value.absent(),
     this.carbsPer100gSnapshot = const Value.absent(),
     this.fatPer100gSnapshot = const Value.absent(),
+    this.fiberPer100gSnapshot = const Value.absent(),
+    this.sugarPer100gSnapshot = const Value.absent(),
+    this.saturatedFatPer100gSnapshot = const Value.absent(),
+    this.sodiumPer100gSnapshot = const Value.absent(),
+    this.portionGramsSnapshot = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -8885,6 +10140,11 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
     Expression<double>? proteinPer100gSnapshot,
     Expression<double>? carbsPer100gSnapshot,
     Expression<double>? fatPer100gSnapshot,
+    Expression<double>? fiberPer100gSnapshot,
+    Expression<double>? sugarPer100gSnapshot,
+    Expression<double>? saturatedFatPer100gSnapshot,
+    Expression<double>? sodiumPer100gSnapshot,
+    Expression<double>? portionGramsSnapshot,
     Expression<int>? sortOrder,
     Expression<int>? rowid,
   }) {
@@ -8903,6 +10163,16 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
         'carbs_per100g_snapshot': carbsPer100gSnapshot,
       if (fatPer100gSnapshot != null)
         'fat_per100g_snapshot': fatPer100gSnapshot,
+      if (fiberPer100gSnapshot != null)
+        'fiber_per100g_snapshot': fiberPer100gSnapshot,
+      if (sugarPer100gSnapshot != null)
+        'sugar_per100g_snapshot': sugarPer100gSnapshot,
+      if (saturatedFatPer100gSnapshot != null)
+        'saturated_fat_per100g_snapshot': saturatedFatPer100gSnapshot,
+      if (sodiumPer100gSnapshot != null)
+        'sodium_per100g_snapshot': sodiumPer100gSnapshot,
+      if (portionGramsSnapshot != null)
+        'portion_grams_snapshot': portionGramsSnapshot,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (rowid != null) 'rowid': rowid,
     });
@@ -8919,6 +10189,11 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
     Value<double?>? proteinPer100gSnapshot,
     Value<double?>? carbsPer100gSnapshot,
     Value<double?>? fatPer100gSnapshot,
+    Value<double?>? fiberPer100gSnapshot,
+    Value<double?>? sugarPer100gSnapshot,
+    Value<double?>? saturatedFatPer100gSnapshot,
+    Value<double?>? sodiumPer100gSnapshot,
+    Value<double?>? portionGramsSnapshot,
     Value<int>? sortOrder,
     Value<int>? rowid,
   }) {
@@ -8934,6 +10209,13 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
           proteinPer100gSnapshot ?? this.proteinPer100gSnapshot,
       carbsPer100gSnapshot: carbsPer100gSnapshot ?? this.carbsPer100gSnapshot,
       fatPer100gSnapshot: fatPer100gSnapshot ?? this.fatPer100gSnapshot,
+      fiberPer100gSnapshot: fiberPer100gSnapshot ?? this.fiberPer100gSnapshot,
+      sugarPer100gSnapshot: sugarPer100gSnapshot ?? this.sugarPer100gSnapshot,
+      saturatedFatPer100gSnapshot:
+          saturatedFatPer100gSnapshot ?? this.saturatedFatPer100gSnapshot,
+      sodiumPer100gSnapshot:
+          sodiumPer100gSnapshot ?? this.sodiumPer100gSnapshot,
+      portionGramsSnapshot: portionGramsSnapshot ?? this.portionGramsSnapshot,
       sortOrder: sortOrder ?? this.sortOrder,
       rowid: rowid ?? this.rowid,
     );
@@ -8978,6 +10260,31 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
     if (fatPer100gSnapshot.present) {
       map['fat_per100g_snapshot'] = Variable<double>(fatPer100gSnapshot.value);
     }
+    if (fiberPer100gSnapshot.present) {
+      map['fiber_per100g_snapshot'] = Variable<double>(
+        fiberPer100gSnapshot.value,
+      );
+    }
+    if (sugarPer100gSnapshot.present) {
+      map['sugar_per100g_snapshot'] = Variable<double>(
+        sugarPer100gSnapshot.value,
+      );
+    }
+    if (saturatedFatPer100gSnapshot.present) {
+      map['saturated_fat_per100g_snapshot'] = Variable<double>(
+        saturatedFatPer100gSnapshot.value,
+      );
+    }
+    if (sodiumPer100gSnapshot.present) {
+      map['sodium_per100g_snapshot'] = Variable<double>(
+        sodiumPer100gSnapshot.value,
+      );
+    }
+    if (portionGramsSnapshot.present) {
+      map['portion_grams_snapshot'] = Variable<double>(
+        portionGramsSnapshot.value,
+      );
+    }
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
@@ -9000,6 +10307,11 @@ class RecipeItemsCompanion extends UpdateCompanion<RecipeItem> {
           ..write('proteinPer100gSnapshot: $proteinPer100gSnapshot, ')
           ..write('carbsPer100gSnapshot: $carbsPer100gSnapshot, ')
           ..write('fatPer100gSnapshot: $fatPer100gSnapshot, ')
+          ..write('fiberPer100gSnapshot: $fiberPer100gSnapshot, ')
+          ..write('sugarPer100gSnapshot: $sugarPer100gSnapshot, ')
+          ..write('saturatedFatPer100gSnapshot: $saturatedFatPer100gSnapshot, ')
+          ..write('sodiumPer100gSnapshot: $sodiumPer100gSnapshot, ')
+          ..write('portionGramsSnapshot: $portionGramsSnapshot, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -10688,6 +12000,50 @@ class $MealTemplateItemsTable extends MealTemplateItems
         type: DriftSqlType.double,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _fiberPer100gSnapshotMeta =
+      const VerificationMeta('fiberPer100gSnapshot');
+  @override
+  late final GeneratedColumn<double> fiberPer100gSnapshot =
+      GeneratedColumn<double>(
+        'fiber_per100g_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sugarPer100gSnapshotMeta =
+      const VerificationMeta('sugarPer100gSnapshot');
+  @override
+  late final GeneratedColumn<double> sugarPer100gSnapshot =
+      GeneratedColumn<double>(
+        'sugar_per100g_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _saturatedFatPer100gSnapshotMeta =
+      const VerificationMeta('saturatedFatPer100gSnapshot');
+  @override
+  late final GeneratedColumn<double> saturatedFatPer100gSnapshot =
+      GeneratedColumn<double>(
+        'saturated_fat_per100g_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sodiumPer100gSnapshotMeta =
+      const VerificationMeta('sodiumPer100gSnapshot');
+  @override
+  late final GeneratedColumn<double> sodiumPer100gSnapshot =
+      GeneratedColumn<double>(
+        'sodium_per100g_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _sortOrderMeta = const VerificationMeta(
     'sortOrder',
   );
@@ -10712,6 +12068,10 @@ class $MealTemplateItemsTable extends MealTemplateItems
     proteinPer100gSnapshot,
     carbsPer100gSnapshot,
     fatPer100gSnapshot,
+    fiberPer100gSnapshot,
+    sugarPer100gSnapshot,
+    saturatedFatPer100gSnapshot,
+    sodiumPer100gSnapshot,
     sortOrder,
   ];
   @override
@@ -10804,6 +12164,42 @@ class $MealTemplateItemsTable extends MealTemplateItems
         ),
       );
     }
+    if (data.containsKey('fiber_per100g_snapshot')) {
+      context.handle(
+        _fiberPer100gSnapshotMeta,
+        fiberPer100gSnapshot.isAcceptableOrUnknown(
+          data['fiber_per100g_snapshot']!,
+          _fiberPer100gSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sugar_per100g_snapshot')) {
+      context.handle(
+        _sugarPer100gSnapshotMeta,
+        sugarPer100gSnapshot.isAcceptableOrUnknown(
+          data['sugar_per100g_snapshot']!,
+          _sugarPer100gSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('saturated_fat_per100g_snapshot')) {
+      context.handle(
+        _saturatedFatPer100gSnapshotMeta,
+        saturatedFatPer100gSnapshot.isAcceptableOrUnknown(
+          data['saturated_fat_per100g_snapshot']!,
+          _saturatedFatPer100gSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sodium_per100g_snapshot')) {
+      context.handle(
+        _sodiumPer100gSnapshotMeta,
+        sodiumPer100gSnapshot.isAcceptableOrUnknown(
+          data['sodium_per100g_snapshot']!,
+          _sodiumPer100gSnapshotMeta,
+        ),
+      );
+    }
     if (data.containsKey('sort_order')) {
       context.handle(
         _sortOrderMeta,
@@ -10861,6 +12257,22 @@ class $MealTemplateItemsTable extends MealTemplateItems
         DriftSqlType.double,
         data['${effectivePrefix}fat_per100g_snapshot'],
       ),
+      fiberPer100gSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber_per100g_snapshot'],
+      ),
+      sugarPer100gSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sugar_per100g_snapshot'],
+      ),
+      saturatedFatPer100gSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}saturated_fat_per100g_snapshot'],
+      ),
+      sodiumPer100gSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium_per100g_snapshot'],
+      ),
       sortOrder: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
@@ -10889,6 +12301,10 @@ class MealTemplateItem extends DataClass
   final double? proteinPer100gSnapshot;
   final double? carbsPer100gSnapshot;
   final double? fatPer100gSnapshot;
+  final double? fiberPer100gSnapshot;
+  final double? sugarPer100gSnapshot;
+  final double? saturatedFatPer100gSnapshot;
+  final double? sodiumPer100gSnapshot;
   final int sortOrder;
   const MealTemplateItem({
     required this.id,
@@ -10901,6 +12317,10 @@ class MealTemplateItem extends DataClass
     this.proteinPer100gSnapshot,
     this.carbsPer100gSnapshot,
     this.fatPer100gSnapshot,
+    this.fiberPer100gSnapshot,
+    this.sugarPer100gSnapshot,
+    this.saturatedFatPer100gSnapshot,
+    this.sodiumPer100gSnapshot,
     required this.sortOrder,
   });
   @override
@@ -10928,6 +12348,20 @@ class MealTemplateItem extends DataClass
     if (!nullToAbsent || fatPer100gSnapshot != null) {
       map['fat_per100g_snapshot'] = Variable<double>(fatPer100gSnapshot);
     }
+    if (!nullToAbsent || fiberPer100gSnapshot != null) {
+      map['fiber_per100g_snapshot'] = Variable<double>(fiberPer100gSnapshot);
+    }
+    if (!nullToAbsent || sugarPer100gSnapshot != null) {
+      map['sugar_per100g_snapshot'] = Variable<double>(sugarPer100gSnapshot);
+    }
+    if (!nullToAbsent || saturatedFatPer100gSnapshot != null) {
+      map['saturated_fat_per100g_snapshot'] = Variable<double>(
+        saturatedFatPer100gSnapshot,
+      );
+    }
+    if (!nullToAbsent || sodiumPer100gSnapshot != null) {
+      map['sodium_per100g_snapshot'] = Variable<double>(sodiumPer100gSnapshot);
+    }
     map['sort_order'] = Variable<int>(sortOrder);
     return map;
   }
@@ -10950,6 +12384,19 @@ class MealTemplateItem extends DataClass
       fatPer100gSnapshot: fatPer100gSnapshot == null && nullToAbsent
           ? const Value.absent()
           : Value(fatPer100gSnapshot),
+      fiberPer100gSnapshot: fiberPer100gSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiberPer100gSnapshot),
+      sugarPer100gSnapshot: sugarPer100gSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sugarPer100gSnapshot),
+      saturatedFatPer100gSnapshot:
+          saturatedFatPer100gSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(saturatedFatPer100gSnapshot),
+      sodiumPer100gSnapshot: sodiumPer100gSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sodiumPer100gSnapshot),
       sortOrder: Value(sortOrder),
     );
   }
@@ -10978,6 +12425,18 @@ class MealTemplateItem extends DataClass
       fatPer100gSnapshot: serializer.fromJson<double?>(
         json['fatPer100gSnapshot'],
       ),
+      fiberPer100gSnapshot: serializer.fromJson<double?>(
+        json['fiberPer100gSnapshot'],
+      ),
+      sugarPer100gSnapshot: serializer.fromJson<double?>(
+        json['sugarPer100gSnapshot'],
+      ),
+      saturatedFatPer100gSnapshot: serializer.fromJson<double?>(
+        json['saturatedFatPer100gSnapshot'],
+      ),
+      sodiumPer100gSnapshot: serializer.fromJson<double?>(
+        json['sodiumPer100gSnapshot'],
+      ),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
     );
   }
@@ -10997,6 +12456,14 @@ class MealTemplateItem extends DataClass
       ),
       'carbsPer100gSnapshot': serializer.toJson<double?>(carbsPer100gSnapshot),
       'fatPer100gSnapshot': serializer.toJson<double?>(fatPer100gSnapshot),
+      'fiberPer100gSnapshot': serializer.toJson<double?>(fiberPer100gSnapshot),
+      'sugarPer100gSnapshot': serializer.toJson<double?>(sugarPer100gSnapshot),
+      'saturatedFatPer100gSnapshot': serializer.toJson<double?>(
+        saturatedFatPer100gSnapshot,
+      ),
+      'sodiumPer100gSnapshot': serializer.toJson<double?>(
+        sodiumPer100gSnapshot,
+      ),
       'sortOrder': serializer.toJson<int>(sortOrder),
     };
   }
@@ -11012,6 +12479,10 @@ class MealTemplateItem extends DataClass
     Value<double?> proteinPer100gSnapshot = const Value.absent(),
     Value<double?> carbsPer100gSnapshot = const Value.absent(),
     Value<double?> fatPer100gSnapshot = const Value.absent(),
+    Value<double?> fiberPer100gSnapshot = const Value.absent(),
+    Value<double?> sugarPer100gSnapshot = const Value.absent(),
+    Value<double?> saturatedFatPer100gSnapshot = const Value.absent(),
+    Value<double?> sodiumPer100gSnapshot = const Value.absent(),
     int? sortOrder,
   }) => MealTemplateItem(
     id: id ?? this.id,
@@ -11030,6 +12501,18 @@ class MealTemplateItem extends DataClass
     fatPer100gSnapshot: fatPer100gSnapshot.present
         ? fatPer100gSnapshot.value
         : this.fatPer100gSnapshot,
+    fiberPer100gSnapshot: fiberPer100gSnapshot.present
+        ? fiberPer100gSnapshot.value
+        : this.fiberPer100gSnapshot,
+    sugarPer100gSnapshot: sugarPer100gSnapshot.present
+        ? sugarPer100gSnapshot.value
+        : this.sugarPer100gSnapshot,
+    saturatedFatPer100gSnapshot: saturatedFatPer100gSnapshot.present
+        ? saturatedFatPer100gSnapshot.value
+        : this.saturatedFatPer100gSnapshot,
+    sodiumPer100gSnapshot: sodiumPer100gSnapshot.present
+        ? sodiumPer100gSnapshot.value
+        : this.sodiumPer100gSnapshot,
     sortOrder: sortOrder ?? this.sortOrder,
   );
   MealTemplateItem copyWithCompanion(MealTemplateItemsCompanion data) {
@@ -11056,6 +12539,18 @@ class MealTemplateItem extends DataClass
       fatPer100gSnapshot: data.fatPer100gSnapshot.present
           ? data.fatPer100gSnapshot.value
           : this.fatPer100gSnapshot,
+      fiberPer100gSnapshot: data.fiberPer100gSnapshot.present
+          ? data.fiberPer100gSnapshot.value
+          : this.fiberPer100gSnapshot,
+      sugarPer100gSnapshot: data.sugarPer100gSnapshot.present
+          ? data.sugarPer100gSnapshot.value
+          : this.sugarPer100gSnapshot,
+      saturatedFatPer100gSnapshot: data.saturatedFatPer100gSnapshot.present
+          ? data.saturatedFatPer100gSnapshot.value
+          : this.saturatedFatPer100gSnapshot,
+      sodiumPer100gSnapshot: data.sodiumPer100gSnapshot.present
+          ? data.sodiumPer100gSnapshot.value
+          : this.sodiumPer100gSnapshot,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
     );
   }
@@ -11073,6 +12568,10 @@ class MealTemplateItem extends DataClass
           ..write('proteinPer100gSnapshot: $proteinPer100gSnapshot, ')
           ..write('carbsPer100gSnapshot: $carbsPer100gSnapshot, ')
           ..write('fatPer100gSnapshot: $fatPer100gSnapshot, ')
+          ..write('fiberPer100gSnapshot: $fiberPer100gSnapshot, ')
+          ..write('sugarPer100gSnapshot: $sugarPer100gSnapshot, ')
+          ..write('saturatedFatPer100gSnapshot: $saturatedFatPer100gSnapshot, ')
+          ..write('sodiumPer100gSnapshot: $sodiumPer100gSnapshot, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
         .toString();
@@ -11090,6 +12589,10 @@ class MealTemplateItem extends DataClass
     proteinPer100gSnapshot,
     carbsPer100gSnapshot,
     fatPer100gSnapshot,
+    fiberPer100gSnapshot,
+    sugarPer100gSnapshot,
+    saturatedFatPer100gSnapshot,
+    sodiumPer100gSnapshot,
     sortOrder,
   );
   @override
@@ -11106,6 +12609,11 @@ class MealTemplateItem extends DataClass
           other.proteinPer100gSnapshot == this.proteinPer100gSnapshot &&
           other.carbsPer100gSnapshot == this.carbsPer100gSnapshot &&
           other.fatPer100gSnapshot == this.fatPer100gSnapshot &&
+          other.fiberPer100gSnapshot == this.fiberPer100gSnapshot &&
+          other.sugarPer100gSnapshot == this.sugarPer100gSnapshot &&
+          other.saturatedFatPer100gSnapshot ==
+              this.saturatedFatPer100gSnapshot &&
+          other.sodiumPer100gSnapshot == this.sodiumPer100gSnapshot &&
           other.sortOrder == this.sortOrder);
 }
 
@@ -11120,6 +12628,10 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
   final Value<double?> proteinPer100gSnapshot;
   final Value<double?> carbsPer100gSnapshot;
   final Value<double?> fatPer100gSnapshot;
+  final Value<double?> fiberPer100gSnapshot;
+  final Value<double?> sugarPer100gSnapshot;
+  final Value<double?> saturatedFatPer100gSnapshot;
+  final Value<double?> sodiumPer100gSnapshot;
   final Value<int> sortOrder;
   final Value<int> rowid;
   const MealTemplateItemsCompanion({
@@ -11133,6 +12645,10 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
     this.proteinPer100gSnapshot = const Value.absent(),
     this.carbsPer100gSnapshot = const Value.absent(),
     this.fatPer100gSnapshot = const Value.absent(),
+    this.fiberPer100gSnapshot = const Value.absent(),
+    this.sugarPer100gSnapshot = const Value.absent(),
+    this.saturatedFatPer100gSnapshot = const Value.absent(),
+    this.sodiumPer100gSnapshot = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -11147,6 +12663,10 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
     this.proteinPer100gSnapshot = const Value.absent(),
     this.carbsPer100gSnapshot = const Value.absent(),
     this.fatPer100gSnapshot = const Value.absent(),
+    this.fiberPer100gSnapshot = const Value.absent(),
+    this.sugarPer100gSnapshot = const Value.absent(),
+    this.saturatedFatPer100gSnapshot = const Value.absent(),
+    this.sodiumPer100gSnapshot = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -11167,6 +12687,10 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
     Expression<double>? proteinPer100gSnapshot,
     Expression<double>? carbsPer100gSnapshot,
     Expression<double>? fatPer100gSnapshot,
+    Expression<double>? fiberPer100gSnapshot,
+    Expression<double>? sugarPer100gSnapshot,
+    Expression<double>? saturatedFatPer100gSnapshot,
+    Expression<double>? sodiumPer100gSnapshot,
     Expression<int>? sortOrder,
     Expression<int>? rowid,
   }) {
@@ -11185,6 +12709,14 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
         'carbs_per100g_snapshot': carbsPer100gSnapshot,
       if (fatPer100gSnapshot != null)
         'fat_per100g_snapshot': fatPer100gSnapshot,
+      if (fiberPer100gSnapshot != null)
+        'fiber_per100g_snapshot': fiberPer100gSnapshot,
+      if (sugarPer100gSnapshot != null)
+        'sugar_per100g_snapshot': sugarPer100gSnapshot,
+      if (saturatedFatPer100gSnapshot != null)
+        'saturated_fat_per100g_snapshot': saturatedFatPer100gSnapshot,
+      if (sodiumPer100gSnapshot != null)
+        'sodium_per100g_snapshot': sodiumPer100gSnapshot,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (rowid != null) 'rowid': rowid,
     });
@@ -11201,6 +12733,10 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
     Value<double?>? proteinPer100gSnapshot,
     Value<double?>? carbsPer100gSnapshot,
     Value<double?>? fatPer100gSnapshot,
+    Value<double?>? fiberPer100gSnapshot,
+    Value<double?>? sugarPer100gSnapshot,
+    Value<double?>? saturatedFatPer100gSnapshot,
+    Value<double?>? sodiumPer100gSnapshot,
     Value<int>? sortOrder,
     Value<int>? rowid,
   }) {
@@ -11216,6 +12752,12 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
           proteinPer100gSnapshot ?? this.proteinPer100gSnapshot,
       carbsPer100gSnapshot: carbsPer100gSnapshot ?? this.carbsPer100gSnapshot,
       fatPer100gSnapshot: fatPer100gSnapshot ?? this.fatPer100gSnapshot,
+      fiberPer100gSnapshot: fiberPer100gSnapshot ?? this.fiberPer100gSnapshot,
+      sugarPer100gSnapshot: sugarPer100gSnapshot ?? this.sugarPer100gSnapshot,
+      saturatedFatPer100gSnapshot:
+          saturatedFatPer100gSnapshot ?? this.saturatedFatPer100gSnapshot,
+      sodiumPer100gSnapshot:
+          sodiumPer100gSnapshot ?? this.sodiumPer100gSnapshot,
       sortOrder: sortOrder ?? this.sortOrder,
       rowid: rowid ?? this.rowid,
     );
@@ -11260,6 +12802,26 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
     if (fatPer100gSnapshot.present) {
       map['fat_per100g_snapshot'] = Variable<double>(fatPer100gSnapshot.value);
     }
+    if (fiberPer100gSnapshot.present) {
+      map['fiber_per100g_snapshot'] = Variable<double>(
+        fiberPer100gSnapshot.value,
+      );
+    }
+    if (sugarPer100gSnapshot.present) {
+      map['sugar_per100g_snapshot'] = Variable<double>(
+        sugarPer100gSnapshot.value,
+      );
+    }
+    if (saturatedFatPer100gSnapshot.present) {
+      map['saturated_fat_per100g_snapshot'] = Variable<double>(
+        saturatedFatPer100gSnapshot.value,
+      );
+    }
+    if (sodiumPer100gSnapshot.present) {
+      map['sodium_per100g_snapshot'] = Variable<double>(
+        sodiumPer100gSnapshot.value,
+      );
+    }
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
@@ -11282,6 +12844,10 @@ class MealTemplateItemsCompanion extends UpdateCompanion<MealTemplateItem> {
           ..write('proteinPer100gSnapshot: $proteinPer100gSnapshot, ')
           ..write('carbsPer100gSnapshot: $carbsPer100gSnapshot, ')
           ..write('fatPer100gSnapshot: $fatPer100gSnapshot, ')
+          ..write('fiberPer100gSnapshot: $fiberPer100gSnapshot, ')
+          ..write('sugarPer100gSnapshot: $sugarPer100gSnapshot, ')
+          ..write('saturatedFatPer100gSnapshot: $saturatedFatPer100gSnapshot, ')
+          ..write('sodiumPer100gSnapshot: $sodiumPer100gSnapshot, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -13686,6 +15252,7 @@ typedef $$RoutineExercisesTableCreateCompanionBuilder =
       required String repsRange,
       Value<int?> suggestedRestSeconds,
       Value<String?> notes,
+      Value<String> setType,
       Value<String?> supersetId,
       required int exerciseIndex,
       Value<String> progressionType,
@@ -13708,6 +15275,7 @@ typedef $$RoutineExercisesTableUpdateCompanionBuilder =
       Value<String> repsRange,
       Value<int?> suggestedRestSeconds,
       Value<String?> notes,
+      Value<String> setType,
       Value<String?> supersetId,
       Value<int> exerciseIndex,
       Value<String> progressionType,
@@ -13813,6 +15381,11 @@ class $$RoutineExercisesTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get setType => $composableBuilder(
+    column: $table.setType,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13934,6 +15507,11 @@ class $$RoutineExercisesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get setType => $composableBuilder(
+    column: $table.setType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get supersetId => $composableBuilder(
     column: $table.supersetId,
     builder: (column) => ColumnOrderings(column),
@@ -14040,6 +15618,9 @@ class $$RoutineExercisesTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<String> get setType =>
+      $composableBuilder(column: $table.setType, builder: (column) => column);
+
   GeneratedColumn<String> get supersetId => $composableBuilder(
     column: $table.supersetId,
     builder: (column) => column,
@@ -14130,6 +15711,7 @@ class $$RoutineExercisesTableTableManager
                 Value<String> repsRange = const Value.absent(),
                 Value<int?> suggestedRestSeconds = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String> setType = const Value.absent(),
                 Value<String?> supersetId = const Value.absent(),
                 Value<int> exerciseIndex = const Value.absent(),
                 Value<String> progressionType = const Value.absent(),
@@ -14150,6 +15732,7 @@ class $$RoutineExercisesTableTableManager
                 repsRange: repsRange,
                 suggestedRestSeconds: suggestedRestSeconds,
                 notes: notes,
+                setType: setType,
                 supersetId: supersetId,
                 exerciseIndex: exerciseIndex,
                 progressionType: progressionType,
@@ -14172,6 +15755,7 @@ class $$RoutineExercisesTableTableManager
                 required String repsRange,
                 Value<int?> suggestedRestSeconds = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String> setType = const Value.absent(),
                 Value<String?> supersetId = const Value.absent(),
                 required int exerciseIndex,
                 Value<String> progressionType = const Value.absent(),
@@ -14192,6 +15776,7 @@ class $$RoutineExercisesTableTableManager
                 repsRange: repsRange,
                 suggestedRestSeconds: suggestedRestSeconds,
                 notes: notes,
+                setType: setType,
                 supersetId: supersetId,
                 exerciseIndex: exerciseIndex,
                 progressionType: progressionType,
@@ -15180,6 +16765,8 @@ typedef $$WorkoutSetsTableCreateCompanionBuilder =
       Value<bool> isDropset,
       Value<bool> isRestPause,
       Value<bool> isWarmup,
+      Value<bool> isMyoReps,
+      Value<bool> isAmrap,
       Value<int> rowid,
     });
 typedef $$WorkoutSetsTableUpdateCompanionBuilder =
@@ -15197,6 +16784,8 @@ typedef $$WorkoutSetsTableUpdateCompanionBuilder =
       Value<bool> isDropset,
       Value<bool> isRestPause,
       Value<bool> isWarmup,
+      Value<bool> isMyoReps,
+      Value<bool> isAmrap,
       Value<int> rowid,
     });
 
@@ -15296,6 +16885,16 @@ class $$WorkoutSetsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isMyoReps => $composableBuilder(
+    column: $table.isMyoReps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isAmrap => $composableBuilder(
+    column: $table.isAmrap,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$SessionExercisesTableFilterComposer get sessionExerciseId {
     final $$SessionExercisesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -15389,6 +16988,16 @@ class $$WorkoutSetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isMyoReps => $composableBuilder(
+    column: $table.isMyoReps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isAmrap => $composableBuilder(
+    column: $table.isAmrap,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SessionExercisesTableOrderingComposer get sessionExerciseId {
     final $$SessionExercisesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -15462,6 +17071,12 @@ class $$WorkoutSetsTableAnnotationComposer
   GeneratedColumn<bool> get isWarmup =>
       $composableBuilder(column: $table.isWarmup, builder: (column) => column);
 
+  GeneratedColumn<bool> get isMyoReps =>
+      $composableBuilder(column: $table.isMyoReps, builder: (column) => column);
+
+  GeneratedColumn<bool> get isAmrap =>
+      $composableBuilder(column: $table.isAmrap, builder: (column) => column);
+
   $$SessionExercisesTableAnnotationComposer get sessionExerciseId {
     final $$SessionExercisesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -15527,6 +17142,8 @@ class $$WorkoutSetsTableTableManager
                 Value<bool> isDropset = const Value.absent(),
                 Value<bool> isRestPause = const Value.absent(),
                 Value<bool> isWarmup = const Value.absent(),
+                Value<bool> isMyoReps = const Value.absent(),
+                Value<bool> isAmrap = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutSetsCompanion(
                 id: id,
@@ -15542,6 +17159,8 @@ class $$WorkoutSetsTableTableManager
                 isDropset: isDropset,
                 isRestPause: isRestPause,
                 isWarmup: isWarmup,
+                isMyoReps: isMyoReps,
+                isAmrap: isAmrap,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15559,6 +17178,8 @@ class $$WorkoutSetsTableTableManager
                 Value<bool> isDropset = const Value.absent(),
                 Value<bool> isRestPause = const Value.absent(),
                 Value<bool> isWarmup = const Value.absent(),
+                Value<bool> isMyoReps = const Value.absent(),
+                Value<bool> isAmrap = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutSetsCompanion.insert(
                 id: id,
@@ -15574,6 +17195,8 @@ class $$WorkoutSetsTableTableManager
                 isDropset: isDropset,
                 isRestPause: isRestPause,
                 isWarmup: isWarmup,
+                isMyoReps: isMyoReps,
+                isAmrap: isAmrap,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -16059,6 +17682,10 @@ typedef $$FoodsTableCreateCompanionBuilder =
       Value<double?> proteinPer100g,
       Value<double?> carbsPer100g,
       Value<double?> fatPer100g,
+      Value<double?> fiberPer100g,
+      Value<double?> sugarPer100g,
+      Value<double?> saturatedFatPer100g,
+      Value<double?> sodiumPer100g,
       Value<String?> portionName,
       Value<double?> portionGrams,
       Value<bool> userCreated,
@@ -16084,6 +17711,10 @@ typedef $$FoodsTableUpdateCompanionBuilder =
       Value<double?> proteinPer100g,
       Value<double?> carbsPer100g,
       Value<double?> fatPer100g,
+      Value<double?> fiberPer100g,
+      Value<double?> sugarPer100g,
+      Value<double?> saturatedFatPer100g,
+      Value<double?> sodiumPer100g,
       Value<String?> portionName,
       Value<double?> portionGrams,
       Value<bool> userCreated,
@@ -16237,6 +17868,26 @@ class $$FoodsTableFilterComposer extends Composer<_$AppDatabase, $FoodsTable> {
 
   ColumnFilters<double> get fatPer100g => $composableBuilder(
     column: $table.fatPer100g,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiberPer100g => $composableBuilder(
+    column: $table.fiberPer100g,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugarPer100g => $composableBuilder(
+    column: $table.sugarPer100g,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get saturatedFatPer100g => $composableBuilder(
+    column: $table.saturatedFatPer100g,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodiumPer100g => $composableBuilder(
+    column: $table.sodiumPer100g,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16460,6 +18111,26 @@ class $$FoodsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiberPer100g => $composableBuilder(
+    column: $table.fiberPer100g,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugarPer100g => $composableBuilder(
+    column: $table.sugarPer100g,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get saturatedFatPer100g => $composableBuilder(
+    column: $table.saturatedFatPer100g,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodiumPer100g => $composableBuilder(
+    column: $table.sodiumPer100g,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get portionName => $composableBuilder(
     column: $table.portionName,
     builder: (column) => ColumnOrderings(column),
@@ -16564,6 +18235,26 @@ class $$FoodsTableAnnotationComposer
 
   GeneratedColumn<double> get fatPer100g => $composableBuilder(
     column: $table.fatPer100g,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fiberPer100g => $composableBuilder(
+    column: $table.fiberPer100g,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sugarPer100g => $composableBuilder(
+    column: $table.sugarPer100g,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get saturatedFatPer100g => $composableBuilder(
+    column: $table.saturatedFatPer100g,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sodiumPer100g => $composableBuilder(
+    column: $table.sodiumPer100g,
     builder: (column) => column,
   );
 
@@ -16769,6 +18460,10 @@ class $$FoodsTableTableManager
                 Value<double?> proteinPer100g = const Value.absent(),
                 Value<double?> carbsPer100g = const Value.absent(),
                 Value<double?> fatPer100g = const Value.absent(),
+                Value<double?> fiberPer100g = const Value.absent(),
+                Value<double?> sugarPer100g = const Value.absent(),
+                Value<double?> saturatedFatPer100g = const Value.absent(),
+                Value<double?> sodiumPer100g = const Value.absent(),
                 Value<String?> portionName = const Value.absent(),
                 Value<double?> portionGrams = const Value.absent(),
                 Value<bool> userCreated = const Value.absent(),
@@ -16793,6 +18488,10 @@ class $$FoodsTableTableManager
                 proteinPer100g: proteinPer100g,
                 carbsPer100g: carbsPer100g,
                 fatPer100g: fatPer100g,
+                fiberPer100g: fiberPer100g,
+                sugarPer100g: sugarPer100g,
+                saturatedFatPer100g: saturatedFatPer100g,
+                sodiumPer100g: sodiumPer100g,
                 portionName: portionName,
                 portionGrams: portionGrams,
                 userCreated: userCreated,
@@ -16818,6 +18517,10 @@ class $$FoodsTableTableManager
                 Value<double?> proteinPer100g = const Value.absent(),
                 Value<double?> carbsPer100g = const Value.absent(),
                 Value<double?> fatPer100g = const Value.absent(),
+                Value<double?> fiberPer100g = const Value.absent(),
+                Value<double?> sugarPer100g = const Value.absent(),
+                Value<double?> saturatedFatPer100g = const Value.absent(),
+                Value<double?> sodiumPer100g = const Value.absent(),
                 Value<String?> portionName = const Value.absent(),
                 Value<double?> portionGrams = const Value.absent(),
                 Value<bool> userCreated = const Value.absent(),
@@ -16842,6 +18545,10 @@ class $$FoodsTableTableManager
                 proteinPer100g: proteinPer100g,
                 carbsPer100g: carbsPer100g,
                 fatPer100g: fatPer100g,
+                fiberPer100g: fiberPer100g,
+                sugarPer100g: sugarPer100g,
+                saturatedFatPer100g: saturatedFatPer100g,
+                sodiumPer100g: sodiumPer100g,
                 portionName: portionName,
                 portionGrams: portionGrams,
                 userCreated: userCreated,
@@ -17006,6 +18713,10 @@ typedef $$DiaryEntriesTableCreateCompanionBuilder =
       Value<double?> protein,
       Value<double?> carbs,
       Value<double?> fat,
+      Value<double?> fiber,
+      Value<double?> sugar,
+      Value<double?> saturatedFat,
+      Value<double?> sodium,
       Value<bool> isQuickAdd,
       Value<String?> notes,
       required DateTime createdAt,
@@ -17025,6 +18736,10 @@ typedef $$DiaryEntriesTableUpdateCompanionBuilder =
       Value<double?> protein,
       Value<double?> carbs,
       Value<double?> fat,
+      Value<double?> fiber,
+      Value<double?> sugar,
+      Value<double?> saturatedFat,
+      Value<double?> sodium,
       Value<bool> isQuickAdd,
       Value<String?> notes,
       Value<DateTime> createdAt,
@@ -17117,6 +18832,26 @@ class $$DiaryEntriesTableFilterComposer
 
   ColumnFilters<double> get fat => $composableBuilder(
     column: $table.fat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get saturatedFat => $composableBuilder(
+    column: $table.saturatedFat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodium => $composableBuilder(
+    column: $table.sodium,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17223,6 +18958,26 @@ class $$DiaryEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiber => $composableBuilder(
+    column: $table.fiber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugar => $composableBuilder(
+    column: $table.sugar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get saturatedFat => $composableBuilder(
+    column: $table.saturatedFat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodium => $composableBuilder(
+    column: $table.sodium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isQuickAdd => $composableBuilder(
     column: $table.isQuickAdd,
     builder: (column) => ColumnOrderings(column),
@@ -17304,6 +19059,20 @@ class $$DiaryEntriesTableAnnotationComposer
   GeneratedColumn<double> get fat =>
       $composableBuilder(column: $table.fat, builder: (column) => column);
 
+  GeneratedColumn<double> get fiber =>
+      $composableBuilder(column: $table.fiber, builder: (column) => column);
+
+  GeneratedColumn<double> get sugar =>
+      $composableBuilder(column: $table.sugar, builder: (column) => column);
+
+  GeneratedColumn<double> get saturatedFat => $composableBuilder(
+    column: $table.saturatedFat,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sodium =>
+      $composableBuilder(column: $table.sodium, builder: (column) => column);
+
   GeneratedColumn<bool> get isQuickAdd => $composableBuilder(
     column: $table.isQuickAdd,
     builder: (column) => column,
@@ -17379,6 +19148,10 @@ class $$DiaryEntriesTableTableManager
                 Value<double?> protein = const Value.absent(),
                 Value<double?> carbs = const Value.absent(),
                 Value<double?> fat = const Value.absent(),
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> saturatedFat = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
                 Value<bool> isQuickAdd = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -17396,6 +19169,10 @@ class $$DiaryEntriesTableTableManager
                 protein: protein,
                 carbs: carbs,
                 fat: fat,
+                fiber: fiber,
+                sugar: sugar,
+                saturatedFat: saturatedFat,
+                sodium: sodium,
                 isQuickAdd: isQuickAdd,
                 notes: notes,
                 createdAt: createdAt,
@@ -17415,6 +19192,10 @@ class $$DiaryEntriesTableTableManager
                 Value<double?> protein = const Value.absent(),
                 Value<double?> carbs = const Value.absent(),
                 Value<double?> fat = const Value.absent(),
+                Value<double?> fiber = const Value.absent(),
+                Value<double?> sugar = const Value.absent(),
+                Value<double?> saturatedFat = const Value.absent(),
+                Value<double?> sodium = const Value.absent(),
                 Value<bool> isQuickAdd = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 required DateTime createdAt,
@@ -17432,6 +19213,10 @@ class $$DiaryEntriesTableTableManager
                 protein: protein,
                 carbs: carbs,
                 fat: fat,
+                fiber: fiber,
+                sugar: sugar,
+                saturatedFat: saturatedFat,
+                sodium: sodium,
                 isQuickAdd: isQuickAdd,
                 notes: notes,
                 createdAt: createdAt,
@@ -17708,6 +19493,10 @@ typedef $$TargetsTableCreateCompanionBuilder =
       Value<double?> proteinTarget,
       Value<double?> carbsTarget,
       Value<double?> fatTarget,
+      Value<double?> fiberTarget,
+      Value<double?> sugarLimit,
+      Value<double?> saturatedFatLimit,
+      Value<double?> sodiumLimit,
       Value<String?> notes,
       required DateTime createdAt,
       Value<int> rowid,
@@ -17720,6 +19509,10 @@ typedef $$TargetsTableUpdateCompanionBuilder =
       Value<double?> proteinTarget,
       Value<double?> carbsTarget,
       Value<double?> fatTarget,
+      Value<double?> fiberTarget,
+      Value<double?> sugarLimit,
+      Value<double?> saturatedFatLimit,
+      Value<double?> sodiumLimit,
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<int> rowid,
@@ -17761,6 +19554,26 @@ class $$TargetsTableFilterComposer
 
   ColumnFilters<double> get fatTarget => $composableBuilder(
     column: $table.fatTarget,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiberTarget => $composableBuilder(
+    column: $table.fiberTarget,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugarLimit => $composableBuilder(
+    column: $table.sugarLimit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get saturatedFatLimit => $composableBuilder(
+    column: $table.saturatedFatLimit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodiumLimit => $composableBuilder(
+    column: $table.sodiumLimit,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17814,6 +19627,26 @@ class $$TargetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiberTarget => $composableBuilder(
+    column: $table.fiberTarget,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugarLimit => $composableBuilder(
+    column: $table.sugarLimit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get saturatedFatLimit => $composableBuilder(
+    column: $table.saturatedFatLimit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodiumLimit => $composableBuilder(
+    column: $table.sodiumLimit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -17858,6 +19691,26 @@ class $$TargetsTableAnnotationComposer
   GeneratedColumn<double> get fatTarget =>
       $composableBuilder(column: $table.fatTarget, builder: (column) => column);
 
+  GeneratedColumn<double> get fiberTarget => $composableBuilder(
+    column: $table.fiberTarget,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sugarLimit => $composableBuilder(
+    column: $table.sugarLimit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get saturatedFatLimit => $composableBuilder(
+    column: $table.saturatedFatLimit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sodiumLimit => $composableBuilder(
+    column: $table.sodiumLimit,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
@@ -17899,6 +19752,10 @@ class $$TargetsTableTableManager
                 Value<double?> proteinTarget = const Value.absent(),
                 Value<double?> carbsTarget = const Value.absent(),
                 Value<double?> fatTarget = const Value.absent(),
+                Value<double?> fiberTarget = const Value.absent(),
+                Value<double?> sugarLimit = const Value.absent(),
+                Value<double?> saturatedFatLimit = const Value.absent(),
+                Value<double?> sodiumLimit = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -17909,6 +19766,10 @@ class $$TargetsTableTableManager
                 proteinTarget: proteinTarget,
                 carbsTarget: carbsTarget,
                 fatTarget: fatTarget,
+                fiberTarget: fiberTarget,
+                sugarLimit: sugarLimit,
+                saturatedFatLimit: saturatedFatLimit,
+                sodiumLimit: sodiumLimit,
                 notes: notes,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -17921,6 +19782,10 @@ class $$TargetsTableTableManager
                 Value<double?> proteinTarget = const Value.absent(),
                 Value<double?> carbsTarget = const Value.absent(),
                 Value<double?> fatTarget = const Value.absent(),
+                Value<double?> fiberTarget = const Value.absent(),
+                Value<double?> sugarLimit = const Value.absent(),
+                Value<double?> saturatedFatLimit = const Value.absent(),
+                Value<double?> sodiumLimit = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -17931,6 +19796,10 @@ class $$TargetsTableTableManager
                 proteinTarget: proteinTarget,
                 carbsTarget: carbsTarget,
                 fatTarget: fatTarget,
+                fiberTarget: fiberTarget,
+                sugarLimit: sugarLimit,
+                saturatedFatLimit: saturatedFatLimit,
+                sodiumLimit: sodiumLimit,
                 notes: notes,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -17966,6 +19835,10 @@ typedef $$RecipesTableCreateCompanionBuilder =
       Value<double?> totalProtein,
       Value<double?> totalCarbs,
       Value<double?> totalFat,
+      Value<double?> totalFiber,
+      Value<double?> totalSugar,
+      Value<double?> totalSaturatedFat,
+      Value<double?> totalSodium,
       required double totalGrams,
       Value<int> servings,
       Value<String?> servingName,
@@ -17983,6 +19856,10 @@ typedef $$RecipesTableUpdateCompanionBuilder =
       Value<double?> totalProtein,
       Value<double?> totalCarbs,
       Value<double?> totalFat,
+      Value<double?> totalFiber,
+      Value<double?> totalSugar,
+      Value<double?> totalSaturatedFat,
+      Value<double?> totalSodium,
       Value<double> totalGrams,
       Value<int> servings,
       Value<String?> servingName,
@@ -18056,6 +19933,26 @@ class $$RecipesTableFilterComposer
 
   ColumnFilters<double> get totalFat => $composableBuilder(
     column: $table.totalFat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalFiber => $composableBuilder(
+    column: $table.totalFiber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalSugar => $composableBuilder(
+    column: $table.totalSugar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalSaturatedFat => $composableBuilder(
+    column: $table.totalSaturatedFat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalSodium => $composableBuilder(
+    column: $table.totalSodium,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18159,6 +20056,26 @@ class $$RecipesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get totalFiber => $composableBuilder(
+    column: $table.totalFiber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalSugar => $composableBuilder(
+    column: $table.totalSugar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalSaturatedFat => $composableBuilder(
+    column: $table.totalSaturatedFat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalSodium => $composableBuilder(
+    column: $table.totalSodium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get totalGrams => $composableBuilder(
     column: $table.totalGrams,
     builder: (column) => ColumnOrderings(column),
@@ -18225,6 +20142,26 @@ class $$RecipesTableAnnotationComposer
 
   GeneratedColumn<double> get totalFat =>
       $composableBuilder(column: $table.totalFat, builder: (column) => column);
+
+  GeneratedColumn<double> get totalFiber => $composableBuilder(
+    column: $table.totalFiber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalSugar => $composableBuilder(
+    column: $table.totalSugar,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalSaturatedFat => $composableBuilder(
+    column: $table.totalSaturatedFat,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalSodium => $composableBuilder(
+    column: $table.totalSodium,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<double> get totalGrams => $composableBuilder(
     column: $table.totalGrams,
@@ -18311,6 +20248,10 @@ class $$RecipesTableTableManager
                 Value<double?> totalProtein = const Value.absent(),
                 Value<double?> totalCarbs = const Value.absent(),
                 Value<double?> totalFat = const Value.absent(),
+                Value<double?> totalFiber = const Value.absent(),
+                Value<double?> totalSugar = const Value.absent(),
+                Value<double?> totalSaturatedFat = const Value.absent(),
+                Value<double?> totalSodium = const Value.absent(),
                 Value<double> totalGrams = const Value.absent(),
                 Value<int> servings = const Value.absent(),
                 Value<String?> servingName = const Value.absent(),
@@ -18326,6 +20267,10 @@ class $$RecipesTableTableManager
                 totalProtein: totalProtein,
                 totalCarbs: totalCarbs,
                 totalFat: totalFat,
+                totalFiber: totalFiber,
+                totalSugar: totalSugar,
+                totalSaturatedFat: totalSaturatedFat,
+                totalSodium: totalSodium,
                 totalGrams: totalGrams,
                 servings: servings,
                 servingName: servingName,
@@ -18343,6 +20288,10 @@ class $$RecipesTableTableManager
                 Value<double?> totalProtein = const Value.absent(),
                 Value<double?> totalCarbs = const Value.absent(),
                 Value<double?> totalFat = const Value.absent(),
+                Value<double?> totalFiber = const Value.absent(),
+                Value<double?> totalSugar = const Value.absent(),
+                Value<double?> totalSaturatedFat = const Value.absent(),
+                Value<double?> totalSodium = const Value.absent(),
                 required double totalGrams,
                 Value<int> servings = const Value.absent(),
                 Value<String?> servingName = const Value.absent(),
@@ -18358,6 +20307,10 @@ class $$RecipesTableTableManager
                 totalProtein: totalProtein,
                 totalCarbs: totalCarbs,
                 totalFat: totalFat,
+                totalFiber: totalFiber,
+                totalSugar: totalSugar,
+                totalSaturatedFat: totalSaturatedFat,
+                totalSodium: totalSodium,
                 totalGrams: totalGrams,
                 servings: servings,
                 servingName: servingName,
@@ -18433,6 +20386,11 @@ typedef $$RecipeItemsTableCreateCompanionBuilder =
       Value<double?> proteinPer100gSnapshot,
       Value<double?> carbsPer100gSnapshot,
       Value<double?> fatPer100gSnapshot,
+      Value<double?> fiberPer100gSnapshot,
+      Value<double?> sugarPer100gSnapshot,
+      Value<double?> saturatedFatPer100gSnapshot,
+      Value<double?> sodiumPer100gSnapshot,
+      Value<double?> portionGramsSnapshot,
       Value<int> sortOrder,
       Value<int> rowid,
     });
@@ -18448,6 +20406,11 @@ typedef $$RecipeItemsTableUpdateCompanionBuilder =
       Value<double?> proteinPer100gSnapshot,
       Value<double?> carbsPer100gSnapshot,
       Value<double?> fatPer100gSnapshot,
+      Value<double?> fiberPer100gSnapshot,
+      Value<double?> sugarPer100gSnapshot,
+      Value<double?> saturatedFatPer100gSnapshot,
+      Value<double?> sodiumPer100gSnapshot,
+      Value<double?> portionGramsSnapshot,
       Value<int> sortOrder,
       Value<int> rowid,
     });
@@ -18541,6 +20504,31 @@ class $$RecipeItemsTableFilterComposer
 
   ColumnFilters<double> get fatPer100gSnapshot => $composableBuilder(
     column: $table.fatPer100gSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiberPer100gSnapshot => $composableBuilder(
+    column: $table.fiberPer100gSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugarPer100gSnapshot => $composableBuilder(
+    column: $table.sugarPer100gSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get saturatedFatPer100gSnapshot => $composableBuilder(
+    column: $table.saturatedFatPer100gSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodiumPer100gSnapshot => $composableBuilder(
+    column: $table.sodiumPer100gSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get portionGramsSnapshot => $composableBuilder(
+    column: $table.portionGramsSnapshot,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18645,6 +20633,31 @@ class $$RecipeItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiberPer100gSnapshot => $composableBuilder(
+    column: $table.fiberPer100gSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugarPer100gSnapshot => $composableBuilder(
+    column: $table.sugarPer100gSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get saturatedFatPer100gSnapshot => $composableBuilder(
+    column: $table.saturatedFatPer100gSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodiumPer100gSnapshot => $composableBuilder(
+    column: $table.sodiumPer100gSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get portionGramsSnapshot => $composableBuilder(
+    column: $table.portionGramsSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
@@ -18740,6 +20753,31 @@ class $$RecipeItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get fiberPer100gSnapshot => $composableBuilder(
+    column: $table.fiberPer100gSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sugarPer100gSnapshot => $composableBuilder(
+    column: $table.sugarPer100gSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get saturatedFatPer100gSnapshot => $composableBuilder(
+    column: $table.saturatedFatPer100gSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sodiumPer100gSnapshot => $composableBuilder(
+    column: $table.sodiumPer100gSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get portionGramsSnapshot => $composableBuilder(
+    column: $table.portionGramsSnapshot,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
 
@@ -18828,6 +20866,12 @@ class $$RecipeItemsTableTableManager
                 Value<double?> proteinPer100gSnapshot = const Value.absent(),
                 Value<double?> carbsPer100gSnapshot = const Value.absent(),
                 Value<double?> fatPer100gSnapshot = const Value.absent(),
+                Value<double?> fiberPer100gSnapshot = const Value.absent(),
+                Value<double?> sugarPer100gSnapshot = const Value.absent(),
+                Value<double?> saturatedFatPer100gSnapshot =
+                    const Value.absent(),
+                Value<double?> sodiumPer100gSnapshot = const Value.absent(),
+                Value<double?> portionGramsSnapshot = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecipeItemsCompanion(
@@ -18841,6 +20885,11 @@ class $$RecipeItemsTableTableManager
                 proteinPer100gSnapshot: proteinPer100gSnapshot,
                 carbsPer100gSnapshot: carbsPer100gSnapshot,
                 fatPer100gSnapshot: fatPer100gSnapshot,
+                fiberPer100gSnapshot: fiberPer100gSnapshot,
+                sugarPer100gSnapshot: sugarPer100gSnapshot,
+                saturatedFatPer100gSnapshot: saturatedFatPer100gSnapshot,
+                sodiumPer100gSnapshot: sodiumPer100gSnapshot,
+                portionGramsSnapshot: portionGramsSnapshot,
                 sortOrder: sortOrder,
                 rowid: rowid,
               ),
@@ -18856,6 +20905,12 @@ class $$RecipeItemsTableTableManager
                 Value<double?> proteinPer100gSnapshot = const Value.absent(),
                 Value<double?> carbsPer100gSnapshot = const Value.absent(),
                 Value<double?> fatPer100gSnapshot = const Value.absent(),
+                Value<double?> fiberPer100gSnapshot = const Value.absent(),
+                Value<double?> sugarPer100gSnapshot = const Value.absent(),
+                Value<double?> saturatedFatPer100gSnapshot =
+                    const Value.absent(),
+                Value<double?> sodiumPer100gSnapshot = const Value.absent(),
+                Value<double?> portionGramsSnapshot = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecipeItemsCompanion.insert(
@@ -18869,6 +20924,11 @@ class $$RecipeItemsTableTableManager
                 proteinPer100gSnapshot: proteinPer100gSnapshot,
                 carbsPer100gSnapshot: carbsPer100gSnapshot,
                 fatPer100gSnapshot: fatPer100gSnapshot,
+                fiberPer100gSnapshot: fiberPer100gSnapshot,
+                sugarPer100gSnapshot: sugarPer100gSnapshot,
+                saturatedFatPer100gSnapshot: saturatedFatPer100gSnapshot,
+                sodiumPer100gSnapshot: sodiumPer100gSnapshot,
+                portionGramsSnapshot: portionGramsSnapshot,
                 sortOrder: sortOrder,
                 rowid: rowid,
               ),
@@ -20049,6 +22109,10 @@ typedef $$MealTemplateItemsTableCreateCompanionBuilder =
       Value<double?> proteinPer100gSnapshot,
       Value<double?> carbsPer100gSnapshot,
       Value<double?> fatPer100gSnapshot,
+      Value<double?> fiberPer100gSnapshot,
+      Value<double?> sugarPer100gSnapshot,
+      Value<double?> saturatedFatPer100gSnapshot,
+      Value<double?> sodiumPer100gSnapshot,
       Value<int> sortOrder,
       Value<int> rowid,
     });
@@ -20064,6 +22128,10 @@ typedef $$MealTemplateItemsTableUpdateCompanionBuilder =
       Value<double?> proteinPer100gSnapshot,
       Value<double?> carbsPer100gSnapshot,
       Value<double?> fatPer100gSnapshot,
+      Value<double?> fiberPer100gSnapshot,
+      Value<double?> sugarPer100gSnapshot,
+      Value<double?> saturatedFatPer100gSnapshot,
+      Value<double?> sodiumPer100gSnapshot,
       Value<int> sortOrder,
       Value<int> rowid,
     });
@@ -20172,6 +22240,26 @@ class $$MealTemplateItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get fiberPer100gSnapshot => $composableBuilder(
+    column: $table.fiberPer100gSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sugarPer100gSnapshot => $composableBuilder(
+    column: $table.sugarPer100gSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get saturatedFatPer100gSnapshot => $composableBuilder(
+    column: $table.saturatedFatPer100gSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodiumPer100gSnapshot => $composableBuilder(
+    column: $table.sodiumPer100gSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
     builder: (column) => ColumnFilters(column),
@@ -20273,6 +22361,26 @@ class $$MealTemplateItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fiberPer100gSnapshot => $composableBuilder(
+    column: $table.fiberPer100gSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sugarPer100gSnapshot => $composableBuilder(
+    column: $table.sugarPer100gSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get saturatedFatPer100gSnapshot => $composableBuilder(
+    column: $table.saturatedFatPer100gSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodiumPer100gSnapshot => $composableBuilder(
+    column: $table.sodiumPer100gSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
@@ -20365,6 +22473,26 @@ class $$MealTemplateItemsTableAnnotationComposer
 
   GeneratedColumn<double> get fatPer100gSnapshot => $composableBuilder(
     column: $table.fatPer100gSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fiberPer100gSnapshot => $composableBuilder(
+    column: $table.fiberPer100gSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sugarPer100gSnapshot => $composableBuilder(
+    column: $table.sugarPer100gSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get saturatedFatPer100gSnapshot => $composableBuilder(
+    column: $table.saturatedFatPer100gSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sodiumPer100gSnapshot => $composableBuilder(
+    column: $table.sodiumPer100gSnapshot,
     builder: (column) => column,
   );
 
@@ -20461,6 +22589,11 @@ class $$MealTemplateItemsTableTableManager
                 Value<double?> proteinPer100gSnapshot = const Value.absent(),
                 Value<double?> carbsPer100gSnapshot = const Value.absent(),
                 Value<double?> fatPer100gSnapshot = const Value.absent(),
+                Value<double?> fiberPer100gSnapshot = const Value.absent(),
+                Value<double?> sugarPer100gSnapshot = const Value.absent(),
+                Value<double?> saturatedFatPer100gSnapshot =
+                    const Value.absent(),
+                Value<double?> sodiumPer100gSnapshot = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MealTemplateItemsCompanion(
@@ -20474,6 +22607,10 @@ class $$MealTemplateItemsTableTableManager
                 proteinPer100gSnapshot: proteinPer100gSnapshot,
                 carbsPer100gSnapshot: carbsPer100gSnapshot,
                 fatPer100gSnapshot: fatPer100gSnapshot,
+                fiberPer100gSnapshot: fiberPer100gSnapshot,
+                sugarPer100gSnapshot: sugarPer100gSnapshot,
+                saturatedFatPer100gSnapshot: saturatedFatPer100gSnapshot,
+                sodiumPer100gSnapshot: sodiumPer100gSnapshot,
                 sortOrder: sortOrder,
                 rowid: rowid,
               ),
@@ -20489,6 +22626,11 @@ class $$MealTemplateItemsTableTableManager
                 Value<double?> proteinPer100gSnapshot = const Value.absent(),
                 Value<double?> carbsPer100gSnapshot = const Value.absent(),
                 Value<double?> fatPer100gSnapshot = const Value.absent(),
+                Value<double?> fiberPer100gSnapshot = const Value.absent(),
+                Value<double?> sugarPer100gSnapshot = const Value.absent(),
+                Value<double?> saturatedFatPer100gSnapshot =
+                    const Value.absent(),
+                Value<double?> sodiumPer100gSnapshot = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MealTemplateItemsCompanion.insert(
@@ -20502,6 +22644,10 @@ class $$MealTemplateItemsTableTableManager
                 proteinPer100gSnapshot: proteinPer100gSnapshot,
                 carbsPer100gSnapshot: carbsPer100gSnapshot,
                 fatPer100gSnapshot: fatPer100gSnapshot,
+                fiberPer100gSnapshot: fiberPer100gSnapshot,
+                sugarPer100gSnapshot: sugarPer100gSnapshot,
+                saturatedFatPer100gSnapshot: saturatedFatPer100gSnapshot,
+                sodiumPer100gSnapshot: sodiumPer100gSnapshot,
                 sortOrder: sortOrder,
                 rowid: rowid,
               ),

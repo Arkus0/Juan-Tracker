@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../core/design_system/design_system.dart' show AppTypography;
 import '../providers/settings_provider.dart';
 
 class PlateCalculatorDialog extends ConsumerStatefulWidget {
@@ -124,10 +124,9 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
             children: [
               Text(
                 'CALCULADORA DE PLACAS',
-                style: GoogleFonts.montserrat(
-                  color: scheme.onSurface,
+                style: AppTypography.headlineSmall.copyWith(
                   fontWeight: FontWeight.w900,
-                  fontSize: 18,
+                  color: scheme.onSurface,
                 ),
               ),
               const SizedBox(height: 20),

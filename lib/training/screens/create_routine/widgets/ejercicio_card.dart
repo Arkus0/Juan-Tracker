@@ -1,10 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:juan_tracker/training/utils/design_system.dart';
+import '../../../../core/design_system/design_system.dart';
 import 'package:juan_tracker/training/models/ejercicio_en_rutina.dart';
 import 'package:juan_tracker/training/models/library_exercise.dart';
+import 'package:juan_tracker/training/models/training_set_type.dart';
 import 'package:juan_tracker/training/services/alternativas_service.dart';
 import 'package:juan_tracker/training/services/exercise_library_service.dart';
 import 'package:juan_tracker/training/widgets/common/alternativas_dialog.dart';
@@ -140,7 +142,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
           SnackBar(
             content: Text(
               'Reemplazado por ${seleccion.name}',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+              style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
             ),
             backgroundColor: scheme.surface,
             behavior: SnackBarBehavior.floating,
@@ -170,8 +172,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
             children: [
               Text(
                 'OPCIONES: ${widget.ejercicio.nombre}',
-                style: GoogleFonts.montserrat(
-                  fontSize: 18,
+                style: AppTypography.headlineSmall.copyWith(
                   fontWeight: FontWeight.w900,
                   color: scheme.onSurface,
                 ),
@@ -203,6 +204,42 @@ class _EjercicioCardState extends State<EjercicioCard> {
                 onChanged: (val) {
                   widget.onUpdate(widget.ejercicio.copyWith(notas: val));
                 },
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Tipo de serie',
+                  style: AppTypography.bodyCompact.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: TrainingSetType.values.map((type) {
+                  final selected = widget.ejercicio.setType == type;
+                  return ChoiceChip(
+                    label: Text(type.label.toUpperCase()),
+                    selected: selected,
+                    onSelected: (_) {
+                      widget.onUpdate(
+                        widget.ejercicio.copyWith(setType: type),
+                      );
+                    },
+                    selectedColor: scheme.primaryContainer,
+                    backgroundColor: scheme.surfaceContainerHighest,
+                    labelStyle: AppTypography.labelSmall.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: selected
+                          ? scheme.onPrimaryContainer
+                          : scheme.onSurfaceVariant,
+                    ),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 16),
               // Rest Time
@@ -296,8 +333,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
                 children: [
                   Text(
                     widget.ejercicio.nombre.toUpperCase(),
-                    style: GoogleFonts.montserrat(
-                      fontSize: 16,
+                    style: AppTypography.titleLarge.copyWith(
                       fontWeight: FontWeight.w900,
                       color: scheme.onSurface,
                     ),
@@ -307,12 +343,35 @@ class _EjercicioCardState extends State<EjercicioCard> {
                   const SizedBox(height: 4),
                   Text(
                     widget.ejercicio.musculosPrincipales.join(', '),
-                    style: GoogleFonts.montserrat(
-                      fontSize: 10,
-                      color: scheme.onSurfaceVariant,
+                    style: AppTypography.labelSmall.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
+                  if (!widget.ejercicio.setType.isDefault) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: scheme.primary.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Text(
+                        widget.ejercicio.setType.shortLabel,
+                        style: AppTypography.micro.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: scheme.onPrimaryContainer,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   // Series x Reps Inputs with controllers to prevent focus loss
                   Row(
@@ -322,10 +381,9 @@ class _EjercicioCardState extends State<EjercicioCard> {
                         child: TextField(
                           controller: _seriesController,
                           keyboardType: TextInputType.number,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            color: scheme.onSurface,
+                          style: AppTypography.titleMedium.copyWith(
                             fontWeight: FontWeight.w800,
+                            color: scheme.onSurface,
                           ),
                           decoration: InputDecoration(
                             isDense: true,
@@ -355,10 +413,10 @@ class _EjercicioCardState extends State<EjercicioCard> {
                         width: 60,
                         child: TextField(
                           controller: _repsController,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            color: scheme.onSurface,
+                          keyboardType: TextInputType.number,
+                          style: AppTypography.titleMedium.copyWith(
                             fontWeight: FontWeight.w800,
+                            color: scheme.onSurface,
                           ),
                           decoration: InputDecoration(
                             isDense: true,
@@ -453,6 +511,27 @@ class _EjercicioCardState extends State<EjercicioCard> {
   }
 
   Widget _buildImage(ColorScheme scheme, LibraryExercise? libExercise) {
+    if (libExercise != null &&
+        libExercise.localImagePath != null &&
+        libExercise.localImagePath!.isNotEmpty) {
+      final file = File(libExercise.localImagePath!);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          width: 60,
+          height: 60,
+          fit: BoxFit.cover,
+          cacheWidth: 120,
+          cacheHeight: 120,
+          errorBuilder: (ctx, err, stack) => Icon(
+            Icons.fitness_center,
+            color: scheme.onSurfaceVariant,
+            size: 30,
+          ),
+        );
+      }
+    }
+
     if (libExercise != null && libExercise.imageUrls.isNotEmpty) {
       return Image.network(
         libExercise.imageUrls.first,

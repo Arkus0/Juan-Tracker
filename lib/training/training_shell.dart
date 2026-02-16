@@ -5,7 +5,7 @@ import 'screens/main_screen.dart';
 import 'services/alternativas_service.dart';
 import 'services/exercise_library_service.dart';
 import 'services/image_precache_service.dart';
-import 'utils/design_system.dart';
+import '../core/design_system/design_system.dart';
 
 class TrainingShell extends ConsumerStatefulWidget {
   const TrainingShell({super.key});
@@ -56,7 +56,7 @@ class _TrainingShellState extends ConsumerState<TrainingShell> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = buildAppTheme();
+    final theme = buildTrainingTheme();
     return Theme(
       data: theme,
       child: Builder(

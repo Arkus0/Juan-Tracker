@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../core/design_system/design_system.dart';
 import '../providers/voice_input_provider.dart';
 import '../services/routine_ocr_service.dart';
 import '../services/voice_input_service.dart';
-import '../utils/design_system.dart';
 import 'voice/voice_mic_button.dart';
 
 /// Tipo de import seleccionado
@@ -263,7 +262,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         SnackBar(
           content: Text(
             'No hay ejercicios válidos para añadir',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -363,7 +362,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
                 Expanded(
                   child: Text(
                     _getTitle(),
-                    style: core.AppTypography.headlineSmall.copyWith(
+                    style: AppTypography.headlineSmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                     textAlign: _mode == SmartImportMode.selection
@@ -378,7 +377,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
             const SizedBox(height: 8),
             Text(
               _getSubtitle(),
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
               ),
               textAlign: TextAlign.center,
@@ -516,7 +515,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
                 Expanded(
                   child: Text(
                     _errorMessage!,
-                    style: core.AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.neonPrimary,
                     ),
                   ),
@@ -580,13 +579,13 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         TextField(
           controller: _textController,
           maxLines: 5,
-          style: core.AppTypography.bodyLarge.copyWith(
+          style: AppTypography.bodyLarge.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
           decoration: InputDecoration(
             hintText:
                 'Pega o escribe tu entrenamiento...\n\nEj: Press banca 4x8 80kg, Sentadilla 3x5 100kg',
-            hintStyle: core.AppTypography.bodyMedium.copyWith(
+            hintStyle: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(77),
             ),
             filled: true,
@@ -644,7 +643,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
               children: [
                 Text(
                   'Ejemplos de formato:',
-                  style: core.AppTypography.labelLarge.copyWith(
+                  style: AppTypography.labelLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
@@ -671,14 +670,14 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         const SizedBox(height: 24),
         Text(
           'Analizando imagen...',
-          style: core.AppTypography.bodyLarge.copyWith(
+          style: AppTypography.bodyLarge.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
           ),
         ),
         const SizedBox(height: 8),
         Text(
           'Detectando ejercicios con OCR',
-          style: core.AppTypography.bodyMedium.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
           ),
         ),
@@ -697,14 +696,14 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
           const SizedBox(height: 16),
           Text(
             'No se detectaron ejercicios',
-            style: core.AppTypography.bodyLarge.copyWith(
+            style: AppTypography.bodyLarge.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Intenta con otra imagen o usa dictado por voz',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
             ),
             textAlign: TextAlign.center,
@@ -745,7 +744,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
               const SizedBox(width: 8),
               Text(
                 '${_importedExercises.where((e) => e.isValid).length} ejercicios detectados',
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.neonCyan,
                 ),
               ),
@@ -799,7 +798,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
             ),
             child: Text(
               'CANCELAR',
-              style: core.AppTypography.titleLarge,
+              style: AppTypography.titleLarge,
             ),
           ),
         ),
@@ -816,7 +815,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
             ),
             child: Text(
               'AÑADIR $validCount EJERCICIO${validCount == 1 ? '' : 'S'}',
-              style: core.AppTypography.headlineSmall,
+              style: AppTypography.headlineSmall,
             ),
           ),
         ),
@@ -845,7 +844,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
               const SizedBox(width: 8),
               Text(
                 'Ejemplos de comandos:',
-                style: core.AppTypography.titleLarge.copyWith(
+                style: AppTypography.titleLarge.copyWith(
                   fontSize: 13,
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                 ),
@@ -876,7 +875,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
           Flexible(
             child: Text(
               '"$text"',
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 fontStyle: FontStyle.italic,
               ),
@@ -935,14 +934,14 @@ class _ImportOptionCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: core.AppTypography.titleLarge.copyWith(
+                      style: AppTypography.titleLarge.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: core.AppTypography.bodyMedium.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                       ),
                     ),
@@ -1020,7 +1019,7 @@ class _SmartExerciseCard extends StatelessWidget {
                     if (isValid)
                       Text(
                         exercise.matchedName!,
-                        style: core.AppTypography.titleLarge.copyWith(
+                        style: AppTypography.titleLarge.copyWith(
                           fontSize: 14,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -1028,14 +1027,14 @@ class _SmartExerciseCard extends StatelessWidget {
                     else
                       Text(
                         'No encontrado',
-                        style: core.AppTypography.titleLarge.copyWith(
+                        style: AppTypography.titleLarge.copyWith(
                           fontSize: 14,
                           color: AppColors.neonPrimary,
                         ),
                       ),
                     Text(
                       '"${exercise.rawText}"',
-                      style: core.AppTypography.labelSmall.copyWith(
+                      style: AppTypography.labelSmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                         fontStyle: FontStyle.italic,
                       ),
@@ -1060,7 +1059,7 @@ class _SmartExerciseCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${(exercise.confidence * 100).toInt()}%',
-                    style: core.AppTypography.labelSmall.copyWith(
+                    style: AppTypography.labelSmall.copyWith(
                       color: _getConfidenceColor(exercise.confidence),
                       fontWeight: FontWeight.bold,
                     ),
@@ -1112,7 +1111,7 @@ class _SmartExerciseCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${exercise.weight!.toStringAsFixed(1)} kg',
-                    style: core.AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                     ),
                   ),
@@ -1154,7 +1153,7 @@ class _CompactField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: core.AppTypography.labelSmall.copyWith(
+          style: AppTypography.labelSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
           ),
         ),
@@ -1168,7 +1167,7 @@ class _CompactField extends StatelessWidget {
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               fontSize: 13,
               color: Theme.of(context).colorScheme.onSurface,
             ),

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../models/ejercicio_en_rutina.dart';
 import '../../models/library_exercise.dart';
 import '../../providers/training_provider.dart';
 import '../../screens/create_routine/widgets/biblioteca_bottom_sheet.dart';
-import '../../utils/design_system.dart';
 
 /// Botón compacto para añadir una serie adicional a un ejercicio
 class AddSetButton extends ConsumerWidget {
@@ -36,7 +35,10 @@ class AddSetButton extends ConsumerWidget {
                     size: 18,
                   ),
                   const SizedBox(width: 8),
-                  Text('Serie añadida', style: AppTypography.labelEmphasis),
+                  Text('Serie añadida', style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.textTertiary,
+                    letterSpacing: 0.8,
+                  )),
                 ],
               ),
               backgroundColor: AppColors.bgElevated,
@@ -64,10 +66,8 @@ class AddSetButton extends ConsumerWidget {
               const SizedBox(width: 6),
               Text(
                 'AÑADIR SERIE',
-                style: GoogleFonts.montserrat(
-                  fontSize: 11,
+                style: AppTypography.sectionLabel.copyWith(
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
                   color: AppColors.textSecondary,
                 ),
               ),
@@ -113,8 +113,7 @@ class AddExerciseButton extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Text(
                   'AÑADIR EJERCICIO',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
+                  style: AppTypography.labelLarge.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.5,
                     color: AppColors.techCyan,
@@ -146,314 +145,97 @@ class AddExerciseButton extends ConsumerWidget {
         builder: (_, controller) => BibliotecaBottomSheet(
           onAdd: (libExercise) {
             Navigator.pop(sheetContext);
-            _showAddOptionDialog(context, ref, libExercise);
+            // Añadir directamente a la sesión (sin dialog intermedio)
+            ref
+                .read(trainingSessionProvider.notifier)
+                .addExerciseToSession(libExercise);
+
+            if (!context.mounted) return;
+
+            // Ofrecer guardar en rutina como acción secundaria del snackbar
+            final state = ref.read(trainingSessionProvider);
+            final hasActiveRoutine =
+                state.activeRutina != null && state.dayIndex != null;
+
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${libExercise.name} añadido',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.textTertiary,
+                    letterSpacing: 0.8,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                backgroundColor: AppColors.success,
+                duration: const Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
+                action: hasActiveRoutine
+                    ? SnackBarAction(
+                        label: 'GUARDAR EN RUTINA',
+                        textColor: Colors.white,
+                        onPressed: () =>
+                            _saveExerciseToRoutine(context, ref, libExercise),
+                      )
+                    : null,
+              ),
+            );
           },
         ),
       ),
     );
   }
 
-  void _showAddOptionDialog(
+  /// Guarda el ejercicio también en la rutina activa (acción opcional).
+  Future<void> _saveExerciseToRoutine(
     BuildContext context,
     WidgetRef ref,
     LibraryExercise exercise,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AddExerciseOptionDialog(
-        exercise: exercise,
-        onSessionOnly: () {
-          Navigator.pop(dialogContext);
-          // Añadir solo a esta sesión
-          ref
-              .read(trainingSessionProvider.notifier)
-              .addExerciseToSession(exercise);
+  ) async {
+    final state = ref.read(trainingSessionProvider);
+    if (state.activeRutina == null || state.dayIndex == null) return;
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle_outline,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${exercise.name} añadido a esta sesión',
-                      style: AppTypography.labelEmphasis,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+    final rutina = state.activeRutina!;
+    final dayIndex = state.dayIndex!;
+
+    if (dayIndex < rutina.dias.length) {
+      final newExercise = EjercicioEnRutina(
+        id: exercise.id.toString(),
+        nombre: exercise.name,
+        descripcion: exercise.description,
+        musculosPrincipales: exercise.muscles,
+        musculosSecundarios: exercise.secondaryMuscles,
+        equipo: exercise.equipment,
+        localImagePath: exercise.localImagePath,
+      );
+
+      final updatedDay = rutina.dias[dayIndex].copyWith(
+        ejercicios: [...rutina.dias[dayIndex].ejercicios, newExercise],
+      );
+
+      final newDias = [...rutina.dias];
+      newDias[dayIndex] = updatedDay;
+      final updatedRutina = rutina.copyWith(dias: newDias);
+
+      await ref.read(trainingRepositoryProvider).saveRutina(updatedRutina);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '✓ Guardado en rutina',
+              style: AppTypography.labelSmall.copyWith(
+                color: AppColors.textTertiary,
+                letterSpacing: 0.8,
               ),
-              backgroundColor: AppColors.success,
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
             ),
-          );
-        },
-        onAddToRoutine: () async {
-          Navigator.pop(dialogContext);
-
-          // Añadir a sesión actual
-          ref
-              .read(trainingSessionProvider.notifier)
-              .addExerciseToSession(exercise);
-
-          // También añadir a la rutina (si hay una activa con día conocido)
-          final state = ref.read(trainingSessionProvider);
-          if (state.activeRutina != null && state.dayIndex != null) {
-            // Usar el repositorio directamente para actualizar la rutina
-            final rutina = state.activeRutina!;
-            final dayIndex = state.dayIndex!;
-
-            // Crear una copia de la rutina con el ejercicio añadido
-            if (dayIndex < rutina.dias.length) {
-              final newExercise = EjercicioEnRutina(
-                id: exercise.id.toString(),
-                nombre: exercise.name,
-                descripcion: exercise.description,
-                musculosPrincipales: exercise.muscles,
-                musculosSecundarios: exercise.secondaryMuscles,
-                equipo: exercise.equipment,
-                localImagePath: exercise.localImagePath,
-              );
-
-              final updatedDay = rutina.dias[dayIndex].copyWith(
-                ejercicios: [...rutina.dias[dayIndex].ejercicios, newExercise],
-              );
-
-              final newDias = [...rutina.dias];
-              newDias[dayIndex] = updatedDay;
-              final updatedRutina = rutina.copyWith(dias: newDias);
-
-              await ref
-                  .read(trainingRepositoryProvider)
-                  .saveRutina(updatedRutina);
-            }
-
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(
-                        Icons.library_add_check,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${exercise.name} añadido a sesión y rutina',
-                          style: AppTypography.labelEmphasis,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: AppColors.success,
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
-          } else {
-            // No hay rutina activa, solo añadir a sesión
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${exercise.name} añadido (sin rutina activa para guardar)',
-                          style: AppTypography.labelEmphasis,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: AppColors.bgElevated,
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
-          }
-        },
-      ),
-    );
-  }
-}
-
-/// Diálogo para elegir si añadir ejercicio solo a la sesión o también a la rutina
-class AddExerciseOptionDialog extends StatelessWidget {
-  final LibraryExercise exercise;
-  final VoidCallback onSessionOnly;
-  final VoidCallback onAddToRoutine;
-
-  const AddExerciseOptionDialog({
-    super.key,
-    required this.exercise,
-    required this.onSessionOnly,
-    required this.onAddToRoutine,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.bgElevated,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Column(
-        children: [
-          const Icon(
-            Icons.fitness_center_rounded,
-            color: AppColors.techCyan,
-            size: 40,
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
           ),
-          const SizedBox(height: 12),
-          Text(
-            exercise.name.toUpperCase(),
-            style: AppTypography.sectionTitle.copyWith(fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            '¿Dónde quieres añadir este ejercicio?',
-            style: TextStyle(color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-
-          // Opción 1: Solo esta sesión
-          _OptionTile(
-            icon: Icons.today_rounded,
-            title: 'SOLO ESTA SESIÓN',
-            subtitle: 'Ejercicio temporal, no se guardará en tu rutina',
-            color: AppColors.textSecondary,
-            onTap: onSessionOnly,
-          ),
-
-          const SizedBox(height: 12),
-
-          // Opción 2: Añadir a la rutina
-          _OptionTile(
-            icon: Icons.library_add_rounded,
-            title: 'AÑADIR A LA RUTINA',
-            subtitle: 'Se guardará permanentemente en este día',
-            color: AppColors.techCyan,
-            onTap: onAddToRoutine,
-            highlighted: true,
-          ),
-        ],
-      ),
-      actionsAlignment: MainAxisAlignment.center,
-      actionsPadding: const EdgeInsets.only(bottom: 16),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text(
-            'CANCELAR',
-            style: TextStyle(color: AppColors.textTertiary),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _OptionTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-  final bool highlighted;
-
-  const _OptionTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-    this.highlighted = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: highlighted ? color.withValues(alpha: 0.1) : AppColors.bgDeep,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: highlighted ? color : AppColors.border,
-          width: highlighted ? 2 : 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                        color: color,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: color.withValues(alpha: 0.6),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+        );
+      }
+    }
   }
 }

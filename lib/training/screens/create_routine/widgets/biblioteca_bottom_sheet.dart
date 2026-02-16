@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
@@ -1007,6 +1009,24 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
 
   Widget _buildImage(LibraryExercise ex) {
     final scheme = Theme.of(context).colorScheme;
+    if (ex.localImagePath != null && ex.localImagePath!.isNotEmpty) {
+      final file = File(ex.localImagePath!);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          cacheWidth: 120,
+          cacheHeight: 120,
+          errorBuilder: (ctx, err, stack) => Container(
+            color: scheme.surfaceContainerHighest,
+            child: Icon(
+              Icons.broken_image,
+              color: scheme.onSurfaceVariant.withAlpha(60),
+            ),
+          ),
+        );
+      }
+    }
     if (ex.imageUrls.isNotEmpty) {
       return Image.network(
         ex.imageUrls.first,

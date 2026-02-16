@@ -9,6 +9,7 @@ import '../models/dia.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/progression_type.dart';
 import '../models/rutina.dart';
+import '../models/training_set_type.dart';
 
 /// Repositorio especializado para operaciones de Rutinas.
 /// Extraído de DriftTrainingRepository para mejor separación de responsabilidades.
@@ -86,6 +87,7 @@ class RoutineRepository {
                 progressionType: ProgressionType.fromString(e.progressionType),
                 weightIncrement: e.weightIncrement,
                 targetRpe: e.targetRpe,
+                setType: TrainingSetType.fromString(e.setType),
               ),
             )
             .toList(),
@@ -266,6 +268,7 @@ class RoutineRepository {
                   ej.descansoSugerido?.inSeconds ?? 60,
                 ),
                 notes: Value(ej.notas ?? ''),
+                setType: Value(ej.setType.value),
                 supersetId: Value(ej.supersetId),
                 exerciseIndex: j,
                 progressionType: Value(ej.progressionType.value),

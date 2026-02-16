@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import '../../utils/design_system.dart';
+import '../../../core/design_system/design_system.dart';
 import '../../utils/performance_utils.dart';
 
 // ============================================================================
@@ -11,29 +10,22 @@ import '../../utils/performance_utils.dart';
 // ============================================================================
 
 class _InputStyles {
-  static final inputText = GoogleFonts.montserrat(
+  static final inputText = AppTypography.headlineSmall.copyWith(
     fontWeight: FontWeight.w800,
-    fontSize: 18,
     color: AppColors.textPrimary,
   );
 
   // 🎯 UX MEDIO: Ghost values más visibles (opacity aumentada para WCAG AA)
-  static final ghostText = GoogleFonts.montserrat(
+  static final ghostText = AppTypography.titleLarge.copyWith(
     color: AppColors.textTertiary,
-    fontWeight: FontWeight.w600,
-    fontSize: 16,
     decoration: TextDecoration.underline,
     decorationColor: AppColors.textTertiary.withValues(alpha: 0.5),
     decorationStyle: TextDecorationStyle.dotted,
   );
 
-  static final ghostTextSuggestion = GoogleFonts.montserrat(
-    fontWeight: FontWeight.w600,
-    fontSize: 16,
-  );
+  static final ghostTextSuggestion = AppTypography.titleLarge;
 
-  static final toolbarButtonLabel = GoogleFonts.montserrat(
-    fontSize: 12,
+  static final toolbarButtonLabel = AppTypography.labelMedium.copyWith(
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
   );

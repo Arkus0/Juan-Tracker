@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/design_system/design_system.dart' show AppTypography;
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
 
@@ -83,8 +83,7 @@ class StreakCounter extends ConsumerWidget {
                   children: [
                     Text(
                       '${streak.currentStreak}',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 32,
+                      style: AppTypography.dataLarge.copyWith(
                         fontWeight: FontWeight.w900,
                         color: hasStreak
                             ? scheme.onSurface
@@ -94,8 +93,7 @@ class StreakCounter extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Text(
                       streak.currentStreak == 1 ? 'DÍA' : 'DÍAS',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
+                      style: AppTypography.titleMedium.copyWith(
                         fontWeight: FontWeight.w700,
                         color: hasStreak
                             ? scheme.onSurfaceVariant
@@ -112,8 +110,7 @@ class StreakCounter extends ConsumerWidget {
                       : streak.lastTrainingDate != null
                       ? 'Sin racha activa'
                       : 'Comienza tu racha hoy',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
+                  style: AppTypography.bodySmall.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
@@ -134,8 +131,7 @@ class StreakCounter extends ConsumerWidget {
                 children: [
                   Text(
                     '${streak.longestStreak}',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 18,
+                    style: AppTypography.dataSmall.copyWith(
                       fontWeight: FontWeight.w800,
                       color: streak.currentStreak >= streak.longestStreak
                           ? scheme.tertiary
@@ -144,8 +140,7 @@ class StreakCounter extends ConsumerWidget {
                   ),
                   Text(
                     'RÉCORD',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 8,
+                    style: AppTypography.microBadge.copyWith(
                       fontWeight: FontWeight.w700,
                       color: scheme.onSurfaceVariant,
                       letterSpacing: 1,
@@ -211,8 +206,7 @@ class StreakBadge extends ConsumerWidget {
               const SizedBox(width: 4),
               Text(
                 '${streak.currentStreak}',
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
+                style: AppTypography.labelLarge.copyWith(
                   fontWeight: FontWeight.w800,
                   color: scheme.onSurface,
                 ),

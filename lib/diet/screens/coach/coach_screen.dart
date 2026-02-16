@@ -406,6 +406,40 @@ class _ActiveCoachState extends ConsumerWidget {
                       value: '${plan.currentKcalTarget} kcal',
                       highlight: true,
                     ),
+                  const Divider(height: 24),
+                  // Toggle de auto-apply
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Modo automático',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Aplicar nuevos targets automáticamente cada semana',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurface.withAlpha(153),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: plan.autoApplyCheckIn,
+                        onChanged: (enabled) {
+                          ref
+                              .read(coachPlanProvider.notifier)
+                              .toggleAutoApply(enabled);
+                        },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

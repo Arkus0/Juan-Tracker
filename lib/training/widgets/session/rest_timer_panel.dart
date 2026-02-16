@@ -1,9 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import '../../utils/design_system.dart';
+import '../../../core/design_system/design_system.dart';
 
 class RestTimerPanel extends StatefulWidget {
   final bool isRestActive;
@@ -252,9 +251,7 @@ class _AggressiveTimerDisplayState extends State<_AggressiveTimerDisplay>
           scale: isCritical ? _scaleAnimation.value : 1.0,
           child: Text(
             '$seconds',
-            style: GoogleFonts.montserrat(
-              fontSize: 120,
-              fontWeight: FontWeight.w900,
+            style: AppTypography.timerGiant.copyWith(
               color: isCritical ? AppColors.neonPrimary : Colors.white,
               shadows: [
                 Shadow(

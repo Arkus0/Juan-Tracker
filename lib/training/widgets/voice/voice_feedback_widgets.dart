@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../services/noise_detection_service.dart';
-import '../../utils/design_system.dart';
 
 /// Banner de sugerencia de fallback cuando hay problemas de ruido.
 ///
@@ -61,7 +60,7 @@ class VoiceFallbackBanner extends StatelessWidget {
                   isWarning
                       ? 'Ambiente ruidoso detectado'
                       : 'Dificultad para reconocer voz',
-                  style: core.AppTypography.labelLarge.copyWith(
+                  style: AppTypography.labelLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
@@ -81,7 +80,7 @@ class VoiceFallbackBanner extends StatelessWidget {
             isWarning
                 ? 'Intenta hablar más cerca del micrófono o usa otro método.'
                 : 'Después de varios intentos fallidos, te recomendamos usar texto o entrada manual.',
-            style: core.AppTypography.bodySmall.copyWith(
+            style: AppTypography.bodySmall.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
             ),
           ),
@@ -161,7 +160,7 @@ class _FallbackButton extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: isPrimary ? AppColors.neonCyan : Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
             ),
@@ -224,7 +223,7 @@ class ConfidenceIndicator extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${(confidence * 100).toInt()}%',
-                style: core.AppTypography.labelLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: _color,
                 ),
               ),
@@ -292,7 +291,7 @@ class VoiceUndoSnackbar {
             Expanded(
               child: Text(
                 message,
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
@@ -366,7 +365,7 @@ class VoiceListeningStatus extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'Pulsa para hablar',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
             ),
           ),
@@ -394,7 +393,7 @@ class VoiceListeningStatus extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Escuchando...',
-                style: core.AppTypography.labelLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: AppColors.error,
                 ),
               ),
@@ -404,7 +403,7 @@ class VoiceListeningStatus extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               partialTranscript!,
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
               maxLines: 2,
@@ -438,7 +437,7 @@ class VoiceListeningStatus extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'Procesando...',
-            style: core.AppTypography.labelLarge.copyWith(
+            style: AppTypography.labelLarge.copyWith(
               color: Colors.amber,
             ),
           ),
@@ -463,7 +462,7 @@ class VoiceListeningStatus extends StatelessWidget {
           Flexible(
             child: Text(
               errorMessage ?? 'No entendido',
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: Colors.orange,
               ),
             ),
@@ -540,7 +539,7 @@ class VoiceLimitsInfo extends StatelessWidget {
             Flexible(
               child: Text(
                 'La voz captura: nombre, series, reps, peso',
-                style: core.AppTypography.labelSmall.copyWith(
+                style: AppTypography.labelSmall.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 ),
               ),
@@ -570,7 +569,7 @@ class VoiceLimitsInfo extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Qué puede hacer la voz',
-                style: core.AppTypography.labelLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
@@ -609,7 +608,7 @@ class VoiceLimitsInfo extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             text,
-            style: core.AppTypography.bodySmall.copyWith(
+            style: AppTypography.bodySmall.copyWith(
               color: supported ? Theme.of(context).colorScheme.onSurface.withAlpha(178) : Theme.of(context).colorScheme.onSurface.withAlpha(97),
             ),
           ),

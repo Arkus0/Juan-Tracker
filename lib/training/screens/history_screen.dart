@@ -3,17 +3,19 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/design_system/design_system.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/widgets/widgets.dart';
 import '../models/external_session.dart';
 import '../models/rutina.dart';
 import '../models/sesion.dart';
 import '../providers/training_provider.dart';
+import '../widgets/common/skeleton_loaders.dart';
 import '../widgets/external_session_sheet.dart';
-import 'session_detail_screen.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
@@ -116,7 +118,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ),
       ),
       body: sessionsAsync.when(
-        loading: () => const Center(child: AppLoading(message: 'Cargando historial...')),
+        loading: () => const HistoryListSkeleton(),
         error: (err, stack) => Center(
           child: AppError(
             message: 'Error al cargar historial',
@@ -130,7 +132,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           }
 
           return rutinasAsync.when(
-            loading: () => const Center(child: AppLoading()),
+            loading: () => const HistoryListSkeleton(),
             error: (err, stack) => Center(
               child: AppError(
                 message: 'Error al cargar rutinas',
@@ -577,15 +579,9 @@ class _SessionTileState extends State<_SessionTile> {
               try {
                 HapticFeedback.mediumImpact();
               } catch (_) {}
-              final theme = Theme.of(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => Theme(
-                    data: theme,
-                    child: SessionDetailScreen(sesion: widget.session),
-                  ),
-                ),
+              context.push(
+                AppRouter.trainingSessionDetail,
+                extra: widget.session,
               );
             },
             borderRadius: BorderRadius.circular(12),
@@ -796,15 +792,9 @@ class _SessionTileState extends State<_SessionTile> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    final theme = Theme.of(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => Theme(
-                          data: theme,
-                          child: SessionDetailScreen(sesion: widget.session),
-                        ),
-                      ),
+                    context.push(
+                      AppRouter.trainingSessionDetail,
+                      extra: widget.session,
                     );
                   },
                   icon: const Icon(Icons.visibility, size: 18),

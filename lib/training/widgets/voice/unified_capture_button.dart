@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
-import '../../utils/design_system.dart';
+import '../../../core/design_system/design_system.dart';
 
 /// Tipo de captura para entrada de datos.
 enum CaptureType { voice, ocr, text, manual }
@@ -149,7 +148,7 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
         ),
         if (widget.showLabels) ...[
           const SizedBox(height: 6),
-          Text(_currentType.label, style: core.AppTypography.labelSmall.copyWith(color: _currentType.color)),
+          Text(_currentType.label, style: AppTypography.labelSmall.copyWith(color: _currentType.color)),
         ],
       ],
     );
@@ -192,7 +191,7 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
                 children: [
                   Icon(Icons.close, size: 12, color: onSurface.withAlpha(138)),
                   const SizedBox(width: 4),
-                  Text('Cerrar', style: core.AppTypography.labelSmall.copyWith(color: onSurface.withAlpha(138))),
+                  Text('Cerrar', style: AppTypography.labelSmall.copyWith(color: onSurface.withAlpha(138))),
                 ],
               ),
             ),
@@ -248,7 +247,7 @@ class CaptureMethodSelector extends StatelessWidget {
                   Icon(type.icon, color: isSelected ? type.color : onSurface.withAlpha(138), size: compact ? 20 : 24),
                   if (!compact) ...[
                     const SizedBox(height: 4),
-                    Text(type.label, style: core.AppTypography.labelSmall.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? type.color : onSurface.withAlpha(138))),
+                    Text(type.label, style: AppTypography.labelSmall.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? type.color : onSurface.withAlpha(138))),
                   ],
                 ],
               ),
@@ -333,7 +332,7 @@ class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(color: AppColors.bgElevated, borderRadius: BorderRadius.circular(8)),
-                          child: Text(type.label, style: core.AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(178))),
+                          child: Text(type.label, style: AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(178))),
                         ),
                         const SizedBox(width: 8),
                         FloatingActionButton.small(

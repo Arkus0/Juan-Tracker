@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../../core/providers/information_density_provider.dart';
 import '../../models/progression_type.dart';
 import '../../models/serie_log.dart';
 import '../../screens/plate_calculator_dialog.dart';
-import '../../utils/design_system.dart';
 import '../../utils/performance_utils.dart';
 import 'log_input.dart';
 
@@ -18,39 +17,39 @@ import 'log_input.dart';
 typedef NullableBoolChanged = void Function({required bool? value});
 
 class _SetRowStyles {
-  static final setNumberText = core.AppTypography.labelMedium.copyWith(
+  static final setNumberText = AppTypography.labelMedium.copyWith(
     fontWeight: FontWeight.w800,
     color: Colors.white,
   );
 
   // 🆕 Estilos para botón de copia (PREV/SUG)
-  static final prevValue = core.AppTypography.labelSmall.copyWith(
+  static final prevValue = AppTypography.labelSmall.copyWith(
     fontSize: 11,
     fontWeight: FontWeight.w600,
   );
 
-  static final prevReps = core.AppTypography.labelSmall.copyWith(
+  static final prevReps = AppTypography.labelSmall.copyWith(
     fontSize: 10,
     fontWeight: FontWeight.w500,
   );
 
-  static final sugValue = core.AppTypography.labelSmall.copyWith(
+  static final sugValue = AppTypography.labelSmall.copyWith(
     fontSize: 11,
     fontWeight: FontWeight.w700,
   );
 
-  static final sugReps = core.AppTypography.labelSmall.copyWith(
+  static final sugReps = AppTypography.labelSmall.copyWith(
     fontSize: 10,
     fontWeight: FontWeight.w600,
   );
 
-  static final tagText = core.AppTypography.labelSmall.copyWith(
+  static final tagText = AppTypography.labelSmall.copyWith(
     fontSize: 8,
     fontWeight: FontWeight.w700,
     letterSpacing: 0.3,
   );
 
-  static final noteText = core.AppTypography.labelSmall.copyWith(
+  static final noteText = AppTypography.labelSmall.copyWith(
     fontSize: 9,
     fontStyle: FontStyle.italic,
   );
@@ -84,6 +83,15 @@ class SessionSetRow extends ConsumerStatefulWidget {
   // 🆕 Fast Logging: Swipe to delete
   final bool canDelete; // Si se puede eliminar (>1 serie en ejercicio)
   final VoidCallback? onDelete; // Callback para eliminar serie
+  final VoidCallback? onDuplicate; // Callback para duplicar serie
+  final bool showPrBadge;
+  // 🆕 Quick toggles de tipo de set
+  final VoidCallback? onToggleWarmup;
+  final VoidCallback? onToggleFailure;
+  final VoidCallback? onToggleDropset;
+  final VoidCallback? onToggleRestPause;
+  final VoidCallback? onToggleMyoReps;
+  final VoidCallback? onToggleAmrap;
 
   const SessionSetRow({
     super.key,
@@ -101,6 +109,14 @@ class SessionSetRow extends ConsumerStatefulWidget {
     this.shouldFocusReps = false,
     this.canDelete = false,
     this.onDelete,
+    this.onDuplicate,
+    this.showPrBadge = false,
+    this.onToggleWarmup,
+    this.onToggleFailure,
+    this.onToggleDropset,
+    this.onToggleRestPause,
+    this.onToggleMyoReps,
+    this.onToggleAmrap,
   });
 
   @override
@@ -229,6 +245,14 @@ class _SessionSetRowState extends ConsumerState<SessionSetRow> {
     final rowColor = isCompleted
         ? AppColors.success.withValues(alpha: 0.12)
         : Colors.transparent;
+    final showSetTypeChips =
+        widget.showAdvanced ||
+        widget.log.isWarmup ||
+        widget.log.isFailure ||
+        widget.log.isDropset ||
+        widget.log.isRestPause ||
+        widget.log.isMyoReps ||
+        widget.log.isAmrap;
 
     // 🆕 Fast Logging: Contenido base de la fila
     final rowContent = GestureDetector(
@@ -354,54 +378,109 @@ class _SessionSetRowState extends ConsumerState<SessionSetRow> {
               ],
             ),
 
+            if (showSetTypeChips) ...[
+              const SizedBox(height: 6),
+              _SetTypeChipsRow(
+                log: widget.log,
+                onToggleWarmup: widget.onToggleWarmup,
+                onToggleFailure: widget.onToggleFailure,
+                onToggleDropset: widget.onToggleDropset,
+                onToggleRestPause: widget.onToggleRestPause,
+                onToggleMyoReps: widget.onToggleMyoReps,
+                onToggleAmrap: widget.onToggleAmrap,
+              ),
+            ],
+
             // Fila de tags (RPE, Failure, notas, sugerencia)
             _TagsRow(
               log: widget.log,
               suggestion: widget.suggestion,
               showAdvanced: widget.showAdvanced,
+              showPrBadge: widget.showPrBadge,
             ),
           ],
         ),
       ),
     );
 
-    // 🆕 Fast Logging: Swipe-to-delete envolviendo el contenido
-    if (widget.canDelete && widget.onDelete != null) {
+    // 🆕 Fast Logging: Swipe-to-delete / swipe-to-duplicate
+    final canDelete = widget.canDelete && widget.onDelete != null;
+    final canDuplicate = widget.onDuplicate != null;
+    if (canDelete || canDuplicate) {
+      final direction = canDelete && canDuplicate
+          ? DismissDirection.horizontal
+          : (canDelete
+                ? DismissDirection.endToStart
+                : DismissDirection.startToEnd);
+
       return Dismissible(
         key: Key('dismissible_set_${widget.log.id}'),
-        direction: DismissDirection.endToStart,
-        confirmDismiss: (direction) async {
+        direction: direction,
+        confirmDismiss: (dir) async {
           // Feedback háptico inmediato - sin diálogo para gimnasio
           HapticFeedback.mediumImpact();
+          if (dir == DismissDirection.startToEnd) {
+            widget.onDuplicate?.call();
+            return false;
+          }
           return true;
         },
-        onDismissed: (direction) {
-          widget.onDelete!();
+        onDismissed: (dir) {
+          if (dir == DismissDirection.endToStart) {
+            widget.onDelete?.call();
+          }
         },
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          margin: const EdgeInsets.symmetric(vertical: 2),
-          decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                'ELIMINAR',
-                style: core.AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
+        background: canDuplicate
+            ? Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                margin: const EdgeInsets.symmetric(vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.neonCyan.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.delete_outline, color: Colors.white, size: 20),
-            ],
-          ),
-        ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.copy_all_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'DUPLICAR',
+                      style: AppTypography.labelMedium.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : const SizedBox.shrink(),
+        secondaryBackground: canDelete
+            ? Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                margin: const EdgeInsets.symmetric(vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      'ELIMINAR',
+                      style: AppTypography.labelMedium.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.delete_outline, color: Colors.white, size: 20),
+                  ],
+                ),
+              )
+            : const SizedBox.shrink(),
         child: rowContent,
       );
     }
@@ -683,11 +762,13 @@ class _TagsRow extends StatelessWidget {
   final SerieLog log;
   final ProgressionSuggestion? suggestion;
   final bool showAdvanced;
+  final bool showPrBadge;
 
   const _TagsRow({
     required this.log,
     this.suggestion,
     required this.showAdvanced,
+    this.showPrBadge = false,
   });
 
   @override
@@ -695,10 +776,13 @@ class _TagsRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final hasContent =
         showAdvanced ||
+        showPrBadge ||
         log.rpe != null ||
         log.isFailure ||
         log.isDropset ||
         log.isRestPause ||
+        log.isMyoReps ||
+        log.isAmrap ||
         (log.notas != null && log.notas!.isNotEmpty) ||
         (suggestion?.message != null && suggestion!.isImprovement);
 
@@ -710,6 +794,12 @@ class _TagsRow extends StatelessWidget {
         spacing: 4,
         runSpacing: 4,
         children: [
+          if (showPrBadge)
+            const _Tag(
+              text: 'PR',
+              color: AppColors.goldAccent,
+              icon: Icons.emoji_events,
+            ),
           if (suggestion?.isImprovement == true && suggestion?.message != null)
             _Tag(
               text: suggestion!.message!,
@@ -731,6 +821,10 @@ class _TagsRow extends StatelessWidget {
             const _Tag(text: 'DROP', color: AppColors.warning),
           if (log.isRestPause)
             const _Tag(text: 'R-P', color: AppColors.info),
+          if (log.isMyoReps)
+            const _Tag(text: 'MYO', color: AppColors.info),
+          if (log.isAmrap)
+            const _Tag(text: 'AMRAP', color: AppColors.warning),
           if (log.isWarmup) const _Tag(text: 'WARM', color: AppColors.info),
           if (log.notas != null && log.notas!.isNotEmpty)
             Flexible(
@@ -743,6 +837,119 @@ class _TagsRow extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Chips rápidos para marcar tipo de set
+class _SetTypeChipsRow extends StatelessWidget {
+  final SerieLog log;
+  final VoidCallback? onToggleWarmup;
+  final VoidCallback? onToggleFailure;
+  final VoidCallback? onToggleDropset;
+  final VoidCallback? onToggleRestPause;
+  final VoidCallback? onToggleMyoReps;
+  final VoidCallback? onToggleAmrap;
+
+  const _SetTypeChipsRow({
+    required this.log,
+    this.onToggleWarmup,
+    this.onToggleFailure,
+    this.onToggleDropset,
+    this.onToggleRestPause,
+    this.onToggleMyoReps,
+    this.onToggleAmrap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 36, right: 40),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          _SetTypeChip(
+            label: 'WARM',
+            selected: log.isWarmup,
+            color: AppColors.info,
+            onToggle: onToggleWarmup,
+          ),
+          _SetTypeChip(
+            label: 'FALLO',
+            selected: log.isFailure,
+            color: AppColors.error,
+            onToggle: onToggleFailure,
+          ),
+          _SetTypeChip(
+            label: 'DROP',
+            selected: log.isDropset,
+            color: AppColors.warning,
+            onToggle: onToggleDropset,
+          ),
+          _SetTypeChip(
+            label: 'R-P',
+            selected: log.isRestPause,
+            color: AppColors.info,
+            onToggle: onToggleRestPause,
+          ),
+          _SetTypeChip(
+            label: 'MYO',
+            selected: log.isMyoReps,
+            color: AppColors.info,
+            onToggle: onToggleMyoReps,
+          ),
+          _SetTypeChip(
+            label: 'AMRAP',
+            selected: log.isAmrap,
+            color: AppColors.warning,
+            onToggle: onToggleAmrap,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetTypeChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback? onToggle;
+
+  const _SetTypeChip({
+    required this.label,
+    required this.selected,
+    required this.color,
+    this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final borderColor = selected
+        ? color
+        : colorScheme.outline.withValues(alpha: 0.3);
+    final bgColor = selected
+        ? color.withValues(alpha: 0.15)
+        : colorScheme.surfaceContainerHighest;
+
+    return FilterChip(
+      label: Text(
+        label,
+        style: _SetRowStyles.tagText.copyWith(
+          color: selected ? color : colorScheme.onSurfaceVariant,
+        ),
+      ),
+      selected: selected,
+      onSelected: onToggle == null ? null : (_) => onToggle?.call(),
+      showCheckmark: false,
+      selectedColor: bgColor,
+      backgroundColor: bgColor,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+      side: BorderSide(color: borderColor),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }

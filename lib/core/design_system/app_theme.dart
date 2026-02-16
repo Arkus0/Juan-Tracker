@@ -105,13 +105,59 @@ abstract class AppColors {
   static const Color completedGreenBright = Color(0xFF4ADE80);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ALIASES PARA COMPATIBILIDAD
+  // ALIASES PARA COMPATIBILIDAD (legacy training/utils/design_system.dart)
   // ═══════════════════════════════════════════════════════════════════════════
-  static const Color bgElevated = darkSurfaceVariant;
+  static const Color bgElevated = darkSurface; // 0xFF16181D
   static const Color bgDeep = darkBackground;
+  static const Color bgInteractive = darkSurfaceVariant; // 0xFF1E2128
+  static const Color bgPressed = darkSurfaceContainer; // 0xFF232834
+
   static const Color textSecondary = darkTextSecondary;
   static const Color textTertiary = darkTextTertiary;
   static const Color textPrimary = darkTextPrimary;
+  static const Color textDisabled = darkTextDisabled;
+  static const Color textOnAccent = Color(0xFFFDF9F5);
+
+  // Rojo principal (legacy bloodRed → ironRed)
+  static const Color bloodRed = ironRed; // 0xFFD02A2A
+  static const Color bloodRedSubtle = Color(0x26D02A2A);
+  static const Color bloodRedGlow = Color(0x4DD02A2A);
+
+  // Aliases masivos para legacy → ironRed
+  static const Color neonPrimary = ironRed;
+  static const Color neonPrimaryHover = ironRedLight; // 0xFFDC3A3A
+  static const Color neonPrimaryPressed = Color(0xFFB11F1F);
+  static const Color neonPrimaryGlow = bloodRedGlow;
+  static const Color actionPrimary = ironRed;
+  static const Color live = ironRed;
+  static const Color liveGlow = bloodRedGlow;
+
+  // Rojo oscuro
+  static const Color darkRed = Color(0xFF8A1B1B);
+  static const Color darkRedSubtle = Color(0x268A1B1B);
+
+  // "fireRed" es realmente ámbar/dorado (PRs, flames)
+  static const Color fireRed = Color(0xFFF5A524);
+
+  // Teal frío — alias restTeal / neonCyan → ironTeal
+  static const Color restTeal = ironTeal; // 0xFF38BDF8
+  static const Color neonCyan = ironTeal;
+  static const Color neonCyanSubtle = Color(0x2638BDF8);
+  static const Color neonCyanDark = Color(0xFF0EA5E9);
+  static const Color techCyan = ironTeal;
+
+  // Gris metálico
+  static const Color metalGray = Color(0xFF464646);
+
+  // Copper/Oro adicional
+  static const Color copperOrange = goldAccent; // 0xFFF6C453
+
+  // Bordes y estructura (dark theme)
+  static const Color border = darkBorder; // 0xFF2A2F39
+  static const Color borderFocus = ironRed;
+  static const Color borderVisible = Color(0xFF313744);
+  static const Color divider = darkDivider; // 0xFF1F2430
+  static const Color borderActive = ironRed;
 }
 
 /// Espaciado estandarizado
@@ -179,12 +225,41 @@ abstract class AppElevation {
   ];
 }
 
+/// Sombras legacy compatibles
+abstract class AppShadows {
+  /// Sombra sutil para cards
+  static List<BoxShadow> get card => [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.2),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
+    ),
+  ];
+
+  /// Sombra elevada (modals, FAB)
+  static List<BoxShadow> get elevated => [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.3),
+      blurRadius: 16,
+      offset: const Offset(0, 4),
+    ),
+  ];
+
+  /// Glow sutil para estados activos
+  static List<BoxShadow> glow(Color color) => [
+    BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 12),
+  ];
+}
+
 /// Duraciones de animación
 abstract class AppDurations {
+  static const Duration instant = Duration(milliseconds: 100);
   static const Duration fast = Duration(milliseconds: 150);
+  static const Duration medium = Duration(milliseconds: 200);
   static const Duration normal = Duration(milliseconds: 250);
   static const Duration slow = Duration(milliseconds: 400);
   static const Duration slower = Duration(milliseconds: 600);
+  static const Duration celebration = Duration(milliseconds: 600);
 }
 
 /// Curvas de animación
@@ -193,6 +268,8 @@ abstract class AppCurves {
   static const Curve easeIn = Curves.easeInCubic;
   static const Curve easeInOut = Curves.easeInOutCubic;
   static const Curve spring = Curves.elasticOut;
+  static const Curve bounce = Curves.elasticOut;
+  static const Curve overshoot = Curves.easeOutBack;
   static const Curve decelerate = Curves.decelerate;
 }
 
@@ -307,6 +384,157 @@ abstract class AppTypography {
     fontSize: 18,
     fontWeight: FontWeight.w700,
     fontFeatures: const [FontFeature.tabularFigures()],
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // Extended tokens (Sprint 3 — migración GoogleFonts)
+  // ──────────────────────────────────────────────────────────────
+
+  /// 120 px — Pantalla de descanso gigante ("5… 4… 3…")
+  static TextStyle get timerGiant => GoogleFonts.montserrat(
+    fontSize: 120,
+    fontWeight: FontWeight.w900,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+
+  /// 56 px — Numpad valor principal ("82.5")
+  static TextStyle get dataHero => GoogleFonts.montserrat(
+    fontSize: 56,
+    fontWeight: FontWeight.w900,
+    letterSpacing: -1.0,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+
+  /// 64 px — Dato gigante (legacy compat)
+  static TextStyle get dataGiant => GoogleFonts.montserrat(
+    fontSize: 64,
+    fontWeight: FontWeight.w900,
+    letterSpacing: -1.0,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+
+  /// 32 px — Timer principal de descanso
+  static TextStyle get timerDisplay => GoogleFonts.montserrat(
+    fontSize: 32,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 2.0,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+
+  /// 22 px — Timer compacto en barra
+  static TextStyle get timerCompact => GoogleFonts.montserrat(
+    fontSize: 22,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 1.0,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+
+  /// 13 px, w400 — Texto body entre bodySmall(12) y bodyMedium(14)
+  static TextStyle get bodyCompact => GoogleFonts.montserrat(
+    fontSize: 13,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// 11 px, w400 — Texto caption / hint
+  static TextStyle get caption => GoogleFonts.montserrat(
+    fontSize: 11,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// 11 px, w700 — Caption enfatizado / chip label
+  static TextStyle get captionBold => GoogleFonts.montserrat(
+    fontSize: 11,
+    fontWeight: FontWeight.w700,
+  );
+
+  /// 11 px, w800, ls:1.0 — Encabezado de sección uppercase ("ACCIONES RÁPIDAS")
+  static TextStyle get sectionLabel => GoogleFonts.montserrat(
+    fontSize: 11,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 1.0,
+  );
+
+  /// 9 px, w400 — Texto más pequeño (meta, pies de dato)
+  static TextStyle get micro => GoogleFonts.montserrat(
+    fontSize: 9,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// 8 px, w800 — Badge diminuto ("PROTEGIDO", "↑MEJORA")
+  static TextStyle get microBadge => GoogleFonts.montserrat(
+    fontSize: 8,
+    fontWeight: FontWeight.w800,
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // Legacy training typography tokens (compat)
+  // ──────────────────────────────────────────────────────────────
+
+  /// 28 px hero texto (nombre ejercicio destacado)
+  static TextStyle get hero => GoogleFonts.montserrat(
+    fontSize: 28,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 0.5,
+    height: 1.2,
+  );
+
+  /// 16 px sección título
+  static TextStyle get sectionTitle => GoogleFonts.montserrat(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.3,
+    height: 1.3,
+  );
+
+  /// 14 px sección título pequeña
+  static TextStyle get sectionTitleSmall => GoogleFonts.montserrat(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.2,
+  );
+
+  /// 11 px label sutil
+  static TextStyle get label => GoogleFonts.montserrat(
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.3,
+  );
+
+  /// 10 px label enfatizado
+  static TextStyle get labelEmphasis => GoogleFonts.montserrat(
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.8,
+  );
+
+  /// 14 px botón
+  static TextStyle get button => GoogleFonts.montserrat(
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.3,
+  );
+
+  /// 10 px meta/hints
+  static TextStyle get meta => GoogleFonts.montserrat(
+    fontSize: 10,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// 9 px badge diminuto
+  static TextStyle get badge => GoogleFonts.montserrat(
+    fontSize: 9,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.3,
+  );
+}
+
+/// Decoraciones pre-construidas (legacy compat)
+abstract class AppDecorations {
+  /// Card estándar con borde
+  static BoxDecoration get card => BoxDecoration(
+    color: AppColors.bgElevated,
+    borderRadius: BorderRadius.circular(AppRadius.md),
+    border: Border.all(color: AppColors.border),
   );
 }
 
@@ -447,6 +675,21 @@ ThemeData buildNutritionTheme() {
       filled: true,
       fillColor: AppColors.lightSurfaceContainer,
       contentPadding: const EdgeInsets.all(AppSpacing.md),
+      hintStyle: AppTypography.bodySmall.copyWith(
+        color: AppColors.lightTextTertiary,
+      ),
+      helperStyle: AppTypography.bodySmall.copyWith(
+        color: AppColors.lightTextTertiary,
+      ),
+      suffixStyle: AppTypography.bodySmall.copyWith(
+        color: AppColors.lightTextSecondary,
+      ),
+      prefixStyle: AppTypography.bodySmall.copyWith(
+        color: AppColors.lightTextSecondary,
+      ),
+      floatingLabelStyle: AppTypography.labelMedium.copyWith(
+        color: scheme.primary,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
         borderSide: const BorderSide(color: AppColors.lightBorder),
@@ -463,6 +706,43 @@ ThemeData buildNutritionTheme() {
         borderRadius: BorderRadius.circular(AppRadius.md),
         borderSide: const BorderSide(color: AppColors.error),
       ),
+    ),
+
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: scheme.primary,
+      selectionColor: scheme.primary.withAlpha((0.2 * 255).round()),
+      selectionHandleColor: scheme.primary,
+    ),
+
+    listTileTheme: ListTileThemeData(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+      ),
+      minVerticalPadding: AppSpacing.sm,
+      iconColor: scheme.onSurfaceVariant,
+      textColor: scheme.onSurface,
+    ),
+
+    switchTheme: SwitchThemeData(
+      thumbColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
+          return scheme.onPrimary;
+        }
+        return scheme.onSurfaceVariant;
+      }),
+      trackColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
+          return scheme.primary;
+        }
+        return scheme.surfaceContainerHighest;
+      }),
+      trackOutlineColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
+          return scheme.primary;
+        }
+        return scheme.outline;
+      }),
     ),
     
     // FAB
@@ -659,6 +939,21 @@ ThemeData buildTrainingTheme() {
       filled: true,
       fillColor: AppColors.darkSurfaceVariant,
       contentPadding: const EdgeInsets.all(AppSpacing.md),
+      hintStyle: AppTypography.bodySmall.copyWith(
+        color: AppColors.darkTextTertiary,
+      ),
+      helperStyle: AppTypography.bodySmall.copyWith(
+        color: AppColors.darkTextTertiary,
+      ),
+      suffixStyle: AppTypography.bodySmall.copyWith(
+        color: AppColors.darkTextSecondary,
+      ),
+      prefixStyle: AppTypography.bodySmall.copyWith(
+        color: AppColors.darkTextSecondary,
+      ),
+      floatingLabelStyle: AppTypography.labelMedium.copyWith(
+        color: scheme.primary,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
         borderSide: const BorderSide(color: AppColors.darkBorder),
@@ -671,6 +966,43 @@ ThemeData buildTrainingTheme() {
         borderRadius: BorderRadius.circular(AppRadius.md),
         borderSide: BorderSide(color: scheme.primary, width: 2),
       ),
+    ),
+
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: scheme.primary,
+      selectionColor: scheme.primary.withAlpha((0.25 * 255).round()),
+      selectionHandleColor: scheme.primary,
+    ),
+
+    listTileTheme: ListTileThemeData(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+      ),
+      minVerticalPadding: AppSpacing.sm,
+      iconColor: scheme.onSurfaceVariant,
+      textColor: scheme.onSurface,
+    ),
+
+    switchTheme: SwitchThemeData(
+      thumbColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
+          return scheme.onPrimary;
+        }
+        return scheme.onSurfaceVariant;
+      }),
+      trackColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
+          return scheme.primary;
+        }
+        return scheme.surfaceContainerHighest;
+      }),
+      trackOutlineColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
+          return scheme.primary;
+        }
+        return scheme.outline;
+      }),
     ),
     
     // FAB

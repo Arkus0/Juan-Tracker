@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../../core/router/app_router.dart';
 import '../../providers/training_provider.dart';
 import '../../services/rest_timer_controller.dart';
-import '../../utils/design_system.dart';
 
 class ActiveSessionBar extends ConsumerWidget {
   const ActiveSessionBar({super.key});

@@ -45,6 +45,12 @@ class DiaryEntryModel {
   final double? carbs;
   final double? fat;
 
+  // Micronutrientes
+  final double? fiber;
+  final double? sugar;
+  final double? saturatedFat;
+  final double? sodium;
+
   // Flags
   final bool isQuickAdd;
   final String? notes;
@@ -64,6 +70,10 @@ class DiaryEntryModel {
     this.protein,
     this.carbs,
     this.fat,
+    this.fiber,
+    this.sugar,
+    this.saturatedFat,
+    this.sodium,
     this.isQuickAdd = false,
     this.notes,
     DateTime? createdAt,
@@ -99,6 +109,10 @@ class DiaryEntryModel {
       protein: macros.protein,
       carbs: macros.carbs,
       fat: macros.fat,
+      fiber: macros.fiber,
+      sugar: macros.sugar,
+      saturatedFat: macros.saturatedFat,
+      sodium: macros.sodium,
       isQuickAdd: false,
       notes: notes,
     );
@@ -114,6 +128,10 @@ class DiaryEntryModel {
     double? protein,
     double? carbs,
     double? fat,
+    double? fiber,
+    double? sugar,
+    double? saturatedFat,
+    double? sodium,
     String? notes,
   }) =>
       DiaryEntryModel(
@@ -129,6 +147,10 @@ class DiaryEntryModel {
         protein: protein,
         carbs: carbs,
         fat: fat,
+        fiber: fiber,
+        sugar: sugar,
+        saturatedFat: saturatedFat,
+        sodium: sodium,
         isQuickAdd: true,
         notes: notes,
       );
@@ -147,6 +169,10 @@ class DiaryEntryModel {
     double? protein,
     double? carbs,
     double? fat,
+    double? fiber,
+    double? sugar,
+    double? saturatedFat,
+    double? sodium,
     bool? isQuickAdd,
     String? notes,
     DateTime? createdAt,
@@ -164,6 +190,10 @@ class DiaryEntryModel {
         protein: protein ?? this.protein,
         carbs: carbs ?? this.carbs,
         fat: fat ?? this.fat,
+        fiber: fiber ?? this.fiber,
+        sugar: sugar ?? this.sugar,
+        saturatedFat: saturatedFat ?? this.saturatedFat,
+        sodium: sodium ?? this.sodium,
         isQuickAdd: isQuickAdd ?? this.isQuickAdd,
         notes: notes ?? this.notes,
         createdAt: createdAt ?? this.createdAt,
@@ -192,6 +222,10 @@ class DailyTotals {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
+  final double sugar;
+  final double saturatedFat;
+  final double sodium;
   final Map<MealType, MealTotals> byMeal;
 
   const DailyTotals({
@@ -199,6 +233,10 @@ class DailyTotals {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.fiber = 0,
+    this.sugar = 0,
+    this.saturatedFat = 0,
+    this.sodium = 0,
     required this.byMeal,
   });
 
@@ -207,6 +245,10 @@ class DailyTotals {
     protein: 0,
     carbs: 0,
     fat: 0,
+    fiber: 0,
+    sugar: 0,
+    saturatedFat: 0,
+    sodium: 0,
     byMeal: {},
   );
 
@@ -218,6 +260,10 @@ class DailyTotals {
     double totalProtein = 0;
     double totalCarbs = 0;
     double totalFat = 0;
+    double totalFiber = 0;
+    double totalSugar = 0;
+    double totalSaturatedFat = 0;
+    double totalSodium = 0;
 
     final mealMap = <MealType, List<DiaryEntryModel>>{};
 
@@ -226,6 +272,10 @@ class DailyTotals {
       totalProtein += entry.protein ?? 0;
       totalCarbs += entry.carbs ?? 0;
       totalFat += entry.fat ?? 0;
+      totalFiber += entry.fiber ?? 0;
+      totalSugar += entry.sugar ?? 0;
+      totalSaturatedFat += entry.saturatedFat ?? 0;
+      totalSodium += entry.sodium ?? 0;
 
       mealMap.putIfAbsent(entry.mealType, () => []).add(entry);
     }
@@ -241,6 +291,10 @@ class DailyTotals {
       protein: totalProtein,
       carbs: totalCarbs,
       fat: totalFat,
+      fiber: totalFiber,
+      sugar: totalSugar,
+      saturatedFat: totalSaturatedFat,
+      sodium: totalSodium,
       byMeal: byMeal,
     );
   }
@@ -263,6 +317,10 @@ class MealTotals {
   final double protein;
   final double carbs;
   final double fat;
+  final double fiber;
+  final double sugar;
+  final double saturatedFat;
+  final double sodium;
   final int entryCount;
 
   const MealTotals({
@@ -270,6 +328,10 @@ class MealTotals {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.fiber = 0,
+    this.sugar = 0,
+    this.saturatedFat = 0,
+    this.sodium = 0,
     required this.entryCount,
   });
 
@@ -278,6 +340,10 @@ class MealTotals {
     protein: 0,
     carbs: 0,
     fat: 0,
+    fiber: 0,
+    sugar: 0,
+    saturatedFat: 0,
+    sodium: 0,
     entryCount: 0,
   );
 
@@ -288,12 +354,20 @@ class MealTotals {
     double protein = 0;
     double carbs = 0;
     double fat = 0;
+    double fiber = 0;
+    double sugar = 0;
+    double saturatedFat = 0;
+    double sodium = 0;
 
     for (final entry in entries) {
       kcal += entry.kcal;
       protein += entry.protein ?? 0;
       carbs += entry.carbs ?? 0;
       fat += entry.fat ?? 0;
+      fiber += entry.fiber ?? 0;
+      sugar += entry.sugar ?? 0;
+      saturatedFat += entry.saturatedFat ?? 0;
+      sodium += entry.sodium ?? 0;
     }
 
     return MealTotals(
@@ -301,6 +375,10 @@ class MealTotals {
       protein: protein,
       carbs: carbs,
       fat: fat,
+      fiber: fiber,
+      sugar: sugar,
+      saturatedFat: saturatedFat,
+      sodium: sodium,
       entryCount: entries.length,
     );
   }

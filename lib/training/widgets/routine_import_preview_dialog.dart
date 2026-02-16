@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../core/design_system/design_system.dart';
 import '../models/rutina.dart';
 import '../services/routine_sharing_service.dart';
-import '../utils/design_system.dart';
 
 /// Dialog to preview an imported routine before adding it to the database.
 class RoutineImportPreviewDialog extends StatefulWidget {
@@ -79,7 +78,7 @@ class _RoutineImportPreviewDialogState
                   Expanded(
                     child: Text(
                       'IMPORTAR RUTINA',
-                      style: core.AppTypography.headlineSmall.copyWith(
+                      style: AppTypography.headlineSmall.copyWith(
                         color: colorScheme.onSurface,
                       ),
                     ),
@@ -105,7 +104,7 @@ class _RoutineImportPreviewDialogState
                     // Name Editor
                     Text(
                       'NOMBRE',
-                      style: core.AppTypography.labelSmall.copyWith(
+                      style: AppTypography.labelSmall.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textTertiary,
                       ),
@@ -113,7 +112,7 @@ class _RoutineImportPreviewDialogState
                     const SizedBox(height: 8),
                     TextField(
                       controller: _nameController,
-                      style: core.AppTypography.titleLarge.copyWith(
+                      style: AppTypography.titleLarge.copyWith(
                         color: colorScheme.onSurface,
                       ),
                       decoration: InputDecoration(
@@ -149,7 +148,7 @@ class _RoutineImportPreviewDialogState
                     // Days Preview
                     Text(
                       'DÍAS',
-                      style: core.AppTypography.labelSmall.copyWith(
+                      style: AppTypography.labelSmall.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textTertiary,
                       ),
@@ -186,7 +185,7 @@ class _RoutineImportPreviewDialogState
                       ),
                       child: Text(
                         'CANCELAR',
-                        style: core.AppTypography.labelLarge.copyWith(
+                        style: AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -213,7 +212,7 @@ class _RoutineImportPreviewDialogState
                       ),
                       child: Text(
                         'IMPORTAR',
-                        style: core.AppTypography.titleMedium.copyWith(
+                        style: AppTypography.titleMedium.copyWith(
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -321,13 +320,13 @@ class _RoutineImportPreviewDialogState
           const SizedBox(height: 4),
           Text(
             value,
-            style: core.AppTypography.headlineSmall.copyWith(
+            style: AppTypography.headlineSmall.copyWith(
               color: colorScheme.onSurface,
             ),
           ),
           Text(
             label,
-            style: core.AppTypography.labelSmall.copyWith(
+            style: AppTypography.labelSmall.copyWith(
               color: AppColors.textTertiary,
             ),
           ),
@@ -370,7 +369,7 @@ class _RoutineImportPreviewDialogState
               Expanded(
                 child: Text(
                   dia.nombre,
-                  style: core.AppTypography.bodyMedium.copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
                     color: colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
@@ -379,7 +378,7 @@ class _RoutineImportPreviewDialogState
               ),
               Text(
                 '${dia.ejercicios.length} ej.',
-                style: core.AppTypography.bodySmall.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppColors.textTertiary,
                 ),
               ),
@@ -413,7 +412,7 @@ class _RoutineImportPreviewDialogState
                     Expanded(
                       child: Text(
                         ejercicio.nombre,
-                        style: core.AppTypography.bodySmall.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: AppColors.textSecondary,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -421,7 +420,7 @@ class _RoutineImportPreviewDialogState
                     ),
                     Text(
                       '${ejercicio.series}x${ejercicio.repsRange}',
-                      style: core.AppTypography.bodySmall.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: AppColors.textTertiary,
                         fontSize: 11,
                       ),
@@ -435,7 +434,7 @@ class _RoutineImportPreviewDialogState
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   '+${dia.ejercicios.length - 3} más',
-                  style: core.AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppColors.textTertiary,
                     fontStyle: FontStyle.italic,
                   ),
@@ -543,7 +542,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                   Expanded(
                     child: Text(
                       'PEGAR JSON',
-                      style: core.AppTypography.headlineSmall.copyWith(
+                      style: AppTypography.headlineSmall.copyWith(
                         color: colorScheme.onSurface,
                       ),
                     ),
@@ -570,7 +569,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       children: [
                         Text(
                           'Pega el JSON de la rutina:',
-                          style: core.AppTypography.bodyMedium.copyWith(
+                          style: AppTypography.bodyMedium.copyWith(
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -677,7 +676,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       ),
                       child: Text(
                         'CANCELAR',
-                        style: core.AppTypography.labelLarge.copyWith(
+                        style: AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -708,7 +707,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                             )
                           : Text(
                               'CONTINUAR',
-                              style: core.AppTypography.titleMedium.copyWith(
+                              style: AppTypography.titleMedium.copyWith(
                                 fontWeight: FontWeight.w900,
                               ),
                             ),

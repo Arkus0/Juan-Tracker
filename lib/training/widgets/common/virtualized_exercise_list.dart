@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../models/library_exercise.dart';
 import '../../providers/exercise_search_providers.dart';
-import '../../utils/design_system.dart';
 import 'optimized_exercise_image.dart';
 
 /// Lista virtualizada de ejercicios para la biblioteca (700+ items)

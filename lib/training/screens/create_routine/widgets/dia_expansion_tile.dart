@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/design_system/design_system.dart';
 import 'package:juan_tracker/training/models/dia.dart';
 import 'package:juan_tracker/training/models/ejercicio_en_rutina.dart';
 import 'package:juan_tracker/training/screens/create_routine/widgets/ejercicio_card.dart';
-import 'package:juan_tracker/training/utils/design_system.dart';
 
 class DiaExpansionTile extends StatefulWidget {
   final int dayIndex;
@@ -150,8 +149,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
             children: [
               Text(
                 'OPCIONES PRO 💀',
-                style: GoogleFonts.montserrat(
-                  fontSize: 20,
+                style: AppTypography.headlineMedium.copyWith(
                   fontWeight: FontWeight.w900,
                   color: scheme.onSurface,
                 ),
@@ -297,8 +295,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 Expanded(
                   child: TextField(
                     controller: _nameController,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 18,
+                    style: AppTypography.headlineSmall.copyWith(
                       fontWeight: FontWeight.w900,
                       color: scheme.onSurface,
                     ),
@@ -331,8 +328,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     ),
                     child: Text(
                       '${widget.dia.ejercicios.length}',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
+                      style: AppTypography.labelMedium.copyWith(
                         fontWeight: FontWeight.w800,
                         color: scheme.onSurface,
                       ),
@@ -383,7 +379,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     padding: const EdgeInsets.all(24.0),
                     child: Text(
                       'VACÍO. AÑADE DOLOR.',
-                      style: GoogleFonts.montserrat(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: scheme.onSurfaceVariant,
                         fontStyle: FontStyle.italic,
                       ),
@@ -450,9 +446,9 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     icon: Icon(Icons.add, color: scheme.primary),
                     label: Text(
                       'AÑADIR EJERCICIO',
-                      style: GoogleFonts.montserrat(
-                        color: scheme.primary,
+                      style: AppTypography.labelLarge.copyWith(
                         fontWeight: FontWeight.w800,
+                        color: scheme.primary,
                       ),
                     ),
                   ),
@@ -549,9 +545,9 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
                 Expanded(
                   child: Text(
                     '${removedItem.nombre} eliminado',
-                    style: GoogleFonts.montserrat(
-                      color: scheme.onSurface,
+                    style: AppTypography.bodyMedium.copyWith(
                       fontWeight: FontWeight.w500,
+                      color: scheme.onSurface,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -567,9 +563,9 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
                   },
                   child: Text(
                     'DESHACER',
-                    style: GoogleFonts.montserrat(
+                    style: AppTypography.titleMedium.copyWith(
+                      fontWeight: FontWeight.w700,
                       color: scheme.onSurface,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -640,9 +636,8 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
               Flexible(
                 child: Text(
                   ex.nombre.toUpperCase(),
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
                     color: scheme.onSurfaceVariant,
                   ),
                   overflow: TextOverflow.ellipsis,

@@ -26,6 +26,10 @@ class DaySummaryCalculator {
       proteinConsumed: consumed.protein,
       carbsConsumed: consumed.carbs,
       fatConsumed: consumed.fat,
+      fiberConsumed: consumed.fiber,
+      sugarConsumed: consumed.sugar,
+      saturatedFatConsumed: consumed.saturatedFat,
+      sodiumConsumed: consumed.sodium,
     );
 
     return DaySummary(

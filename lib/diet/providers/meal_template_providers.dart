@@ -131,6 +131,10 @@ class UseMealTemplateNotifier extends AsyncNotifier<void> {
           protein: item.protein,
           carbs: item.carbs,
           fat: item.fat,
+          fiber: item.fiber,
+          sugar: item.sugar,
+          saturatedFat: item.saturatedFat,
+          sodium: item.sodium,
         );
 
         await diaryRepository.insert(entry);

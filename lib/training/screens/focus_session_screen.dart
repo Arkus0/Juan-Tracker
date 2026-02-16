@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/training_provider.dart';
 import '../services/haptics_controller.dart';
-import '../utils/design_system.dart';
+import '../../core/design_system/design_system.dart';
 import '../widgets/session/focus_mode_widgets.dart';
 
 /// Notifier para saber si estamos en modo Focus
@@ -166,22 +166,22 @@ class _FocusSessionScreenState extends ConsumerState<FocusSessionScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('¡Sesión Completada!', style: AppTypography.sectionTitle),
+        title: Text('¡Sesión Completada!', style: AppTypography.titleLarge),
         content: Text(
           'Has completado todos los sets de esta sesión.',
-          style: AppTypography.body,
+          style: AppTypography.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('CONTINUAR', style: AppTypography.button),
+            child: Text('CONTINUAR', style: AppTypography.labelLarge),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _finishSession();
             },
-            child: Text('TERMINAR', style: AppTypography.button.copyWith(
+            child: Text('TERMINAR', style: AppTypography.labelLarge.copyWith(
               color: Theme.of(context).colorScheme.primary,
             )),
           ),
@@ -201,7 +201,7 @@ class _FocusSessionScreenState extends ConsumerState<FocusSessionScreen> {
             children: [
               const Icon(Icons.check_circle, color: Colors.white),
               const SizedBox(width: 8),
-              Text('¡Sesión guardada!', style: AppTypography.labelEmphasis),
+              Text('¡Sesión guardada!', style: AppTypography.labelSmall),
             ],
           ),
           backgroundColor: AppColors.success,
@@ -331,7 +331,7 @@ class _FocusSessionScreenState extends ConsumerState<FocusSessionScreen> {
         onPressed: _finishSession,
         backgroundColor: AppColors.success,
         icon: const Icon(Icons.check),
-        label: Text('TERMINAR', style: AppTypography.labelEmphasis),
+        label: Text('TERMINAR', style: AppTypography.labelSmall),
       ),
     );
   }
@@ -386,7 +386,7 @@ class _ExerciseHeader extends StatelessWidget {
                 children: [
                   Text(
                     exerciseName.toUpperCase(),
-                    style: AppTypography.sectionTitle.copyWith(
+                    style: AppTypography.titleLarge.copyWith(
                       fontSize: 18,
                     ),
                     textAlign: TextAlign.center,
@@ -396,7 +396,7 @@ class _ExerciseHeader extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Ejercicio ${exerciseIndex + 1} de $totalExercises',
-                    style: AppTypography.meta.copyWith(
+                    style: AppTypography.caption.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
                   ),
@@ -597,7 +597,7 @@ class _InputPanel extends StatelessWidget {
                 icon: Icon(isLastSet ? Icons.check_circle : Icons.arrow_forward),
                 label: Text(
                   isLastSet ? 'COMPLETAR SESIÓN' : 'GUARDAR Y CONTINUAR',
-                  style: AppTypography.labelEmphasis.copyWith(
+                  style: AppTypography.labelSmall.copyWith(
                     color: colors.onPrimary,
                   ),
                 ),
@@ -675,7 +675,7 @@ class _SelectableFocusSetCard extends StatelessWidget {
                       ? const Icon(Icons.check, color: Colors.white, size: 28)
                       : Text(
                           setNumber.toString(),
-                          style: AppTypography.sectionTitle.copyWith(
+                          style: AppTypography.titleLarge.copyWith(
                             color: isSelected ? colors.onPrimary : colors.onSurface,
                             fontSize: 20,
                           ),
@@ -742,7 +742,7 @@ class _DataItem extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppTypography.meta.copyWith(
+          style: AppTypography.caption.copyWith(
             color: isSelected ? colors.onPrimaryContainer : colors.onSurfaceVariant,
             fontWeight: FontWeight.w600,
           ),
@@ -764,7 +764,7 @@ class _DataItem extends StatelessWidget {
               const SizedBox(width: 2),
               Text(
                 unit!,
-                style: AppTypography.meta.copyWith(
+                style: AppTypography.caption.copyWith(
                   color: isSelected ? colors.onPrimaryContainer : colors.onSurfaceVariant,
                 ),
               ),

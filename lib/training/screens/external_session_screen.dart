@@ -3,13 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/design_system/design_system.dart' as core
-    show AppTypography;
+import '../../core/design_system/design_system.dart';
 import '../models/external_session.dart';
 import '../providers/training_provider.dart';
 import '../providers/voice_input_provider.dart';
 import '../services/voice_input_service.dart';
-import '../utils/design_system.dart';
 import '../widgets/voice/voice_mic_button.dart';
 
 /// Pantalla para agregar sesiones de entrenamiento realizadas fuera de la app
@@ -46,7 +44,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
       appBar: AppBar(
         title: Text(
           'AGREGAR SESIÓN EXTERNA',
-          style: core.AppTypography.titleLarge,
+          style: AppTypography.titleLarge,
         ),
         actions: [
           if (_exercises.isNotEmpty)
@@ -54,7 +52,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               onPressed: _onSaveSession,
               child: Text(
                 'GUARDAR',
-                style: core.AppTypography.labelLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: AppColors.success,
                 ),
               ),
@@ -128,7 +126,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               children: [
                 Text(
                   'Sesión Externa',
-                  style: core.AppTypography.labelLarge.copyWith(
+                  style: AppTypography.labelLarge.copyWith(
                     color: AppColors.neonCyan,
                   ),
                 ),
@@ -136,7 +134,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                 Text(
                   'Registra entrenamientos hechos fuera de la app. '
                   'Se marcarán como "externos" en tu historial.',
-                  style: core.AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                   ),
                 ),
@@ -172,14 +170,14 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                 children: [
                   Text(
                     'Fecha de la sesión',
-                    style: core.AppTypography.bodySmall.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _formatDate(_selectedDate),
-                    style: core.AppTypography.bodyLarge.copyWith(
+                    style: AppTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -243,7 +241,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               children: [
                 Text(
                   'Dicta los ejercicios de tu sesión:',
-                  style: core.AppTypography.labelLarge.copyWith(
+                  style: AppTypography.labelLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                   ),
                 ),
@@ -284,7 +282,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Text(
         text,
-        style: core.AppTypography.bodySmall.copyWith(
+        style: AppTypography.bodySmall.copyWith(
           color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
           fontStyle: FontStyle.italic,
         ),
@@ -308,7 +306,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           const SizedBox(width: 8),
           Text(
             'ESCUCHANDO...',
-            style: core.AppTypography.labelLarge.copyWith(
+            style: AppTypography.labelLarge.copyWith(
               color: AppColors.neonPrimary,
             ),
           ),
@@ -319,7 +317,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
     if (state.isProcessing) {
       return Text(
         'Procesando...',
-        style: core.AppTypography.bodyMedium.copyWith(
+        style: AppTypography.bodyMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
         ),
       );
@@ -327,7 +325,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
 
     return Text(
       'Mantén pulsado para hablar',
-      style: core.AppTypography.bodyMedium.copyWith(
+      style: AppTypography.bodyMedium.copyWith(
         color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
       ),
     );
@@ -339,7 +337,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
       children: [
         Text(
           'Ejercicios detectados:',
-          style: core.AppTypography.labelLarge.copyWith(
+          style: AppTypography.labelLarge.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
           ),
         ),
@@ -361,7 +359,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
             ),
             child: Text(
               'AÑADIR ${exercises.length} EJERCICIO${exercises.length == 1 ? '' : 'S'}',
-              style: core.AppTypography.labelLarge,
+              style: AppTypography.labelLarge,
             ),
           ),
         ),
@@ -388,7 +386,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           Expanded(
             child: Text(
               message ?? 'No entendido. Intenta de nuevo.',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
             ),
@@ -410,7 +408,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
         children: [
           Text(
             'Añade ejercicios manualmente',
-            style: core.AppTypography.labelLarge.copyWith(
+            style: AppTypography.labelLarge.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
             ),
           ),
@@ -447,7 +445,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
             const SizedBox(width: 8),
             Text(
               'EJERCICIOS (${_exercises.length})',
-              style: core.AppTypography.labelMedium.copyWith(
+              style: AppTypography.labelMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                 letterSpacing: 1,
               ),
@@ -470,16 +468,16 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
     return TextField(
       maxLines: 3,
       onChanged: (value) => _sessionNotes = value,
-      style: core.AppTypography.bodyMedium.copyWith(
+      style: AppTypography.bodyMedium.copyWith(
         color: Theme.of(context).colorScheme.onSurface,
       ),
       decoration: InputDecoration(
         labelText: 'Notas de la sesión (opcional)',
-        labelStyle: core.AppTypography.bodyMedium.copyWith(
+        labelStyle: AppTypography.bodyMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
         ),
         hintText: 'Cómo te sentiste, condiciones, etc.',
-        hintStyle: core.AppTypography.bodyMedium.copyWith(
+        hintStyle: AppTypography.bodyMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface.withAlpha(77),
         ),
         filled: true,
@@ -516,14 +514,14 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               children: [
                 Text(
                   'Incluir en estadísticas',
-                  style: core.AppTypography.labelLarge.copyWith(
+                  style: AppTypography.labelLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Si activas esto, los pesos contarán para tu progresión',
-                  style: core.AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
@@ -658,7 +656,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           backgroundColor: AppColors.bgElevated,
           title: Text(
             editIndex == null ? 'Añadir ejercicio' : 'Editar ejercicio',
-            style: core.AppTypography.titleMedium.copyWith(
+            style: AppTypography.titleMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -670,7 +668,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                   controller: nameController,
                   decoration: InputDecoration(
                     labelText: 'Nombre del ejercicio',
-                    labelStyle: core.AppTypography.bodyMedium.copyWith(
+                    labelStyle: AppTypography.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                     filled: true,
@@ -689,7 +687,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           labelText: 'Series',
-                          labelStyle: core.AppTypography.bodyMedium.copyWith(
+                          labelStyle: AppTypography.bodyMedium.copyWith(
                             color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                           ),
                           filled: true,
@@ -706,7 +704,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                         controller: repsController,
                         decoration: InputDecoration(
                           labelText: 'Reps (ej. 8 o 6-8)',
-                          labelStyle: core.AppTypography.bodyMedium.copyWith(
+                          labelStyle: AppTypography.bodyMedium.copyWith(
                             color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                           ),
                           filled: true,
@@ -727,7 +725,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                   ),
                   decoration: InputDecoration(
                     labelText: 'Peso (kg) - opcional',
-                    labelStyle: core.AppTypography.bodyMedium.copyWith(
+                    labelStyle: AppTypography.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                     filled: true,
@@ -743,7 +741,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                   maxLines: 2,
                   decoration: InputDecoration(
                     labelText: 'Notas - opcional',
-                    labelStyle: core.AppTypography.bodyMedium.copyWith(
+                    labelStyle: AppTypography.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                     filled: true,
@@ -761,7 +759,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               onPressed: () => Navigator.of(ctx).pop(),
               child: Text(
                 'CANCELAR',
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 ),
               ),
@@ -823,7 +821,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               ),
               child: Text(
                 editIndex == null ? 'AÑADIR' : 'GUARDAR',
-                style: core.AppTypography.labelLarge,
+                style: AppTypography.labelLarge,
               ),
             ),
           ],
@@ -907,7 +905,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               Expanded(
                 child: Text(
                   '¡Sesión guardada!',
-                  style: core.AppTypography.titleMedium.copyWith(
+                  style: AppTypography.titleMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
@@ -920,19 +918,19 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
             children: [
               Text(
                 'Fecha: ${_formatDate(_selectedDate)}',
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                 ),
               ),
               Text(
                 'Ejercicios: ${_exercises.length}',
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                 ),
               ),
               Text(
                 'En estadísticas: ${_includeInStats ? "Sí" : "No"}',
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                 ),
               ),
@@ -954,7 +952,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                     Expanded(
                       child: Text(
                         'Guardada en tu historial como sesión externa',
-                        style: core.AppTypography.bodySmall.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: AppColors.neonCyan,
                         ),
                       ),
@@ -972,7 +970,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
               },
               child: Text(
                 'ACEPTAR',
-                style: core.AppTypography.labelLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: AppColors.success,
                 ),
               ),
@@ -1070,7 +1068,7 @@ class _ModeButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 color: isSelected
                     ? AppColors.neonCyan
@@ -1116,7 +1114,7 @@ class _ParsedExerciseTile extends StatelessWidget {
               children: [
                 Text(
                   isValid ? exercise.matchedName! : 'No encontrado',
-                  style: core.AppTypography.labelLarge.copyWith(
+                  style: AppTypography.labelLarge.copyWith(
                     color: isValid
                         ? Theme.of(context).colorScheme.onSurface
                         : Colors.orange,
@@ -1125,7 +1123,7 @@ class _ParsedExerciseTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${exercise.series}x${exercise.repsRange}${exercise.weight != null ? ' • ${exercise.weight}kg' : ''}',
-                  style: core.AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
@@ -1173,14 +1171,14 @@ class _ExerciseTile extends StatelessWidget {
               children: [
                 Text(
                   exercise.name,
-                  style: core.AppTypography.labelLarge.copyWith(
+                  style: AppTypography.labelLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${exercise.sets} series × ${exercise.reps} reps${exercise.weight != null ? ' • ${exercise.weight!.toStringAsFixed(1)} kg' : ''}',
-                  style: core.AppTypography.bodyMedium.copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                   ),
                 ),
@@ -1188,7 +1186,7 @@ class _ExerciseTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Nota: ${exercise.notes}',
-                    style: core.AppTypography.bodySmall.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                       fontStyle: FontStyle.italic,
                     ),

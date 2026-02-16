@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import '../providers/training_provider.dart';
+import '../widgets/common/skeleton_loaders.dart';
 import '../widgets/routine_template_sheet.dart';
 
 import 'create_edit_routine_screen.dart';
@@ -43,9 +44,10 @@ class RutinasScreen extends ConsumerWidget {
           ),
           SliverToBoxAdapter(
             child: rutinasAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(AppSpacing.lg),
-                child: AppLoading(message: 'Cargando rutinas...'),
+              loading: () => ShimmerController(
+                child: Column(
+                  children: List.generate(4, (_) => const RutinaCardSkeleton()),
+                ),
               ),
               error: (err, stack) => AppError(
                 message: 'Error al cargar rutinas',

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/analysis_models.dart';
 import '../models/sesion.dart';
 import '../repositories/i_training_repository.dart';
 import 'training_provider.dart';
@@ -93,3 +94,12 @@ final exerciseHistoryProvider = FutureProvider.family<List<Sesion>, String>(
     return sessions;
   },
 );
+
+/// Provider de tendencia de fuerza para un ejercicio especÃ­fico
+final exerciseStrengthTrendProvider =
+    FutureProvider.family<List<StrengthDataPoint>, String>(
+      (ref, exerciseName) async {
+        final repo = ref.read(_trainingRepoProvider);
+        return repo.getStrengthTrend(exerciseName, months: 6);
+      },
+    );

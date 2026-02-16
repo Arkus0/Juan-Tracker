@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../providers/voice_input_provider.dart' as vip;
-import '../../utils/design_system.dart';
 import 'voice_training_fab.dart' show VoiceTrainingCommand, VoiceCommandType;
 
 // Re-exportar los tipos del FAB para compatibilidad
@@ -179,7 +178,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
                 transcript != null
                     ? 'No entendido: "$transcript"'
                     : 'No se detectó voz',
-                style: core.AppTypography.bodyMedium,
+                style: AppTypography.bodyMedium,
               ),
             ),
           ],
@@ -470,7 +469,7 @@ class _ListeningOverlay extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Text(
                         'ESCUCHANDO...',
-                        style: core.AppTypography.headlineSmall.copyWith(
+                        style: AppTypography.headlineSmall.copyWith(
                           color: AppColors.neonPrimary,
                         ),
                       ),
@@ -496,7 +495,7 @@ class _ListeningOverlay extends ConsumerWidget {
                       children: [
                         Text(
                           text,
-                          style: core.AppTypography.titleMedium.copyWith(
+                          style: AppTypography.titleMedium.copyWith(
                             color: voiceState.partialTranscript.isEmpty
                                 ? colorScheme.onSurface.withAlpha(97)
                                 : colorScheme.onSurface,
@@ -522,7 +521,7 @@ class _ListeningOverlay extends ConsumerWidget {
                   // Hint para cerrar
                   Text(
                     'Toca en cualquier lugar para detener',
-                    style: core.AppTypography.labelSmall.copyWith(
+                    style: AppTypography.labelSmall.copyWith(
                       color: colorScheme.onSurface.withAlpha(97),
                     ),
                   ),
@@ -558,7 +557,7 @@ class _ListeningOverlay extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(
                 'MODIFICANDO:',
-                style: core.AppTypography.labelSmall.copyWith(
+                style: AppTypography.labelSmall.copyWith(
                   color: AppColors.neonCyan,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
@@ -569,7 +568,7 @@ class _ListeningOverlay extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             ctx.exerciseName,
-            style: core.AppTypography.titleMedium.copyWith(
+            style: AppTypography.titleMedium.copyWith(
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
             ),
@@ -577,7 +576,7 @@ class _ListeningOverlay extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             'Serie ${ctx.currentSet} de ${ctx.totalSets}',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: colorScheme.onSurface.withAlpha(178),
             ),
           ),
@@ -710,7 +709,7 @@ class _ListeningOverlay extends ConsumerWidget {
           const SizedBox(width: 8),
           Text(
             '$detectedType: $detectedValue',
-            style: core.AppTypography.labelLarge.copyWith(
+            style: AppTypography.labelLarge.copyWith(
               color: detectedColor,
               fontWeight: FontWeight.bold,
             ),
@@ -772,13 +771,13 @@ class _FieldChip extends StatelessWidget {
         children: [
           Text(
             label,
-            style: core.AppTypography.labelSmall.copyWith(
+            style: AppTypography.labelSmall.copyWith(
               color: colorScheme.onSurface.withAlpha(138),
             ),
           ),
           Text(
             value,
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               fontWeight: FontWeight.bold,
               color: isSet ? AppColors.success : colorScheme.onSurface.withAlpha(97),
             ),
@@ -816,7 +815,7 @@ class _CommandHint extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: core.AppTypography.labelSmall.copyWith(
+            style: AppTypography.labelSmall.copyWith(
               color: colorScheme.onSurface.withAlpha(138),
             ),
           ),

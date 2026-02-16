@@ -11,6 +11,7 @@ import '../widgets/analysis/activity_heatmap.dart';
 import '../widgets/analysis/calendar_view.dart';
 import '../widgets/analysis/hall_of_fame.dart';
 import '../widgets/analysis/recovery_monitor.dart';
+import '../widgets/analysis/weekly_muscle_volume_card.dart';
 import '../widgets/analysis/session_list_view.dart';
 import '../widgets/analysis/streak_counter.dart';
 import '../widgets/analysis/strength_trend.dart';
@@ -624,6 +625,10 @@ class _LaboratorioTab extends ConsumerWidget {
 
         // Recovery Monitor
         RecoveryMonitor(),
+
+        SizedBox(height: 20),
+
+        WeeklyMuscleVolumeCard(),
 
         SizedBox(height: 20),
 

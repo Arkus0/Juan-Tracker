@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../models/library_exercise.dart';
 import '../../providers/voice_input_provider.dart';
 import '../../services/voice_input_service.dart';
-import '../../utils/design_system.dart';
 import 'voice_mic_button.dart';
 
 /// Sheet modal para dictado de ejercicios por voz
@@ -101,7 +100,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
         SnackBar(
           content: Text(
             'No hay ejercicios válidos para añadir',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -209,7 +208,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
             // Título
             Text(
               'DICTADO POR VOZ',
-              style: core.AppTypography.headlineSmall.copyWith(
+              style: AppTypography.headlineSmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
@@ -254,7 +253,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               const SizedBox(height: 8),
               Text(
                 'Procesando...',
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 ),
               ),
@@ -307,7 +306,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                       ),
                       child: Text(
                         'CANCELAR',
-                        style: core.AppTypography.titleLarge,
+                        style: AppTypography.titleLarge,
                       ),
                     ),
                   ),
@@ -326,7 +325,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                       ),
                       child: Text(
                         'AÑADIR ${voiceState.validExercises.length} EJERCICIO${voiceState.validExercises.length == 1 ? '' : 'S'}',
-                        style: core.AppTypography.headlineSmall,
+                        style: AppTypography.headlineSmall,
                       ),
                     ),
                   ),
@@ -357,7 +356,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
           const SizedBox(width: 8),
           Text(
             'ESCUCHANDO...',
-            style: core.AppTypography.labelLarge.copyWith(
+            style: AppTypography.labelLarge.copyWith(
               color: AppColors.neonPrimary,
             ),
           ),
@@ -368,7 +367,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
     if (voiceState.isProcessing) {
       return Text(
         'Procesando...',
-        style: core.AppTypography.bodyMedium.copyWith(
+        style: AppTypography.bodyMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
         ),
       );
@@ -377,7 +376,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
     // Estado idle - instrucciones
     return Text(
       'Mantén pulsado para hablar',
-      style: core.AppTypography.bodyMedium.copyWith(
+      style: AppTypography.bodyMedium.copyWith(
         color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
       ),
     );
@@ -403,7 +402,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
           Expanded(
             child: Text(
               message,
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.neonPrimary,
               ),
             ),
@@ -412,7 +411,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
             onPressed: () => ref.read(voiceInputProvider.notifier).retry(),
             child: Text(
               'REINTENTAR',
-              style: core.AppTypography.labelSmall.copyWith(
+              style: AppTypography.labelSmall.copyWith(
                 color: AppColors.neonPrimary,
                 fontWeight: FontWeight.bold,
               ),
@@ -445,7 +444,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               const SizedBox(width: 8),
               Text(
                 'NO ENTENDIDO',
-                style: core.AppTypography.labelLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: Colors.orange,
                 ),
               ),
@@ -454,7 +453,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
           const SizedBox(height: 8),
           Text(
             message,
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
             ),
           ),
@@ -495,7 +494,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
         children: [
           Text(
             'Ejemplos de comandos:',
-            style: core.AppTypography.titleLarge.copyWith(
+            style: AppTypography.titleLarge.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
             ),
           ),
@@ -523,7 +522,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
           Flexible(
             child: Text(
               '"$text"',
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 fontStyle: FontStyle.italic,
               ),
@@ -585,21 +584,21 @@ class _ParsedExerciseCard extends StatelessWidget {
                     if (isValid)
                       Text(
                         exercise.matchedName!,
-                        style: core.AppTypography.titleMedium.copyWith(
+                        style: AppTypography.titleMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                       )
                     else
                       Text(
                         'No encontrado',
-                        style: core.AppTypography.titleMedium.copyWith(
+                        style: AppTypography.titleMedium.copyWith(
                           color: AppColors.neonPrimary,
                         ),
                       ),
                     const SizedBox(height: 2),
                     Text(
                       '"${exercise.rawText}"',
-                      style: core.AppTypography.bodyMedium.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                         fontStyle: FontStyle.italic,
                       ),
@@ -622,7 +621,7 @@ class _ParsedExerciseCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${(exercise.confidence * 100).toInt()}%',
-                    style: core.AppTypography.labelSmall.copyWith(
+                    style: AppTypography.labelSmall.copyWith(
                       color: confidenceColor,
                       fontWeight: FontWeight.bold,
                     ),
@@ -694,7 +693,7 @@ class _ParsedExerciseCard extends StatelessWidget {
                   ),
                   child: Text(
                     '${exercise.weight!.toStringAsFixed(1)} kg',
-                    style: core.AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                       fontWeight: FontWeight.w500,
                     ),
@@ -723,7 +722,7 @@ class _ParsedExerciseCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     'Superserie',
-                    style: core.AppTypography.labelSmall.copyWith(
+                    style: AppTypography.labelSmall.copyWith(
                       color: AppColors.warning,
                       fontWeight: FontWeight.w600,
                     ),
@@ -738,7 +737,7 @@ class _ParsedExerciseCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Nota: ${exercise.notes}',
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                 fontStyle: FontStyle.italic,
               ),
@@ -777,7 +776,7 @@ class _CompactField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: core.AppTypography.labelSmall.copyWith(
+          style: AppTypography.labelSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
             fontWeight: FontWeight.w600,
           ),
@@ -788,7 +787,7 @@ class _CompactField extends StatelessWidget {
           onChanged: onChanged,
           keyboardType: keyboardType,
           textAlign: TextAlign.center,
-          style: core.AppTypography.bodyLarge.copyWith(
+          style: AppTypography.bodyLarge.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
@@ -871,7 +870,7 @@ class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
         children: [
           Text(
             'Seleccionar ejercicio',
-            style: core.AppTypography.titleLarge.copyWith(
+            style: AppTypography.titleLarge.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -880,12 +879,12 @@ class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
             controller: _searchController,
             onChanged: _search,
             autofocus: true,
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
               hintText: 'Buscar ejercicio...',
-              hintStyle: core.AppTypography.bodyMedium.copyWith(
+              hintStyle: AppTypography.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
               ),
               prefixIcon: Icon(
@@ -917,20 +916,20 @@ class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
                       backgroundColor: AppColors.live,
                       child: Text(
                         exercise.name[0].toUpperCase(),
-                        style: core.AppTypography.titleLarge.copyWith(
+                        style: AppTypography.titleLarge.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
                     title: Text(
                       exercise.name,
-                      style: core.AppTypography.bodyMedium.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     subtitle: Text(
                       exercise.muscleGroup,
-                      style: core.AppTypography.bodyMedium.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                       ),
                     ),
@@ -977,7 +976,7 @@ class _VoiceCapabilitiesBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'La voz captura:',
-                style: core.AppTypography.labelSmall.copyWith(
+                style: AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.neonCyan,
                 ),
@@ -999,7 +998,7 @@ class _VoiceCapabilitiesBanner extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Detalles avanzados se ajustan después.',
-            style: core.AppTypography.labelSmall.copyWith(
+            style: AppTypography.labelSmall.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
               fontStyle: FontStyle.italic,
             ),
@@ -1036,7 +1035,7 @@ class _CapabilityChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: core.AppTypography.labelSmall.copyWith(
+            style: AppTypography.labelSmall.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
             ),
           ),

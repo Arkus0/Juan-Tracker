@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../providers/voice_input_provider.dart';
-import '../../utils/design_system.dart';
 
 /// Botón de micrófono con animación de onda cuando está escuchando
 ///
@@ -97,7 +96,7 @@ class _VoiceMicButtonState extends ConsumerState<VoiceMicButton>
             child: Text(
               isListening ? 'Escuchando...' : 'Dictar',
               key: ValueKey(isListening),
-              style: core.AppTypography.labelLarge.copyWith(
+              style: AppTypography.labelLarge.copyWith(
                 color: isListening ? AppColors.neonPrimary : onSurface.withAlpha(178),
               ),
             ),
@@ -207,12 +206,12 @@ class VoiceTranscriptPreview extends ConsumerWidget {
             Row(children: [
               const _PulsingDot(size: 12),
               const SizedBox(width: 8),
-              Text('Escuchando...', style: core.AppTypography.labelLarge.copyWith(color: AppColors.neonPrimary)),
+              Text('Escuchando...', style: AppTypography.labelLarge.copyWith(color: AppColors.neonPrimary)),
             ]),
           if (voiceState.isListening) const SizedBox(height: 8),
           Text(
             text.isEmpty ? 'Di algo como: "Añade sentadilla 5 series de 5..."' : text,
-            style: core.AppTypography.bodyLarge.copyWith(
+            style: AppTypography.bodyLarge.copyWith(
               fontWeight: text.isEmpty ? FontWeight.w400 : FontWeight.w500,
               color: text.isEmpty ? onSurface.withAlpha(76) : (voiceState.isListening ? onSurface.withAlpha(138) : onSurface),
               fontStyle: text.isEmpty ? FontStyle.italic : FontStyle.normal,

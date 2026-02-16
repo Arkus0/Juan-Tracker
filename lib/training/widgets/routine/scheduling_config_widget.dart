@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../models/rutina.dart';
-import '../../utils/design_system.dart';
 
 /// Widget de configuración de scheduling para rutinas en modo Pro
 /// 
@@ -48,7 +47,7 @@ class SchedulingConfigWidget extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'CONFIGURACIÓN DE SCHEDULING',
-                style: core.AppTypography.labelSmall.copyWith(
+                style: AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.neonPrimary,
                 ),
@@ -81,7 +80,7 @@ class SchedulingConfigWidget extends StatelessWidget {
       children: [
         Text(
           'Modo de Programación',
-          style: core.AppTypography.bodyMedium.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
           ),
         ),
@@ -149,7 +148,7 @@ class SchedulingConfigWidget extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             label,
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
@@ -165,7 +164,7 @@ class SchedulingConfigWidget extends StatelessWidget {
         const SizedBox(width: 12),
         Text(
           label,
-          style: core.AppTypography.bodyMedium.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -179,7 +178,7 @@ class SchedulingConfigWidget extends StatelessWidget {
       children: [
         Text(
           'Asignar Días de la Semana',
-          style: core.AppTypography.bodyMedium.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
           ),
         ),
@@ -209,7 +208,7 @@ class SchedulingConfigWidget extends StatelessWidget {
       children: [
         Text(
           'Configuración de Descanso',
-          style: core.AppTypography.bodyMedium.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
           ),
         ),
@@ -226,7 +225,7 @@ class SchedulingConfigWidget extends StatelessWidget {
                 children: [
                   Text(
                     'Descanso mínimo: $minRestHours horas',
-                    style: core.AppTypography.bodyMedium,
+                    style: AppTypography.bodyMedium,
                   ),
                   Slider(
                     value: minRestHours.toDouble(),
@@ -259,7 +258,7 @@ class SchedulingConfigWidget extends StatelessWidget {
                 children: [
                   Text(
                     'Descanso máximo: $maxRestHours horas',
-                    style: core.AppTypography.bodyMedium,
+                    style: AppTypography.bodyMedium,
                   ),
                   Slider(
                     value: maxRestHours.toDouble(),
@@ -321,7 +320,7 @@ class SchedulingConfigWidget extends StatelessWidget {
           Expanded(
             child: Text(
               info,
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: Colors.blue,
                 height: 1.4,
               ),
@@ -359,7 +358,7 @@ class _DayWeekdaySelector extends StatelessWidget {
             flex: 2,
             child: Text(
               dayName,
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
               ),
               overflow: TextOverflow.ellipsis,
@@ -395,7 +394,7 @@ class _DayWeekdaySelector extends StatelessWidget {
                     child: Center(
                       child: Text(
                         _weekdayNames[index],
-                        style: core.AppTypography.labelSmall.copyWith(
+                        style: AppTypography.labelSmall.copyWith(
                           color: isSelected ? colorScheme.surface : colorScheme.onSurface.withAlpha(178),
                           fontWeight: FontWeight.bold,
                         ),

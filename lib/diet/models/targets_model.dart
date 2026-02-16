@@ -8,6 +8,13 @@ class TargetsModel {
   final double? proteinTarget;
   final double? carbsTarget;
   final double? fatTarget;
+
+  // Micronutrient targets (v16)
+  final double? fiberTarget;     // g (recomendado: 25-30g)
+  final double? sugarLimit;      // g (límite: <50g OMS)
+  final double? saturatedFatLimit; // g (límite: <20g)
+  final double? sodiumLimit;     // g (límite: <2.3g OMS)
+
   final String? notes;
   final DateTime createdAt;
 
@@ -18,6 +25,10 @@ class TargetsModel {
     this.proteinTarget,
     this.carbsTarget,
     this.fatTarget,
+    this.fiberTarget,
+    this.sugarLimit,
+    this.saturatedFatLimit,
+    this.sodiumLimit,
     this.notes,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -30,6 +41,10 @@ class TargetsModel {
     double? proteinTarget,
     double? carbsTarget,
     double? fatTarget,
+    double? fiberTarget,
+    double? sugarLimit,
+    double? saturatedFatLimit,
+    double? sodiumLimit,
     String? notes,
     DateTime? createdAt,
   }) =>
@@ -40,6 +55,10 @@ class TargetsModel {
         proteinTarget: proteinTarget ?? this.proteinTarget,
         carbsTarget: carbsTarget ?? this.carbsTarget,
         fatTarget: fatTarget ?? this.fatTarget,
+        fiberTarget: fiberTarget ?? this.fiberTarget,
+        sugarLimit: sugarLimit ?? this.sugarLimit,
+        saturatedFatLimit: saturatedFatLimit ?? this.saturatedFatLimit,
+        sodiumLimit: sodiumLimit ?? this.sodiumLimit,
         notes: notes ?? this.notes,
         createdAt: createdAt ?? this.createdAt,
       );
@@ -127,6 +146,10 @@ class TargetsProgress {
   final double proteinConsumed;
   final double carbsConsumed;
   final double fatConsumed;
+  final double fiberConsumed;
+  final double sugarConsumed;
+  final double saturatedFatConsumed;
+  final double sodiumConsumed;
 
   const TargetsProgress({
     this.targets,
@@ -134,6 +157,10 @@ class TargetsProgress {
     required this.proteinConsumed,
     required this.carbsConsumed,
     required this.fatConsumed,
+    this.fiberConsumed = 0,
+    this.sugarConsumed = 0,
+    this.saturatedFatConsumed = 0,
+    this.sodiumConsumed = 0,
   });
 
   /// Porcentajes de progreso (0.0 - 1.0+)
@@ -156,6 +183,30 @@ class TargetsProgress {
   double? get fatPercent =>
       targets?.fatTarget != null && targets!.fatTarget! > 0
           ? fatConsumed / targets!.fatTarget!
+          : null;
+
+  /// Porcentaje de fibra (meta mínima)
+  double? get fiberPercent =>
+      targets?.fiberTarget != null && targets!.fiberTarget! > 0
+          ? fiberConsumed / targets!.fiberTarget!
+          : null;
+
+  /// Porcentaje de azúcar (límite máximo)
+  double? get sugarPercent =>
+      targets?.sugarLimit != null && targets!.sugarLimit! > 0
+          ? sugarConsumed / targets!.sugarLimit!
+          : null;
+
+  /// Porcentaje de grasa saturada (límite máximo)
+  double? get saturatedFatPercent =>
+      targets?.saturatedFatLimit != null && targets!.saturatedFatLimit! > 0
+          ? saturatedFatConsumed / targets!.saturatedFatLimit!
+          : null;
+
+  /// Porcentaje de sodio (límite máximo)
+  double? get sodiumPercent =>
+      targets?.sodiumLimit != null && targets!.sodiumLimit! > 0
+          ? sodiumConsumed / targets!.sodiumLimit!
           : null;
 
   /// Calorías/macros restantes

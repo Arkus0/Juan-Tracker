@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'core/providers/app_providers.dart';
+import 'diet/services/diet_reminder_service.dart';
 
 import 'training/services/timer_audio_service.dart';
 
@@ -24,6 +25,9 @@ Future<void> main() async {
   ]);
 
   final prefs = initFutures[1] as SharedPreferences;
+
+  // Inicializar servicio de recordatorios de dieta (timezone + canal)
+  await DietReminderService.instance.initialize();
 
   runApp(
     ProviderScope(

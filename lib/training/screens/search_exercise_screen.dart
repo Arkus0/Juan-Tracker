@@ -14,6 +14,7 @@ import '../providers/smart_import_provider.dart';
 import '../utils/exercise_colors.dart';
 import '../widgets/exercise_detail_dialog.dart';
 import '../widgets/common/create_exercise_dialog.dart';
+import '../widgets/common/skeleton_loaders.dart';
 import '../widgets/smart_import_sheet_v2.dart';
 
 class SearchExerciseScreen extends ConsumerStatefulWidget {
@@ -607,7 +608,7 @@ class _SmartSectionsContent extends ConsumerWidget {
           ],
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const ExerciseListSkeleton(),
       error: (_, _) => const _EmptyLibraryView(),
     );
   }
@@ -654,7 +655,7 @@ class _SearchResultsContent extends ConsumerWidget {
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const ExerciseListSkeleton(),
       error: (error, _) => Center(
         child: Text(
           'Error: $error',
@@ -941,9 +942,10 @@ class _AllExercisesList extends ConsumerWidget {
               .toList(),
         );
       },
-      loading: () => const Padding(
-        padding: EdgeInsets.all(16),
-        child: Center(child: CircularProgressIndicator()),
+      loading: () => ShimmerController(
+        child: Column(
+          children: List.generate(5, (_) => const ExerciseListItemSkeleton()),
+        ),
       ),
       error: (_, _) => const SizedBox.shrink(),
     );

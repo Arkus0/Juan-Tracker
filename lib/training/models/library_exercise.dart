@@ -153,7 +153,7 @@ class LibraryExercise {
     String? description,
     String? license,
     List<String>? imageUrls,
-    String? localImagePath,
+    Object? localImagePath = _sentinel,
     List<String>? muscles,
     List<String>? secondaryMuscles,
     bool? isFavorite,
@@ -167,7 +167,9 @@ class LibraryExercise {
       description: description ?? this.description,
       license: license ?? this.license,
       imageUrls: imageUrls ?? this.imageUrls,
-      localImagePath: localImagePath ?? this.localImagePath,
+      localImagePath: localImagePath == _sentinel
+          ? this.localImagePath
+          : localImagePath as String?,
       muscles: muscles ?? this.muscles,
       secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
       isFavorite: isFavorite ?? this.isFavorite,
@@ -175,3 +177,6 @@ class LibraryExercise {
     );
   }
 }
+
+/// Sentinel para permitir setear null explÃ­cito en copyWith
+const _sentinel = Object();

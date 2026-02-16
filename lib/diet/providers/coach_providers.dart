@@ -100,6 +100,16 @@ class CoachPlanNotifier extends Notifier<CoachPlan?> {
     await repository.savePlan(updatedPlan);
     state = updatedPlan;
   }
+
+  /// Activa/desactiva el modo de auto-aplicar check-in
+  Future<void> toggleAutoApply(bool enabled) async {
+    if (state == null) return;
+    final repository = ref.read(coachRepositoryProvider);
+
+    final updatedPlan = state!.copyWith(autoApplyCheckIn: enabled);
+    await repository.savePlan(updatedPlan);
+    state = updatedPlan;
+  }
 }
 
 // ============================================================================
@@ -196,6 +206,56 @@ final isCheckInDueProvider = Provider<bool>((ref) {
 
 final adaptiveCoachServiceProvider = Provider<AdaptiveCoachService>((ref) {
   return const AdaptiveCoachService();
+});
+
+// ============================================================================
+// AUTO-APPLY CHECK-IN
+// ============================================================================
+
+/// Resultado de un auto-apply ejecutado
+class AutoApplyResult {
+  final int previousKcal;
+  final int newKcal;
+  final String summary;
+
+  const AutoApplyResult({
+    required this.previousKcal,
+    required this.newKcal,
+    required this.summary,
+  });
+}
+
+/// Provider que ejecuta auto-apply si:
+/// 1. El plan tiene autoApplyCheckIn = true
+/// 2. El check-in está pendiente (7+ días)
+/// 3. Hay datos suficientes para calcular
+///
+/// Devuelve el resultado para mostrar snackbar. null = no se aplicó.
+final autoApplyCheckInProvider =
+    FutureProvider.autoDispose<AutoApplyResult?>((ref) async {
+  final plan = ref.watch(coachPlanProvider);
+  if (plan == null || !plan.autoApplyCheckIn) return null;
+
+  final isCheckInDue = ref.watch(isCheckInDueProvider);
+  if (!isCheckInDue) return null;
+
+  // Calcular check-in
+  final checkIn = await ref.watch(weeklyCheckInProvider.future);
+  if (checkIn == null || checkIn.status != CheckInStatus.ready) return null;
+
+  // Guardar target anterior para mostrar en snackbar
+  final previousKcal = plan.currentKcalTarget ?? plan.initialTdeeEstimate;
+
+  // Aplicar automáticamente
+  final targetsRepo = ref.read(targetsRepositoryProvider);
+  await targetsRepo.insert(checkIn.proposedTargets);
+  await ref.read(coachPlanProvider.notifier).applyCheckIn(checkIn);
+
+  return AutoApplyResult(
+    previousKcal: previousKcal,
+    newKcal: checkIn.proposedTargets.kcalTarget,
+    summary: checkIn.explanation.line5,
+  );
 });
 
 // ============================================================================

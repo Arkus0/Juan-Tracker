@@ -3,13 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../core/design_system/design_system.dart';
 import '../models/external_session.dart';
 import '../models/library_exercise.dart';
 import '../providers/voice_input_provider.dart';
 import '../services/exercise_matching_service.dart';
 import '../services/voice_input_service.dart';
-import '../utils/design_system.dart';
 import 'voice/ptt_voice_button.dart';
 
 /// Sheet para agregar sesiones externas al historial.
@@ -229,7 +228,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
         SnackBar(
           content: Text(
             'Agrega al menos un ejercicio',
-            style: core.AppTypography.bodyMedium.copyWith(color: onSurface),
+            style: AppTypography.bodyMedium.copyWith(color: onSurface),
           ),
           backgroundColor: AppColors.error,
         ),
@@ -291,7 +290,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                 Expanded(
                   child: Text(
                     'AGREGAR SESIÓN EXTERNA',
-                    style: core.AppTypography.headlineSmall.copyWith(
+                    style: AppTypography.headlineSmall.copyWith(
                       color: onSurface,
                     ),
                   ),
@@ -383,7 +382,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                 children: [
                   Text(
                     'FECHA DE LA SESIÓN',
-                    style: core.AppTypography.labelSmall.copyWith(
+                    style: AppTypography.labelSmall.copyWith(
                       color: AppColors.textTertiary,
                       letterSpacing: 1,
                     ),
@@ -391,7 +390,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                   const SizedBox(height: 4),
                   Text(
                     isToday ? 'Hoy - ${dateStr.split(',')[1].trim()}' : dateStr,
-                    style: core.AppTypography.bodyLarge.copyWith(
+                    style: AppTypography.bodyLarge.copyWith(
                       color: onSurface,
                     ),
                   ),
@@ -413,7 +412,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
       children: [
         Text(
           '¿Cómo quieres agregar los ejercicios?',
-          style: core.AppTypography.bodyLarge.copyWith(
+          style: AppTypography.bodyLarge.copyWith(
             color: onSurface,
           ),
         ),
@@ -480,7 +479,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
           Expanded(
             child: Text(
               'La voz captura ejercicios básicos: nombre, series, reps y peso. Detalles avanzados se editan después.',
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: onSurfaceWithAlpha,
               ),
             ),
@@ -573,7 +572,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
         children: [
           Text(
             'Ejemplos de lo que puedes decir:',
-            style: core.AppTypography.labelLarge.copyWith(
+            style: AppTypography.labelLarge.copyWith(
               color: onSurfaceWithAlpha,
             ),
           ),
@@ -602,7 +601,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
           Flexible(
             child: Text(
               text,
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 fontStyle: FontStyle.italic,
                 color: onSurfaceWithAlpha,
               ),
@@ -650,14 +649,14 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
               const SizedBox(height: 16),
               Text(
                 'Escanear log de entrenamiento',
-                style: core.AppTypography.bodyLarge.copyWith(
+                style: AppTypography.bodyLarge.copyWith(
                   color: onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Toma una foto de tu log escrito o impreso',
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: onSurfaceWithAlpha,
                 ),
               ),
@@ -701,7 +700,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
               Expanded(
                 child: Text(
                   'OCR funciona mejor con texto claro y legible. Usa voz o texto si falla.',
-                  style: core.AppTypography.bodyMedium.copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
                     color: onSurfaceWithAlpha,
                   ),
                 ),
@@ -736,11 +735,11 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
         TextField(
           controller: _textController,
           maxLines: 4,
-          style: core.AppTypography.bodyLarge.copyWith(color: onSurface),
+          style: AppTypography.bodyLarge.copyWith(color: onSurface),
           decoration: InputDecoration(
             hintText:
                 'Escribe tu entrenamiento...\n\nEj: Press banca 4x8 80kg, Sentadilla 3x5 100kg',
-            hintStyle: core.AppTypography.bodyMedium.copyWith(
+            hintStyle: AppTypography.bodyMedium.copyWith(
               color: onSurfaceWithAlpha,
             ),
             filled: true,
@@ -813,7 +812,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
           children: [
             Text(
               'EJERCICIOS (${_exercises.length})',
-              style: core.AppTypography.labelSmall.copyWith(
+              style: AppTypography.labelSmall.copyWith(
                 color: AppColors.textSecondary,
                 letterSpacing: 1,
               ),
@@ -821,7 +820,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
             if (_exercises.isNotEmpty)
               Text(
                 '~${(_exercises.fold(0.0, (sum, e) => sum + (e.weight ?? 0) * _parseReps(e.repsRange) * e.series) / 1000).toStringAsFixed(1)}t volumen',
-                style: core.AppTypography.labelSmall.copyWith(
+                style: AppTypography.labelSmall.copyWith(
                   color: AppColors.neonCyan,
                 ),
               ),
@@ -878,14 +877,14 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                   children: [
                     Text(
                       'Incluir en métricas de progresión',
-                      style: core.AppTypography.labelLarge.copyWith(
+                      style: AppTypography.labelLarge.copyWith(
                         color: onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Afecta sugerencias automáticas de peso',
-                      style: core.AppTypography.bodyMedium.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: onSurfaceWithAlpha,
                       ),
                     ),
@@ -905,10 +904,10 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
         // Notas opcionales
         TextField(
           onChanged: (v) => _sessionNotes = v.isEmpty ? null : v,
-          style: core.AppTypography.bodyMedium.copyWith(color: onSurface),
+          style: AppTypography.bodyMedium.copyWith(color: onSurface),
           decoration: InputDecoration(
             hintText: 'Notas de la sesión (opcional)',
-            hintStyle: core.AppTypography.bodyMedium.copyWith(
+            hintStyle: AppTypography.bodyMedium.copyWith(
               color: onSurface.withAlpha(97),
             ),
             prefixIcon: const Icon(
@@ -955,7 +954,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
             ),
             child: Text(
               'CANCELAR',
-              style: core.AppTypography.titleLarge,
+              style: AppTypography.titleLarge,
             ),
           ),
         ),
@@ -967,7 +966,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
             icon: const Icon(Icons.save),
             label: Text(
               'GUARDAR SESIÓN',
-              style: core.AppTypography.headlineSmall,
+              style: AppTypography.headlineSmall,
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.neonCyan,
@@ -1015,7 +1014,7 @@ class _SourceButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: core.AppTypography.labelSmall.copyWith(
+              style: AppTypography.labelSmall.copyWith(
                 color: color,
               ),
             ),
@@ -1055,7 +1054,7 @@ class _MethodChip extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
@@ -1114,7 +1113,7 @@ class _ExerciseCard extends StatelessWidget {
                   children: [
                     Text(
                       exercise.name,
-                      style: core.AppTypography.titleLarge.copyWith(
+                      style: AppTypography.titleLarge.copyWith(
                         color: onSurface,
                       ),
                     ),
@@ -1122,7 +1121,7 @@ class _ExerciseCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '"${exercise.rawInput}"',
-                        style: core.AppTypography.bodyMedium.copyWith(
+                        style: AppTypography.bodyMedium.copyWith(
                           fontStyle: FontStyle.italic,
                           color: onSurfaceWithAlpha,
                         ),
@@ -1139,7 +1138,7 @@ class _ExerciseCard extends StatelessWidget {
                 ),
                 child: Text(
                   '${(exercise.confidence * 100).toInt()}%',
-                  style: core.AppTypography.labelSmall.copyWith(
+                  style: AppTypography.labelSmall.copyWith(
                     color: _getConfidenceColor(),
                   ),
                 ),
@@ -1207,7 +1206,7 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Nota: ${exercise.notes}',
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 fontStyle: FontStyle.italic,
                 color: onSurfaceWithAlpha,
               ),
@@ -1287,13 +1286,13 @@ class _InfoChip extends StatelessWidget {
           children: [
             Text(
               label,
-              style: core.AppTypography.labelSmall.copyWith(
+              style: AppTypography.labelSmall.copyWith(
                 color: onSurfaceWithAlpha,
               ),
             ),
             Text(
               value,
-              style: core.AppTypography.titleLarge.copyWith(
+              style: AppTypography.titleLarge.copyWith(
                 color: onSurface,
               ),
             ),
@@ -1411,7 +1410,7 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
         children: [
           Text(
             'Añadir ejercicio',
-            style: core.AppTypography.labelLarge.copyWith(
+            style: AppTypography.labelLarge.copyWith(
               color: onSurface,
             ),
           ),
@@ -1420,10 +1419,10 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
           // Nombre del ejercicio
           TextField(
             controller: _nameController,
-            style: core.AppTypography.bodyLarge.copyWith(color: onSurface),
+            style: AppTypography.bodyLarge.copyWith(color: onSurface),
             decoration: InputDecoration(
               labelText: 'Nombre del ejercicio',
-              labelStyle: core.AppTypography.bodyMedium.copyWith(
+              labelStyle: AppTypography.bodyMedium.copyWith(
                 color: onSurfaceWithAlpha,
               ),
               suffixIcon: IconButton(
@@ -1455,7 +1454,7 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                   const SizedBox(width: 6),
                   Text(
                     'Encontrado en biblioteca',
-                    style: core.AppTypography.labelSmall.copyWith(
+                    style: AppTypography.labelSmall.copyWith(
                       color: AppColors.neonCyan,
                     ),
                   ),
@@ -1474,12 +1473,12 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                   controller: _seriesController,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
-                  style: core.AppTypography.titleLarge.copyWith(
+                  style: AppTypography.titleLarge.copyWith(
                     color: onSurface,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Series',
-                    labelStyle: core.AppTypography.labelSmall.copyWith(
+                    labelStyle: AppTypography.labelSmall.copyWith(
                       color: onSurfaceWithAlpha,
                     ),
                     filled: true,
@@ -1497,16 +1496,16 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                   controller: _repsController,
                   keyboardType: TextInputType.text,
                   textAlign: TextAlign.center,
-                  style: core.AppTypography.titleLarge.copyWith(
+                  style: AppTypography.titleLarge.copyWith(
                     color: onSurface,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Reps',
-                    labelStyle: core.AppTypography.labelSmall.copyWith(
+                    labelStyle: AppTypography.labelSmall.copyWith(
                       color: onSurfaceWithAlpha,
                     ),
                     hintText: '8-12',
-                    hintStyle: core.AppTypography.bodyMedium.copyWith(
+                    hintStyle: AppTypography.bodyMedium.copyWith(
                       color: onSurfaceWithAlphaLow,
                     ),
                     filled: true,
@@ -1526,12 +1525,12 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                     decimal: true,
                   ),
                   textAlign: TextAlign.center,
-                  style: core.AppTypography.titleLarge.copyWith(
+                  style: AppTypography.titleLarge.copyWith(
                     color: onSurface,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Peso (kg)',
-                    labelStyle: core.AppTypography.labelSmall.copyWith(
+                    labelStyle: AppTypography.labelSmall.copyWith(
                       color: onSurfaceWithAlpha,
                     ),
                     filled: true,
@@ -1632,7 +1631,7 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
         children: [
           Text(
             'Seleccionar ejercicio',
-            style: core.AppTypography.headlineSmall.copyWith(
+            style: AppTypography.headlineSmall.copyWith(
               color: onSurface,
             ),
           ),
@@ -1641,10 +1640,10 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
             controller: _searchController,
             onChanged: _search,
             autofocus: true,
-            style: core.AppTypography.bodyLarge.copyWith(color: onSurface),
+            style: AppTypography.bodyLarge.copyWith(color: onSurface),
             decoration: InputDecoration(
               hintText: 'Buscar ejercicio...',
-              hintStyle: core.AppTypography.bodyMedium.copyWith(
+              hintStyle: AppTypography.bodyMedium.copyWith(
                 color: onSurfaceWithAlphaLow,
               ),
               prefixIcon: Icon(Icons.search, color: onSurfaceWithAlpha),
@@ -1673,20 +1672,20 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
                       backgroundColor: AppColors.error.withValues(alpha: 0.3),
                       child: Text(
                         exercise.name[0].toUpperCase(),
-                        style: core.AppTypography.titleLarge.copyWith(
+                        style: AppTypography.titleLarge.copyWith(
                           color: onSurface,
                         ),
                       ),
                     ),
                     title: Text(
                       exercise.name,
-                      style: core.AppTypography.bodyLarge.copyWith(
+                      style: AppTypography.bodyLarge.copyWith(
                         color: onSurface,
                       ),
                     ),
                     subtitle: Text(
                       exercise.muscleGroup,
-                      style: core.AppTypography.bodyMedium.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: onSurfaceWithAlpha,
                       ),
                     ),

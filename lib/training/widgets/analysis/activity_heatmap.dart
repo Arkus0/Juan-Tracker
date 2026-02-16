@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../../../core/design_system/design_system.dart';
 
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
-import '../../utils/design_system.dart';
 
 /// GitHub-style activity heatmap for training consistency visualization
 class ActivityHeatmap extends ConsumerStatefulWidget {
@@ -90,8 +90,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
       children: [
         Text(
           'MAPA DE ACTIVIDAD',
-          style: GoogleFonts.montserrat(
-            fontSize: 12,
+          style: AppTypography.labelMedium.copyWith(
             fontWeight: FontWeight.w700,
             color: scheme.onSurfaceVariant,
             letterSpacing: 1.2,
@@ -114,8 +113,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
             ),
             Text(
               '$year',
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
+              style: AppTypography.titleMedium.copyWith(
                 fontWeight: FontWeight.w700,
                 color: scheme.onSurface,
               ),
@@ -222,9 +220,8 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
       child: Center(
         child: Text(
           'Error cargando datos',
-          style: GoogleFonts.montserrat(
+          style: AppTypography.bodySmall.copyWith(
             color: scheme.onSurfaceVariant,
-            fontSize: 12,
           ),
         ),
       ),
@@ -237,8 +234,8 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
       children: [
         Text(
           'Menos',
-          style: GoogleFonts.montserrat(
-            fontSize: 10,
+          style: AppTypography.labelSmall.copyWith(
+            fontWeight: FontWeight.w400,
             color: scheme.onSurfaceVariant,
           ),
         ),
@@ -257,8 +254,8 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
         const SizedBox(width: 4),
         Text(
           'Más',
-          style: GoogleFonts.montserrat(
-            fontSize: 10,
+          style: AppTypography.labelSmall.copyWith(
+            fontWeight: FontWeight.w400,
             color: scheme.onSurfaceVariant,
           ),
         ),
@@ -290,8 +287,8 @@ class _MonthLabelsRow extends StatelessWidget {
   ];
 
   // Pre-computed style para evitar GoogleFonts en build
-  static final _labelStyle = GoogleFonts.montserrat(
-    fontSize: 10,
+  static final _labelStyle = AppTypography.labelSmall.copyWith(
+    fontWeight: FontWeight.w400,
     color: AppColors.textTertiary,
   );
 

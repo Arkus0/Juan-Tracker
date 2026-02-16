@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/design_system/design_system.dart';
 import '../../services/error_tolerance_system.dart';
-import '../../utils/design_system.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // TOLERANCE FEEDBACK WIDGETS
@@ -78,8 +77,7 @@ class WelcomeBackBanner extends StatelessWidget {
               Expanded(
                 child: Text(
                   '¡BIENVENIDO DE VUELTA!',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
+                  style: AppTypography.titleMedium.copyWith(
                     fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                     letterSpacing: 0.5,
@@ -98,8 +96,7 @@ class WelcomeBackBanner extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             message,
-            style: GoogleFonts.montserrat(
-              fontSize: 13,
+            style: AppTypography.bodyCompact.copyWith(
               color: AppColors.textSecondary,
               height: 1.4,
             ),
@@ -108,8 +105,7 @@ class WelcomeBackBanner extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Es normal perder algo de fuerza. Lo recuperarás rápido.',
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
+              style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
                 fontStyle: FontStyle.italic,
               ),
@@ -133,10 +129,7 @@ class WelcomeBackBanner extends StatelessWidget {
                     ),
                     child: Text(
                       'MANTENER ${_fmt(result.originalWeight!)}KG',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: AppTypography.captionBold,
                     ),
                   ),
                 ),
@@ -155,10 +148,7 @@ class WelcomeBackBanner extends StatelessWidget {
                     ),
                     child: Text(
                       'USAR ${_fmt(result.adjustedWeight)}KG',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: AppTypography.captionBold,
                     ),
                   ),
                 ),
@@ -208,8 +198,7 @@ class SuspiciousDataDialog extends StatelessWidget {
           Expanded(
             child: Text(
               '¿QUISISTE DECIR...?',
-              style: GoogleFonts.montserrat(
-                fontSize: 16,
+              style: AppTypography.titleLarge.copyWith(
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
@@ -223,9 +212,7 @@ class SuspiciousDataDialog extends StatelessWidget {
         children: [
           Text(
             exerciseName,
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+            style: AppTypography.titleMedium.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
@@ -259,8 +246,7 @@ class SuspiciousDataDialog extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Si ${_fmt(enteredWeight)}kg es correcto, confiaremos en ti.',
-            style: GoogleFonts.montserrat(
-              fontSize: 11,
+            style: AppTypography.caption.copyWith(
               color: AppColors.textTertiary,
               fontStyle: FontStyle.italic,
             ),
@@ -311,8 +297,7 @@ class _WeightOption extends StatelessWidget {
           children: [
             Text(
               '${weight.toInt()}',
-              style: GoogleFonts.montserrat(
-                fontSize: 28,
+              style: AppTypography.displaySmall.copyWith(
                 fontWeight: FontWeight.w900,
                 color: isRecommended
                     ? AppColors.success
@@ -321,9 +306,7 @@ class _WeightOption extends StatelessWidget {
             ),
             Text(
               'KG',
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+              style: AppTypography.titleSmall.copyWith(
                 color: isRecommended
                     ? AppColors.success
                     : AppColors.textSecondary,
@@ -332,8 +315,7 @@ class _WeightOption extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.montserrat(
-                fontSize: 9,
+              style: AppTypography.micro.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textTertiary,
                 letterSpacing: 0.5,
@@ -376,8 +358,7 @@ class DifficultDayBanner extends StatelessWidget {
           Expanded(
             child: Text(
               result.message ?? 'Día difícil. No afecta tu progreso.',
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
+              style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
@@ -464,9 +445,8 @@ class DeloadSuggestionBanner extends StatelessWidget {
                   children: [
                     Text(
                       '¿MOMENTO DE CONSOLIDAR?',
-                      style: GoogleFonts.montserrat(
+                      style: AppTypography.sectionLabel.copyWith(
                         fontSize: 12,
-                        fontWeight: FontWeight.w800,
                         color: AppColors.warning,
                         letterSpacing: 0.5,
                       ),
@@ -474,8 +454,7 @@ class DeloadSuggestionBanner extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       exerciseName,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 11,
+                      style: AppTypography.caption.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
@@ -495,8 +474,7 @@ class DeloadSuggestionBanner extends StatelessWidget {
           Text(
             'Llevas $weeksStalled semanas en ${_fmt(currentWeight)}kg sin subir. '
             'A veces un pequeño paso atrás permite dar dos pasos adelante.',
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
+            style: AppTypography.bodySmall.copyWith(
               color: AppColors.textSecondary,
               height: 1.4,
             ),
@@ -514,10 +492,7 @@ class DeloadSuggestionBanner extends StatelessWidget {
                   ),
                   child: Text(
                     'SIGO IGUAL',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTypography.captionBold,
                   ),
                 ),
               ),
@@ -535,10 +510,7 @@ class DeloadSuggestionBanner extends StatelessWidget {
                   ),
                   child: Text(
                     'BAJAR A ${_fmt(suggestedWeight)}KG',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTypography.captionBold,
                   ),
                 ),
               ),
@@ -563,7 +535,7 @@ void showToleranceSnackBar(
     SnackBar(
       content: Text(
         message,
-        style: GoogleFonts.montserrat(fontSize: 13, color: Colors.white),
+        style: AppTypography.bodyCompact.copyWith(color: Colors.white),
       ),
       backgroundColor: isPositive ? AppColors.success : AppColors.bgElevated,
       behavior: SnackBarBehavior.floating,

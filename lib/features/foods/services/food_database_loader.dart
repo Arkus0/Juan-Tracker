@@ -10,234 +10,100 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/providers/database_provider.dart';
 import '../../../training/database/database.dart';
+import '../providers/market_providers.dart';
 
 /// Servicio para cargar la base de datos de alimentos desde el asset comprimido
-///
-/// Optimizaciones implementadas:
-/// 1. Parseo en Isolate (no bloquea UI)
-/// 2. Batches dinámicos basados en memoria disponible
-/// 3. Inserción sin verificación de duplicados (más rápido)
-/// 4. Una sola transacción por batch
-/// 5. Descompresión en memoria eficiente
+/// 
+/// Soporta múltiples mercados (España, USA, etc.)
+/// Optimizaciones: Parseo en isolates, batches grandes, transacciones por batch
 class FoodDatabaseLoader {
-  static const String _assetPath = 'assets/data/foods.jsonl.gz';
   static const String _dbVersionKey = 'food_db_version';
   static const int _currentDbVersion = 1;
-
-  /// Batch size base - se ajusta dinámicamente según memoria disponible
-  static const int _defaultBatchSize = 5000;
-  static const int _minBatchSize = 1000; // Para dispositivos low-end
-  static const int _maxBatchSize = 8000; // Para dispositivos high-end
+  static const int _batchSize = 5000;
 
   final AppDatabase _db;
-
+  
   FoodDatabaseLoader(this._db);
 
-  /// Calcula el batch size óptimo basado en la memoria disponible del dispositivo
-  /// para evitar OOM en dispositivos con poca RAM
-  int _calculateOptimalBatchSize() {
-    try {
-      // Obtener memoria disponible aproximada
-      final memInfo = PlatformDispatcher.instance.views.first.devicePixelRatio;
-      // Usar devicePixelRatio como proxy (no hay API directa de memoria en Dart)
-      // En la práctica, dispositivos con pixel ratio más alto suelen tener más RAM
+  /// Obtiene el path del asset según el mercado seleccionado
+  String _getAssetPath(FoodMarket market) => 'assets/data/${market.filename}';
 
-      if (memInfo >= 3.0) {
-        return _maxBatchSize; // High-end devices
-      } else if (memInfo >= 2.0) {
-        return _defaultBatchSize; // Mid-range
-      } else {
-        return _minBatchSize; // Low-end devices
-      }
-    } catch (e) {
-      // Fallback seguro
-      return _defaultBatchSize;
-    }
-  }
-
-  /// Verifica si la base de datos de alimentos ya está cargada
-  Future<bool> isDatabaseLoaded() async {
+  /// Verifica si la base de datos del mercado está cargada
+  Future<bool> isDatabaseLoaded(FoodMarket market) async {
     final prefs = await SharedPreferences.getInstance();
-    final version = prefs.getInt(_dbVersionKey);
-
-    if (version != _currentDbVersion) {
+    final savedVersion = prefs.getInt('${_dbVersionKey}_${market.name}');
+    
+    if (savedVersion != _currentDbVersion) {
       return false;
     }
-
-    // Verificar si hay alimentos en la base (muestra rápida)
-    final count = await _db
-        .customSelect(
-          'SELECT COUNT(*) as count FROM foods WHERE user_created = 0 LIMIT 1',
-        )
-        .getSingle();
-
-    final hasFoods = (count.data['count'] as int) > 10000;
-
-    // Verificar integridad: si hay alimentos pero el índice FTS está vacío o no existe
-    if (hasFoods) {
-      try {
-        final ftsCount = await _db
-            .customSelect('SELECT COUNT(*) as count FROM foods_fts LIMIT 1')
-            .getSingle();
-        if ((ftsCount.data['count'] as int) == 0) {
-          // El índice FTS está vacío, necesita reconstrucción
-          return false;
-        }
-      } catch (e) {
-        // La tabla foods_fts no existe o está corrupta
-        debugPrint('FTS table check failed: $e');
-        return false;
-      }
-    }
-
-    return hasFoods;
+    
+    // Verificar si hay alimentos de este mercado
+    final count = await _db.customSelect(
+      "SELECT COUNT(*) as count FROM foods WHERE user_created = 0 LIMIT 1"
+    ).getSingle();
+    
+    return (count.data['count'] as int) > 10000;
   }
 
-  /// Reconstruye solo el índice FTS5 (útil cuando la base de datos ya está cargada pero el índice está corrupto)
-  Future<void> rebuildIndexOnly({
-    void Function(double progress)? onProgress,
-  }) async {
-    onProgress?.call(0.0);
-    await _db.rebuildFtsIndex();
-    onProgress?.call(1.0);
-    await _markDatabaseAsLoaded();
-  }
-
-  /// Carga la base de datos desde el asset de forma optimizada
-  ///
-  /// Retorna el número de alimentos cargados
+  /// Carga la base de datos desde el asset
   Future<int> loadDatabase({
+    required FoodMarket market,
     void Function(double progress, int loaded)? onProgress,
   }) async {
+    final assetPath = _getAssetPath(market);
+    
     try {
-      debugPrint('[FoodDatabaseLoader] Starting loadDatabase...');
-
-      // Verificar si la base de datos ya está cargada pero el índice necesita reconstrucción
-      final foodsCount = await _db
-          .customSelect(
-            'SELECT COUNT(*) as count FROM foods WHERE user_created = 0 LIMIT 1',
-          )
-          .getSingle();
-      final hasFoods = (foodsCount.data['count'] as int) > 10000;
-      debugPrint(
-        '[FoodDatabaseLoader] Current foods count: ${foodsCount.data['count']}, hasFoods: $hasFoods',
-      );
-
-      final ftsCount = await _db
-          .customSelect('SELECT COUNT(*) as count FROM foods_fts LIMIT 1')
-          .getSingle();
-      final hasFts = (ftsCount.data['count'] as int) > 0;
-      debugPrint(
-        '[FoodDatabaseLoader] FTS count: ${ftsCount.data['count']}, hasFts: $hasFts',
-      );
-
-      if (hasFoods && !hasFts) {
-        // La base de datos está cargada pero el índice FTS está vacío
-        // Solo reconstruir el índice sin recargar todo
-        debugPrint(
-          '[FoodDatabaseLoader] Foods exist but FTS empty - rebuilding index only',
-        );
-        onProgress?.call(0.5, foodsCount.data['count'] as int);
-        await rebuildIndexOnly(
-          onProgress: (p) =>
-              onProgress?.call(0.5 + p * 0.5, foodsCount.data['count'] as int),
-        );
-        return foodsCount.data['count'] as int;
-      }
-
-      // 1. Cargar y descomprimir en isolate
       onProgress?.call(0.0, 0);
-
-      final byteData = await rootBundle.load(_assetPath);
+      
+      // Verificar que el asset existe
+      final byteData = await rootBundle.load(assetPath);
       final bytes = byteData.buffer.asUint8List();
-
-      // Descompresión en isolate para no bloquear UI
+      
+      // Descompresión en isolate
       final jsonlString = await compute(_decompressGzip, bytes);
-
-      // 2. Parsear en isolate
       onProgress?.call(0.05, 0);
-
+      
+      // Separar líneas en isolate
       final lines = await compute(_splitLines, jsonlString);
       final totalLines = lines.length;
-
-      // 3. Procesar en batches dinámicos según memoria disponible
-      final batchSize = _calculateOptimalBatchSize();
-      debugPrint('[FoodDatabaseLoader] Using batch size: $batchSize');
-
+      
+      // Procesar en batches
       int loadedCount = 0;
-      final totalBatches = (totalLines / batchSize).ceil();
-
+      final totalBatches = (totalLines / _batchSize).ceil();
+      
       for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-        final start = batchIndex * batchSize;
-        final end = (start + batchSize < totalLines)
-            ? start + batchSize
-            : totalLines;
+        final start = batchIndex * _batchSize;
+        final end = (start + _batchSize < totalLines) ? start + _batchSize : totalLines;
         final batchLines = lines.sublist(start, end);
-
+        
         // Parsear batch en isolate
         final companions = await compute(_parseBatch, batchLines);
-
-        // Insertar en DB (esto sí debe ser en el isolate principal por drift)
+        
+        // Insertar en DB
         await _insertBatchOptimized(companions);
-
+        
         loadedCount += companions.length;
-
-        // Reportar progreso
+        
         final progress = 0.05 + (0.95 * loadedCount / totalLines);
         onProgress?.call(progress, loadedCount);
       }
-
-      // 4. Reconstruir índice FTS5 para búsqueda
-      debugPrint(
-        '[FoodDatabaseLoader] Rebuilding FTS index after inserting $loadedCount foods...',
-      );
-      onProgress?.call(0.98, loadedCount);
-      await _db.rebuildFtsIndex();
-
-      // Sanity checks after loading
-      final finalFoodsCount = await _db
-          .customSelect('SELECT COUNT(*) as count FROM foods')
-          .getSingle();
-      final finalFtsCount = await _db
-          .customSelect('SELECT COUNT(*) as count FROM foods_fts')
-          .getSingle();
-      debugPrint(
-        '[FoodDatabaseLoader] ✅ Final foods count: ${finalFoodsCount.data['count']}',
-      );
-      debugPrint(
-        '[FoodDatabaseLoader] ✅ Final FTS count: ${finalFtsCount.data['count']}',
-      );
-
-      // Test search to verify FTS works
-      final testResults = await _db
-          .customSelect(
-            "SELECT food_id, name FROM foods_fts WHERE foods_fts MATCH 'leche*' LIMIT 3",
-          )
-          .get();
-      debugPrint(
-        '[FoodDatabaseLoader] 🔍 Test search "leche*": ${testResults.length} results',
-      );
-      for (final row in testResults) {
-        debugPrint('  - ${row.data['name']}');
-      }
-
-      // 5. Marcar como cargada
-      await _markDatabaseAsLoaded();
-      debugPrint('[FoodDatabaseLoader] ✅ Database marked as loaded');
-
+      
+      // Marcar como cargada
+      await _markDatabaseAsLoaded(market);
+      
       return loadedCount;
     } catch (e) {
-      throw Exception('Error cargando base de datos: $e');
+      throw Exception('Error cargando base de datos para ${market.displayName}: $e');
     }
   }
 
-  /// Parsea un batch de líneas JSONL en un isolate
+  /// Parsea un batch de líneas JSONL
   static List<FoodsCompanion> _parseBatch(List<String> lines) {
     final companions = <FoodsCompanion>[];
-
+    
     for (final line in lines) {
       if (line.trim().isEmpty) continue;
-
+      
       try {
         final json = jsonDecode(line) as Map<String, dynamic>;
         final companion = _parseFoodCompanion(json);
@@ -246,42 +112,42 @@ class FoodDatabaseLoader {
         // Ignorar líneas malformadas
       }
     }
-
+    
     return companions;
   }
 
-  /// Descomprime GZIP en isolate
+  /// Descomprime GZIP
   static String _decompressGzip(Uint8List bytes) {
     final decodedBytes = gzip.decode(bytes);
     return utf8.decode(decodedBytes);
   }
 
-  /// Separa líneas en isolate
+  /// Separa líneas
   static List<String> _splitLines(String text) {
     return const LineSplitter().convert(text);
   }
 
-  /// Inserta un batch de alimentos de forma optimizada (una sola transacción)
+  /// Inserta un batch de alimentos
   Future<void> _insertBatchOptimized(List<FoodsCompanion> batch) async {
     await _db.transaction(() async {
       await _db.batch((b) {
-        b.insertAll(_db.foods, batch, mode: InsertMode.insertOrReplace);
+        b.insertAll(
+          _db.foods, 
+          batch, 
+          mode: InsertMode.insertOrReplace,
+        );
       });
     });
   }
 
-  /// Parsea un JSON de Open Food Facts a FoodsCompanion
+  /// Parsea un JSON a FoodsCompanion
   static FoodsCompanion _parseFoodCompanion(Map<String, dynamic> json) {
     final nutriments = json['nutriments'] as Map<String, dynamic>? ?? {};
-    final name = _sanitizeName(json['name'] as String? ?? 'Sin nombre');
-    final brand = json['brands'] as String?;
-
+    
     return FoodsCompanion(
       id: Value(json['code'] as String? ?? const Uuid().v4()),
-      name: Value(name),
-      // normalizedName is critical for LIKE fallback search
-      normalizedName: Value(name.toLowerCase()),
-      brand: Value(brand),
+      name: Value(_sanitizeName(json['name'] as String? ?? 'Sin nombre')),
+      brand: Value(json['brands'] as String?),
       kcalPer100g: Value(_parseDouble(nutriments['energy_kcal'])?.round() ?? 0),
       proteinPer100g: Value(_parseDouble(nutriments['proteins'])),
       carbsPer100g: Value(_parseDouble(nutriments['carbohydrates'])),
@@ -295,24 +161,35 @@ class FoodDatabaseLoader {
   }
 
   /// Marca la base de datos como cargada
-  Future<void> _markDatabaseAsLoaded() async {
+  Future<void> _markDatabaseAsLoaded(FoodMarket market) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_dbVersionKey, _currentDbVersion);
+    await prefs.setInt('${_dbVersionKey}_${market.name}', _currentDbVersion);
   }
 
-  /// Limpia la base de datos de alimentos
-  Future<void> clearDatabase() async {
+  /// Limpia la base de datos
+  Future<void> clearDatabase(FoodMarket market) async {
     await _db.delete(_db.foods).go();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_dbVersionKey);
+    await prefs.remove('${_dbVersionKey}_${market.name}');
   }
 
-  /// Sanitiza el nombre del alimento
+  /// Cambia de mercado (limpia DB anterior y carga nueva)
+  Future<int> switchMarket({
+    required FoodMarket from,
+    required FoodMarket to,
+    void Function(double progress, int loaded)? onProgress,
+  }) async {
+    // Limpiar mercado anterior
+    await clearDatabase(from);
+    
+    // Cargar nuevo mercado
+    return loadDatabase(market: to, onProgress: onProgress);
+  }
+
   static String _sanitizeName(String name) {
     return name.trim().replaceAll(RegExp(r'\s+'), ' ');
   }
 
-  /// Parsea un double de varios formatos posibles
   static double? _parseDouble(dynamic value) {
     if (value == null) return null;
     if (value is double) return value;
@@ -330,204 +207,11 @@ final foodDatabaseLoaderProvider = Provider<FoodDatabaseLoader>((ref) {
   return FoodDatabaseLoader(db);
 });
 
-/// Provider para verificar estado de carga
+/// Provider para verificar estado de carga del mercado actual
 final foodDatabaseLoadedProvider = FutureProvider<bool>((ref) async {
+  final market = ref.watch(selectedMarketProvider);
+  if (market == null) return false;
+  
   final loader = ref.watch(foodDatabaseLoaderProvider);
-  return loader.isDatabaseLoaded();
-});
-
-enum FoodBootstrapStage { idle, checking, loading, ready, error }
-
-class FoodBootstrapStatus {
-  final FoodBootstrapStage stage;
-  final double? progress;
-  final int loaded;
-  final String? message;
-  final String? errorMessage;
-
-  const FoodBootstrapStatus({
-    this.stage = FoodBootstrapStage.idle,
-    this.progress,
-    this.loaded = 0,
-    this.message,
-    this.errorMessage,
-  });
-
-  FoodBootstrapStatus copyWith({
-    FoodBootstrapStage? stage,
-    double? progress,
-    int? loaded,
-    String? message,
-    String? errorMessage,
-  }) {
-    return FoodBootstrapStatus(
-      stage: stage ?? this.stage,
-      progress: progress ?? this.progress,
-      loaded: loaded ?? this.loaded,
-      message: message,
-      errorMessage: errorMessage,
-    );
-  }
-
-  bool get isBusy =>
-      stage == FoodBootstrapStage.checking ||
-      stage == FoodBootstrapStage.loading;
-}
-
-final foodBootstrapControllerProvider =
-    NotifierProvider<FoodBootstrapController, FoodBootstrapStatus>(
-      FoodBootstrapController.new,
-    );
-
-class FoodBootstrapController extends Notifier<FoodBootstrapStatus> {
-  bool _isRunning = false;
-
-  @override
-  FoodBootstrapStatus build() => const FoodBootstrapStatus();
-
-  Future<void> bootstrapIfNeeded({bool forceReload = false}) async {
-    if (_isRunning) return;
-    _isRunning = true;
-
-    try {
-      state = state.copyWith(
-        stage: FoodBootstrapStage.checking,
-        message: 'Verificando base de alimentos...',
-      );
-
-      final loader = ref.read(foodDatabaseLoaderProvider);
-      final isLoaded = forceReload ? false : await loader.isDatabaseLoaded();
-
-      if (isLoaded) {
-        state = state.copyWith(
-          stage: FoodBootstrapStage.ready,
-          progress: 1.0,
-          message: 'Base de alimentos lista',
-          errorMessage: null,
-        );
-        return;
-      }
-
-      state = state.copyWith(
-        stage: FoodBootstrapStage.loading,
-        progress: 0,
-        loaded: 0,
-        message: 'Cargando base de alimentos...',
-        errorMessage: null,
-      );
-
-      await loader.loadDatabase(
-        onProgress: (progress, loaded) {
-          state = state.copyWith(
-            stage: FoodBootstrapStage.loading,
-            progress: progress,
-            loaded: loaded,
-            message:
-                'Cargando base de alimentos... ${(progress * 100).toStringAsFixed(0)}%',
-            errorMessage: null,
-          );
-        },
-      );
-
-      state = state.copyWith(
-        stage: FoodBootstrapStage.ready,
-        progress: 1.0,
-        message: 'Base de alimentos lista',
-        errorMessage: null,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        stage: FoodBootstrapStage.error,
-        errorMessage: 'Error cargando base de alimentos: $e',
-      );
-    } finally {
-      _isRunning = false;
-    }
-  }
-}
-
-/// Diagnostic info for debugging database issues
-class FoodDatabaseDiagnostics {
-  final int totalFoods;
-  final int systemFoods;
-  final int userFoods;
-  final int ftsEntries;
-  final int foodsWithNormalizedName;
-  final List<String> sampleNames;
-  final int sampleSearchResults;
-
-  const FoodDatabaseDiagnostics({
-    required this.totalFoods,
-    required this.systemFoods,
-    required this.userFoods,
-    required this.ftsEntries,
-    required this.foodsWithNormalizedName,
-    required this.sampleNames,
-    required this.sampleSearchResults,
-  });
-
-  bool get isHealthy =>
-      totalFoods > 10000 && ftsEntries > 10000 && sampleSearchResults > 0;
-
-  @override
-  String toString() {
-    return '''
-FoodDatabaseDiagnostics:
-  Total foods: $totalFoods
-  System foods: $systemFoods
-  User foods: $userFoods
-  FTS entries: $ftsEntries
-  Foods with normalizedName: $foodsWithNormalizedName
-  Sample names: ${sampleNames.take(3).join(', ')}
-  Sample search results: $sampleSearchResults
-  Is healthy: $isHealthy
-''';
-  }
-}
-
-/// Provider for database diagnostics
-final foodDatabaseDiagnosticsProvider = FutureProvider<FoodDatabaseDiagnostics>((
-  ref,
-) async {
-  final db = ref.watch(appDatabaseProvider);
-
-  final totalFoods = await db
-      .customSelect('SELECT COUNT(*) as count FROM foods')
-      .getSingle();
-  final systemFoods = await db
-      .customSelect(
-        'SELECT COUNT(*) as count FROM foods WHERE user_created = 0',
-      )
-      .getSingle();
-  final userFoods = await db
-      .customSelect(
-        'SELECT COUNT(*) as count FROM foods WHERE user_created = 1',
-      )
-      .getSingle();
-  final ftsEntries = await db
-      .customSelect('SELECT COUNT(*) as count FROM foods_fts')
-      .getSingle();
-  final withNormalized = await db
-      .customSelect(
-        'SELECT COUNT(*) as count FROM foods WHERE normalized_name IS NOT NULL',
-      )
-      .getSingle();
-  final sampleFoods = await db
-      .customSelect('SELECT name FROM foods LIMIT 5')
-      .get();
-  final searchTest = await db
-      .customSelect(
-        "SELECT COUNT(*) as count FROM foods_fts WHERE foods_fts MATCH 'leche*'",
-      )
-      .getSingle();
-
-  return FoodDatabaseDiagnostics(
-    totalFoods: totalFoods.data['count'] as int,
-    systemFoods: systemFoods.data['count'] as int,
-    userFoods: userFoods.data['count'] as int,
-    ftsEntries: ftsEntries.data['count'] as int,
-    foodsWithNormalizedName: withNormalized.data['count'] as int,
-    sampleNames: sampleFoods.map((r) => r.data['name'] as String).toList(),
-    sampleSearchResults: searchTest.data['count'] as int,
-  );
+  return loader.isDatabaseLoaded(market);
 });

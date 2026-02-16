@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+
+import '../../../core/design_system/design_system.dart' show AppTypography;
 
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
@@ -136,10 +137,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Sin objetivos configurados',
-              style: GoogleFonts.montserrat(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTypography.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
@@ -204,10 +202,7 @@ class _TargetCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           'Desde ${DateFormat('d MMMM yyyy', 'es').format(target.validFrom)}',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: AppTypography.titleMedium,
                         ),
                       ],
                     ),
@@ -314,8 +309,7 @@ class _MacroDisplay extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: GoogleFonts.montserrat(
-            fontSize: 16,
+          style: AppTypography.titleLarge.copyWith(
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -373,10 +367,7 @@ class _TargetForm extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     isEditing ? 'Editar objetivo' : 'Nuevo objetivo',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTypography.headlineSmall,
                   ),
                 ),
                 IconButton(
@@ -410,9 +401,7 @@ class _TargetForm extends ConsumerWidget {
                 // Macros
                 Text(
                   'MACROS (opcional)',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                  style: AppTypography.titleSmall.copyWith(
                     letterSpacing: 1,
                     color: theme.colorScheme.primary,
                   ),

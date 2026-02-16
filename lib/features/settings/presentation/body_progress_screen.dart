@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -130,6 +131,21 @@ class _MeasurementsTab extends ConsumerWidget {
               error: (_, _) => const SizedBox.shrink(),
             ),
           ),
+        ),
+
+        // Gráficos de evolución
+        measurementsAsync.when(
+          data: (measurements) {
+            if (measurements.length < 2) return const SliverToBoxAdapter(child: SizedBox.shrink());
+            return SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: _MeasurementCharts(measurements: measurements),
+              ),
+            );
+          },
+          loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+          error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
         ),
 
         // Lista de medidas
@@ -1164,5 +1180,323 @@ class _AddPhotoSheetState extends ConsumerState<_AddPhotoSheet> {
       context,
       message: 'Foto guardada correctamente',
     );
+  }
+}
+
+// ============================================================================
+// GRÁFICOS DE EVOLUCIÓN DE MEDIDAS
+// ============================================================================
+
+/// Métricas disponibles para graficar.
+enum _MeasurementMetric {
+  waist('Cintura', 'cm'),
+  chest('Pecho', 'cm'),
+  hips('Cadera', 'cm'),
+  arms('Brazos (prom)', 'cm'),
+  thighs('Muslos (prom)', 'cm'),
+  neck('Cuello', 'cm'),
+  bodyFat('Grasa corporal', '%');
+
+  final String label;
+  final String unit;
+  const _MeasurementMetric(this.label, this.unit);
+
+  double? getValue(BodyMeasurementModel m) => switch (this) {
+    _MeasurementMetric.waist => m.waistCm,
+    _MeasurementMetric.chest => m.chestCm,
+    _MeasurementMetric.hips => m.hipsCm,
+    _MeasurementMetric.arms => m.avgArmCm,
+    _MeasurementMetric.thighs => m.avgThighCm,
+    _MeasurementMetric.neck => m.neckCm,
+    _MeasurementMetric.bodyFat => m.bodyFatPercentage,
+  };
+}
+
+/// Widget que muestra gráficos de evolución de medidas seleccionables.
+class _MeasurementCharts extends StatefulWidget {
+  final List<BodyMeasurementModel> measurements;
+
+  const _MeasurementCharts({required this.measurements});
+
+  @override
+  State<_MeasurementCharts> createState() => _MeasurementChartsState();
+}
+
+class _MeasurementChartsState extends State<_MeasurementCharts> {
+  _MeasurementMetric _selectedMetric = _MeasurementMetric.waist;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    // Solo métricas que tienen datos (al menos 2 puntos)
+    final availableMetrics = _MeasurementMetric.values.where((metric) {
+      final values = widget.measurements
+          .where((m) => metric.getValue(m) != null)
+          .toList();
+      return values.length >= 2;
+    }).toList();
+
+    if (availableMetrics.isEmpty) return const SizedBox.shrink();
+
+    // Si la métrica seleccionada no está disponible, cambiar a la primera
+    if (!availableMetrics.contains(_selectedMetric)) {
+      _selectedMetric = availableMetrics.first;
+    }
+
+    return Card(
+      elevation: 0,
+      color: cs.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(Icons.show_chart, color: cs.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Evolución',
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // Selector de métrica
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: availableMetrics.map((metric) {
+                  final isSelected = metric == _selectedMetric;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      label: Text(metric.label),
+                      selected: isSelected,
+                      onSelected: (_) => setState(() => _selectedMetric = metric),
+                      labelStyle: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected ? cs.onPrimary : cs.onSurfaceVariant,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Gráfico
+            SizedBox(
+              height: 180,
+              child: _MeasurementLineChart(
+                measurements: widget.measurements,
+                metric: _selectedMetric,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Gráfico de línea para una métrica de medida corporal.
+class _MeasurementLineChart extends StatelessWidget {
+  final List<BodyMeasurementModel> measurements;
+  final _MeasurementMetric metric;
+
+  const _MeasurementLineChart({
+    required this.measurements,
+    required this.metric,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Filtrar medidas que tienen valor para esta métrica (orden cronológico)
+    final filtered = measurements
+        .where((m) => metric.getValue(m) != null)
+        .toList()
+        .reversed
+        .toList(); // Reversed porque vienen desc por fecha
+
+    if (filtered.length < 2) return const SizedBox.shrink();
+
+    final spots = filtered.asMap().entries.map((e) {
+      return FlSpot(e.key.toDouble(), metric.getValue(e.value)!);
+    }).toList();
+
+    final values = spots.map((s) => s.y).toList();
+    final minY = values.reduce((a, b) => a < b ? a : b);
+    final maxY = values.reduce((a, b) => a > b ? a : b);
+    final range = maxY - minY;
+    final padding = range > 0 ? range * 0.2 : 2.0;
+
+    // Calcular cambio total
+    final firstVal = values.first;
+    final lastVal = values.last;
+    final change = lastVal - firstVal;
+    final changeStr = '${change >= 0 ? '+' : ''}${change.toStringAsFixed(1)} ${metric.unit}';
+    final isDecreasing = change < 0;
+
+    return Column(
+      children: [
+        // Indicador de cambio total
+        Align(
+          alignment: Alignment.centerRight,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: (isDecreasing ? AppColors.success : AppColors.error)
+                  .withAlpha((0.15 * 255).round()),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Text(
+              changeStr,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: isDecreasing ? AppColors.success : AppColors.error,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Expanded(
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: range > 0 ? range / 3 : 1,
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (value, meta) {
+                      return Text(
+                        metric == _MeasurementMetric.bodyFat
+                            ? '${value.toStringAsFixed(1)}%'
+                            : value.toStringAsFixed(0),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 24,
+                    interval: _calculateInterval(filtered.length),
+                    getTitlesWidget: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx < 0 || idx >= filtered.length) {
+                        return const SizedBox.shrink();
+                      }
+                      return Text(
+                        DateFormat('d/M').format(filtered[idx].date),
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+              ),
+              borderData: FlBorderData(show: false),
+              minX: 0,
+              maxX: (spots.length - 1).toDouble(),
+              minY: minY - padding,
+              maxY: maxY + padding,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  curveSmoothness: 0.3,
+                  color: theme.colorScheme.primary,
+                  barWidth: 3,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 3,
+                        color: theme.colorScheme.primary,
+                        strokeWidth: 1.5,
+                        strokeColor: theme.colorScheme.surface,
+                      );
+                    },
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: theme.colorScheme.primary
+                        .withAlpha((0.1 * 255).round()),
+                  ),
+                ),
+              ],
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (_) =>
+                      theme.colorScheme.surfaceContainerHighest,
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final idx = spot.x.toInt();
+                      if (idx < 0 || idx >= filtered.length) return null;
+                      final m = filtered[idx];
+                      final val = metric.getValue(m)!;
+                      return LineTooltipItem(
+                        '${val.toStringAsFixed(1)} ${metric.unit}\n',
+                        TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: DateFormat('d MMM yyyy', 'es').format(m.date),
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontSize: 11,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      );
+                    }).whereType<LineTooltipItem>().toList();
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  double _calculateInterval(int count) {
+    if (count <= 5) return 1;
+    if (count <= 10) return 2;
+    if (count <= 20) return 4;
+    return (count / 5).ceilToDouble();
   }
 }

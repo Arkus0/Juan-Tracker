@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../models/serie_log.dart';
-import '../../utils/design_system.dart';
 
 /// Widget que muestra un gráfico simple de progresión con los últimos logs.
 /// Usa CustomPaint para dibujar líneas sin dependencias externas.
@@ -34,8 +33,7 @@ class ProgressionChart extends StatelessWidget {
       children: [
         Text(
           'PROGRESIÓN',
-          style: GoogleFonts.montserrat(
-            fontSize: 12,
+          style: AppTypography.labelMedium.copyWith(
             fontWeight: FontWeight.w800,
             color: AppColors.neonPrimary,
           ),
@@ -76,7 +74,7 @@ class ProgressionChart extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Sin datos de progresión',
-            style: GoogleFonts.montserrat(color: Colors.white38, fontSize: 12),
+            style: AppTypography.bodySmall.copyWith(color: Colors.white38),
           ),
         ],
       ),

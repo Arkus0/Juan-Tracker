@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/design_system/design_system.dart';
 import '../../../core/models/user_profile_model.dart';
 import '../../../core/providers/database_provider.dart';
@@ -8,6 +9,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/services/tdee_calculator.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../diet/providers/body_progress_providers.dart';
+import '../../../diet/providers/reminder_providers.dart';
 import 'body_progress_screen.dart';
 
 /// Pantalla de Perfil y Ajustes
@@ -78,6 +80,11 @@ class _SettingsContent extends StatelessWidget {
 
         // Sección Biblioteca
         _LibrarySection(),
+
+        const SizedBox(height: AppSpacing.lg),
+
+        // Sección Recordatorios
+        const _RemindersSection(),
 
         const SizedBox(height: AppSpacing.lg),
 
@@ -686,6 +693,291 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
       ref.invalidate(userProfileProvider);
       Navigator.of(context).pop();
     }
+  }
+}
+
+// ============================================================================
+// REMINDERS SECTION - Recordatorios configurables
+// ============================================================================
+
+class _RemindersSection extends ConsumerWidget {
+  const _RemindersSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final reminders = ref.watch(dietRemindersProvider);
+    final notifier = ref.read(dietRemindersProvider.notifier);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: colors.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    Icons.notifications_active,
+                    color: colors.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Recordatorios',
+                        style: AppTypography.titleMedium,
+                      ),
+                      Text(
+                        reminders.hasAnyEnabled
+                            ? '${reminders.enabledCount} activo${reminders.enabledCount != 1 ? 's' : ''}'
+                            : 'Ninguno activo',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const Divider(),
+            const SizedBox(height: AppSpacing.sm),
+
+            // --- Comidas ---
+            Padding(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.sm,
+                bottom: AppSpacing.xs,
+              ),
+              child: Text(
+                'COMIDAS',
+                style: AppTypography.labelSmall.copyWith(
+                  color: colors.onSurfaceVariant,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+
+            _ReminderRow(
+              icon: Icons.free_breakfast,
+              label: 'Desayuno',
+              config: reminders.breakfast,
+              onToggle: notifier.toggleBreakfast,
+              onTimeChanged: notifier.setBreakfastTime,
+            ),
+            _ReminderRow(
+              icon: Icons.lunch_dining,
+              label: 'Almuerzo',
+              config: reminders.lunch,
+              onToggle: notifier.toggleLunch,
+              onTimeChanged: notifier.setLunchTime,
+            ),
+            _ReminderRow(
+              icon: Icons.dinner_dining,
+              label: 'Cena',
+              config: reminders.dinner,
+              onToggle: notifier.toggleDinner,
+              onTimeChanged: notifier.setDinnerTime,
+            ),
+            _ReminderRow(
+              icon: Icons.apple,
+              label: 'Merienda',
+              config: reminders.snack,
+              onToggle: notifier.toggleSnack,
+              onTimeChanged: notifier.setSnackTime,
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+            const Divider(),
+            const SizedBox(height: AppSpacing.sm),
+
+            // --- Seguimiento ---
+            Padding(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.sm,
+                bottom: AppSpacing.xs,
+              ),
+              child: Text(
+                'SEGUIMIENTO',
+                style: AppTypography.labelSmall.copyWith(
+                  color: colors.onSurfaceVariant,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+
+            _ReminderRow(
+              icon: Icons.monitor_weight,
+              label: 'Pesaje matutino',
+              config: reminders.weighIn,
+              onToggle: notifier.toggleWeighIn,
+              onTimeChanged: notifier.setWeighInTime,
+            ),
+            _ReminderRow(
+              icon: Icons.water_drop,
+              label: 'Hidratación',
+              config: reminders.water,
+              onToggle: notifier.toggleWater,
+              onTimeChanged: notifier.setWaterTime,
+            ),
+            _ReminderRow(
+              icon: Icons.auto_graph,
+              label: 'Check-in semanal',
+              subtitle: 'Cada lunes',
+              config: reminders.weeklyCheckIn,
+              onToggle: notifier.toggleWeeklyCheckIn,
+              onTimeChanged: notifier.setWeeklyCheckInTime,
+            ),
+
+            // Botón para desactivar todo
+            if (reminders.hasAnyEnabled) ...[
+              const SizedBox(height: AppSpacing.md),
+              const Divider(),
+              const SizedBox(height: AppSpacing.sm),
+              Center(
+                child: TextButton.icon(
+                  onPressed: () => notifier.disableAll(),
+                  icon: Icon(
+                    Icons.notifications_off,
+                    size: 18,
+                    color: colors.error,
+                  ),
+                  label: Text(
+                    'Desactivar todos',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: colors.error,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Fila de un recordatorio con toggle y selector de hora
+class _ReminderRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final ReminderConfig config;
+  final Future<void> Function(bool enabled) onToggle;
+  final Future<void> Function(TimeOfDay time) onTimeChanged;
+
+  const _ReminderRow({
+    required this.icon,
+    required this.label,
+    this.subtitle,
+    required this.config,
+    required this.onToggle,
+    required this.onTimeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final timeStr = _formatTime(config.time);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: config.enabled ? colors.primary : colors.onSurfaceVariant,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: config.enabled
+                        ? colors.onSurface
+                        : colors.onSurfaceVariant,
+                  ),
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: colors.onSurfaceVariant,
+                      fontSize: 11,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // Selector de hora (solo visible si está activo)
+          if (config.enabled)
+            InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              onTap: () => _pickTime(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Text(
+                  timeStr,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: colors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(width: AppSpacing.xs),
+          SizedBox(
+            height: 38,
+            child: Switch(
+              value: config.enabled,
+              onChanged: onToggle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickTime(BuildContext context) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: config.time,
+      helpText: 'Hora del recordatorio',
+      cancelText: 'CANCELAR',
+      confirmText: 'ACEPTAR',
+    );
+    if (picked != null) {
+      await onTimeChanged(picked);
+    }
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final h = time.hour.toString().padLeft(2, '0');
+    final m = time.minute.toString().padLeft(2, '0');
+    return '$h:$m';
   }
 }
 

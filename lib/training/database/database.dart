@@ -168,6 +168,8 @@ class RoutineExercises extends Table {
   TextColumn get repsRange => text()();
   IntColumn get suggestedRestSeconds => integer().nullable()();
   TextColumn get notes => text().nullable()();
+  TextColumn get setType =>
+      text().withDefault(const Constant('normal'))();
 
   TextColumn get supersetId => text().nullable()();
   IntColumn get exerciseIndex => integer()();
@@ -246,6 +248,8 @@ class WorkoutSets extends Table {
   BoolColumn get isDropset => boolean().withDefault(const Constant(false))();
   BoolColumn get isRestPause => boolean().withDefault(const Constant(false))();
   BoolColumn get isWarmup => boolean().withDefault(const Constant(false))();
+  BoolColumn get isMyoReps => boolean().withDefault(const Constant(false))();
+  BoolColumn get isAmrap => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -295,6 +299,12 @@ class Foods extends Table {
   RealColumn get proteinPer100g => real().nullable()();
   RealColumn get carbsPer100g => real().nullable()();
   RealColumn get fatPer100g => real().nullable()();
+
+  // Micronutrientes por 100g (v16)
+  RealColumn get fiberPer100g => real().nullable()();
+  RealColumn get sugarPer100g => real().nullable()();
+  RealColumn get saturatedFatPer100g => real().nullable()();
+  RealColumn get sodiumPer100g => real().nullable()();
 
   // Valores nutricionales por porción (opcional)
   TextColumn get portionName =>
@@ -358,6 +368,12 @@ class DiaryEntries extends Table {
   RealColumn get carbs => real().nullable()();
   RealColumn get fat => real().nullable()();
 
+  // Micronutrientes (v16)
+  RealColumn get fiber => real().nullable()();
+  RealColumn get sugar => real().nullable()();
+  RealColumn get saturatedFat => real().nullable()();
+  RealColumn get sodium => real().nullable()();
+
   // Para quickAdd libre: macros originales ingresados por usuario
   BoolColumn get isQuickAdd => boolean().withDefault(const Constant(false))();
 
@@ -392,6 +408,13 @@ class Targets extends Table {
   RealColumn get proteinTarget => real().nullable()();
   RealColumn get carbsTarget => real().nullable()();
   RealColumn get fatTarget => real().nullable()();
+
+  // Micronutrient targets (v16)
+  RealColumn get fiberTarget => real().nullable()();
+  RealColumn get sugarLimit => real().nullable()();
+  RealColumn get saturatedFatLimit => real().nullable()();
+  RealColumn get sodiumLimit => real().nullable()();
+
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 
@@ -411,6 +434,10 @@ class Recipes extends Table {
   RealColumn get totalProtein => real().nullable()();
   RealColumn get totalCarbs => real().nullable()();
   RealColumn get totalFat => real().nullable()();
+  RealColumn get totalFiber => real().nullable()();
+  RealColumn get totalSugar => real().nullable()();
+  RealColumn get totalSaturatedFat => real().nullable()();
+  RealColumn get totalSodium => real().nullable()();
   RealColumn get totalGrams => real()(); // Peso total de la receta
 
   // Porciones
@@ -442,6 +469,11 @@ class RecipeItems extends Table {
   RealColumn get proteinPer100gSnapshot => real().nullable()();
   RealColumn get carbsPer100gSnapshot => real().nullable()();
   RealColumn get fatPer100gSnapshot => real().nullable()();
+  RealColumn get fiberPer100gSnapshot => real().nullable()();
+  RealColumn get sugarPer100gSnapshot => real().nullable()();
+  RealColumn get saturatedFatPer100gSnapshot => real().nullable()();
+  RealColumn get sodiumPer100gSnapshot => real().nullable()();
+  RealColumn get portionGramsSnapshot => real().nullable()();
 
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 
@@ -536,6 +568,10 @@ class MealTemplateItems extends Table {
   RealColumn get proteinPer100gSnapshot => real().nullable()();
   RealColumn get carbsPer100gSnapshot => real().nullable()();
   RealColumn get fatPer100gSnapshot => real().nullable()();
+  RealColumn get fiberPer100gSnapshot => real().nullable()();
+  RealColumn get sugarPer100gSnapshot => real().nullable()();
+  RealColumn get saturatedFatPer100gSnapshot => real().nullable()();
+  RealColumn get sodiumPer100gSnapshot => real().nullable()();
 
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 
@@ -802,16 +838,88 @@ class AppDatabase extends _$AppDatabase {
         }
       }
       // 🆕 Migration path to version 14: Add isRestPause column to WorkoutSets
-      if (from < 14) {
-        try {
-          await m.addColumn(workoutSets, workoutSets.isRestPause);
-          debugPrint('Migration v14: isRestPause column added successfully');
-        } catch (e) {
-          debugPrint('Migration v14 isRestPause error: $e');
+        if (from < 14) {
+          try {
+            await m.addColumn(workoutSets, workoutSets.isRestPause);
+            debugPrint('Migration v14: isRestPause column added successfully');
+          } catch (e) {
+            debugPrint('Migration v14 isRestPause error: $e');
+          }
         }
-      }
-    },
-  );
+        // ðŸ†• Migration path to version 15: Add setType to RoutineExercises and Myo/AMRAP flags
+        if (from < 15) {
+          try {
+            await m.addColumn(routineExercises, routineExercises.setType);
+            await m.addColumn(workoutSets, workoutSets.isMyoReps);
+            await m.addColumn(workoutSets, workoutSets.isAmrap);
+            debugPrint(
+              'Migration v15: setType + myo/amrap columns added successfully',
+            );
+          } catch (e) {
+            debugPrint('Migration v15 setType/myo/amrap error: $e');
+          }
+        }
+        // 🆕 Migration path to version 16: Micronutrients expansion
+        if (from < 16) {
+          try {
+            // Foods: añadir micronutrientes por 100g
+            await m.addColumn(foods, foods.fiberPer100g);
+            await m.addColumn(foods, foods.sugarPer100g);
+            await m.addColumn(foods, foods.saturatedFatPer100g);
+            await m.addColumn(foods, foods.sodiumPer100g);
+
+            // DiaryEntries: añadir micronutrientes por entrada
+            await m.addColumn(diaryEntries, diaryEntries.fiber);
+            await m.addColumn(diaryEntries, diaryEntries.sugar);
+            await m.addColumn(diaryEntries, diaryEntries.saturatedFat);
+            await m.addColumn(diaryEntries, diaryEntries.sodium);
+
+            // Targets: añadir objetivos de micronutrientes
+            await m.addColumn(targets, targets.fiberTarget);
+            await m.addColumn(targets, targets.sugarLimit);
+            await m.addColumn(targets, targets.saturatedFatLimit);
+            await m.addColumn(targets, targets.sodiumLimit);
+
+            // RecipeItems: añadir snapshots de micronutrientes
+            await m.addColumn(recipeItems, recipeItems.fiberPer100gSnapshot);
+            await m.addColumn(recipeItems, recipeItems.sugarPer100gSnapshot);
+            await m.addColumn(recipeItems, recipeItems.saturatedFatPer100gSnapshot);
+            await m.addColumn(recipeItems, recipeItems.sodiumPer100gSnapshot);
+
+            // MealTemplateItems: añadir snapshots de micronutrientes
+            await m.addColumn(mealTemplateItems, mealTemplateItems.fiberPer100gSnapshot);
+            await m.addColumn(mealTemplateItems, mealTemplateItems.sugarPer100gSnapshot);
+            await m.addColumn(mealTemplateItems, mealTemplateItems.saturatedFatPer100gSnapshot);
+            await m.addColumn(mealTemplateItems, mealTemplateItems.sodiumPer100gSnapshot);
+
+            debugPrint(
+              'Migration v16: Micronutrient columns added successfully',
+            );
+          } catch (e) {
+            debugPrint('Migration v16 micronutrients error: $e');
+          }
+        }
+        // 🆕 Migration path to version 17: Recipe micronutrient totals + portionGramsSnapshot
+        if (from < 17) {
+          try {
+            // Recipes: añadir totales de micronutrientes
+            await m.addColumn(recipes, recipes.totalFiber);
+            await m.addColumn(recipes, recipes.totalSugar);
+            await m.addColumn(recipes, recipes.totalSaturatedFat);
+            await m.addColumn(recipes, recipes.totalSodium);
+
+            // RecipeItems: añadir portionGramsSnapshot
+            await m.addColumn(recipeItems, recipeItems.portionGramsSnapshot);
+
+            debugPrint(
+              'Migration v17: Recipe micro columns + portionGramsSnapshot added',
+            );
+          } catch (e) {
+            debugPrint('Migration v17 error: $e');
+          }
+        }
+      },
+    );
 
   /// 🆕 Crea tabla FTS5 virtual para búsqueda de alimentos
   /// Usa un enfoque external content con sincronización manual
@@ -939,7 +1047,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 17;
 
   // ============================================================================
   // 🆕 NUEVO: MÉTODOS DE BÚSQUEDA FTS5
@@ -1066,6 +1174,7 @@ class AppDatabase extends _$AppDatabase {
     final results = await customSelect(
       'SELECT id, name, normalized_name, brand, barcode, '
       'kcal_per100g, protein_per100g, carbs_per100g, fat_per100g, '
+      'fiber_per100g, sugar_per100g, saturated_fat_per100g, sodium_per100g, '
       'portion_name, portion_grams, user_created, verified_source, '
       'source_metadata, use_count, last_used_at, nutri_score, nova_group, '
       'is_favorite, created_at, updated_at '
@@ -1116,6 +1225,7 @@ class AppDatabase extends _$AppDatabase {
     final results = await customSelect(
       'SELECT id, name, normalized_name, brand, barcode, '
       'kcal_per100g, protein_per100g, carbs_per100g, fat_per100g, '
+      'fiber_per100g, sugar_per100g, saturated_fat_per100g, sodium_per100g, '
       'portion_name, portion_grams, user_created, verified_source, '
       'source_metadata, use_count, last_used_at, nutri_score, nova_group, '
       'is_favorite, created_at, updated_at FROM foods '
@@ -1143,6 +1253,10 @@ class AppDatabase extends _$AppDatabase {
       proteinPer100g: row.read<double?>('protein_per100g'),
       carbsPer100g: row.read<double?>('carbs_per100g'),
       fatPer100g: row.read<double?>('fat_per100g'),
+      fiberPer100g: row.read<double?>('fiber_per100g'),
+      sugarPer100g: row.read<double?>('sugar_per100g'),
+      saturatedFatPer100g: row.read<double?>('saturated_fat_per100g'),
+      sodiumPer100g: row.read<double?>('sodium_per100g'),
       portionName: row.read<String?>('portion_name'),
       portionGrams: row.read<double?>('portion_grams'),
       userCreated: row.read<bool>('user_created'),

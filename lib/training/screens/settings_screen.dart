@@ -2,14 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/design_system/design_system.dart' as core show AppTypography, AppSpacing, AppRadius;
+import '../../core/design_system/design_system.dart';
+import '../../core/router/app_router.dart';
 import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/home_button.dart';
 import '../../core/providers/information_density_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/media_control_service.dart';
 import '../services/timer_notification_service.dart';
-import '../utils/design_system.dart';
 import 'export_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -28,11 +28,11 @@ class SettingsScreen extends ConsumerWidget {
         ),
         title: Text(
           'PERFIL',
-          style: core.AppTypography.headlineMedium,
+          style: AppTypography.headlineMedium,
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(core.AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           // Sección Timer
           const _SectionHeader(title: 'TIMER DE DESCANSO'),
@@ -86,7 +86,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 Text(
                   '${settings.defaultRestSeconds}s',
-                  style: core.AppTypography.headlineSmall.copyWith(
+                  style: AppTypography.headlineSmall.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -114,7 +114,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(
               'Controla la música de Spotify u otras apps sin salir del entrenamiento. '
               'Requiere permiso de acceso a notificaciones.',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
               ),
             ),
@@ -125,6 +125,42 @@ class SettingsScreen extends ConsumerWidget {
           // Sección Entrada de Datos
           const _SectionHeader(title: 'ENTRADA DE DATOS'),
           const SizedBox(height: 8),
+
+          _SettingsTile(
+            icon: Icons.history_rounded,
+            title: 'Auto-rellenar última sesión',
+            subtitle: 'Copia pesos/reps previos al iniciar la sesión',
+            trailing: Switch(
+              value: settings.autoFillLastSession,
+              onChanged: (value) =>
+                  notifier.setAutoFillLastSession(value: value),
+              activeThumbColor: AppColors.completedGreen,
+            ),
+          ),
+
+          _SettingsTile(
+            icon: Icons.local_fire_department_outlined,
+            title: 'Calentamiento automatico',
+            subtitle: 'Genera sets al definir el primer peso',
+            trailing: Switch(
+              value: settings.autoWarmupEnabled,
+              onChanged: (value) =>
+                  notifier.setAutoWarmupEnabled(value: value),
+              activeThumbColor: AppColors.completedGreen,
+            ),
+          ),
+
+          _SettingsTile(
+            icon: Icons.timer_outlined,
+            title: 'Descanso inteligente',
+            subtitle: 'Sugiere descanso según tu historial',
+            trailing: Switch(
+              value: settings.autoRestFromHistoryEnabled,
+              onChanged: (value) =>
+                  notifier.setAutoRestFromHistoryEnabled(value: value),
+              activeThumbColor: AppColors.completedGreen,
+            ),
+          ),
 
           _SettingsTile(
             icon: Icons.touch_app,
@@ -140,8 +176,20 @@ class SettingsScreen extends ConsumerWidget {
 
           _SettingsTile(
             icon: Icons.center_focus_strong,
+            title: 'Modo enfoque',
+            subtitle: 'Oculta overlays y navegaci\u00f3n en sesi\u00f3n',
+            trailing: Switch(
+              value: settings.sessionFocusModeEnabled,
+              onChanged: (value) =>
+                  notifier.setSessionFocusModeEnabled(value: value),
+              activeThumbColor: AppColors.completedGreen,
+            ),
+          ),
+
+          _SettingsTile(
+            icon: Icons.center_focus_strong,
             title: 'Autofocus',
-            subtitle: 'Enfocar automáticamente el input de peso/reps',
+            subtitle: 'Enfocar automaticamente el input de peso/reps',
             trailing: Switch(
               value: settings.autofocusEnabled,
               onChanged: (value) =>
@@ -150,11 +198,20 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
+          _SettingsTile(
+            icon: Icons.tune,
+            title: 'Incrementos rapidos',
+            subtitle:
+                'Pesos: ${_formatWeightList(settings.quickWeightIncrements)} | Reps: ${settings.quickRepIncrements.join(', ')}',
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showQuickIncrementSheet(context, ref),
+          ),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               'Optimizado para gimnasio: botones grandes, contexto visible, auto-completado. Desactiva autofocus si prefieres control manual.',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
               ),
             ),
@@ -174,7 +231,7 @@ class SettingsScreen extends ConsumerWidget {
               'Ajusta el espaciado entre elementos en la pantalla de entrenamiento. '
               'Compacta = más info en pantalla, menos scroll. '
               'Detallada = más espacio entre ejercicios, más legible.',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
               ),
             ),
@@ -202,7 +259,7 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: Text(
               'En superseries, el timer solo inicia después del último ejercicio del grupo.',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppColors.textTertiary,
               ),
             ),
@@ -256,7 +313,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(
               'El modo debug de VS Code es ~10x más lento que release. '
               'Para probar rendimiento real: flutter run --release',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppColors.copperOrange,
                 fontStyle: FontStyle.italic,
               ),
@@ -270,6 +327,20 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
 
           _StorageTile(),
+
+          const SizedBox(height: 24),
+
+          // Sección Progreso Corporal
+          const _SectionHeader(title: 'PROGRESO CORPORAL'),
+          const SizedBox(height: 8),
+
+          _SettingsTile(
+            icon: Icons.straighten_rounded,
+            title: 'Medidas y fotos',
+            subtitle: 'Registra medidas corporales y fotos de progreso',
+            onTap: () => context.goToBodyProgress(),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 18),
+          ),
 
           const SizedBox(height: 24),
 
@@ -310,7 +381,7 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.pan_tool,
             gesture: 'Mantener pulsado',
             where: 'Una serie (fila)',
-            action: 'Marcar como warmup, failure o dropset',
+            action: 'Marcar como warmup, failure, dropset, rest-pause, myo reps o AMRAP',
           ),
 
           _GestureTile(
@@ -347,7 +418,7 @@ class SettingsScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.info.withAlpha(20),
-                borderRadius: BorderRadius.circular(core.AppRadius.sm),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 border: Border.all(color: AppColors.info.withAlpha(50)),
               ),
               child: Row(
@@ -357,7 +428,7 @@ class SettingsScreen extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       'Los valores grises en peso/reps son sugerencias basadas en tu historial. ¡Doble-tap para usarlos!',
-                      style: core.AppTypography.bodySmall.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: AppColors.info,
                       ),
                     ),
@@ -464,7 +535,7 @@ class SettingsScreen extends ConsumerWidget {
           Center(
             child: Text(
               '💪 Hecho para el gym',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
               ),
             ),
@@ -474,6 +545,150 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 }
+
+  void _showQuickIncrementSheet(BuildContext context, WidgetRef ref) {
+    final settings = ref.read(settingsProvider);
+    final notifier = ref.read(settingsProvider.notifier);
+
+    final weightOptions = <double>[1.25, 2.5, 5, 7.5, 10];
+    final repOptions = <int>[1, 2, 3, 5];
+
+    final selectedWeights = settings.quickWeightIncrements.toSet();
+    final selectedReps = settings.quickRepIncrements.toSet();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.lg),
+        ),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.border,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Incrementos rapidos',
+                      style: AppTypography.titleLarge,
+                    ),
+                    const SizedBox(height: 12),
+                    Text('Pesos', style: AppTypography.titleMedium),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final value in weightOptions)
+                          FilterChip(
+                            label: Text('${_formatWeight(value)}kg'),
+                            selected: selectedWeights.contains(value),
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  selectedWeights.add(value);
+                                } else {
+                                  selectedWeights.remove(value);
+                                }
+                              });
+                            },
+                            selectedColor: AppColors.techCyan.withAlpha(51),
+                            checkmarkColor: AppColors.techCyan,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Reps', style: AppTypography.titleMedium),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final value in repOptions)
+                          FilterChip(
+                            label: Text('$value rep'),
+                            selected: selectedReps.contains(value),
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  selectedReps.add(value);
+                                } else {
+                                  selectedReps.remove(value);
+                                }
+                              });
+                            },
+                            selectedColor: AppColors.completedGreen.withAlpha(51),
+                            checkmarkColor: AppColors.completedGreen,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          child: const Text('CANCELAR'),
+                        ),
+                        const Spacer(),
+                        FilledButton(
+                          onPressed: () {
+                            if (selectedWeights.isEmpty || selectedReps.isEmpty) {
+                              AppSnackbar.showWarning(
+                                context,
+                                message:
+                                    'Selecciona al menos un incremento de peso y reps',
+                              );
+                              return;
+                            }
+                            notifier.setQuickIncrements(
+                              weightIncrements: selectedWeights.toList(),
+                              repIncrements: selectedReps.toList(),
+                            );
+                            Navigator.pop(sheetContext);
+                          },
+                          child: const Text('GUARDAR'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _formatWeightList(List<double> values) {
+    return values.map(_formatWeight).join(', ');
+  }
+
+  String _formatWeight(double value) {
+    if (value % 1 == 0) return value.toStringAsFixed(0);
+    final oneDecimal = (value * 10).round() / 10;
+    if ((oneDecimal - value).abs() < 0.0001) {
+      return value.toStringAsFixed(1);
+    }
+    return value.toStringAsFixed(2);
+  }
 
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -486,7 +701,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, top: 8),
       child: Text(
         title,
-        style: core.AppTypography.labelLarge.copyWith(
+        style: AppTypography.labelLarge.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
           letterSpacing: 1.5,
         ),
@@ -500,12 +715,14 @@ class _SettingsTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   const _SettingsTile({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.trailing,
+    this.onTap,
   });
 
   @override
@@ -515,23 +732,24 @@ class _SettingsTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(core.AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: ListTile(
         leading: Icon(icon, color: colorScheme.onSurface.withAlpha(178)),
         title: Text(
           title,
-          style: core.AppTypography.titleLarge.copyWith(
+          style: AppTypography.titleLarge.copyWith(
             color: colorScheme.onSurface,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: core.AppTypography.bodySmall.copyWith(
+          style: AppTypography.bodySmall.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
         ),
         trailing: trailing,
+        onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       ),
     );
@@ -562,19 +780,19 @@ class _StorageTileState extends State<_StorageTile> {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(core.AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: ListTile(
         leading: Icon(Icons.storage, color: colorScheme.onSurface.withAlpha(178)),
         title: Text(
           'Caché de imágenes',
-          style: core.AppTypography.titleLarge.copyWith(
+          style: AppTypography.titleLarge.copyWith(
             color: colorScheme.onSurface,
           ),
         ),
         subtitle: Text(
           _storageInfo,
-          style: core.AppTypography.bodySmall.copyWith(
+          style: AppTypography.bodySmall.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
         ),
@@ -582,7 +800,7 @@ class _StorageTileState extends State<_StorageTile> {
           onPressed: null,
           child: Text(
             'Limpiar',
-            style: core.AppTypography.titleLarge.copyWith(
+            style: AppTypography.titleLarge.copyWith(
               color: colorScheme.onSurface.withAlpha(100),
             ),
           ),
@@ -666,7 +884,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
             const SizedBox(width: 12),
             Text(
               'Permiso necesario',
-              style: core.AppTypography.titleLarge.copyWith(
+              style: AppTypography.titleLarge.copyWith(
                 color: colorScheme.onSurface,
               ),
             ),
@@ -675,7 +893,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
         content: Text(
           'Para ver el timer en la pantalla de bloqueo, la app necesita permiso para mostrar notificaciones.\n\n'
           'Ve a Ajustes del sistema > Apps > Juan Training > Notificaciones y actívalas.',
-          style: core.AppTypography.bodyMedium.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
         ),
@@ -684,7 +902,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Entendido',
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
@@ -701,7 +919,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(core.AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: !_hasPermission && widget.isEnabled
             ? Border.all(color: Colors.orange.withAlpha(128))
             : null,
@@ -717,7 +935,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
             ),
             title: Text(
               'Mostrar en pantalla de bloqueo',
-              style: core.AppTypography.titleLarge.copyWith(
+              style: AppTypography.titleLarge.copyWith(
                 color: colorScheme.onSurface,
               ),
             ),
@@ -725,7 +943,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
               _hasPermission || !widget.isEnabled
                   ? 'Ver y controlar el timer sin desbloquear'
                   : '⚠️ Permiso de notificaciones requerido',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: !_hasPermission && widget.isEnabled
                     ? Colors.orange[400]
                     : colorScheme.onSurfaceVariant,
@@ -773,7 +991,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
                   icon: const Icon(Icons.notifications_active, size: 18),
                   label: Text(
                     'Activar notificaciones',
-                    style: core.AppTypography.labelLarge,
+                    style: AppTypography.labelLarge,
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.orange[400],
@@ -845,7 +1063,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
             Expanded(
               child: Text(
                 'Habilitar control de música',
-                style: core.AppTypography.titleLarge.copyWith(
+                style: AppTypography.titleLarge.copyWith(
                   color: colorScheme.onSurface,
                 ),
               ),
@@ -858,7 +1076,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
           children: [
             Text(
               'Para controlar la música desde la app:',
-              style: core.AppTypography.labelLarge.copyWith(
+              style: AppTypography.labelLarge.copyWith(
                 color: colorScheme.onSurface,
               ),
             ),
@@ -881,7 +1099,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.cyan.withAlpha(26),
-                borderRadius: BorderRadius.circular(core.AppRadius.sm),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 border: Border.all(color: Colors.cyan.withAlpha(77)),
               ),
               child: Row(
@@ -891,7 +1109,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                   Expanded(
                     child: Text(
                       'Esto permite ver qué canción suena y controlala.',
-                      style: core.AppTypography.bodySmall.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: Colors.cyan[300],
                       ),
                     ),
@@ -906,7 +1124,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Entendido',
-              style: core.AppTypography.labelLarge.copyWith(
+              style: AppTypography.labelLarge.copyWith(
                 color: Colors.cyan[400],
               ),
             ),
@@ -923,7 +1141,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(core.AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         children: [
@@ -934,7 +1152,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
             ),
             title: Text(
               'Control de música',
-              style: core.AppTypography.titleLarge.copyWith(
+              style: AppTypography.titleLarge.copyWith(
                 color: colorScheme.onSurface,
               ),
             ),
@@ -944,7 +1162,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                   : _hasAccess
                   ? '✓ Acceso habilitado${_isMusicActive ? " • Música detectada" : ""}'
                   : 'Acceso no configurado',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: _hasAccess ? Colors.cyan[400] : colorScheme.onSurfaceVariant,
               ),
             ),
@@ -973,7 +1191,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                   icon: const Icon(Icons.settings, size: 18),
                   label: Text(
                     'Ver instrucciones',
-                    style: core.AppTypography.labelLarge,
+                    style: AppTypography.labelLarge,
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.cyan[400],
@@ -993,7 +1211,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                       icon: const Icon(Icons.refresh, size: 18),
                       label: Text(
                         'Actualizar',
-                        style: core.AppTypography.bodySmall,
+                        style: AppTypography.bodySmall,
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: colorScheme.onSurfaceVariant,
@@ -1009,7 +1227,7 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                       icon: const Icon(Icons.open_in_new, size: 18),
                       label: Text(
                         'Abrir Spotify',
-                        style: core.AppTypography.bodySmall,
+                        style: AppTypography.bodySmall,
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.green[400],
@@ -1050,7 +1268,7 @@ class _InstructionStep extends StatelessWidget {
             child: Center(
               child: Text(
                 number,
-                style: core.AppTypography.labelLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: colorScheme.onSurface,
                 ),
               ),
@@ -1062,7 +1280,7 @@ class _InstructionStep extends StatelessWidget {
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 text,
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -1099,19 +1317,19 @@ class _GuideTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(core.AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: ListTile(
         leading: Icon(icon, color: colorScheme.onSurface.withAlpha(178)),
         title: Text(
           title,
-          style: core.AppTypography.titleLarge.copyWith(
+          style: AppTypography.titleLarge.copyWith(
             color: colorScheme.onSurface,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: core.AppTypography.bodySmall.copyWith(
+          style: AppTypography.bodySmall.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
         ),
@@ -1137,7 +1355,7 @@ class _DensityModeTile extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(core.AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1157,13 +1375,13 @@ class _DensityModeTile extends ConsumerWidget {
                     children: [
                       Text(
                         'Densidad de información',
-                        style: core.AppTypography.titleLarge.copyWith(
+                        style: AppTypography.titleLarge.copyWith(
                           color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         '${DensityValues.modeName(density)}: ${DensityValues.modeDescription(density)}',
-                        style: core.AppTypography.bodySmall.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
@@ -1181,21 +1399,21 @@ class _DensityModeTile extends ConsumerWidget {
                   value: DensityMode.compact,
                   label: Text(
                     'Compacta',
-                    style: core.AppTypography.labelSmall,
+                    style: AppTypography.labelSmall,
                   ),
                 ),
                 ButtonSegment<DensityMode>(
                   value: DensityMode.comfortable,
                   label: Text(
                     'Cómoda',
-                    style: core.AppTypography.labelSmall,
+                    style: AppTypography.labelSmall,
                   ),
                 ),
                 ButtonSegment<DensityMode>(
                   value: DensityMode.detailed,
                   label: Text(
                     'Detallada',
-                    style: core.AppTypography.labelSmall,
+                    style: AppTypography.labelSmall,
                   ),
                 ),
               ],
@@ -1241,14 +1459,14 @@ void _showGuideDialog(
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: colorScheme.surfaceContainerHighest,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(core.AppRadius.lg)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
       title: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppColors.bloodRed.withAlpha(38),
-              borderRadius: BorderRadius.circular(core.AppRadius.sm),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(icon, color: AppColors.bloodRed, size: 24),
           ),
@@ -1256,7 +1474,7 @@ void _showGuideDialog(
           Expanded(
             child: Text(
               title,
-              style: core.AppTypography.headlineSmall.copyWith(
+              style: AppTypography.headlineSmall.copyWith(
                 color: colorScheme.onSurface,
               ),
             ),
@@ -1286,7 +1504,7 @@ void _showGuideDialog(
                     Expanded(
                       child: Text(
                         bullet,
-                        style: core.AppTypography.bodyMedium.copyWith(
+                        style: AppTypography.bodyMedium.copyWith(
                           color: colorScheme.onSurface,
                           height: 1.4,
                         ),
@@ -1303,7 +1521,7 @@ void _showGuideDialog(
           onPressed: () => Navigator.pop(ctx),
           child: Text(
             'ENTENDIDO',
-            style: core.AppTypography.labelLarge.copyWith(
+            style: AppTypography.labelLarge.copyWith(
               color: AppColors.bloodRed,
             ),
           ),
@@ -1336,7 +1554,7 @@ class _GestureTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(core.AppRadius.sm),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: colorScheme.outline.withAlpha(50)),
       ),
       child: Row(
@@ -1345,7 +1563,7 @@ class _GestureTile extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppColors.neonPrimary.withAlpha(30),
-              borderRadius: BorderRadius.circular(core.AppRadius.xs),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
             child: Icon(icon, color: AppColors.neonPrimary, size: 20),
           ),
@@ -1359,20 +1577,20 @@ class _GestureTile extends StatelessWidget {
                     children: [
                       TextSpan(
                         text: gesture,
-                        style: core.AppTypography.labelLarge.copyWith(
+                        style: AppTypography.labelLarge.copyWith(
                           color: AppColors.neonPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       TextSpan(
                         text: ' en ',
-                        style: core.AppTypography.bodySmall.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                       TextSpan(
                         text: where,
-                        style: core.AppTypography.bodySmall.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: colorScheme.onSurface,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1383,7 +1601,7 @@ class _GestureTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   action,
-                  style: core.AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),

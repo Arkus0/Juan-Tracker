@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../models/voice_action.dart';
-import '../../utils/design_system.dart';
 
 /// Muestra un snackbar con opción de deshacer después de una acción por voz
 ///
@@ -37,13 +36,13 @@ class VoiceUndoSnackbar {
                 children: [
                   Text(
                     'Por voz:',
-                    style: core.AppTypography.labelSmall.copyWith(
+                    style: AppTypography.labelSmall.copyWith(
                       color: onSurface.withAlpha(138),
                     ),
                   ),
                   Text(
                     action.description,
-                    style: core.AppTypography.labelLarge.copyWith(
+                    style: AppTypography.labelLarge.copyWith(
                       color: onSurface,
                     ),
                   ),
@@ -87,7 +86,7 @@ class VoiceUndoSnackbar {
             Expanded(
               child: Text(
                 message,
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: onSurface,
                 ),
               ),
@@ -128,7 +127,7 @@ class VoiceUndoSnackbar {
             Expanded(
               child: Text(
                 message,
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: onSurface,
                 ),
               ),

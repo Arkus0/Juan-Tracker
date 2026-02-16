@@ -138,6 +138,13 @@ final muscleVolumeProvider = FutureProvider<Map<String, MuscleVolume>>((
   return repo.getMuscleVolumePeriod();
 });
 
+/// Muscle volume for last 7 days
+final muscleVolumeWeekProvider =
+    FutureProvider<Map<String, MuscleVolume>>((ref) async {
+      final repo = ref.watch(trainingRepositoryProvider);
+      return repo.getMuscleVolumePeriod(days: 7);
+    });
+
 /// Symmetry data with imbalance detection
 final symmetryDataProvider = FutureProvider<SymmetryData>((ref) async {
   final volumes = await ref.watch(muscleVolumeProvider.future);
@@ -201,6 +208,18 @@ final allPersonalRecordsProvider = FutureProvider<List<PersonalRecord>>((
   final repo = ref.watch(trainingRepositoryProvider);
   return repo.getPersonalRecords();
 });
+
+/// Personal record para un ejercicio específico
+final personalRecordForExerciseProvider =
+    FutureProvider.family<PersonalRecord?, String>((ref, exerciseName) async {
+      if (exerciseName.trim().isEmpty) return null;
+      final repo = ref.watch(trainingRepositoryProvider);
+      final records = await repo.getPersonalRecords(
+        exerciseNames: [exerciseName],
+      );
+      if (records.isEmpty) return null;
+      return records.first;
+    });
 
 /// Strength trend for selected exercise
 final strengthTrendProvider = FutureProvider<List<StrengthDataPoint>>((

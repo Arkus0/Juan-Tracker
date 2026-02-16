@@ -4,18 +4,19 @@ import 'package:intl/intl.dart';
 
 import 'package:juan_tracker/core/design_system/design_system.dart';
 import 'package:juan_tracker/core/feedback/haptics.dart';
+import 'package:juan_tracker/core/providers/dashboard_config_provider.dart';
 import 'package:juan_tracker/core/router/app_router.dart';
 import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
 import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/services/weight_input_validator.dart';
-import 'package:juan_tracker/training/utils/design_system.dart' as training;
+import 'package:juan_tracker/core/widgets/nutrition_streak_counter.dart';
 import 'package:juan_tracker/training/widgets/analysis/streak_counter.dart';
 import 'package:juan_tracker/training/providers/training_provider.dart';
 
 /// Pantalla de entrada principal con selección de modo
-class EntryScreen extends StatelessWidget {
+class EntryScreen extends ConsumerWidget {
   const EntryScreen({super.key});
 
   String get _greeting {
@@ -30,8 +31,10 @@ class EntryScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final config = ref.watch(dashboardConfigProvider);
+    final visibleTiles = config.visibleTiles;
 
     return Scaffold(
       backgroundColor: colors.surface,
@@ -51,7 +54,20 @@ class EntryScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _AnimatedLogo(),
+                        Row(
+                          children: [
+                            _AnimatedLogo(),
+                            const Spacer(),
+                            IconButton(
+                              icon: Icon(
+                                Icons.dashboard_customize_outlined,
+                                color: colors.onSurfaceVariant,
+                              ),
+                              tooltip: 'Personalizar dashboard',
+                              onPressed: () => _showCustomizeSheet(context, ref),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 24),
                         Text(
                           _greeting,
@@ -72,27 +88,20 @@ class EntryScreen extends StatelessWidget {
                   ),
                 ),
 
-                // Selector de modo
+                // Tiles dinámicos según configuración
                 SliverPadding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _NutritionModeCard(
-                        onTap: () => _navigateToNutrition(context),
-                      ),
-                      const SizedBox(height: 16),
-                      _TrainingModeCard(
-                        onTap: () => _navigateToTraining(context),
-                      ),
-                    ]),
-                  ),
-                ),
-
-                // Indicador de racha
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: const StreakCounter(),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final tile = visibleTiles[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildTile(context, tile.id),
+                        );
+                      },
+                      childCount: visibleTiles.length,
+                    ),
                   ),
                 ),
 
@@ -140,6 +149,27 @@ class EntryScreen extends StatelessWidget {
   void _navigateToTraining(BuildContext context) {
     AppHaptics.buttonPressed();
     context.goToTraining();
+  }
+
+  Widget _buildTile(BuildContext context, DashboardTileId id) {
+    return switch (id) {
+      DashboardTileId.nutrition => _NutritionModeCard(
+          onTap: () => _navigateToNutrition(context),
+        ),
+      DashboardTileId.training => _TrainingModeCard(
+          onTap: () => _navigateToTraining(context),
+        ),
+      DashboardTileId.streak => const StreakCounter(),
+      DashboardTileId.nutritionStreak => const NutritionStreakCounter(),
+    };
+  }
+
+  void _showCustomizeSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _DashboardCustomizeSheet(),
+    );
   }
 }
 
@@ -710,8 +740,8 @@ class _TrainingModeCard extends ConsumerWidget {
             subtitle: 'Configura tu primera rutina',
             icon: Icons.fitness_center_rounded,
             gradientColors: [
-              training.AppColors.darkRed,
-              training.AppColors.bloodRed,
+              AppColors.darkRed,
+              AppColors.bloodRed,
             ],
             stats: const [
               _Stat(
@@ -751,7 +781,7 @@ class _TrainingModeCard extends ConsumerWidget {
               : Icons.fitness_center_rounded,
           gradientColors: suggestion.isRestDay
               ? [Colors.blueGrey, Colors.blueGrey.shade700]
-              : [training.AppColors.darkRed, training.AppColors.bloodRed],
+              : [AppColors.darkRed, AppColors.bloodRed],
           stats: [
             // Stat 1: Qué toca hoy (lo más importante)
             _Stat(
@@ -779,8 +809,8 @@ class _TrainingModeCard extends ConsumerWidget {
         subtitle: 'Cargando sugerencia...',
         icon: Icons.fitness_center_rounded,
         gradientColors: [
-          training.AppColors.darkRed,
-          training.AppColors.bloodRed,
+          AppColors.darkRed,
+          AppColors.bloodRed,
         ],
         stats: const [
           _Stat(icon: Icons.fitness_center, value: '...', label: 'cargando'),
@@ -794,8 +824,8 @@ class _TrainingModeCard extends ConsumerWidget {
         subtitle: 'Error al cargar',
         icon: Icons.fitness_center_rounded,
         gradientColors: [
-          training.AppColors.darkRed,
-          training.AppColors.bloodRed,
+          AppColors.darkRed,
+          AppColors.bloodRed,
         ],
         stats: const [
           _Stat(icon: Icons.error, value: '--', label: 'error'),
@@ -858,6 +888,161 @@ class _MiniProgressRing extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Sheet para personalizar el dashboard (reordenar y ocultar tiles)
+class _DashboardCustomizeSheet extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final config = ref.watch(dashboardConfigProvider);
+    final colors = Theme.of(context).colorScheme;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.35,
+      maxChildSize: 0.75,
+      expand: false,
+      builder: (context, scrollController) => Column(
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colors.onSurfaceVariant.withAlpha((0.4 * 255).round()),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.dashboard_customize, color: colors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Personalizar dashboard',
+                  style: AppTypography.titleMedium,
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () {
+                    ref.read(dashboardConfigProvider.notifier).reset();
+                  },
+                  child: const Text('Restablecer'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.sm,
+            ),
+            child: Text(
+              'Arrastra para reordenar. Usa el switch para mostrar u ocultar.',
+              style: AppTypography.bodySmall.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ReorderableListView.builder(
+              scrollController: scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              itemCount: config.tiles.length,
+              onReorder: (oldIndex, newIndex) {
+                if (newIndex > oldIndex) newIndex--;
+                ref
+                    .read(dashboardConfigProvider.notifier)
+                    .reorder(oldIndex, newIndex);
+              },
+              itemBuilder: (context, index) {
+                final tile = config.tiles[index];
+                return _DashboardTileRow(
+                  key: ValueKey(tile.id),
+                  tile: tile,
+                  onToggle: () {
+                    ref
+                        .read(dashboardConfigProvider.notifier)
+                        .toggleVisibility(tile.id);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardTileRow extends StatelessWidget {
+  final DashboardTileConfig tile;
+  final VoidCallback onToggle;
+
+  const _DashboardTileRow({
+    super.key,
+    required this.tile,
+    required this.onToggle,
+  });
+
+  IconData get _tileIcon => switch (tile.id) {
+        DashboardTileId.nutrition => Icons.restaurant_rounded,
+        DashboardTileId.training => Icons.fitness_center_rounded,
+        DashboardTileId.streak => Icons.local_fire_department_rounded,
+        DashboardTileId.nutritionStreak => Icons.emoji_food_beverage_rounded,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Card(
+      elevation: 0,
+      color: tile.visible
+          ? colors.surfaceContainerHighest
+          : colors.surfaceContainerHighest.withAlpha((0.4 * 255).round()),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        leading: Icon(
+          _tileIcon,
+          color: tile.visible ? colors.primary : colors.onSurfaceVariant,
+        ),
+        title: Text(
+          tile.id.label,
+          style: TextStyle(
+            color: tile.visible ? colors.onSurface : colors.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          tile.id.description,
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Switch(
+              value: tile.visible,
+              onChanged: (_) => onToggle(),
+            ),
+            Icon(
+              Icons.drag_handle,
+              color: colors.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
   }

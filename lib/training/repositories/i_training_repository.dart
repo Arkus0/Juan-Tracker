@@ -105,4 +105,9 @@ abstract class ITrainingRepository {
 
   /// Get unique exercise names from history for dropdown selectors
   Future<List<String>> getExerciseNames();
+
+  /// Get average rest seconds per libraryId from history
+  Future<Map<String, int>> getAverageRestSecondsByLibraryId(
+    List<String> libraryIds,
+  );
 }

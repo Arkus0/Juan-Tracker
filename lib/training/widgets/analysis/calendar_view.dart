@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../../core/design_system/design_system.dart' show AppTypography;
 import '../../providers/analysis_provider.dart';
 import 'daily_snapshot_card.dart';
 
@@ -135,9 +135,8 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
             return Center(
               child: Text(
                 '${day.day}',
-                style: GoogleFonts.montserrat(
+                style: AppTypography.bodyMedium.copyWith(
                   color: scheme.onSurfaceVariant,
-                  fontSize: 14,
                 ),
               ),
             );
@@ -151,14 +150,12 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
             border: Border.all(color: scheme.outline),
             borderRadius: BorderRadius.circular(8),
           ),
-          formatButtonTextStyle: GoogleFonts.montserrat(
+          formatButtonTextStyle: AppTypography.bodySmall.copyWith(
             color: scheme.onSurfaceVariant,
-            fontSize: 12,
           ),
-          titleTextStyle: GoogleFonts.montserrat(
-            color: scheme.onSurface,
+          titleTextStyle: AppTypography.titleLarge.copyWith(
             fontWeight: FontWeight.w700,
-            fontSize: 16,
+            color: scheme.onSurface,
           ),
           leftChevronIcon: Icon(
             Icons.chevron_left,
@@ -170,48 +167,39 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           ),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
-          weekdayStyle: GoogleFonts.montserrat(
+          weekdayStyle: AppTypography.labelMedium.copyWith(
             color: scheme.onSurfaceVariant,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
           ),
-          weekendStyle: GoogleFonts.montserrat(
+          weekendStyle: AppTypography.labelMedium.copyWith(
             color: scheme.onSurfaceVariant,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
           ),
         ),
         calendarStyle: CalendarStyle(
           cellMargin: const EdgeInsets.all(4),
           // Default
-          defaultTextStyle: GoogleFonts.montserrat(
+          defaultTextStyle: AppTypography.bodyMedium.copyWith(
             color: scheme.onSurface,
-            fontSize: 14,
           ),
           // Weekend
-          weekendTextStyle: GoogleFonts.montserrat(
+          weekendTextStyle: AppTypography.bodyMedium.copyWith(
             color: scheme.onSurfaceVariant,
-            fontSize: 14,
           ),
           // Today
           todayDecoration: BoxDecoration(
             color: scheme.surface,
             shape: BoxShape.circle,
           ),
-          todayTextStyle: GoogleFonts.montserrat(
+          todayTextStyle: AppTypography.titleMedium.copyWith(
             color: scheme.onSurface,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
           ),
           // Selected
           selectedDecoration: BoxDecoration(
             color: scheme.primary,
             shape: BoxShape.circle,
           ),
-          selectedTextStyle: GoogleFonts.montserrat(
-            color: scheme.onSurface,
+          selectedTextStyle: AppTypography.titleMedium.copyWith(
             fontWeight: FontWeight.w700,
-            fontSize: 14,
+            color: scheme.onSurface,
           ),
         ),
       ),
@@ -237,7 +225,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
       child: Center(
         child: Text(
           '${day.day}',
-          style: GoogleFonts.montserrat(
+          style: AppTypography.bodyMedium.copyWith(
             color: isSelected
                 ? scheme.onSurface
                 : isToday
@@ -246,7 +234,6 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
             fontWeight: isSelected || isToday
                 ? FontWeight.w600
                 : FontWeight.w400,
-            fontSize: 14,
           ),
         ),
       ),

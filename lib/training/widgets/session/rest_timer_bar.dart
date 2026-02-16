@@ -3,14 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/design_system/design_system.dart' show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/haptics_controller.dart' show HapticEvent, HapticsController;
 import '../../services/rest_timer_controller.dart';
 import '../../services/timer_audio_service.dart';
 import '../../services/timer_notification_service.dart';
 import '../../services/timer_platform_service.dart';
-import '../../utils/design_system.dart' show AppColors;
 import '../../utils/performance_utils.dart' show PerformanceMode, Throttler;
 
 /// Callback cuando el timer termina, incluye info para auto-focus

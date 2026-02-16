@@ -8,7 +8,7 @@ class SerieLog {
   final String id;
   final double peso;
   final int reps;
-  bool completed;
+  final bool completed;
   final int? rpe;
   final String? notas;
   final int? restSeconds;
@@ -16,6 +16,8 @@ class SerieLog {
   final bool isDropset;
   final bool isRestPause;
   final bool isWarmup;
+  final bool isMyoReps;
+  final bool isAmrap;
 
   SerieLog({
     String? id,
@@ -29,6 +31,8 @@ class SerieLog {
     this.isDropset = false,
     this.isRestPause = false,
     this.isWarmup = false,
+    this.isMyoReps = false,
+    this.isAmrap = false,
   }) : id = id ?? const Uuid().v4();
 
   /// Copia de la serie con valores modificados.
@@ -44,6 +48,8 @@ class SerieLog {
     bool? isDropset,
     bool? isRestPause,
     bool? isWarmup,
+    bool? isMyoReps,
+    bool? isAmrap,
   }) {
     return SerieLog(
       id: id ?? this.id,
@@ -57,6 +63,8 @@ class SerieLog {
       isDropset: isDropset ?? this.isDropset,
       isRestPause: isRestPause ?? this.isRestPause,
       isWarmup: isWarmup ?? this.isWarmup,
+      isMyoReps: isMyoReps ?? this.isMyoReps,
+      isAmrap: isAmrap ?? this.isAmrap,
     );
   }
 
@@ -74,7 +82,9 @@ class SerieLog {
         isFailure == other.isFailure &&
         isDropset == other.isDropset &&
         isRestPause == other.isRestPause &&
-        isWarmup == other.isWarmup;
+        isWarmup == other.isWarmup &&
+        isMyoReps == other.isMyoReps &&
+        isAmrap == other.isAmrap;
   }
 
   @override
@@ -88,5 +98,7 @@ class SerieLog {
     isDropset,
     isRestPause,
     isWarmup,
+    isMyoReps,
+    isAmrap,
   );
 }

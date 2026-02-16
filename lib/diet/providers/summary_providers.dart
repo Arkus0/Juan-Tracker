@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/database_provider.dart';
 import '../../diet/providers/coach_providers.dart';
 import '../models/models.dart';
+import '../providers/macro_cycle_providers.dart';
 import '../services/day_summary_calculator.dart';
 
 /// {@template summary_providers}
@@ -94,18 +95,54 @@ final currentTargetsProvider = FutureProvider<TargetsModel?>((ref) async {
 // DAY SUMMARY
 // ============================================================================
 
+/// Provider de targets con ciclado de macros aplicado para una fecha.
+///
+/// Si el ciclado está activo, ajusta kcal/protein/carbs/fat según el tipo de día.
+/// Si no, devuelve los targets base del CoachPlan.
+final cycleAwareTargetsForDateProvider =
+    Provider.family<AsyncValue<TargetsModel?>, DateTime>((ref, date) {
+      final baseTargetsAsync = ref.watch(activeTargetsProvider);
+      final cycleConfig = ref.watch(macroCycleConfigProvider);
+
+      if (baseTargetsAsync.isLoading) return const AsyncValue.loading();
+      if (baseTargetsAsync.hasError) {
+        return AsyncValue.error(
+          baseTargetsAsync.error!, baseTargetsAsync.stackTrace!);
+      }
+
+      final baseTargets = baseTargetsAsync.value;
+      if (baseTargets == null) return const AsyncValue.data(null);
+
+      // Si no hay ciclado activo, devolver targets base
+      if (cycleConfig == null || !cycleConfig.enabled) {
+        return AsyncValue.data(baseTargets);
+      }
+
+      // Aplicar macros del día específico
+      final dayMacros = cycleConfig.getMacrosForDate(date);
+      final adjusted = baseTargets.copyWith(
+        kcalTarget: dayMacros.kcal,
+        proteinTarget: dayMacros.protein,
+        carbsTarget: dayMacros.carbs,
+        fatTarget: dayMacros.fat,
+      );
+
+      return AsyncValue.data(adjusted);
+    });
+
 /// Provider del resumen completo del día (consumo + targets + progreso).
 ///
 /// Este es el provider principal para la UI de "budget".
 /// Combina:
 /// - Totales consumidos del día
-/// - Target activo para la fecha (CoachPlan o targets tradicionales)
+/// - Target activo para la fecha (con ciclado de macros si está activo)
 /// - Progreso calculado
 final daySummaryForDateProvider =
     Provider.family<AsyncValue<DaySummary>, DateTime>((ref, date) {
       final normalizedDate = DateTime(date.year, date.month, date.day);
       final totalsAsync = ref.watch(dailyTotalsForDateProvider(normalizedDate));
-      final targetsAsync = ref.watch(activeTargetsProvider);
+      final targetsAsync = ref.watch(
+        cycleAwareTargetsForDateProvider(normalizedDate));
       final calculator = ref.watch(daySummaryCalculatorProvider);
 
       // Combinar ambos streams

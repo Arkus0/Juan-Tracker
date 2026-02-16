@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../../diet/models/models.dart';
 import '../../../diet/providers/diet_providers.dart';
+import '../../../diet/providers/serving_preset_providers.dart';
 
 /// Diálogo para añadir una entrada desde un alimento existente
 class AddEntryDialog extends ConsumerStatefulWidget {
@@ -27,11 +29,12 @@ class AddEntryDialog extends ConsumerStatefulWidget {
 class _AddEntryDialogState extends ConsumerState<AddEntryDialog> {
   late final TextEditingController _amountController;
   ServingUnit _selectedUnit = ServingUnit.grams;
+  bool _smartDefaultApplied = false;
 
   @override
   void initState() {
     super.initState();
-    // Usar cantidad inicial si se proporciona
+    // Usar cantidad inicial si se proporciona explícitamente (voz/OCR)
     final initialValue = widget.initialAmount?.toStringAsFixed(0) ?? '100';
     _amountController = TextEditingController(text: initialValue);
     _selectedUnit = widget.initialUnit ?? ServingUnit.grams;
@@ -43,10 +46,35 @@ class _AddEntryDialogState extends ConsumerState<AddEntryDialog> {
     super.dispose();
   }
 
+  /// Aplica la última porción usada como default (solo una vez, si no hay initialAmount)
+  void _applySmartDefault(LastUsedServing lastUsed) {
+    if (_smartDefaultApplied || widget.initialAmount != null) return;
+    _smartDefaultApplied = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _amountController.text = lastUsed.amount == lastUsed.amount.roundToDouble()
+            ? lastUsed.amount.toInt().toString()
+            : lastUsed.amount.toStringAsFixed(1);
+        _selectedUnit = lastUsed.unit;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final food = widget.food;
     final calculated = _calculateMacros();
+    final presetsAsync = ref.watch(servingPresetsProvider(food));
+
+    // Aplicar smart default si existe último uso
+    if (food.id.isNotEmpty) {
+      final lastUsedAsync = ref.watch(lastUsedServingProvider(food.id));
+      lastUsedAsync.whenData((lastUsed) {
+        if (lastUsed != null) _applySmartDefault(lastUsed);
+      });
+    }
 
     return AlertDialog(
       title: Text(food.name),
@@ -55,6 +83,26 @@ class _AddEntryDialogState extends ConsumerState<AddEntryDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Preset chips de porciones rápidas
+            presetsAsync.when(
+              data: (presets) => presets.isNotEmpty
+                  ? _ServingPresetChips(
+                      presets: presets,
+                      onSelected: (preset) {
+                        setState(() {
+                          _amountController.text =
+                              preset.amount == preset.amount.roundToDouble()
+                                  ? preset.amount.toInt().toString()
+                                  : preset.amount.toStringAsFixed(1);
+                          _selectedUnit = preset.unit;
+                        });
+                      },
+                    )
+                  : const SizedBox.shrink(),
+              loading: () => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
+            ),
+
             // Cantidad y unidad
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,6 +301,60 @@ class _MacroPill extends StatelessWidget {
           style: TextStyle(fontSize: 11, color: color),
         ),
       ],
+    );
+  }
+}
+
+// ============================================================================
+// SERVING PRESET CHIPS
+// ============================================================================
+
+/// Fila horizontal de chips para seleccionar porciones rápidas
+class _ServingPresetChips extends StatelessWidget {
+  final List<ServingPreset> presets;
+  final ValueChanged<ServingPreset> onSelected;
+
+  const _ServingPresetChips({
+    required this.presets,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Wrap(
+        spacing: AppSpacing.xs,
+        runSpacing: AppSpacing.xs,
+        children: presets.map((preset) {
+          return ActionChip(
+            avatar: preset.isLastUsed
+                ? Icon(Icons.history, size: 16, color: colors.primary)
+                : null,
+            label: Text(
+              preset.label,
+              style: AppTypography.labelSmall.copyWith(
+                color: preset.isLastUsed
+                    ? colors.primary
+                    : colors.onSurfaceVariant,
+                fontWeight:
+                    preset.isLastUsed ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            backgroundColor: preset.isLastUsed
+                ? colors.primaryContainer.withAlpha(120)
+                : null,
+            side: preset.isLastUsed
+                ? BorderSide(color: colors.primary.withAlpha(80))
+                : null,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+            onPressed: () => onSelected(preset),
+          );
+        }).toList(),
+      ),
     );
   }
 }

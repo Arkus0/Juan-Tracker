@@ -20,7 +20,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../utils/design_system.dart';
+import '../../../core/design_system/design_system.dart';
 
 /// Controlador de celebraciones de hitos
 class MilestoneCelebrationController {
@@ -266,7 +266,7 @@ class _CompletionCelebrationDialogState
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: AppColors.bgElevated,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               // Oro cálido sutil para celebración final
               border: Border.all(
                 color: AppColors.goldAccent.withValues(alpha: 0.4),
@@ -338,7 +338,7 @@ class PRCelebration extends StatelessWidget {
       decoration: BoxDecoration(
         // Oro sutil, no brillante
         color: AppColors.goldSubtle,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: AppColors.goldAccent.withValues(alpha: 0.3)),
       ),
       child: Row(

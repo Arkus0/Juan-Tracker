@@ -10,14 +10,18 @@ import 'package:juan_tracker/core/widgets/widgets.dart';
 import 'package:juan_tracker/diet/models/meal_template.dart';
 import 'package:juan_tracker/diet/models/models.dart';
 import 'package:juan_tracker/diet/providers/diet_providers.dart';
+import 'package:juan_tracker/diet/providers/adherence_providers.dart';
 import 'package:juan_tracker/diet/providers/meal_template_providers.dart';
 import 'package:juan_tracker/diet/providers/quick_actions_provider.dart';
 import 'package:juan_tracker/diet/services/day_summary_calculator.dart';
 import 'package:juan_tracker/features/diary/presentation/edit_entry_dialog.dart';
+import 'package:juan_tracker/features/diary/presentation/quick_add_sheet.dart';
+import 'package:juan_tracker/diet/providers/coach_nudge_providers.dart';
+import 'package:juan_tracker/diet/providers/coach_providers.dart';
 import 'package:juan_tracker/features/home/providers/home_providers.dart';
 import 'package:juan_tracker/training/database/database.dart' as db;
 
-enum DiaryViewMode { list, calendar }
+enum DiaryViewMode { list, calendar, timeline }
 
 /// Notifier para controlar el modo de vista del diario
 class DiaryViewModeNotifier extends Notifier<DiaryViewMode> {
@@ -40,15 +44,13 @@ final diaryViewModeProvider =
 
 /// Notifier para controlar qué secciones de comida están expandidas
 class ExpandedMealsNotifier extends Notifier<Set<MealType>> {
+  bool _userToggled = false;
+
   @override
-  Set<MealType> build() => {
-    MealType.breakfast,
-    MealType.lunch,
-    MealType.dinner,
-    MealType.snack,
-  };
+  Set<MealType> build() => <MealType>{};
 
   void toggle(MealType mealType) {
+    _userToggled = true;
     final current = Set<MealType>.from(state);
     if (current.contains(mealType)) {
       current.remove(mealType);
@@ -56,6 +58,23 @@ class ExpandedMealsNotifier extends Notifier<Set<MealType>> {
       current.add(mealType);
     }
     state = current;
+  }
+
+  void autoSetFromEntries(List<DiaryEntryModel> entries) {
+    if (_userToggled) return;
+    final withEntries = <MealType>{};
+    for (final entry in entries) {
+      withEntries.add(entry.mealType);
+    }
+    if (withEntries.length != state.length ||
+        !withEntries.containsAll(state)) {
+      state = withEntries;
+    }
+  }
+
+  void resetAuto() {
+    _userToggled = false;
+    state = <MealType>{};
   }
 }
 
@@ -75,9 +94,41 @@ class DiaryScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(daySummaryProvider);
     final viewMode = ref.watch(diaryViewModeProvider);
 
+    // Auto-apply check-in: escuchar resultado y mostrar snackbar
+    ref.listen<AsyncValue<AutoApplyResult?>>(
+      autoApplyCheckInProvider,
+      (prev, next) {
+        next.whenData((result) {
+          if (result != null && context.mounted) {
+            AppSnackbar.show(
+              context,
+              message: '🤖 Coach actualizó targets: '
+                  '${result.previousKcal} → ${result.newKcal} kcal',
+            );
+          }
+        });
+      },
+    );
+
+    // Reset auto-expansión al cambiar de fecha
+    ref.listen<DateTime>(selectedDateProvider, (prev, next) {
+      if (prev == null) return;
+      if (prev.year != next.year ||
+          prev.month != next.month ||
+          prev.day != next.day) {
+        ref.read(expandedMealsProvider.notifier).resetAuto();
+      }
+    });
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       extendBody: true,
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'quick_add_fab',
+        onPressed: () => QuickAddSheet.show(context),
+        tooltip: 'Entrada rápida',
+        child: const Icon(Icons.bolt),
+      ),
       body: CustomScrollView(
         slivers: [
           // App Bar
@@ -148,7 +199,12 @@ class DiaryScreen extends ConsumerWidget {
             ),
           ),
 
-          // Quick Actions: Repetir ayer + Recientes
+          // Coach Smart Nudges
+          const SliverToBoxAdapter(
+            child: _CoachNudgesSection(),
+          ),
+
+          // Acciones rápidas
           const SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -160,7 +216,46 @@ class DiaryScreen extends ConsumerWidget {
           // Secciones de comidas - siempre visibles
           entriesAsync.when(
             data: (entries) {
-              // Agrupar entradas por tipo de comida
+              ref
+                  .read(expandedMealsProvider.notifier)
+                  .autoSetFromEntries(entries);
+              // Vista timeline: orden cronológico
+              if (viewMode == DiaryViewMode.timeline) {
+                final sorted = List<DiaryEntryModel>.from(entries)
+                  ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+                if (sorted.isEmpty) {
+                  return const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppSpacing.xl),
+                      child: AppEmpty(
+                        icon: Icons.schedule,
+                        title: 'Sin registros hoy',
+                        subtitle: 'Añade tu primera comida del día',
+                      ),
+                    ),
+                  );
+                }
+
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final entry = sorted[index];
+                        return _TimelineEntryTile(
+                          entry: entry,
+                          isFirst: index == 0,
+                          isLast: index == sorted.length - 1,
+                        );
+                      },
+                      childCount: sorted.length,
+                    ),
+                  ),
+                );
+              }
+
+              // Vista clásica: agrupar por tipo de comida
               final entriesByMeal = <MealType, List<DiaryEntryModel>>{};
               for (final entry in entries) {
                 entriesByMeal.putIfAbsent(entry.mealType, () => []).add(entry);
@@ -237,6 +332,8 @@ class _MealSection extends ConsumerWidget {
     // per meal type. Total work is ~40 operations per rebuild, which is
     // acceptable. Rebuilds only occur when entries actually change.
     final totals = _calculateTotals(entries);
+    final countLabel =
+        entries.length == 1 ? '1 alimento' : '${entries.length} alimentos';
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -288,7 +385,7 @@ class _MealSection extends ConsumerWidget {
                         ),
                         if (entries.isNotEmpty)
                           Text(
-                            '${totals.kcal} kcal · P:${totals.protein.toStringAsFixed(0)}g · C:${totals.carbs.toStringAsFixed(0)}g · G:${totals.fat.toStringAsFixed(0)}g',
+                            '${totals.kcal} kcal · $countLabel',
                             style: AppTypography.bodySmall.copyWith(
                               color: colors.onSurfaceVariant,
                             ),
@@ -307,6 +404,15 @@ class _MealSection extends ConsumerWidget {
                   ),
 
                   // Icono expandir/colapsar
+                  if (!isExpanded)
+                    IconButton(
+                      icon: const Icon(Icons.add, size: 20),
+                      tooltip:
+                          'Añadir a ${mealType.displayName.toLowerCase()}',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => _showAddEntry(context, ref, mealType),
+                      color: colors.primary,
+                    ),
                   Icon(
                     isExpanded ? Icons.expand_less : Icons.expand_more,
                     color: colors.onSurfaceVariant,
@@ -352,6 +458,17 @@ class _MealSection extends ConsumerWidget {
           // Contenido expandible
           if (isExpanded) ...[
             const Divider(height: 1),
+
+            if (entries.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: _MealMacrosRow(totals: totals),
+              ),
 
             if (entries.isEmpty)
               ListTile(
@@ -642,8 +759,69 @@ class _MealTotals {
   });
 }
 
+class _MealMacrosRow extends StatelessWidget {
+  final _MealTotals totals;
+
+  const _MealMacrosRow({required this.totals});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _MacroPill(
+          label: 'P',
+          value: '${totals.protein.toStringAsFixed(0)}g',
+          color: AppColors.error,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        _MacroPill(
+          label: 'C',
+          value: '${totals.carbs.toStringAsFixed(0)}g',
+          color: AppColors.warning,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        _MacroPill(
+          label: 'G',
+          value: '${totals.fat.toStringAsFixed(0)}g',
+          color: AppColors.info,
+        ),
+      ],
+    );
+  }
+}
+
+class _MacroPill extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _MacroPill({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withAlpha((0.12 * 255).round()),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Text(
+        '$label $value',
+        style: AppTypography.labelSmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
 /// Tile de entrada individual
-class _EntryTile extends StatelessWidget {
+class _EntryTile extends StatefulWidget {
   final DiaryEntryModel entry;
   final VoidCallback onTap;
   final VoidCallback onDelete;
@@ -655,8 +833,52 @@ class _EntryTile extends StatelessWidget {
   });
 
   @override
+  State<_EntryTile> createState() => _EntryTileState();
+}
+
+class _EntryTileState extends State<_EntryTile> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final entry = widget.entry;
+
+    final detailChips = <Widget>[
+      _MacroPill(
+        label: 'Cantidad',
+        value: '${entry.amount.toStringAsFixed(0)} ${entry.unit.name}',
+        color: colors.primary,
+      ),
+    ];
+
+    if (entry.protein != null && entry.protein! > 0) {
+      detailChips.add(
+        _MacroPill(
+          label: 'P',
+          value: '${entry.protein!.toStringAsFixed(0)}g',
+          color: AppColors.error,
+        ),
+      );
+    }
+    if (entry.carbs != null && entry.carbs! > 0) {
+      detailChips.add(
+        _MacroPill(
+          label: 'C',
+          value: '${entry.carbs!.toStringAsFixed(0)}g',
+          color: AppColors.warning,
+        ),
+      );
+    }
+    if (entry.fat != null && entry.fat! > 0) {
+      detailChips.add(
+        _MacroPill(
+          label: 'G',
+          value: '${entry.fat!.toStringAsFixed(0)}g',
+          color: AppColors.info,
+        ),
+      );
+    }
 
     return Dismissible(
       key: Key(entry.id),
@@ -667,39 +889,69 @@ class _EntryTile extends StatelessWidget {
         padding: const EdgeInsets.only(right: AppSpacing.lg),
         child: Icon(Icons.delete, color: colors.onError),
       ),
-      onDismissed: (_) => onDelete(),
-      child: ListTile(
-        title: Text(
-          entry.foodName,
-          style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500),
-        ),
-        subtitle: Text(
-          '${entry.amount.toStringAsFixed(0)} ${entry.unit.name} · ${entry.kcal} kcal',
-          style: AppTypography.bodySmall.copyWith(
-            color: colors.onSurfaceVariant,
-          ),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${entry.kcal}',
+      onDismissed: (_) => widget.onDelete(),
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(
+              entry.foodName,
               style: AppTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colors.primary,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            if (entry.protein != null && entry.protein! > 0)
-              Text(
-                'P:${entry.protein!.toStringAsFixed(0)}g',
-                style: AppTypography.labelSmall.copyWith(
-                  color: colors.onSurfaceVariant,
+            subtitle: !_expanded
+                ? Text(
+                    '${entry.kcal} kcal',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  )
+                : null,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${entry.kcal}',
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colors.primary,
+                  ),
                 ),
+                IconButton(
+                  icon: Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    color: colors.onSurfaceVariant,
+                  ),
+                  tooltip: _expanded ? 'Ocultar detalles' : 'Ver detalles',
+                  onPressed: () {
+                    setState(() => _expanded = !_expanded);
+                  },
+                ),
+              ],
+            ),
+            onTap: widget.onTap,
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.md,
               ),
-          ],
-        ),
-        onTap: onTap,
+              child: Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: detailChips,
+              ),
+            ),
+            crossFadeState: _expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: AppDurations.fast,
+          ),
+        ],
       ),
     );
   }
@@ -829,12 +1081,21 @@ class _MonthCalendar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final entryDaysAsync = ref.watch(calendarEntryDaysProvider);
+    final adherenceAsync = ref.watch(monthAdherenceProvider(selectedDate));
 
     final entryDays = entryDaysAsync.when(
       data: (days) => days,
       loading: () => <DateTime>{},
       error: (_, _) => <DateTime>{},
     );
+
+    final adherenceData = adherenceAsync.when(
+      data: (data) => data,
+      loading: () => MonthAdherenceData.empty,
+      error: (_, _) => MonthAdherenceData.empty,
+    );
+
+    final hasAdherence = adherenceData.targetKcal != null;
 
     return Card(
       margin: const EdgeInsets.all(AppSpacing.lg),
@@ -850,6 +1111,10 @@ class _MonthCalendar extends ConsumerWidget {
               selectedDayPredicate: (day) => isSameDay(day, selectedDate),
               onDaySelected: (selectedDay, focusedDay) {
                 onDateSelected(selectedDay);
+              },
+              onPageChanged: (focusedDay) {
+                // Trigger re-fetch de adherencia para el nuevo mes
+                ref.read(monthAdherenceProvider(focusedDay));
               },
               eventLoader: (day) {
                 final normalizedDay = DateTime(day.year, day.month, day.day);
@@ -896,11 +1161,43 @@ class _MonthCalendar extends ConsumerWidget {
                 ),
                 markersMaxCount: 1,
                 markerSize: 6,
-                markerDecoration: BoxDecoration(
-                  color: colorScheme.tertiary,
-                  shape: BoxShape.circle,
-                ),
+                // Marcar invisible para usar calendarBuilders
+                markerDecoration: hasAdherence
+                    ? const BoxDecoration()
+                    : BoxDecoration(
+                        color: colorScheme.tertiary,
+                        shape: BoxShape.circle,
+                      ),
               ),
+              calendarBuilders: hasAdherence
+                  ? CalendarBuilders(
+                      markerBuilder: (context, day, events) {
+                        if (events.isEmpty) return null;
+                        final normalizedDay = DateTime(
+                          day.year,
+                          day.month,
+                          day.day,
+                        );
+                        final status = adherenceData.dayStatus[normalizedDay];
+                        final dotColor = status != null
+                            ? MonthAdherenceData.colorForStatus(
+                                status, colorScheme)
+                            : colorScheme.tertiary;
+
+                        return Positioned(
+                          bottom: 1,
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: dotColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : const CalendarBuilders(),
               daysOfWeekStyle: DaysOfWeekStyle(
                 weekdayStyle: AppTypography.labelSmall.copyWith(
                   color: colorScheme.onSurfaceVariant,
@@ -910,28 +1207,31 @@ class _MonthCalendar extends ConsumerWidget {
                 ),
               ),
             ),
+            // Leyenda de colores
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: colorScheme.tertiary,
-                      shape: BoxShape.circle,
+              child: hasAdherence
+                  ? _AdherenceLegend()
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: colorScheme.tertiary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Día con registros',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Día con registros',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),
@@ -940,13 +1240,70 @@ class _MonthCalendar extends ConsumerWidget {
   }
 }
 
-class _DailySummaryCard extends ConsumerWidget {
+/// Leyenda de colores de adherencia para el calendario.
+class _AdherenceLegend extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _LegendDot(color: Colors.green, label: '±10%'),
+        const SizedBox(width: 12),
+        _LegendDot(color: Colors.amber.shade600, label: '±25%'),
+        const SizedBox(width: 12),
+        _LegendDot(color: Colors.red.shade400, label: '>25%'),
+      ],
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: AppTypography.labelSmall.copyWith(
+            fontSize: 10,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DailySummaryCard extends ConsumerStatefulWidget {
   final DaySummary summary;
 
   const _DailySummaryCard({required this.summary});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_DailySummaryCard> createState() => _DailySummaryCardState();
+}
+
+class _DailySummaryCardState extends ConsumerState<_DailySummaryCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = widget.summary;
     final colors = Theme.of(context).colorScheme;
     final hasTargets = summary.hasTargets;
     final kcalRemaining = summary.progress.kcalRemaining ?? 0;
@@ -993,23 +1350,9 @@ class _DailySummaryCard extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    if (hasTargets) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'Consumido: ${summary.consumed.kcal} / ${summary.targets!.kcalTarget}',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
-              if (hasTargets)
-                _MacroDonut(
-                  progress: summary.progress.kcalPercent ?? 0,
-                  remaining: summary.progress.kcalRemaining,
-                ),
             ],
           ),
 
@@ -1058,68 +1401,128 @@ class _DailySummaryCard extends ConsumerWidget {
             ),
           ],
 
-          const SizedBox(height: AppSpacing.lg),
-          const Divider(height: 1),
-          const SizedBox(height: AppSpacing.lg),
-
-          Row(
-            children: [
-              Expanded(
-                child: _MacroItem(
-                  label: 'Proteína',
-                  value: _calculateRemaining(
-                    summary.targets?.proteinTarget,
-                    summary.consumed.protein,
-                  ),
-                  target: summary.targets?.proteinTarget?.toStringAsFixed(0),
-                  color: AppColors.error,
-                  progress: summary.progress.proteinPercent ?? 0,
-                  showRemaining: summary.hasTargets,
-                  isOver: _isOverTarget(
-                    summary.targets?.proteinTarget,
-                    summary.consumed.protein,
-                  ),
-                ),
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _expanded = !_expanded),
+              icon: Icon(
+                _expanded ? Icons.expand_less : Icons.expand_more,
+                size: 18,
               ),
-              Expanded(
-                child: _MacroItem(
-                  label: 'Carbs',
-                  value: _calculateRemaining(
-                    summary.targets?.carbsTarget,
-                    summary.consumed.carbs,
-                  ),
-                  target: summary.targets?.carbsTarget?.toStringAsFixed(0),
-                  color: AppColors.warning,
-                  progress: summary.progress.carbsPercent ?? 0,
-                  showRemaining: summary.hasTargets,
-                  isOver: _isOverTarget(
-                    summary.targets?.carbsTarget,
-                    summary.consumed.carbs,
-                  ),
-                ),
+              label: Text(_expanded ? 'Ocultar detalles' : 'Ver macros y micros'),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: colors.primary,
               ),
-              Expanded(
-                child: _MacroItem(
-                  label: 'Grasa',
-                  value: _calculateRemaining(
-                    summary.targets?.fatTarget,
-                    summary.consumed.fat,
+            ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Column(
+              children: [
+                const SizedBox(height: AppSpacing.sm),
+                const Divider(height: 1),
+                const SizedBox(height: AppSpacing.lg),
+                if (hasTargets) ...[
+                  Row(
+                    children: [
+                      _MacroDonut(
+                        progress: summary.progress.kcalPercent ?? 0,
+                        remaining: summary.progress.kcalRemaining,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          'Consumido: ${summary.consumed.kcal} / ${summary.targets!.kcalTarget} kcal',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  target: summary.targets?.fatTarget?.toStringAsFixed(0),
-                  color: AppColors.info,
-                  progress: summary.progress.fatPercent ?? 0,
-                  showRemaining: summary.hasTargets,
-                  isOver: _isOverTarget(
-                    summary.targets?.fatTarget,
-                    summary.consumed.fat,
-                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MacroItem(
+                        label: 'Proteína',
+                        value: _calculateRemaining(
+                          summary.targets?.proteinTarget,
+                          summary.consumed.protein,
+                        ),
+                        target: summary.targets?.proteinTarget?.toStringAsFixed(0),
+                        color: AppColors.error,
+                        progress: summary.progress.proteinPercent ?? 0,
+                        showRemaining: summary.hasTargets,
+                        isOver: _isOverTarget(
+                          summary.targets?.proteinTarget,
+                          summary.consumed.protein,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _MacroItem(
+                        label: 'Carbs',
+                        value: _calculateRemaining(
+                          summary.targets?.carbsTarget,
+                          summary.consumed.carbs,
+                        ),
+                        target: summary.targets?.carbsTarget?.toStringAsFixed(0),
+                        color: AppColors.warning,
+                        progress: summary.progress.carbsPercent ?? 0,
+                        showRemaining: summary.hasTargets,
+                        isOver: _isOverTarget(
+                          summary.targets?.carbsTarget,
+                          summary.consumed.carbs,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _MacroItem(
+                        label: 'Grasa',
+                        value: _calculateRemaining(
+                          summary.targets?.fatTarget,
+                          summary.consumed.fat,
+                        ),
+                        target: summary.targets?.fatTarget?.toStringAsFixed(0),
+                        color: AppColors.info,
+                        progress: summary.progress.fatPercent ?? 0,
+                        showRemaining: summary.hasTargets,
+                        isOver: _isOverTarget(
+                          summary.targets?.fatTarget,
+                          summary.consumed.fat,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                if (_hasMicronutrientData(summary))
+                  _MicronutrientSection(summary: summary),
+              ],
+            ),
+            crossFadeState: _expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: AppDurations.fast,
           ),
         ],
       ),
     );
+  }
+
+  bool _hasMicronutrientData(DaySummary summary) {
+    final c = summary.consumed;
+    final t = summary.targets;
+    return (c.fiber > 0 || c.sugar > 0 || c.saturatedFat > 0 || c.sodium > 0) ||
+        (t?.fiberTarget != null ||
+            t?.sugarLimit != null ||
+            t?.saturatedFatLimit != null ||
+            t?.sodiumLimit != null);
   }
 
   Color _getKcalColor(int remaining, bool hasTargets, ColorScheme colors) {
@@ -1145,6 +1548,205 @@ class _DailySummaryCard extends ConsumerWidget {
   bool _isOverTarget(double? target, double consumed) {
     if (target == null) return false;
     return consumed > target;
+  }
+}
+
+/// Sección expandible de micronutrientes (fibra, azúcar, grasa sat., sodio)
+class _MicronutrientSection extends StatefulWidget {
+  final DaySummary summary;
+
+  const _MicronutrientSection({required this.summary});
+
+  @override
+  State<_MicronutrientSection> createState() => _MicronutrientSectionState();
+}
+
+class _MicronutrientSectionState extends State<_MicronutrientSection>
+    with SingleTickerProviderStateMixin {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final consumed = widget.summary.consumed;
+    final targets = widget.summary.targets;
+    final progress = widget.summary.progress;
+
+    return Column(
+      children: [
+        const SizedBox(height: AppSpacing.sm),
+
+        // Botón para expandir/colapsar
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.xs,
+              horizontal: AppSpacing.sm,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.science_outlined,
+                  size: 14,
+                  color: colors.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Micronutrientes',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                AnimatedRotation(
+                  turns: _expanded ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    Icons.expand_more,
+                    size: 16,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Contenido expandible
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Column(
+              children: [
+                _MicroRow(
+                  icon: Icons.grass,
+                  label: 'Fibra',
+                  consumed: consumed.fiber,
+                  target: targets?.fiberTarget,
+                  unit: 'g',
+                  percent: progress.fiberPercent,
+                  color: const Color(0xFF4CAF50), // Verde
+                  isLimit: false,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _MicroRow(
+                  icon: Icons.cookie_outlined,
+                  label: 'Azúcar',
+                  consumed: consumed.sugar,
+                  target: targets?.sugarLimit,
+                  unit: 'g',
+                  percent: progress.sugarPercent,
+                  color: const Color(0xFFFF9800), // Naranja
+                  isLimit: true,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _MicroRow(
+                  icon: Icons.water_drop_outlined,
+                  label: 'Grasa sat.',
+                  consumed: consumed.saturatedFat,
+                  target: targets?.saturatedFatLimit,
+                  unit: 'g',
+                  percent: progress.saturatedFatPercent,
+                  color: const Color(0xFFF44336), // Rojo
+                  isLimit: true,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _MicroRow(
+                  icon: Icons.local_fire_department_outlined,
+                  label: 'Sodio',
+                  consumed: consumed.sodium,
+                  target: targets?.sodiumLimit,
+                  unit: 'mg',
+                  percent: progress.sodiumPercent,
+                  color: const Color(0xFF9C27B0), // Púrpura
+                  isLimit: true,
+                ),
+              ],
+            ),
+          ),
+          crossFadeState:
+              _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 200),
+        ),
+      ],
+    );
+  }
+}
+
+/// Fila individual de micronutriente con barra de progreso
+class _MicroRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final double consumed;
+  final double? target;
+  final String unit;
+  final double? percent;
+  final Color color;
+  final bool isLimit; // true = límite (rojo al exceder), false = objetivo (verde al alcanzar)
+
+  const _MicroRow({
+    required this.icon,
+    required this.label,
+    required this.consumed,
+    this.target,
+    required this.unit,
+    this.percent,
+    required this.color,
+    this.isLimit = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final pct = percent ?? 0;
+    final isOver = isLimit && pct > 1.0;
+    final barColor = isOver ? AppColors.error : color;
+
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: barColor),
+        const SizedBox(width: AppSpacing.sm),
+        SizedBox(
+          width: 72,
+          child: Text(
+            label,
+            style: AppTypography.labelSmall.copyWith(
+              color: isOver ? AppColors.error : colors.onSurfaceVariant,
+              fontWeight: isOver ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: pct.clamp(0.0, 1.0),
+              minHeight: 4,
+              backgroundColor: barColor.withAlpha((0.15 * 255).round()),
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        SizedBox(
+          width: 72,
+          child: Text(
+            target != null
+                ? '${consumed.toStringAsFixed(0)}/${target!.toStringAsFixed(0)}$unit'
+                : '${consumed.toStringAsFixed(0)}$unit',
+            style: AppTypography.labelSmall.copyWith(
+              color: isOver ? AppColors.error : colors.onSurfaceVariant,
+              fontWeight: isOver ? FontWeight.w600 : FontWeight.normal,
+            ),
+            textAlign: TextAlign.right,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -1319,6 +1921,12 @@ class _ViewModeToggle extends StatelessWidget {
             onTap: () => onModeChanged(DiaryViewMode.list),
           ),
           _ToggleButton(
+            icon: Icons.schedule,
+            label: 'Cronología',
+            isSelected: viewMode == DiaryViewMode.timeline,
+            onTap: () => onModeChanged(DiaryViewMode.timeline),
+          ),
+          _ToggleButton(
             icon: Icons.calendar_month,
             label: 'Calendario',
             isSelected: viewMode == DiaryViewMode.calendar,
@@ -1372,12 +1980,97 @@ class _ToggleButton extends StatelessWidget {
 }
 
 // ============================================================================
-// QUICK ACTIONS CARD (Repetir ayer + Recientes)
+// QUICK ACTIONS CARD (Acciones rápidas)
 // ============================================================================
 
-/// Card con acciones rápidas: Repetir ayer + chips de alimentos recientes
+/// Card compacta que abre un sheet con acciones rápidas.
 class _QuickActionsCard extends ConsumerWidget {
   const _QuickActionsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final yesterday = ref.watch(yesterdayMealsProvider).asData?.value;
+    final templates =
+        ref.watch(topMealTemplatesProvider).asData?.value ?? [];
+    final recents =
+        ref.watch(quickRecentFoodsProvider).asData?.value ?? [];
+
+    final subtitleParts = <String>[];
+    if (yesterday != null && yesterday.entryCount > 0) {
+      subtitleParts.add('Ayer: ${yesterday.entryCount}');
+    }
+    if (templates.isNotEmpty) {
+      subtitleParts.add('${templates.length} plantillas');
+    }
+    if (recents.isNotEmpty) {
+      subtitleParts.add('${recents.length} recientes');
+    }
+    final subtitle =
+        subtitleParts.isEmpty ? 'Plantillas y recientes' : subtitleParts.join(' · ');
+
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        onTap: () => _showQuickActionsSheet(context),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer.withAlpha((0.6 * 255).round()),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Icon(
+                  Icons.bolt,
+                  size: 18,
+                  color: colors.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Acciones rápidas',
+                      style: AppTypography.titleSmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppTypography.labelSmall.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showQuickActionsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => const _QuickActionsSheet(),
+    );
+  }
+}
+
+class _QuickActionsSheet extends ConsumerWidget {
+  const _QuickActionsSheet();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1387,115 +2080,132 @@ class _QuickActionsCard extends ConsumerWidget {
     final recentsAsync = ref.watch(quickRecentFoodsProvider);
     final templatesAsync = ref.watch(topMealTemplatesProvider);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Botón Repetir ayer
-        yesterdayAsync.when(
-          data: (yesterday) {
-            if (yesterday.isEmpty) return const SizedBox.shrink();
+    final yesterday = yesterdayAsync.asData?.value;
+    final templates = templatesAsync.asData?.value ?? [];
+    final recents = recentsAsync.asData?.value ?? [];
+    final hasAny = (yesterday != null && !yesterday.isEmpty) ||
+        templates.isNotEmpty ||
+        recents.isNotEmpty;
 
-            // Calcular la fecha del "ayer" relativo a la fecha seleccionada
-            final yesterdayDate = DateTime(
-              selectedDate.year,
-              selectedDate.month,
-              selectedDate.day - 1,
-            );
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _RepeatYesterdayButton(
-                entryCount: yesterday.entryCount,
-                totalKcal: yesterday.totalKcal,
-                sourceDate: yesterdayDate,
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          AppSpacing.lg + bottomPadding,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Acciones rápidas',
+                style: AppTypography.titleMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
-
-        // Chips de plantillas guardadas
-        templatesAsync.when(
-          data: (templates) {
-            if (templates.isEmpty) return const SizedBox.shrink();
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.bookmark_outline,
-                      size: 14,
-                      color: colors.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Plantillas guardadas',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Plantillas, recientes y repetir comidas',
+                style: AppTypography.bodySmall.copyWith(
+                  color: colors.onSurfaceVariant,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: templates.take(4).map((template) {
-                    return _TemplateChip(template: template);
-                  }).toList(),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              if (!hasAny)
+                const AppEmpty(
+                  icon: Icons.bolt,
+                  title: 'Sin atajos aún',
+                  subtitle: 'Aparecerán cuando tengas historial de comidas.',
                 ),
-                const SizedBox(height: AppSpacing.sm),
+
+              if (hasAny) ...[
+                if (yesterday != null && !yesterday.isEmpty) ...[
+                  const _QuickActionsSectionHeader(
+                    icon: Icons.history_rounded,
+                    title: 'Repetir ayer',
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  _RepeatYesterdayButton(
+                    entryCount: yesterday.entryCount,
+                    totalKcal: yesterday.totalKcal,
+                    sourceDate: DateTime(
+                      selectedDate.year,
+                      selectedDate.month,
+                      selectedDate.day - 1,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+
+                if (templates.isNotEmpty) ...[
+                  const _QuickActionsSectionHeader(
+                    icon: Icons.bookmark_outline,
+                    title: 'Plantillas guardadas',
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: templates.take(4).map((template) {
+                      return _TemplateChip(template: template);
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+
+                if (recents.isNotEmpty) ...[
+                  const _QuickActionsSectionHeader(
+                    icon: Icons.history,
+                    title: 'Añadir rápido',
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: recents.take(6).map((food) {
+                      return _RecentFoodChip(food: food);
+                    }).toList(),
+                  ),
+                ],
               ],
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
 
-        // Chips de alimentos recientes
-        recentsAsync.when(
-          data: (recents) {
-            if (recents.isEmpty) return const SizedBox.shrink();
+class _QuickActionsSectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.history,
-                      size: 14,
-                      color: colors.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Añadir rápido (toca para elegir comida)',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: recents.take(6).map((food) {
-                    return _RecentFoodChip(food: food);
-                  }).toList(),
-                ),
-              ],
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
+  const _QuickActionsSectionHeader({
+    required this.icon,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: colors.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            title,
+            style: AppTypography.labelSmall.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+          ),
         ),
       ],
     );
@@ -1713,6 +2423,10 @@ class _RecentFoodChip extends ConsumerWidget {
       protein: food.protein,
       carbs: food.carbs,
       fat: food.fat,
+      fiber: food.fiber,
+      sugar: food.sugar,
+      saturatedFat: food.saturatedFat,
+      sodium: food.sodium,
       createdAt: DateTime.now(),
     );
 
@@ -1842,5 +2556,252 @@ class _TemplateChip extends ConsumerWidget {
         AppSnackbar.showError(context, message: 'Error al aplicar plantilla');
       }
     }
+  }
+}
+
+// ============================================================================
+// COACH SMART NUDGES
+// ============================================================================
+
+/// Sección que muestra nudges inteligentes del coach.
+/// Se oculta automáticamente si no hay nudges activos.
+class _CoachNudgesSection extends ConsumerWidget {
+  const _CoachNudgesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nudges = ref.watch(coachNudgesProvider);
+
+    if (nudges.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Column(
+        children: [
+          const SizedBox(height: AppSpacing.sm),
+          ...nudges.map((nudge) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                child: _CoachNudgeTile(nudge: nudge),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tile individual de un nudge del coach.
+/// Color de fondo sutil según el tipo de nudge.
+class _CoachNudgeTile extends StatelessWidget {
+  final CoachNudge nudge;
+
+  const _CoachNudgeTile({required this.nudge});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final (bgColor, fgColor) = _nudgeColors(cs);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        children: [
+          Text(nudge.emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              nudge.message,
+              style: AppTypography.bodySmall.copyWith(
+                color: fgColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  (Color, Color) _nudgeColors(ColorScheme cs) {
+    return switch (nudge.type) {
+      NudgeType.warning => (
+          cs.errorContainer.withAlpha((0.6 * 255).round()),
+          cs.onErrorContainer,
+        ),
+      NudgeType.info => (
+          cs.primaryContainer.withAlpha((0.5 * 255).round()),
+          cs.onPrimaryContainer,
+        ),
+      NudgeType.positive => (
+          cs.tertiaryContainer.withAlpha((0.6 * 255).round()),
+          cs.onTertiaryContainer,
+        ),
+      NudgeType.reminder => (
+          cs.secondaryContainer.withAlpha((0.5 * 255).round()),
+          cs.onSecondaryContainer,
+        ),
+    };
+  }
+}
+
+// ============================================================================
+// VISTA TIMELINE (cronológica)
+// ============================================================================
+
+/// Tile de una entrada en la vista timeline
+class _TimelineEntryTile extends ConsumerWidget {
+  final DiaryEntryModel entry;
+  final bool isFirst;
+  final bool isLast;
+
+  const _TimelineEntryTile({
+    required this.entry,
+    this.isFirst = false,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).colorScheme;
+    final timeStr = DateFormat('HH:mm').format(entry.createdAt);
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Timeline vertical con hora
+          SizedBox(
+            width: 56,
+            child: Column(
+              children: [
+                // Hora
+                Text(
+                  timeStr,
+                  style: AppTypography.labelSmall.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colors.primary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Línea vertical
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    decoration: BoxDecoration(
+                      color: isLast
+                          ? Colors.transparent
+                          : colors.outline.withAlpha((0.3 * 255).round()),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Contenido
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: AppCard(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                onTap: () => _onTap(context, ref),
+                child: Row(
+                  children: [
+                    // Icono de comida
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: _mealColor.withAlpha((0.15 * 255).round()),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Icon(_mealIcon, size: 16, color: _mealColor),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    // Info del alimento
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.foodName,
+                            style: AppTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                '${entry.amount.round()}${entry.unit == ServingUnit.grams ? 'g' : entry.unit == ServingUnit.milliliter ? 'ml' : ' porc'}',
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: colors.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                entry.mealType.displayName,
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: _mealColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Calorías
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${entry.kcal}',
+                          style: AppTypography.dataSmall.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          'kcal',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color get _mealColor => switch (entry.mealType) {
+        MealType.breakfast => const Color(0xFFFF9800),
+        MealType.lunch => const Color(0xFF4CAF50),
+        MealType.dinner => const Color(0xFF2196F3),
+        MealType.snack => const Color(0xFF9C27B0),
+      };
+
+  IconData get _mealIcon => switch (entry.mealType) {
+        MealType.breakfast => Icons.free_breakfast,
+        MealType.lunch => Icons.lunch_dining,
+        MealType.dinner => Icons.dinner_dining,
+        MealType.snack => Icons.cookie,
+      };
+
+  void _onTap(BuildContext context, WidgetRef ref) {
+    // Mismo comportamiento que en la vista por comidas
+    ref.read(selectedMealTypeProvider.notifier).meal = entry.mealType;
   }
 }

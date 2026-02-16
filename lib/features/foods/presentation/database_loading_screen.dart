@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/market_providers.dart';
 import '../services/food_database_loader.dart';
 
 /// Pantalla de carga inicial de la base de datos de alimentos
 /// 
 /// Se muestra en el primer lanzamiento de la app mientras se cargan
-/// los ~600,000 productos de Open Food Facts desde el asset comprimido.
+/// los productos desde el asset comprimido según el mercado seleccionado.
 class DatabaseLoadingScreen extends ConsumerStatefulWidget {
   final VoidCallback onComplete;
 
@@ -21,6 +22,7 @@ class DatabaseLoadingScreen extends ConsumerStatefulWidget {
 
 class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
   double _progress = 0.0;
+  int _loadedCount = 0;
   String _status = 'Preparando base de datos...';
   String? _error;
 
@@ -31,42 +33,49 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
   }
 
   Future<void> _checkAndLoadDatabase() async {
+    final market = ref.read(selectedMarketProvider);
+    
+    if (market == null) {
+      setState(() {
+        _error = 'No se ha seleccionado un mercado';
+      });
+      return;
+    }
+
     try {
       final loader = ref.read(foodDatabaseLoaderProvider);
       
       // Verificar si ya está cargada
-      final isLoaded = await loader.isDatabaseLoaded();
+      final isLoaded = await loader.isDatabaseLoaded(market);
       
       if (isLoaded) {
-        // Ya está cargada, ir directamente a la app
         widget.onComplete();
         return;
       }
 
-      // Necesita carga - mostrar progreso
       setState(() {
-        _status = 'Descargando base de datos de alimentos...';
+        _status = 'Cargando productos de ${market.displayName}...';
         _progress = 0.0;
       });
 
-      // Cargar la base de datos con progreso
+      // Cargar la base de datos
       final loadedCount = await loader.loadDatabase(
+        market: market,
         onProgress: (progress, loaded) {
           setState(() {
             _progress = progress;
-            _status = 'Cargando alimentos... ${(progress * 100).toStringAsFixed(0)}% ($loaded)';
+            _loadedCount = loaded;
+            _status = 'Cargando ${market.displayName}... ${(progress * 100).toStringAsFixed(0)}%';
           });
         },
       );
 
       setState(() {
-        _status = '¡Base de datos lista! ($loadedCount alimentos)';
+        _status = '¡Listo! $loadedCount productos cargados';
         _progress = 1.0;
       });
 
-      // Pequeña pausa para mostrar el mensaje de completado
       await Future.delayed(const Duration(milliseconds: 500));
-      
       widget.onComplete();
     } catch (e) {
       setState(() {
@@ -78,6 +87,7 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final market = ref.watch(selectedMarketProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -86,17 +96,15 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo/Icono
-              Icon(
-                Icons.restaurant_menu,
-                size: 80,
-                color: theme.colorScheme.primary,
+              // Flag del mercado
+              Text(
+                market?.flag ?? '🌍',
+                style: const TextStyle(fontSize: 80),
               ),
               const SizedBox(height: 32),
               
-              // Título
               Text(
-                'Configuración inicial',
+                'Configurando tu biblioteca',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -104,9 +112,8 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
               ),
               const SizedBox(height: 8),
               
-              // Subtítulo explicativo
               Text(
-                'Estamos preparando la base de datos de alimentos.\nSolo es necesario una vez.',
+                'Estamos preparando los productos de ${market?.displayName ?? "tu región"}.\nSolo es necesario una vez.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -114,7 +121,6 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
               ),
               const SizedBox(height: 48),
               
-              // Barra de progreso
               if (_error == null) ...[
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
@@ -129,19 +135,17 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Texto de estado
                 Text(
                   _status,
                   style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
                 
-                // Estimación de tiempo
-                if (_progress > 0 && _progress < 1)
+                if (_loadedCount > 0 && _progress < 1)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      'Esto puede tardar unos minutos...',
+                      '$_loadedCount productos importados',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -149,7 +153,6 @@ class _DatabaseLoadingScreenState extends ConsumerState<DatabaseLoadingScreen> {
                   ),
               ],
               
-              // Error
               if (_error != null) ...[
                 Icon(
                   Icons.error_outline,

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import '../../utils/design_system.dart';
+import '../../../core/design_system/design_system.dart';
 
 /// ============================================================================
 /// NUMPAD INPUT MODAL — Intensidad Roja (Underground Gym)
@@ -294,8 +293,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                   // Nombre del ejercicio - MUY sutil
                   Text(
                     widget.exerciseName.toUpperCase(),
-                    style: GoogleFonts.montserrat(
-                      fontSize: 11,
+                    style: AppTypography.caption.copyWith(
                       fontWeight: FontWeight.w500,
                       color: _ModalColors.textSecondary,
                       letterSpacing: 0.3,
@@ -308,8 +306,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                   // Serie actual - Rojo para foco
                   Text(
                     'SERIE ${widget.setNumber} DE ${widget.totalSets}',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12,
+                    style: AppTypography.labelMedium.copyWith(
                       fontWeight: FontWeight.w700,
                       color: _ModalColors.activeSet,
                       letterSpacing: 0.5,
@@ -354,8 +351,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                               const SizedBox(width: 6),
                               Text(
                                 'Anterior: ${_formatNumber(widget.previousValue!)} ${widget.fieldLabel}',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 11,
+                                style: AppTypography.caption.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: _displayValue.isEmpty
                                       ? _ModalColors.textPrimary
@@ -376,8 +372,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                                 ),
                                 child: Text(
                                   'USAR',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 9,
+                                  style: AppTypography.micro.copyWith(
                                     fontWeight: FontWeight.w800,
                                     color: _ModalColors.activeSet,
                                   ),
@@ -416,8 +411,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                             const SizedBox(width: 6),
                             Text(
                               'Calcular discos',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 11,
+                              style: AppTypography.caption.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: _ModalColors.activeSet,
                               ),
@@ -445,20 +439,16 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                       children: [
                         Text(
                           _displayValue.isEmpty ? '0' : _displayValue,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 56, // Reducido
-                            fontWeight: FontWeight.w900,
+                          style: AppTypography.dataHero.copyWith(
                             color: _displayValue.isEmpty
                                 ? _ModalColors.textDisabled
                                 : _ModalColors.textPrimary,
-                            letterSpacing: -1.0,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           widget.fieldLabel,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 20,
+                          style: AppTypography.headlineMedium.copyWith(
                             fontWeight: FontWeight.w500,
                             color: _ModalColors.textSecondary,
                           ),
@@ -473,9 +463,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                           widget.isInteger
                               ? 'Máximo: $_maxReps reps'
                               : 'Máximo: ${_maxWeight.toStringAsFixed(1)} kg',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                          style: AppTypography.labelMedium.copyWith(
                             color: AppColors.warning,
                           ),
                         ),
@@ -534,10 +522,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                           ),
                           child: Text(
                             '+/−',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: AppTypography.dataSmall,
                           ),
                         ),
                       ),
@@ -560,10 +545,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                           ),
                           child: Text(
                             'LIMPIAR',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppTypography.labelMedium,
                           ),
                         ),
                       ),
@@ -598,8 +580,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                             const SizedBox(width: 8),
                             Text(
                               'CONFIRMAR',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 16,
+                              style: AppTypography.titleLarge.copyWith(
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.3,
                               ),
@@ -651,9 +632,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                     )
                   : Text(
                       label,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w700,
+                      style: AppTypography.displayMedium.copyWith(
                         color: isDisabled
                             ? _ModalColors.textDisabled
                             : _ModalColors.textPrimary,

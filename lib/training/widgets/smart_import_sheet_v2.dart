@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../core/design_system/design_system.dart';
 import '../models/detected_exercise_draft.dart';
 import '../models/library_exercise.dart';
 import '../providers/smart_import_provider.dart';
-import '../utils/design_system.dart';
 import 'voice/voice_mic_button.dart';
 
 /// Sheet unificado para importación inteligente (Voz + OCR) - V2
@@ -98,7 +97,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
         SnackBar(
           content: Text(
             'No hay ejercicios válidos para añadir',
-            style: core.AppTypography.bodyMedium.copyWith(color: onSurfaceColor),
+            style: AppTypography.bodyMedium.copyWith(color: onSurfaceColor),
           ),
           backgroundColor: AppColors.error,
         ),
@@ -195,14 +194,14 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
             children: [
               Text(
                 _getTitle(state),
-                style: core.AppTypography.headlineSmall.copyWith(
+                style: AppTypography.headlineSmall.copyWith(
                   color: onSurfaceColor,
                 ),
               ),
               if (state.isEditing && state.drafts.isNotEmpty)
                 Text(
                   '${state.validCount} válidos, ${state.editedCount} editados',
-                  style: core.AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: onSurfaceColor.withAlpha(138),
                   ),
                 ),
@@ -282,7 +281,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
           const SizedBox(height: 8),
           Text(
             'Elige cómo añadir ejercicios',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: onSurfaceColor.withAlpha(138),
             ),
           ),
@@ -335,7 +334,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
         const SizedBox(height: 24),
         Text(
           state.processingMessage ?? 'Procesando...',
-          style: core.AppTypography.bodyLarge.copyWith(
+          style: AppTypography.bodyLarge.copyWith(
             color: onSurfaceColor.withAlpha(178),
           ),
         ),
@@ -396,7 +395,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                 Expanded(
                   child: Text(
                     state.partialTranscript,
-                    style: core.AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.bodyMedium.copyWith(
                       color: onSurfaceColor.withAlpha(178),
                       fontStyle: FontStyle.italic,
                     ),
@@ -417,7 +416,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
             ),
             child: Text(
               '${state.validCount} ejercicios detectados',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppColors.neonCyan,
                 fontWeight: FontWeight.w500,
               ),
@@ -456,7 +455,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
               const SizedBox(width: 6),
               Text(
                 'Ejemplos:',
-                style: core.AppTypography.labelLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: onSurfaceColor.withAlpha(178),
                 ),
               ),
@@ -478,7 +477,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Text(
         '"$text"',
-        style: core.AppTypography.bodySmall.copyWith(
+        style: AppTypography.bodySmall.copyWith(
           color: onSurfaceColor.withAlpha(97),
           fontStyle: FontStyle.italic,
         ),
@@ -520,7 +519,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                   state.validCount == state.drafts.length
                       ? 'Todos los ejercicios tienen match'
                       : '${state.drafts.length - state.validCount} sin match - toca para corregir',
-                  style: core.AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: onSurfaceColor.withAlpha(178),
                   ),
                 ),
@@ -531,7 +530,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                 icon: const Icon(Icons.add, size: 16),
                 label: Text(
                   'MÁS',
-                  style: core.AppTypography.labelLarge.copyWith(
+                  style: AppTypography.labelLarge.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -629,7 +628,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
             ),
             child: Text(
               'CANCELAR',
-              style: core.AppTypography.labelLarge.copyWith(
+              style: AppTypography.labelLarge.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -648,7 +647,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
             ),
             child: Text(
               'AÑADIR ${state.validCount} EJERCICIO${state.validCount == 1 ? '' : 'S'}',
-              style: core.AppTypography.headlineSmall.copyWith(
+              style: AppTypography.headlineSmall.copyWith(
                 color: onSurfaceColor,
               ),
             ),
@@ -675,7 +674,7 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
         const SizedBox(height: 16),
         Text(
           state.errorMessage ?? 'Error desconocido',
-          style: core.AppTypography.bodyMedium.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             color: onSurfaceColor.withAlpha(178),
           ),
           textAlign: TextAlign.center,
@@ -788,14 +787,14 @@ class _ImportOptionCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: core.AppTypography.titleMedium.copyWith(
+                      style: AppTypography.titleMedium.copyWith(
                         color: onSurfaceColor,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: core.AppTypography.bodySmall.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: onSurfaceColor.withAlpha(138),
                       ),
                     ),
@@ -915,7 +914,7 @@ class _DraftExerciseCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 draft.currentMatchedName ?? 'Sin match',
-                                style: core.AppTypography.bodyMedium.copyWith(
+                                style: AppTypography.bodyMedium.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: isValid
                                       ? onSurfaceColor
@@ -934,7 +933,7 @@ class _DraftExerciseCard extends StatelessWidget {
                         ),
                         Text(
                           '"${draft.originalRawText}"',
-                          style: core.AppTypography.bodySmall.copyWith(
+                          style: AppTypography.bodySmall.copyWith(
                             color: onSurfaceColor.withAlpha(76),
                             fontStyle: FontStyle.italic,
                           ),
@@ -988,7 +987,7 @@ class _DraftExerciseCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             'Editar nombre',
-                            style: core.AppTypography.bodyMedium.copyWith(
+                            style: AppTypography.bodyMedium.copyWith(
                               color: onSurfaceColor,
                             ),
                           ),
@@ -1007,7 +1006,7 @@ class _DraftExerciseCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             'Duplicar',
-                            style: core.AppTypography.bodyMedium.copyWith(
+                            style: AppTypography.bodyMedium.copyWith(
                               color: onSurfaceColor,
                             ),
                           ),
@@ -1027,7 +1026,7 @@ class _DraftExerciseCard extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               'Restaurar original',
-                              style: core.AppTypography.bodyMedium.copyWith(
+                              style: AppTypography.bodyMedium.copyWith(
                                 color: onSurfaceColor,
                               ),
                             ),
@@ -1046,7 +1045,7 @@ class _DraftExerciseCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             'Eliminar',
-                            style: core.AppTypography.bodyMedium.copyWith(
+                            style: AppTypography.bodyMedium.copyWith(
                               color: AppColors.error,
                             ),
                           ),
@@ -1115,7 +1114,7 @@ class _DraftExerciseCard extends StatelessWidget {
         backgroundColor: AppColors.bgElevated,
         title: Text(
           'Editar nombre',
-          style: core.AppTypography.titleMedium.copyWith(color: onSurfaceColor),
+          style: AppTypography.titleMedium.copyWith(color: onSurfaceColor),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1123,7 +1122,7 @@ class _DraftExerciseCard extends StatelessWidget {
           children: [
             Text(
               'Escribe el nombre del ejercicio y se buscará en la biblioteca:',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: onSurfaceColor.withAlpha(138),
               ),
             ),
@@ -1131,12 +1130,12 @@ class _DraftExerciseCard extends StatelessWidget {
             TextField(
               controller: controller,
               autofocus: true,
-              style: core.AppTypography.bodyMedium.copyWith(color: onSurfaceColor),
+              style: AppTypography.bodyMedium.copyWith(color: onSurfaceColor),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: AppColors.bgDeep,
                 hintText: 'Ej: Press banca',
-                hintStyle: core.AppTypography.bodyMedium.copyWith(
+                hintStyle: AppTypography.bodyMedium.copyWith(
                   color: onSurfaceColor.withAlpha(76),
                 ),
                 border: OutlineInputBorder(
@@ -1152,7 +1151,7 @@ class _DraftExerciseCard extends StatelessWidget {
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               'CANCELAR',
-              style: core.AppTypography.labelLarge.copyWith(
+              style: AppTypography.labelLarge.copyWith(
                 color: onSurfaceColor.withAlpha(138),
               ),
             ),
@@ -1170,7 +1169,7 @@ class _DraftExerciseCard extends StatelessWidget {
             ),
             child: Text(
               'BUSCAR',
-              style: core.AppTypography.labelLarge.copyWith(
+              style: AppTypography.labelLarge.copyWith(
                 color: AppColors.bgDeep,
                 fontWeight: FontWeight.bold,
               ),
@@ -1240,7 +1239,7 @@ class _ConfidenceBadge extends StatelessWidget {
             ],
             Text(
               draft.confidenceLabel,
-              style: core.AppTypography.labelSmall.copyWith(
+              style: AppTypography.labelSmall.copyWith(
                 color: textColor,
                 fontWeight: FontWeight.bold,
               ),
@@ -1277,7 +1276,7 @@ class _CompactField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: core.AppTypography.labelSmall.copyWith(
+          style: AppTypography.labelSmall.copyWith(
             color: onSurfaceColor.withAlpha(97),
             fontWeight: FontWeight.w500,
           ),
@@ -1292,7 +1291,7 @@ class _CompactField extends StatelessWidget {
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: onSurfaceColor,
               fontWeight: FontWeight.w500,
             ),
@@ -1302,7 +1301,7 @@ class _CompactField extends StatelessWidget {
               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               isDense: true,
               hintText: hintText,
-              hintStyle: core.AppTypography.bodyMedium.copyWith(
+              hintStyle: AppTypography.bodyMedium.copyWith(
                 color: onSurfaceColor.withAlpha(76),
               ),
             ),
@@ -1359,7 +1358,7 @@ class _ModeToggleChip extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 fontWeight: FontWeight.w500,
                 color: isActive ? activeColor : AppColors.textTertiary,
               ),
@@ -1453,7 +1452,7 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
 
               Text(
                 'Seleccionar ejercicio',
-                style: core.AppTypography.titleLarge.copyWith(
+                style: AppTypography.titleLarge.copyWith(
                   color: onSurfaceColor,
                 ),
               ),
@@ -1464,12 +1463,12 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
                 controller: _searchController,
                 onChanged: _search,
                 autofocus: true,
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: onSurfaceColor,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Buscar ejercicio...',
-                  hintStyle: core.AppTypography.bodyMedium.copyWith(
+                  hintStyle: AppTypography.bodyMedium.copyWith(
                     color: onSurfaceColor.withAlpha(97),
                   ),
                   prefixIcon: Icon(Icons.search, color: onSurfaceColor.withAlpha(138)),
@@ -1499,7 +1498,7 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
                     ? Center(
                         child: Text(
                           'No se encontraron ejercicios',
-                          style: core.AppTypography.bodyMedium.copyWith(
+                          style: AppTypography.bodyMedium.copyWith(
                             color: onSurfaceColor.withAlpha(138),
                           ),
                         ),
@@ -1516,7 +1515,7 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
                               radius: 18,
                               child: Text(
                                 exercise.name[0].toUpperCase(),
-                                style: core.AppTypography.bodyMedium.copyWith(
+                                style: AppTypography.bodyMedium.copyWith(
                                   color: onSurfaceColor,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1524,14 +1523,14 @@ class _ExerciseSearchSheetState extends State<_ExerciseSearchSheet> {
                             ),
                             title: Text(
                               exercise.name,
-                              style: core.AppTypography.bodyMedium.copyWith(
+                              style: AppTypography.bodyMedium.copyWith(
                                 color: onSurfaceColor,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             subtitle: Text(
                               exercise.muscleGroup,
-                              style: core.AppTypography.bodySmall.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                 color: onSurfaceColor.withAlpha(138),
                               ),
                             ),

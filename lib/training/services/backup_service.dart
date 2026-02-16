@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:csv/csv.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/rutina.dart';
 import '../models/dia.dart';
@@ -10,7 +13,10 @@ import '../models/ejercicio_en_rutina.dart';
 import '../models/sesion.dart';
 import '../models/ejercicio.dart';
 import '../models/serie_log.dart';
+import '../models/training_set_type.dart';
+import '../models/library_exercise.dart';
 import '../repositories/i_training_repository.dart';
+import '../services/exercise_library_service.dart';
 
 /// Servicio de backup/restore completo de datos de entrenamiento
 /// Exporta/importa todo: rutinas, sesiones, notas
@@ -249,6 +255,249 @@ class BackupService {
     result.add(current.trim());
     return result;
   }
+
+  /// Importa desde CSV exportado por Juan Tracker
+  Future<ImportResult> importFromJuanTrackerCsv(String csvContent) async {
+    try {
+      final cleaned = csvContent.replaceAll('\uFEFF', '');
+      final rows = const CsvToListConverter(
+        fieldDelimiter: ';',
+        eol: '\n',
+      ).convert(cleaned);
+      if (rows.length < 2) {
+        return ImportResult.error('CSV vacío o inválido');
+      }
+
+      final header = rows.first
+          .map((e) => e.toString().trim().toLowerCase())
+          .toList();
+
+      int indexOfColumn(List<String> keys) {
+        for (final key in keys) {
+          final idx = header.indexOf(key);
+          if (idx != -1) return idx;
+        }
+        return -1;
+      }
+
+      final dateIndex = indexOfColumn(['fecha', 'date']);
+      final exerciseIndex = indexOfColumn(['ejercicio', 'exercise']);
+      final weightIndex = indexOfColumn(['peso (kg)', 'peso', 'weight']);
+      final repsIndex = indexOfColumn(['repeticiones', 'reps']);
+      final rpeIndex = indexOfColumn(['rpe']);
+      final sessionNotesIndex =
+          indexOfColumn(['notas sesión', 'session notes']);
+      final setNotesIndex = indexOfColumn(['notas serie', 'set notes']);
+      final warmupIndex = indexOfColumn(['calentamiento', 'warmup']);
+      final failureIndex = indexOfColumn(['fallo', 'failure']);
+      final dropsetIndex = indexOfColumn(['dropset']);
+      final restPauseIndex = indexOfColumn(['rest-pause', 'rest pause']);
+      final myoIndex = indexOfColumn(['myo reps', 'myo']);
+      final amrapIndex = indexOfColumn(['amrap']);
+
+      if (dateIndex == -1 || exerciseIndex == -1) {
+        return ImportResult.error(
+          'Formato CSV inválido. Se requieren columnas Fecha y Ejercicio.',
+        );
+      }
+
+      final sessionsByDate = <DateTime, Map<String, List<_JuanCsvSet>>>{};
+      final sessionNotesByDate = <DateTime, String>{};
+
+      final dateFormat = DateFormat('dd/MM/yyyy');
+
+      for (var i = 1; i < rows.length; i++) {
+        final row = rows[i];
+        if (row.isEmpty) continue;
+
+        final dateRaw =
+            dateIndex < row.length ? row[dateIndex].toString().trim() : '';
+        final exerciseName = exerciseIndex < row.length
+            ? row[exerciseIndex].toString().trim()
+            : '';
+        if (dateRaw.isEmpty || exerciseName.isEmpty) continue;
+
+        DateTime? date;
+        try {
+          date = dateFormat.parseStrict(dateRaw);
+        } catch (_) {
+          continue;
+        }
+
+        double parseDouble(int index) {
+          if (index < 0 || index >= row.length) return 0.0;
+          final raw = row[index].toString().trim();
+          if (raw.isEmpty) return 0.0;
+          return double.tryParse(raw.replaceAll(',', '.')) ?? 0.0;
+        }
+
+        int parseInt(int index) {
+          if (index < 0 || index >= row.length) return 0;
+          return int.tryParse(row[index].toString().trim()) ?? 0;
+        }
+
+        bool parseBool(int index) {
+          if (index < 0 || index >= row.length) return false;
+          final raw = row[index].toString().trim().toLowerCase();
+          return raw == 'sí' ||
+              raw == 'si' ||
+              raw == 'true' ||
+              raw == '1';
+        }
+
+        final weight = parseDouble(weightIndex);
+        final reps = parseInt(repsIndex);
+        final rpe = rpeIndex >= 0 ? parseInt(rpeIndex) : null;
+        final setNotes =
+            setNotesIndex >= 0 && setNotesIndex < row.length
+                ? row[setNotesIndex].toString().trim()
+                : null;
+        final sessionNotes =
+            sessionNotesIndex >= 0 && sessionNotesIndex < row.length
+                ? row[sessionNotesIndex].toString().trim()
+                : null;
+
+        if (sessionNotes != null && sessionNotes.isNotEmpty) {
+          sessionNotesByDate.putIfAbsent(date, () => sessionNotes);
+        }
+
+        final set = _JuanCsvSet(
+          exerciseName: exerciseName,
+          weight: weight,
+          reps: reps,
+          rpe: rpe == 0 ? null : rpe,
+          notes: setNotes,
+          isWarmup: parseBool(warmupIndex),
+          isFailure: parseBool(failureIndex),
+          isDropset: parseBool(dropsetIndex),
+          isRestPause: parseBool(restPauseIndex),
+          isMyoReps: parseBool(myoIndex),
+          isAmrap: parseBool(amrapIndex),
+        );
+
+        sessionsByDate.putIfAbsent(date, () => {});
+        sessionsByDate[date]!.putIfAbsent(exerciseName, () => []);
+        sessionsByDate[date]![exerciseName]!.add(set);
+      }
+
+      if (sessionsByDate.isEmpty) {
+        return ImportResult.error('No se encontraron datos válidos');
+      }
+
+      final library = ExerciseLibraryService.instance;
+      if (!library.isLoaded) {
+        await library.loadLibrary();
+      }
+
+      int sessionsImported = 0;
+      int setsImported = 0;
+
+      for (final entry in sessionsByDate.entries) {
+        final date = entry.key;
+        final exercises = <Ejercicio>[];
+
+        for (final exEntry in entry.value.entries) {
+          final name = exEntry.key;
+          final sets = exEntry.value;
+
+          LibraryExercise? matched;
+          for (final ex in library.exercises) {
+            if (ex.name.toLowerCase() == name.toLowerCase()) {
+              matched = ex;
+              break;
+            }
+          }
+          if (matched == null) {
+            for (final ex in library.exercises) {
+              if (name.toLowerCase().contains(ex.name.toLowerCase())) {
+                matched = ex;
+                break;
+              }
+            }
+          }
+
+          final logs = sets.map((s) {
+            return SerieLog(
+              peso: s.weight,
+              reps: s.reps,
+              completed: true,
+              rpe: s.rpe,
+              notas: s.notes,
+              isWarmup: s.isWarmup,
+              isFailure: s.isFailure,
+              isDropset: s.isDropset,
+              isRestPause: s.isRestPause,
+              isMyoReps: s.isMyoReps,
+              isAmrap: s.isAmrap,
+            );
+          }).toList();
+
+          exercises.add(Ejercicio(
+            id: '${date.millisecondsSinceEpoch}_${name.hashCode}',
+            libraryId: matched?.id.toString() ?? '',
+            nombre: name,
+            musculosPrincipales: matched?.muscles ?? const [],
+            musculosSecundarios: matched?.secondaryMuscles ?? const [],
+            series: logs.length,
+            reps: logs.isNotEmpty ? logs.first.reps : 0,
+            peso: logs.isNotEmpty ? logs.first.peso : 0.0,
+            notas: sessionNotesByDate[date],
+            logs: logs,
+          ));
+
+          setsImported += logs.length;
+        }
+
+        final sesion = Sesion(
+          id: const Uuid().v4(),
+          rutinaId: '',
+          fecha: date,
+          ejerciciosCompletados: exercises,
+          ejerciciosObjetivo: const [],
+          durationSeconds: null,
+        );
+
+        await _repo.saveSesion(sesion);
+        sessionsImported++;
+      }
+
+      return ImportResult.success(
+        sessionsImported: sessionsImported,
+        setsImported: setsImported,
+        source: 'CSV Juan Tracker',
+      );
+    } catch (e) {
+      return ImportResult.error('Error al importar CSV: $e');
+    }
+  }
+}
+
+class _JuanCsvSet {
+  final String exerciseName;
+  final double weight;
+  final int reps;
+  final int? rpe;
+  final String? notes;
+  final bool isWarmup;
+  final bool isFailure;
+  final bool isDropset;
+  final bool isRestPause;
+  final bool isMyoReps;
+  final bool isAmrap;
+
+  const _JuanCsvSet({
+    required this.exerciseName,
+    required this.weight,
+    required this.reps,
+    this.rpe,
+    this.notes,
+    this.isWarmup = false,
+    this.isFailure = false,
+    this.isDropset = false,
+    this.isRestPause = false,
+    this.isMyoReps = false,
+    this.isAmrap = false,
+  });
 }
 
 /// Datos completos de backup
@@ -322,6 +571,7 @@ class RoutineBackup {
         'repsRange': e.repsRange,
         'descansoSugerido': e.descansoSugerido?.inSeconds,
         'supersetId': e.supersetId,
+        'setType': e.setType.value,
         'musculosPrincipales': e.musculosPrincipales,
         'musculosSecundarios': e.musculosSecundarios,
         'equipo': e.equipo,
@@ -353,6 +603,7 @@ class RoutineBackup {
             ? Duration(seconds: e['descansoSugerido'] as int) 
             : null,
         supersetId: e['supersetId'] as String?,
+        setType: TrainingSetType.fromString(e['setType'] as String?),
       )).toList(),
     )).toList(),
     isProMode: isProMode,
@@ -419,6 +670,11 @@ class SessionBackup {
         'completed': l.completed,
         'rpe': l.rpe,
         'isWarmup': l.isWarmup,
+        'isFailure': l.isFailure,
+        'isDropset': l.isDropset,
+        'isRestPause': l.isRestPause,
+        'isMyoReps': l.isMyoReps,
+        'isAmrap': l.isAmrap,
         'notas': l.notas,
       }).toList(),
     }).toList(),
@@ -439,6 +695,11 @@ class SessionBackup {
         completed: l['completed'] as bool? ?? true,
         rpe: l['rpe'] as int?,
         isWarmup: l['isWarmup'] as bool? ?? false,
+        isFailure: l['isFailure'] as bool? ?? false,
+        isDropset: l['isDropset'] as bool? ?? false,
+        isRestPause: l['isRestPause'] as bool? ?? false,
+        isMyoReps: l['isMyoReps'] as bool? ?? false,
+        isAmrap: l['isAmrap'] as bool? ?? false,
         notas: l['notas'] as String?,
       )).toList();
       

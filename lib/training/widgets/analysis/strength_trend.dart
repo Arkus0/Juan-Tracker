@@ -2,77 +2,67 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/design_system/design_system.dart';
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
-import '../../utils/design_system.dart';
 
-// ⚡ OPTIMIZACIÓN: Estilos pre-computados para evitar GoogleFonts en build
+// ⚡ OPTIMIZACIÓN: Estilos pre-computados para evitar recálculo en build
 class _TrendStyles {
-  static final sectionTitle = GoogleFonts.montserrat(
-    fontSize: 12,
+  static final sectionTitle = AppTypography.labelMedium.copyWith(
     fontWeight: FontWeight.w700,
     color: AppColors.textSecondary,
     letterSpacing: 1.2,
   );
 
-  static final dropdownHint = GoogleFonts.montserrat(
+  static final dropdownHint = AppTypography.bodyMedium.copyWith(
     color: AppColors.textTertiary,
-    fontSize: 14,
   );
 
-  static final dropdownItem = GoogleFonts.montserrat(
+  static final dropdownItem = AppTypography.bodyMedium.copyWith(
     color: Colors.white,
-    fontSize: 14,
   );
 
-  static final axisLabel = GoogleFonts.montserrat(
+  static final axisLabel = AppTypography.labelSmall.copyWith(
+    fontWeight: FontWeight.w400,
     color: AppColors.textTertiary,
-    fontSize: 10,
+    letterSpacing: 0,
   );
 
-  static final axisLabelSmall = GoogleFonts.montserrat(
+  static final axisLabelSmall = AppTypography.micro.copyWith(
     color: AppColors.textTertiary,
-    fontSize: 9,
   );
 
-  static final tooltipDate = GoogleFonts.montserrat(
+  static final tooltipDate = AppTypography.caption.copyWith(
     color: AppColors.textSecondary,
-    fontSize: 11,
   );
 
-  static final tooltipValue = GoogleFonts.montserrat(
-    color: Colors.white,
-    fontWeight: FontWeight.w700,
-    fontSize: 13,
-  );
-
-  static final tooltipSubtext = GoogleFonts.montserrat(
-    color: AppColors.textTertiary,
-    fontSize: 10,
-  );
-
-  static final summaryTitle = GoogleFonts.montserrat(
-    fontSize: 13,
+  static final tooltipValue = AppTypography.bodyCompact.copyWith(
     fontWeight: FontWeight.w700,
     color: Colors.white,
   );
 
-  static final summarySubtitle = GoogleFonts.montserrat(
-    fontSize: 11,
+  static final tooltipSubtext = AppTypography.labelSmall.copyWith(
+    fontWeight: FontWeight.w400,
+    color: AppColors.textTertiary,
+    letterSpacing: 0,
+  );
+
+  static final summaryTitle = AppTypography.bodyCompact.copyWith(
+    fontWeight: FontWeight.w700,
+    color: Colors.white,
+  );
+
+  static final summarySubtitle = AppTypography.caption.copyWith(
     color: AppColors.textSecondary,
   );
 
-  static final emptyTitle = GoogleFonts.montserrat(
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
+  static final emptyTitle = AppTypography.titleMedium.copyWith(
     color: AppColors.textTertiary,
   );
 
-  static final emptySubtitle = GoogleFonts.montserrat(
-    fontSize: 12,
+  static final emptySubtitle = AppTypography.bodySmall.copyWith(
     color: AppColors.border,
   );
 }

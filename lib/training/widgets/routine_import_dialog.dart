@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../core/design_system/design_system.dart';
 import '../services/routine_ocr_service.dart';
-import '../utils/design_system.dart';
 
 /// Widget para importar rutinas desde imagen (OCR)
 ///
@@ -219,7 +218,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                 Expanded(
                   child: Text(
                     'IMPORTAR RUTINA',
-                    style: core.AppTypography.headlineSmall.copyWith(
+                    style: AppTypography.headlineSmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
@@ -264,14 +263,14 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             const SizedBox(height: 24),
             Text(
               'Analizando imagen...',
-              style: core.AppTypography.bodyLarge.copyWith(
+              style: AppTypography.bodyLarge.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Detectando ejercicios con IA',
-              style: core.AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
               ),
             ),
@@ -294,7 +293,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
               textAlign: TextAlign.center,
@@ -307,7 +306,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'CANCELAR',
-                    style: core.AppTypography.labelLarge.copyWith(
+                    style: AppTypography.labelLarge.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                   ),
@@ -328,7 +327,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   icon: const Icon(Icons.refresh, size: 18),
                   label: Text(
                     'REINTENTAR',
-                    style: core.AppTypography.labelLarge,
+                    style: AppTypography.labelLarge,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
@@ -358,7 +357,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
               const SizedBox(width: 8),
               Text(
                 '${_candidates.length} ejercicio${_candidates.length == 1 ? '' : 's'} detectado${_candidates.length == 1 ? '' : 's'}',
-                style: core.AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
                 ),
               ),
@@ -392,7 +391,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   ),
                   child: Text(
                     'CANCELAR',
-                    style: core.AppTypography.labelLarge.copyWith(
+                    style: AppTypography.labelLarge.copyWith(
                       color: AppColors.neonPrimary,
                     ),
                   ),
@@ -406,7 +405,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   icon: const Icon(Icons.add, size: 20),
                   label: Text(
                     'AÑADIR ${_candidates.length}',
-                    style: core.AppTypography.titleMedium,
+                    style: AppTypography.titleMedium,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
@@ -442,7 +441,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                     children: [
                       Text(
                         candidate.matchedExerciseName ?? 'Desconocido',
-                        style: core.AppTypography.titleMedium.copyWith(
+                        style: AppTypography.titleMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
@@ -458,7 +457,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                           Expanded(
                             child: Text(
                               '${candidate.rawText}${candidate.cleanedText.isNotEmpty ? ' → "${candidate.cleanedText}"' : ''}',
-                              style: core.AppTypography.bodySmall.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
                               ),
                               maxLines: 2,
@@ -481,7 +480,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                             ),
                             child: Text(
                               '$confidence%',
-                              style: core.AppTypography.labelSmall.copyWith(
+                              style: AppTypography.labelSmall.copyWith(
                                 color: confidence >= 70
                                     ? AppColors.neonCyan
                                     : confidence >= 50
@@ -526,7 +525,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     '×',
-                    style: core.AppTypography.headlineSmall.copyWith(
+                    style: AppTypography.headlineSmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                   ),
@@ -551,7 +550,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                     ),
                     child: Text(
                       '${candidate.weight!.toStringAsFixed(candidate.weight! % 1 == 0 ? 0 : 1)} kg',
-                      style: core.AppTypography.bodyMedium.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.error.withAlpha(200),
                       ),
@@ -578,7 +577,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             controller: controller,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
-            style: core.AppTypography.titleLarge.copyWith(
+            style: AppTypography.titleLarge.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
             decoration: InputDecoration(
@@ -599,7 +598,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
         const SizedBox(height: 4),
         Text(
           label,
-          style: core.AppTypography.labelSmall.copyWith(
+          style: AppTypography.labelSmall.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withAlpha(97),
           ),
         ),
@@ -636,14 +635,14 @@ class _SourceSelectorSheet extends StatelessWidget {
 
           Text(
             'IMPORTAR RUTINA',
-            style: core.AppTypography.headlineSmall.copyWith(
+            style: AppTypography.headlineSmall.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Escanea una rutina escrita a mano o una captura de pantalla',
-            style: core.AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
             ),
             textAlign: TextAlign.center,
@@ -717,14 +716,14 @@ class _SourceOption extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 label,
-                style: core.AppTypography.labelLarge.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: core.AppTypography.bodySmall.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                 ),
               ),

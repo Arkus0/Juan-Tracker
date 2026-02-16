@@ -739,6 +739,65 @@ class _FoodSearchUnifiedScreenState
     }
   }
 
+  /// Quick-log: registra un alimento con cantidad prefijada sin abrir diálogo.
+  Future<void> _quickLogFood(Food food, double amount, String unitKey) async {
+    if (food.kcalPer100g <= 0) {
+      // Redirigir a flujo normal si faltan datos
+      _selectFood(food);
+      return;
+    }
+
+    final ServingUnit unit;
+    switch (unitKey) {
+      case 'portion':
+        unit = ServingUnit.portion;
+        break;
+      case 'ml':
+        unit = ServingUnit.milliliter;
+        break;
+      default:
+        unit = ServingUnit.grams;
+    }
+
+    final date = ref.read(selectedDateProvider);
+    final mealType = ref.read(selectedMealTypeProvider);
+
+    final entry = DiaryEntryModel.fromFood(
+      id: const Uuid().v4(),
+      date: date,
+      mealType: mealType,
+      food: food.toModel(),
+      amount: amount,
+      unit: unit,
+    );
+
+    try {
+      await ref.read(diaryRepositoryProvider).insert(entry);
+      await ref.read(alimentoRepositoryProvider).recordSelection(food.id);
+      ref.invalidate(recentFoodsForUnifiedProvider);
+
+      if (!mounted) return;
+
+      // Formato legible para el snackbar
+      final amountStr = amount == amount.roundToDouble()
+          ? amount.toInt().toString()
+          : amount.toStringAsFixed(1);
+      final unitLabel = unitKey == 'portion'
+          ? (food.portionName ?? 'porción')
+          : unitKey == 'ml' ? 'ml' : 'g';
+
+      AppSnackbar.show(
+        context,
+        message: '${food.name} ($amountStr$unitLabel) añadido',
+      );
+      // NO hacer pop: el usuario puede seguir logueando más alimentos
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.showError(context, message: 'Error al guardar: $e');
+      }
+    }
+  }
+
   void _showManualAddSheet({_OcrExtractedData? prefillData}) {
     showModalBottomSheet(
       context: context,
@@ -771,7 +830,6 @@ class _FoodSearchUnifiedScreenState
     final recentFoods = ref.watch(recentFoodsForUnifiedProvider);
     final batchState = ref.watch(batchSelectionProvider);
     final favoriteFoods = ref.watch(favoriteFoodsForUnifiedProvider);
-    final foodBootstrapStatus = ref.watch(foodBootstrapControllerProvider);
 
     return Scaffold(
       resizeToAvoidBottomInset:
@@ -818,10 +876,6 @@ class _FoodSearchUnifiedScreenState
 
           // Chips de modo de entrada
           _buildInputModeChips(inputMode),
-
-          if (foodBootstrapStatus.isBusy ||
-              foodBootstrapStatus.stage == FoodBootstrapStage.error)
-            _buildFoodBootstrapBanner(foodBootstrapStatus),
 
           // Indicador de escucha de voz
           if (_isListening) _buildVoiceListeningIndicator(),
@@ -946,68 +1000,6 @@ class _FoodSearchUnifiedScreenState
     );
   }
 
-  Widget _buildFoodBootstrapBanner(FoodBootstrapStatus status) {
-    final theme = Theme.of(context);
-    final isError = status.stage == FoodBootstrapStage.error;
-    final message =
-        status.message ??
-        (isError
-            ? (status.errorMessage ?? 'Error al preparar base de alimentos')
-            : 'Preparando base de alimentos...');
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isError
-            ? theme.colorScheme.errorContainer
-            : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isError
-              ? theme.colorScheme.error.withAlpha((0.4 * 255).round())
-              : theme.colorScheme.outline.withAlpha((0.2 * 255).round()),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isError ? Icons.error_outline : Icons.sync,
-                size: 18,
-                color: isError
-                    ? theme.colorScheme.onErrorContainer
-                    : theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  message,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: isError
-                        ? theme.colorScheme.onErrorContainer
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              if (isError)
-                TextButton(
-                  onPressed: _retryFoodBootstrap,
-                  child: const Text('Reintentar'),
-                ),
-            ],
-          ),
-          if (status.isBusy) ...[
-            const SizedBox(height: 8),
-            LinearProgressIndicator(value: status.progress),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildBootstrapWaitingResults({
     String message = 'Preparando base de alimentos. Espera un momento...',
   }) {
@@ -1037,11 +1029,7 @@ class _FoodSearchUnifiedScreenState
     );
   }
 
-  Future<void> _retryFoodBootstrap() async {
-    await ref
-        .read(foodBootstrapControllerProvider.notifier)
-        .bootstrapIfNeeded(forceReload: true);
-  }
+
 
   Widget _buildVoiceListeningIndicator() {
     return Container(
@@ -1106,14 +1094,14 @@ class _FoodSearchUnifiedScreenState
     required String searchQuery,
     required BatchSelectionState batchState,
   }) {
-    final bootstrapStatus = ref.watch(foodBootstrapControllerProvider);
+    final foodDatabaseLoaded = ref.watch(foodDatabaseLoadedProvider);
 
     // Modo recientes
     if (inputMode == FoodInputMode.recent) {
       return recentFoods.when(
         data: (foods) {
           if (foods.isEmpty) {
-            if (bootstrapStatus.isBusy) {
+            if (foodDatabaseLoaded.isLoading) {
               return _buildBootstrapWaitingResults();
             }
             return SearchEmptyState(
@@ -1146,7 +1134,7 @@ class _FoodSearchUnifiedScreenState
       return searchResults.when(
         data: (scoredFoods) {
           if (scoredFoods.isEmpty && searchQuery.isNotEmpty) {
-            if (bootstrapStatus.isBusy) {
+            if (foodDatabaseLoaded.isLoading) {
               return _buildBootstrapWaitingResults(
                 message:
                     'La base de alimentos todavía se está preparando. Intenta de nuevo en unos segundos.',
@@ -1348,6 +1336,9 @@ class _FoodSearchUnifiedScreenState
         return FoodListItem(
           food: food,
           onTap: () => _selectFood(food),
+          onQuickLog: !isBatchMode
+              ? (amount, unitKey) => _quickLogFood(food, amount, unitKey)
+              : null,
           onLongPress: !isBatchMode
               ? () => ref
                     .read(batchSelectionProvider.notifier)

@@ -26,9 +26,13 @@ import '../../training/screens/session_detail_screen.dart';
 import '../../training/screens/training_session_screen.dart';
 import '../../diet/screens/coach/plan_setup_screen.dart';
 import '../../diet/screens/coach/weekly_check_in_screen.dart';
+import '../../diet/screens/macro_cycle_screen.dart';
+import '../../diet/screens/recipe_list_screen.dart';
+import '../../diet/screens/recipe_editor_screen.dart';
 import '../../diet/screens/search_benchmark_screen.dart';
 import '../../core/onboarding/splash_wrapper.dart';
 import '../../training/training_shell.dart';
+import '../../features/settings/presentation/body_progress_screen.dart';
 
 /// Provider para acceder al router desde cualquier parte de la app
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -61,6 +65,10 @@ class AppRouter {
   static const String nutritionCoach = '/nutrition/coach';
   static const String nutritionCoachSetup = '/nutrition/coach/setup';
   static const String nutritionCoachCheckin = '/nutrition/coach/checkin';
+  static const String nutritionMacroCycle = '/nutrition/macro-cycle';
+  static const String nutritionRecipes = '/nutrition/recipes';
+  static const String nutritionRecipeNew = '/nutrition/recipes/new';
+  static const String nutritionRecipeEdit = '/nutrition/recipes/:id';
   static const String training = '/training';
   static const String trainingHistory = '/training/history';
   static const String trainingRoutines = '/training/routines';
@@ -69,6 +77,8 @@ class AppRouter {
   static const String trainingSettings = '/training/settings';
   static const String trainingSession = '/training/session';
   static const String trainingSessionDetail = '/training/session/detail';
+
+  static const String bodyProgress = '/body-progress';
 
   // Debug routes (only available in debug mode)
   static const String debugSearchBenchmark = '/debug/search-benchmark';
@@ -170,12 +180,43 @@ class AppRouter {
         builder: (context, state) => const WeeklyCheckInScreen(),
       ),
 
+      // Ciclado de macros
+      GoRoute(
+        path: nutritionMacroCycle,
+        builder: (context, state) => const MacroCycleScreen(),
+      ),
+
+      // Recetas
+      GoRoute(
+        path: nutritionRecipes,
+        builder: (context, state) => const RecipeListScreen(),
+      ),
+      GoRoute(
+        path: nutritionRecipeNew,
+        builder: (context, state) => const RecipeEditorScreen(),
+      ),
+      GoRoute(
+        path: '/nutrition/recipes/:id',
+        builder: (context, state) => RecipeEditorScreen(
+          recipeId: state.pathParameters['id'],
+        ),
+      ),
+
       // === DEBUG ROUTES (only in debug mode) ===
       if (kDebugMode)
         GoRoute(
           path: debugSearchBenchmark,
           builder: (context, state) => const SearchBenchmarkScreen(),
         ),
+
+      // === PROGRESO CORPORAL ===
+      GoRoute(
+        path: bodyProgress,
+        pageBuilder: (context, state) => _fadePage(
+          key: state.pageKey,
+          child: const BodyProgressScreen(),
+        ),
+      ),
 
       // === ENTRENAMIENTO ===
       // Transición fade desde EntryScreen (usa TrainingShell internamente)
@@ -226,23 +267,65 @@ class AppRouter {
       ),
 
       // Sesión de entrenamiento activa
-      // Nota: TrainingSessionScreen no acepta sessionId, maneja su propio estado
+      // Transición "expand into battle mode": scale + slide-up + fade
       GoRoute(
         path: trainingSession,
-        builder: (context, state) => const TrainingSessionScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage<void>(
+          key: state.pageKey,
+          child: const TrainingSessionScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            // Scale desde 0.92 → 1.0 (efecto "expandir")
+            final scale = Tween<double>(
+              begin: 0.92,
+              end: 1.0,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            ));
+            // Slide-up sutil
+            final slideUp = Tween<Offset>(
+              begin: const Offset(0, 0.08),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            ));
+            return SlideTransition(
+              position: slideUp,
+              child: ScaleTransition(
+                scale: scale,
+                child: FadeTransition(opacity: animation, child: child),
+              ),
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 400),
+          reverseTransitionDuration: const Duration(milliseconds: 250),
+        ),
       ),
 
       // Detalle de sesión completada
       // Requiere el objeto Sesion completo, no solo ID
-      // Por ahora redirige a historial (deep link complejo requiere provider)
       GoRoute(
         path: trainingSessionDetail,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final extra = state.extra;
           if (extra is Sesion) {
-            return SessionDetailScreen(sesion: extra);
+            return CustomTransitionPage<void>(
+              key: state.pageKey,
+              child: SessionDetailScreen(sesion: extra),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 300),
+            );
           }
-          return const _MissingSessionDetailScreen();
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const _MissingSessionDetailScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+          );
         },
       ),
 
@@ -368,6 +451,9 @@ extension GoRouterExtension on BuildContext {
 
   /// Navega a Today Screen (vista HOY unificada)
   void goToToday() => go('/today');
+
+  /// Navega a la pantalla de progreso corporal (medidas + fotos)
+  void goToBodyProgress() => push(AppRouter.bodyProgress);
 
   /// Vuelve atrás
   void goBack() => pop();

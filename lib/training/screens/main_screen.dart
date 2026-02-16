@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/main_provider.dart';
-import '../utils/design_system.dart';
+import '../../core/design_system/design_system.dart';
 import '../widgets/session/active_session_bar.dart';
 import 'analysis_screen.dart';
 import 'rutinas_screen.dart';

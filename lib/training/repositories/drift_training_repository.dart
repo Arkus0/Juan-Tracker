@@ -142,4 +142,9 @@ class DriftTrainingRepository implements ITrainingRepository {
 
   @override
   Future<List<String>> getExerciseNames() => _analyticsRepo.getExerciseNames();
+
+  @override
+  Future<Map<String, int>> getAverageRestSecondsByLibraryId(
+    List<String> libraryIds,
+  ) => _analyticsRepo.getAverageRestSecondsByLibraryId(libraryIds);
 }

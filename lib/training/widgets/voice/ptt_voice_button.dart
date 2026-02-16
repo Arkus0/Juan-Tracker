@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../providers/voice_input_provider.dart';
-import '../../utils/design_system.dart';
 import 'voice_training_fab.dart';
 
 /// Estados explícitos del botón Push To Talk
@@ -185,7 +184,7 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
         children: [
           Icon(Icons.touch_app, size: 16, color: onSurface.withAlpha(138)),
           const SizedBox(width: 8),
-          Text('Mantén pulsado para hablar', style: core.AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(138))),
+          Text('Mantén pulsado para hablar', style: AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(138))),
         ],
       ),
     );
@@ -236,10 +235,10 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
       child: Column(
         key: ValueKey(_displayState),
         children: [
-          Text(labelText, style: core.AppTypography.labelLarge.copyWith(color: config.labelColor)),
+          Text(labelText, style: AppTypography.labelLarge.copyWith(color: config.labelColor)),
           if (_displayState == PttState.success && _successPreview != null) ...[
             const SizedBox(height: 4),
-            Text(_successPreview!, style: core.AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(138)), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(_successPreview!, style: AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(138)), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ],
       ),
@@ -256,7 +255,7 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
         children: [
           const _PulsingDot(color: AppColors.error),
           const SizedBox(width: 8),
-          Flexible(child: Text(text, style: core.AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(178)), maxLines: 2, overflow: TextOverflow.ellipsis)),
+          Flexible(child: Text(text, style: AppTypography.bodyMedium.copyWith(color: onSurface.withAlpha(178)), maxLines: 2, overflow: TextOverflow.ellipsis)),
         ],
       ),
     );

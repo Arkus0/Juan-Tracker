@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../core/design_system/design_system.dart';
 import '../../core/widgets/app_snackbar.dart';
 import '../models/ejercicio.dart';
 import '../models/sesion.dart';
 import '../providers/training_provider.dart';
-import '../utils/design_system.dart';
+import '../widgets/common/skeleton_loaders.dart';
 
 class SessionDetailScreen extends ConsumerWidget {
   final Sesion sesion;
@@ -35,7 +35,7 @@ class SessionDetailScreen extends ConsumerWidget {
         ],
       ),
       body: sessionsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const TrainingSessionSkeleton(),
         error: (err, stack) => Center(
           child: Text(
             'Error: $err',
@@ -44,9 +44,10 @@ class SessionDetailScreen extends ConsumerWidget {
         ),
         data: (sessions) {
           final previousSession = _findPreviousSession(sessions);
+          final sessionPrs = _computeSessionPRs(sessions);
 
           return rutinasAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const TrainingSessionSkeleton(),
             error: (err, stack) =>
                 const SizedBox(), // Just don't show routine name if error
             data: (rutinas) {
@@ -111,6 +112,10 @@ class SessionDetailScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 16),
+
+                    _buildSummaryCard(context, sessionPrs),
+
                     const SizedBox(height: 24),
 
                     // Exercises List
@@ -265,6 +270,195 @@ class SessionDetailScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildSummaryCard(BuildContext context, List<_SessionPr> prs) {
+    final volume = sesion.totalVolume;
+    final sets = sesion.completedSetsCount;
+    final exercises = sesion.ejerciciosCompletados.length;
+    final durationSeconds = sesion.durationSeconds;
+    final durationText = durationSeconds != null
+        ? '${(durationSeconds / 60).round()} min'
+        : 'N/A';
+    final volumePerMin = _formatVolumePerMinute(volume, durationSeconds);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.insights,
+                  size: 18,
+                  color: colorScheme.tertiary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'RESUMEN DE SESION',
+                    style: AppTypography.titleMedium.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                if (prs.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiary.withAlpha(38),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'PRs ${prs.length}',
+                      style: AppTypography.labelSmall.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.tertiary,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _SummaryStat(
+                    icon: Icons.monitor_weight_outlined,
+                    label: 'VOLUMEN',
+                    value: _formatVolume(volume),
+                  ),
+                ),
+                Expanded(
+                  child: _SummaryStat(
+                    icon: Icons.check_circle_outline,
+                    label: 'SERIES',
+                    value: '$sets',
+                  ),
+                ),
+                Expanded(
+                  child: _SummaryStat(
+                    icon: Icons.fitness_center,
+                    label: 'EJERCICIOS',
+                    value: '$exercises',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _SummaryStat(
+                    icon: Icons.timer_outlined,
+                    label: 'DURACION',
+                    value: durationText,
+                  ),
+                ),
+                Expanded(
+                  child: _SummaryStat(
+                    icon: Icons.speed,
+                    label: 'VOL/MIN',
+                    value: volumePerMin,
+                  ),
+                ),
+                const Spacer(),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (prs.isEmpty)
+              Text(
+                'Sin PRs en esta sesion',
+                style: AppTypography.bodySmall.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              )
+            else
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: prs.map((pr) => _PrChip(pr: pr)).toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatVolume(double volume) {
+    if (volume >= 1000) {
+      return '${(volume / 1000).toStringAsFixed(1)}t';
+    }
+    return '${volume.toStringAsFixed(0)}kg';
+  }
+
+  String _formatVolumePerMinute(double volume, int? durationSeconds) {
+    if (durationSeconds == null || durationSeconds <= 0) return 'N/A';
+    final minutes = durationSeconds / 60;
+    if (minutes <= 0) return 'N/A';
+    final perMin = volume / minutes;
+    if (perMin >= 1000) {
+      return '${(perMin / 1000).toStringAsFixed(2)}t/min';
+    }
+    return '${perMin.toStringAsFixed(0)}kg/min';
+  }
+
+  List<_SessionPr> _computeSessionPRs(List<Sesion> sessions) {
+    final prs = <_SessionPr>[];
+    final currentDate = sesion.fecha;
+
+    for (final exercise in sesion.ejerciciosCompletados) {
+      final currentBest = _bestSet(exercise);
+      if (currentBest.weight <= 0) continue;
+
+      var previousBest = 0.0;
+      for (final history in sessions) {
+        if (history.id == sesion.id) continue;
+        if (!history.fecha.isBefore(currentDate)) continue;
+        for (final other in history.ejerciciosCompletados) {
+          if (other.historyKey != exercise.historyKey) continue;
+          final historyBest = _bestSet(other);
+          if (historyBest.weight > previousBest) {
+            previousBest = historyBest.weight;
+          }
+        }
+      }
+
+      if (currentBest.weight > previousBest) {
+        prs.add(
+          _SessionPr(
+            exerciseName: exercise.nombre,
+            weight: currentBest.weight,
+            reps: currentBest.reps,
+            previousBest: previousBest,
+          ),
+        );
+      }
+    }
+
+    prs.sort((a, b) => b.weight.compareTo(a.weight));
+    return prs;
+  }
+
+  _BestSet _bestSet(Ejercicio exercise) {
+    var bestWeight = 0.0;
+    var bestReps = 0;
+    for (final log in exercise.logs) {
+      if (!log.completed) continue;
+      if (log.peso > bestWeight ||
+          (log.peso == bestWeight && log.reps > bestReps)) {
+        bestWeight = log.peso;
+        bestReps = log.reps;
+      }
+    }
+    return _BestSet(weight: bestWeight, reps: bestReps);
+  }
+
   Widget _buildHeaderCell(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -284,7 +478,7 @@ class SessionDetailScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Text(
         text,
-        style: core.AppTypography.bodyMedium.copyWith(
+        style: AppTypography.bodyMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),
         textAlign: TextAlign.center,
@@ -321,7 +515,7 @@ class SessionDetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Text(
           text,
-          style: core.AppTypography.bodyMedium.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -334,7 +528,7 @@ class SessionDetailScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Text(
         text,
-        style: core.AppTypography.bodySmall.copyWith(
+        style: AppTypography.bodySmall.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         textAlign: TextAlign.center,
@@ -354,7 +548,7 @@ class SessionDetailScreen extends ConsumerWidget {
             Expanded(
               child: Text(
                 '¿ELIMINAR SESIÓN?',
-                style: core.AppTypography.headlineSmall,
+                style: AppTypography.headlineSmall,
               ),
             ),
           ],
@@ -365,7 +559,7 @@ class SessionDetailScreen extends ConsumerWidget {
           children: [
             Text(
               'Esta acción no se puede deshacer.',
-              style: core.AppTypography.bodyMedium.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(178),
               ),
             ),
@@ -382,19 +576,19 @@ class SessionDetailScreen extends ConsumerWidget {
                 children: [
                   Text(
                     sesion.dayName ?? 'Sesión',
-                    style: core.AppTypography.titleMedium,
+                    style: AppTypography.titleMedium,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     DateFormat('EEEE, d MMMM yyyy', 'es_ES').format(sesion.fecha),
-                    style: core.AppTypography.bodySmall.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${sesion.completedSetsCount} series • ${(sesion.totalVolume / 1000).toStringAsFixed(1)}t volumen',
-                    style: core.AppTypography.bodySmall.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: AppColors.neonCyan,
                     ),
                   ),
@@ -408,7 +602,7 @@ class SessionDetailScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               'CANCELAR',
-              style: core.AppTypography.labelMedium.copyWith(
+              style: AppTypography.labelMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withAlpha(138),
               ),
             ),
@@ -418,7 +612,7 @@ class SessionDetailScreen extends ConsumerWidget {
             icon: const Icon(Icons.delete, size: 18),
             label: Text(
               'ELIMINAR',
-              style: core.AppTypography.labelLarge,
+              style: AppTypography.labelLarge,
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
@@ -444,7 +638,7 @@ class SessionDetailScreen extends ConsumerWidget {
             SnackBar(
               content: Text(
                 'Error al eliminar: $e',
-                style: core.AppTypography.bodyMedium,
+                style: AppTypography.bodyMedium,
               ),
               backgroundColor: AppColors.error,
             ),
@@ -453,4 +647,100 @@ class SessionDetailScreen extends ConsumerWidget {
       }
     }
   }
+}
+
+class _SummaryStat extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _SummaryStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: AppTypography.labelSmall.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                letterSpacing: 0.6,
+              ),
+            ),
+            Text(
+              value,
+              style: AppTypography.titleSmall.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PrChip extends StatelessWidget {
+  final _SessionPr pr;
+
+  const _PrChip({required this.pr});
+
+  String _formatWeight(double value) {
+    if (value == value.truncateToDouble()) {
+      return value.toInt().toString();
+    }
+    return value.toStringAsFixed(1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.tertiary.withAlpha(28),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colorScheme.tertiary.withAlpha(60)),
+      ),
+      child: Text(
+        '${pr.exerciseName}: ${_formatWeight(pr.weight)}kg x ${pr.reps}',
+        style: AppTypography.labelSmall.copyWith(
+          color: colorScheme.tertiary,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _SessionPr {
+  final String exerciseName;
+  final double weight;
+  final int reps;
+  final double previousBest;
+
+  const _SessionPr({
+    required this.exerciseName,
+    required this.weight,
+    required this.reps,
+    required this.previousBest,
+  });
+}
+
+class _BestSet {
+  final double weight;
+  final int reps;
+
+  const _BestSet({required this.weight, required this.reps});
 }

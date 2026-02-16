@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/design_system/design_system.dart';
 import '../../providers/session_progress_provider.dart';
-import '../../utils/design_system.dart';
 
 /// 🎯 AGGRESSIVE RED: Barra de progreso ultra-mínima
 ///

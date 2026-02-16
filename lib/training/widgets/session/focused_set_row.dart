@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/design_system/design_system.dart' as core show AppTypography;
+import '../../../core/design_system/design_system.dart';
 import '../../../core/providers/information_density_provider.dart';
 import '../../models/serie_log.dart';
 import '../../screens/plate_calculator_dialog.dart';
-import '../../utils/design_system.dart';
 import 'numpad_input_modal.dart';
 
 /// ============================================================================
@@ -47,27 +46,27 @@ class TrainingColors {
 
 // ⚡ OPTIMIZACIÓN: Estilos pre-computados para evitar GoogleFonts en build
 class _SetRowStyles {
-  static final badgeLabel = core.AppTypography.labelLarge.copyWith(
+  static final badgeLabel = AppTypography.labelLarge.copyWith(
     fontWeight: FontWeight.w800,
     color: AppColors.textOnAccent,
   );
 
-  static final badgeLabelDisabled = core.AppTypography.labelLarge.copyWith(
+  static final badgeLabelDisabled = AppTypography.labelLarge.copyWith(
     fontWeight: FontWeight.w800,
     color: TrainingColors.textDisabled,
   );
 
   // Serie activa: números grandes pero no exagerados
-  static final valueActiveText = core.AppTypography.dataMedium;
+  static final valueActiveText = AppTypography.dataMedium;
 
-  static final valueNormalText = core.AppTypography.titleLarge;
+  static final valueNormalText = AppTypography.titleLarge;
 
   // Labels muy sutiles para no competir con datos
-  static final labelActiveText = core.AppTypography.labelSmall.copyWith(
+  static final labelActiveText = AppTypography.labelSmall.copyWith(
     color: AppColors.textTertiary,
   );
 
-  static final labelNormalText = core.AppTypography.labelSmall.copyWith(
+  static final labelNormalText = AppTypography.labelSmall.copyWith(
     color: AppColors.textTertiary,
   );
 }
@@ -177,9 +176,18 @@ class FocusedSetRow extends ConsumerStatefulWidget {
   final Function(double) onWeightChanged;
   final Function(int) onRepsChanged;
   final ValueChanged<bool?> onCompleted;
+  final bool showAdvanced;
   final VoidCallback? onLongPress;
   final VoidCallback? onDelete; // 🆕 Callback para eliminar serie
   final bool canDelete; // 🆕 Si se puede eliminar (>1 serie)
+  final bool showPrBadge;
+  // 🆕 Quick toggles de tipo de set
+  final VoidCallback? onToggleWarmup;
+  final VoidCallback? onToggleFailure;
+  final VoidCallback? onToggleDropset;
+  final VoidCallback? onToggleRestPause;
+  final VoidCallback? onToggleMyoReps;
+  final VoidCallback? onToggleAmrap;
 
   const FocusedSetRow({
     super.key,
@@ -193,9 +201,17 @@ class FocusedSetRow extends ConsumerStatefulWidget {
     required this.onWeightChanged,
     required this.onRepsChanged,
     required this.onCompleted,
+    required this.showAdvanced,
     this.onLongPress,
     this.onDelete,
     this.canDelete = false,
+    this.showPrBadge = false,
+    this.onToggleWarmup,
+    this.onToggleFailure,
+    this.onToggleDropset,
+    this.onToggleRestPause,
+    this.onToggleMyoReps,
+    this.onToggleAmrap,
   });
 
   @override
@@ -246,6 +262,14 @@ class _FocusedSetRowState extends ConsumerState<FocusedSetRow>
     final density = ref.watch(informationDensityProvider);
     final densityValues = DensityValues.forMode(density);
     final isCompleted = widget.log.completed;
+    final showSetTypeChips =
+        widget.showAdvanced ||
+        widget.log.isWarmup ||
+        widget.log.isFailure ||
+        widget.log.isDropset ||
+        widget.log.isRestPause ||
+        widget.log.isMyoReps ||
+        widget.log.isAmrap;
 
     // Colores y estilos según estado
     final style = _getRowStyle(isCompleted, widget.isActive, widget.isFuture, densityValues);
@@ -291,73 +315,91 @@ class _FocusedSetRowState extends ConsumerState<FocusedSetRow>
                 width: widget.isActive ? 2 : 1,
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Número de serie
-                _SetNumberBadge(
-                  index: widget.index,
-                  isCompleted: isCompleted,
-                  isActive: widget.isActive,
-                  isWarmup: widget.log.isWarmup,
-                  isDropset: widget.log.isDropset,
-                ),
+                Row(
+                  children: [
+                    // Número de serie
+                    _SetNumberBadge(
+                      index: widget.index,
+                      isCompleted: isCompleted,
+                      isActive: widget.isActive,
+                      isWarmup: widget.log.isWarmup,
+                      isDropset: widget.log.isDropset,
+                    ),
 
-                const SizedBox(width: 12),
+                    const SizedBox(width: 12),
 
-                // Input KG (táctil grande)
-                // 🎯 FIX #3: Muestra peso incluso si es 0 o negativo (máquinas asistidas)
-                // 🎯 HIGH-005: Detectar peso sospechoso y mostrar sugerencia inline
-                Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      final suspiciousWeight = _detectSuspiciousWeight(
-                        widget.log.peso,
-                        widget.prevLog?.peso,
-                      );
-                      return _TappableValueInput(
-                        value: widget.log.peso,
-                        label: 'KG',
+                    // Input KG (táctil grande)
+                    // 🎯 FIX #3: Muestra peso incluso si es 0 o negativo (máquinas asistidas)
+                    // 🎯 HIGH-005: Detectar peso sospechoso y mostrar sugerencia inline
+                    Expanded(
+                      child: Builder(
+                        builder: (context) {
+                          final suspiciousWeight = _detectSuspiciousWeight(
+                            widget.log.peso,
+                            widget.prevLog?.peso,
+                          );
+                          return _TappableValueInput(
+                            value: widget.log.peso,
+                            label: 'KG',
+                            isActive: widget.isActive,
+                            isCompleted: isCompleted,
+                            textColor: style.textColor,
+                            allowZeroAndNegative: true, // 🎯 FIX #3
+                            onTap: isCompleted ? null : () => _openWeightInput(context),
+                            // 🎯 HIGH-005: Mostrar sugerencia si el peso parece erróneo
+                            suggestedValue: suspiciousWeight,
+                            onAcceptSuggestion: suspiciousWeight != null
+                                ? () => widget.onWeightChanged(suspiciousWeight)
+                                : null,
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // Input REPS (táctil grande)
+                    // 🎯 FIX #3: Muestra reps incluso si es 0 (isométricos, holds)
+                    Expanded(
+                      child: _TappableValueInput(
+                        value: widget.log.reps.toDouble(),
+                        label: 'REPS',
                         isActive: widget.isActive,
                         isCompleted: isCompleted,
                         textColor: style.textColor,
-                        allowZeroAndNegative: true, // 🎯 FIX #3
-                        onTap: isCompleted ? null : () => _openWeightInput(context),
-                        // 🎯 HIGH-005: Mostrar sugerencia si el peso parece erróneo
-                        suggestedValue: suspiciousWeight,
-                        onAcceptSuggestion: suspiciousWeight != null
-                            ? () => widget.onWeightChanged(suspiciousWeight)
-                            : null,
-                      );
-                    },
+                        isInteger: true,
+                        allowZeroAndNegative:
+                            true, // 🎯 FIX #3: permite 0 para isométricos
+                        onTap: isCompleted ? null : () => _openRepsInput(context),
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // Checkbox de completado
+                    _CompletionCheckbox(
+                      isCompleted: isCompleted,
+                      isActive: widget.isActive,
+                      onChanged: widget.onCompleted,
+                    ),
+                  ],
+                ),
+                if (showSetTypeChips) ...[
+                  const SizedBox(height: 6),
+                  _SetTypeChipsRow(
+                    log: widget.log,
+                    showPrBadge: widget.showPrBadge,
+                    onToggleWarmup: widget.onToggleWarmup,
+                    onToggleFailure: widget.onToggleFailure,
+                    onToggleDropset: widget.onToggleDropset,
+                    onToggleRestPause: widget.onToggleRestPause,
+                    onToggleMyoReps: widget.onToggleMyoReps,
+                    onToggleAmrap: widget.onToggleAmrap,
                   ),
-                ),
-
-                const SizedBox(width: 12),
-
-                // Input REPS (táctil grande)
-                // 🎯 FIX #3: Muestra reps incluso si es 0 (isométricos, holds)
-                Expanded(
-                  child: _TappableValueInput(
-                    value: widget.log.reps.toDouble(),
-                    label: 'REPS',
-                    isActive: widget.isActive,
-                    isCompleted: isCompleted,
-                    textColor: style.textColor,
-                    isInteger: true,
-                    allowZeroAndNegative:
-                        true, // 🎯 FIX #3: permite 0 para isométricos
-                    onTap: isCompleted ? null : () => _openRepsInput(context),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                // Checkbox de completado
-                _CompletionCheckbox(
-                  isCompleted: isCompleted,
-                  isActive: widget.isActive,
-                  onChanged: widget.onCompleted,
-                ),
+                ],
               ],
             ),
           ),
@@ -391,7 +433,7 @@ class _FocusedSetRowState extends ConsumerState<FocusedSetRow>
             children: [
               Text(
                 'ELIMINAR',
-                style: core.AppTypography.labelMedium.copyWith(
+                style: AppTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.w800,
                   color: Theme.of(context).colorScheme.onSurface,
                   letterSpacing: 0.5,
@@ -730,7 +772,7 @@ class _WeightSuggestionBadge extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 _displaySuggestion,
-                style: core.AppTypography.labelSmall.copyWith(
+                style: AppTypography.labelSmall.copyWith(
                   fontWeight: FontWeight.w700,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -739,6 +781,130 @@ class _WeightSuggestionBadge extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Chips rápidos para marcar tipo de set
+class _SetTypeChipsRow extends StatelessWidget {
+  final SerieLog log;
+  final bool showPrBadge;
+  final VoidCallback? onToggleWarmup;
+  final VoidCallback? onToggleFailure;
+  final VoidCallback? onToggleDropset;
+  final VoidCallback? onToggleRestPause;
+  final VoidCallback? onToggleMyoReps;
+  final VoidCallback? onToggleAmrap;
+
+  const _SetTypeChipsRow({
+    required this.log,
+    this.showPrBadge = false,
+    this.onToggleWarmup,
+    this.onToggleFailure,
+    this.onToggleDropset,
+    this.onToggleRestPause,
+    this.onToggleMyoReps,
+    this.onToggleAmrap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 44, right: 8),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          if (showPrBadge)
+            _SetTypeChip(
+              label: 'PR',
+              selected: true,
+              color: AppColors.goldAccent,
+              onToggle: null,
+            ),
+          _SetTypeChip(
+            label: 'WARM',
+            selected: log.isWarmup,
+            color: AppColors.info,
+            onToggle: onToggleWarmup,
+          ),
+          _SetTypeChip(
+            label: 'FALLO',
+            selected: log.isFailure,
+            color: AppColors.error,
+            onToggle: onToggleFailure,
+          ),
+          _SetTypeChip(
+            label: 'DROP',
+            selected: log.isDropset,
+            color: AppColors.warning,
+            onToggle: onToggleDropset,
+          ),
+          _SetTypeChip(
+            label: 'R-P',
+            selected: log.isRestPause,
+            color: AppColors.info,
+            onToggle: onToggleRestPause,
+          ),
+          _SetTypeChip(
+            label: 'MYO',
+            selected: log.isMyoReps,
+            color: AppColors.info,
+            onToggle: onToggleMyoReps,
+          ),
+          _SetTypeChip(
+            label: 'AMRAP',
+            selected: log.isAmrap,
+            color: AppColors.warning,
+            onToggle: onToggleAmrap,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetTypeChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback? onToggle;
+
+  const _SetTypeChip({
+    required this.label,
+    required this.selected,
+    required this.color,
+    this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final borderColor = selected
+        ? color
+        : colorScheme.outline.withValues(alpha: 0.3);
+    final bgColor = selected
+        ? color.withValues(alpha: 0.15)
+        : colorScheme.surfaceContainerHighest;
+
+    return FilterChip(
+      label: Text(
+        label,
+        style: AppTypography.labelSmall.copyWith(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: selected ? color : colorScheme.onSurfaceVariant,
+        ),
+      ),
+      selected: selected,
+      onSelected: onToggle == null ? null : (_) => onToggle?.call(),
+      showCheckmark: false,
+      selectedColor: bgColor,
+      backgroundColor: bgColor,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+      side: BorderSide(color: borderColor),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }
